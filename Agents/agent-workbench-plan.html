@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agent 工作台 · 设计方案 v0.1（OpenCode × Pi）</title>
+<style>
+:root{
+  --paper:#f6f4ef;
+  --paper-2:#efece4;
+  --surface:#fffefb;
+  --ink:#17181b;
+  --ink-2:#3c3f45;
+  --muted:#6f7279;
+  --line:#e3ded3;
+  --line-strong:#cfc7b8;
+  --accent:#2b4f9e;
+  --accent-soft:#e9eefb;
+  --amber:#9a5712;
+  --amber-soft:#fbefdf;
+  --green:#22654e;
+  --green-soft:#e6f1eb;
+  --red:#98302f;
+  --red-soft:#fae9e8;
+  --code-bg:#171a1f;
+  --code-ink:#e9e6de;
+  --code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05), 0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.8;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{
+  position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;
+  padding:10px 16px;border-radius:0 0 10px 0;z-index:999;
+}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:266px minmax(0,1fr);align-items:start}
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  position:sticky;top:0;height:100vh;overflow:auto;
+  padding:30px 18px 26px 26px;border-right:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));
+  backdrop-filter:blur(6px);
+}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{
+  width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;
+  background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.brand-mark::after{
+  content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;
+  border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg);
+}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25;letter-spacing:.01em}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{
+  display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;
+  padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;
+  font-size:13.2px;line-height:1.5;border:1px solid transparent;
+}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+/* ---------- main ---------- */
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:52px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{
+  font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.6vw,62px);
+  line-height:1.08;letter-spacing:-.015em;margin:0 0 18px;
+}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2);
+}
+.pill b{font-weight:600;color:var(--ink)}
+.pill .swatch{width:7px;height:7px;border-radius:50%}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:30px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:14px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:24px;margin-bottom:62px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:26px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:34px 0 12px;letter-spacing:-.005em}
+h4{font-size:14px;margin:22px 0 6px;letter-spacing:.02em;color:var(--ink-2)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.875em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+
+/* ---------- components ---------- */
+.callout{
+  border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);
+  border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2);
+}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+
+/* ---------- filters ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+  font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 240px;max-width:320px}
+.search input{
+  width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+
+/* ---------- agent cards ---------- */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.agent{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 18px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;
+  transition:transform .15s,box-shadow .15s,border-color .15s;
+}
+.agent:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 12px 34px -20px rgba(23,24,27,.5)}
+.agent-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.agent-name{font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:normal}
+.agent-zh{font-size:12.5px;color:var(--muted);margin-top:1px}
+.tier{font-size:10.5px;font-family:var(--mono);letter-spacing:.06em;padding:2px 7px;border-radius:5px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.agent p{margin:0;font-size:13.6px;color:var(--ink-2);line-height:1.7}
+.agent dl{margin:0;display:grid;gap:7px;font-size:12.8px}
+.agent dl > div{display:grid;grid-template-columns:52px 1fr;gap:8px}
+.agent dt{color:var(--muted);font-size:12px}
+.agent dd{margin:0;color:var(--ink-2)}
+.agent-foot{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper)}
+.tag.oc{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.tag.pi{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.tag.ro{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.tag.rw{color:var(--red);border-color:#f0cfcf;background:var(--red-soft)}
+
+/* ---------- tips ---------- */
+.tip-group{margin:0 0 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.tip-group > summary{
+  cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:10px;
+  font-weight:600;font-size:14.5px;background:linear-gradient(180deg,#fffefb,#fbf9f4);
+}
+.tip-group > summary::-webkit-details-marker{display:none}
+.tip-group > summary .chev{margin-left:auto;transition:transform .18s;color:var(--muted)}
+.tip-group[open] > summary .chev{transform:rotate(90deg)}
+.tip-group > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tip-group .body{padding:4px 18px 16px}
+.tip{padding:12px 0;border-top:1px solid var(--line)}
+.tip:first-child{border-top:0}
+.tip h4{margin:0 0 4px;font-size:14.2px;color:var(--ink)}
+.tip p{margin:0;font-size:13.6px;color:var(--ink-2);line-height:1.72}
+.tip .why{display:block;margin-top:5px;font-size:12.5px;color:var(--muted)}
+.tip .why b{color:var(--ink-2);font-weight:600}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:560px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+td code{white-space:nowrap}
+
+/* ---------- code ---------- */
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{
+  margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;
+  font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;
+}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.7;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre;font-size:inherit}
+
+/* ---------- timeline ---------- */
+.timeline{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.timeline::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.timeline li{position:relative;padding:0 0 22px 44px}
+.timeline li::before{
+  content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--accent);
+}
+.timeline .ph{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:3px}
+.timeline .ph b{font-size:15px}
+.timeline .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.04em}
+.timeline p{margin:0;font-size:13.4px;color:var(--ink-2)}
+.timeline .out{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+/* ---------- my agents ---------- */
+.mine-form{display:grid;grid-template-columns:1.1fr 1.6fr .8fr auto;gap:8px;align-items:end}
+.mine-form label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.mine-form input,.mine-form select{
+  font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink);min-width:0;
+}
+.mine-form input:focus,.mine-form select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.btn{
+  appearance:none;font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:#f8f6f0;
+}
+.btn:hover{background:#2b2d33}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line-strong);font-weight:500}
+.btn.ghost:hover{background:var(--paper-2)}
+.mine-list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.mine-list li{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:11px 14px;border:1px solid var(--line);
+  border-radius:10px;background:var(--surface);font-size:13.5px;
+}
+.mine-list .nm{font-family:var(--mono);font-weight:600}
+.mine-list .use{color:var(--muted);font-size:12.5px}
+.mine-list .del{margin-left:auto;background:none;border:1px solid var(--line-strong);border-radius:6px;padding:2px 8px;font-size:11.5px;color:var(--muted);cursor:pointer}
+.mine-list .del:hover{color:var(--red);border-color:#e3b9b8}
+.hint{font-size:12px;color:var(--muted);margin-top:10px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- misc ---------- */
+.checklist{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checklist li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checklist input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+.tree{font-family:var(--mono);font-size:12.6px;line-height:1.85;color:var(--code-ink)}
+.tree .c{color:#8b9aac}
+.tree .k{color:#e5c07b}
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{
+  position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);
+  background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center;
+}
+.top-btn.show{display:flex}
+.top-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  .mine-form{grid-template-columns:1fr 1fr}
+  .mine-form .add-wrap{grid-column:1/-1}
+  .btn{width:100%}
+  h1{font-size:clamp(34px,9vw,48px)}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none !important;animation:none !important}
+}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:11pt}
+  .sidebar,.progress,.top-btn,.copy,.toolbar,.mine-form,.del,.result-line{display:none !important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:26px;page-break-inside:auto}
+  .agent,.tip-group,.card,.code,table{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  .agent-grid{grid-template-columns:1fr 1fr}
+  h1{font-size:30pt}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Agent 工作台</div>
+      <div class="brand-sub">方案 · v0.1</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>速览</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>背景与目标</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>产品定位</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>信息架构</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>Agent 目录</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>技巧库</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>我的 Agent</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>双工具落地</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>目录与技术</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>路线图</span></a></li>
+      <li><a href="#s11"><span class="no">11</span><span>验收标准</span></a></li>
+      <li><a href="#s12"><span class="no">12</span><span>风险与取舍</span></a></li>
+      <li><a href="#s13"><span class="no">13</span><span>附录</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    主要运行时<br><b>OpenCode</b> · <b>Pi</b><br>
+    最后核验 2026-10-29<br>
+    本页为离线单文件
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>设计方案 · 可交互原型说明<span class="dot"></span>2026-10-29</p>
+    <h1>Agent <em>工作台</em></h1>
+    <p class="lede">把散落在 OpenCode 与 Pi 配置目录里的 Agent、分散在各处的使用技巧、以及你自己常用的那一小队角色，收进一个可搜索、可收藏、可导出、可同步的本地入口。</p>
+    <div class="meta-row">
+      <span class="pill"><span class="swatch" style="background:var(--accent)"></span>OpenCode</span>
+      <span class="pill"><span class="swatch" style="background:var(--amber)"></span>Pi</span>
+      <span class="pill">形态 <b>单文件 HTML → 静态站点</b></span>
+      <span class="pill">数据 <b>Markdown + JSON</b></span>
+      <span class="pill">版本 <b>v0.1</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">12<span>类</span></div><div class="l">常用 Agent 角色卡</div></div>
+      <div class="kpi"><div class="n">14<span>条</span></div><div class="l">分场景使用技巧</div></div>
+      <div class="kpi"><div class="n">5<span>个</span></div><div class="l">一级功能模块</div></div>
+      <div class="kpi"><div class="n">4<span>阶段</span></div><div class="l">可独立验收的路线</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">速览</h2></div>
+    <p class="lead-in">这不是再造一个 Agent，而是给 Agent 建一座「索引 + 说明书 + 装配台」。核心价值在于：让「该派谁上」和「怎么派」在 10 秒内被回答。</p>
+
+    <div class="grid g3" style="margin:22px 0">
+      <div class="card">
+        <h4 style="margin-top:0">它是什么</h4>
+        <p class="small" style="margin:0">一个本地优先的 Agent 目录：每张卡片写清角色、适用场景、权限边界、推荐模型与两个工具下的落地方式。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">它解决什么</h4>
+        <p class="small" style="margin:0">「我知道有个审查 Agent，但忘了叫什么、放哪、怎么配」；「这条技巧上次用得很顺，想不起来原话」。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">本期做到哪</h4>
+        <p class="small" style="margin:0">内容模型定稿 + 单文件原型（搜索、筛选、收藏、自定义）+ 双工具配置模板；同步脚本列为下一阶段。</p>
+      </div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">一句话架构</span>
+      内容层（Markdown / JSON，进 Git）→ 视图层（离线单文件 HTML，可搜索可筛选）→ 使用层（收藏、复制配置、导出清单、后续与本地目录同步）。三层解耦，任何一层都能单独替换。
+    </div>
+
+    <h3>三个关键决策</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>决策</th><th>选择</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>交付形态</td><td>先做单文件 HTML，不做后端</td><td>零依赖、可离线、可进 Git、双击即用；先验证内容结构，再谈工程化。</td></tr>
+          <tr><td>Agent 定义载体</td><td>Markdown + frontmatter 为唯一事实源</td><td>OpenCode 与 Pi 都吃 Markdown；同一份角色卡可双向生成配置片段。</td></tr>
+          <tr><td>「我的 Agent」</td><td>浏览器本地存储 + 可导出 JSON</td><td>不引入账号体系；收藏是个人偏好，导出后可跨设备迁移或进仓库。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">背景与目标</h2></div>
+
+    <h3>现状盘点</h3>
+    <p>你当前的 Agent 资产分散在两个运行时、两种目录层级、两种 frontmatter 方言里。它们本身都够用，问题出在「跨工具的心智模型」没有被统一。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>资产</th><th>OpenCode 里的位置</th><th>Pi 里的位置</th><th>现状痛点</th></tr></thead>
+        <tbody>
+          <tr><td>Agent 定义</td><td><code>~/.config/opencode/agents/*.md</code><br><code>.opencode/agents/*.md</code></td><td><code>~/.pi/agent/agents/*.md</code><br><code>.pi/agents/*.md</code>（依赖子代理扩展）</td><td>同名不同义，字段不通用，容易写两份且逐渐漂移</td></tr>
+          <tr><td>项目指令</td><td><code>AGENTS.md</code></td><td><code>AGENTS.md</code> / <code>SYSTEM.md</code> / <code>APPEND_SYSTEM.md</code></td><td>约束写在项目里，跨项目不可见</td></tr>
+          <tr><td>可复用流程</td><td><code>commands/*.md</code>（<code>/cmd</code>）</td><td><code>prompts/*.md</code>（slash 命令）</td><td>流程与 Agent 混在一起，缺少统一索引</td></tr>
+          <tr><td>技巧</td><td>散落在会话、笔记、聊天记录</td><td>同左</td><td>不可检索，复用全靠记忆</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>五个具体问题</h3>
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">1 · 找不到</h4><p class="small" style="margin:0">知道「有个专门做审查的角色」，但名字、文件、触发方式记不全，于是每次重新写 prompt。</p></div>
+      <div class="card"><h4 style="margin-top:0">2 · 对不齐</h4><p class="small" style="margin:0">OpenCode 用 <code>mode</code> / <code>permission</code>，Pi 用 <code>name</code> / <code>tools</code>，同一角色维护两份，改一处忘一处。</p></div>
+      <div class="card"><h4 style="margin-top:0">3 · 记不住</h4><p class="small" style="margin:0">「先侦察后施工」「审查要用另一个模型」这类经验，没有沉淀成可检索的条目。</p></div>
+      <div class="card"><h4 style="margin-top:0">4 · 不敢加</h4><p class="small" style="margin:0">想试新 Agent，但不清楚权限边界与风险，索性只用默认那几个。</p></div>
+    </div>
+
+    <h3>目标与非目标</h3>
+    <div class="grid g2">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <h4 style="margin-top:0">本期目标</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>统一 Agent 卡片模型，覆盖 OpenCode 与 Pi</li>
+          <li>可搜索、可筛选、可比较的角色目录</li>
+          <li>按场景组织的技巧库（可检索）</li>
+          <li>「我的 Agent」：手动添加、删除、导出</li>
+          <li>每条角色卡都能一键复制为两个工具可用的配置</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">明确不做</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>不做 Agent 运行时 / 不做模型网关</li>
+          <li>不做账号、云同步、团队协作后台</li>
+          <li>不自动修改你的 OpenCode / Pi 配置（同步脚本需显式确认）</li>
+          <li>不做 Agent 市场与评分体系（先解决自用）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">成功判断</span>
+      两周后回看：新增一个 Agent 的时间从「翻文档 + 试错 20 分钟」降到「复制模板 + 改 3 行」；不再出现「这个角色我是不是写过」的疑问。
+    </div>
+  </section>
+
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">产品定位</h2></div>
+
+    <p class="lead-in">一句话：<strong>Agent 的图书馆 + 你的工具箱</strong>。图书馆负责「有什么、怎么用」，工具箱负责「我常用哪几个、怎么一键带走」。</p>
+
+    <div class="grid g2" style="margin:20px 0">
+      <div class="card">
+        <h4 style="margin-top:0">三个使用瞬间</h4>
+        <ol class="small" style="margin:0;padding-left:1.2em">
+          <li><b>开工前</b>：搜「审查」，30 秒内拿到角色卡与配置片段。</li>
+          <li><b>卡住时</b>：翻「技巧库 → 上下文」，找到「先侦察后施工」的具体做法。</li>
+          <li><b>沉淀时</b>：把这次调好的 Agent 加进「我的」，下次直接复用。</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">设计原则</h4>
+        <ol class="small" style="margin:0;padding-left:1.2em">
+          <li><b>内容先于交互</b>：关掉 JavaScript 也能读完所有角色与技巧。</li>
+          <li><b>一屏一问题</b>：每个模块只回答一个疑问，不堆仪表盘。</li>
+          <li><b>权限显性化</b>：只读 / 可写、开箱 / 需配置，一眼可见。</li>
+          <li><b>本地优先</b>：不依赖网络、不依赖账号、数据可导出。</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>常见做法</th><th>本方案选择</th></tr></thead>
+        <tbody>
+          <tr><td>组织方式</td><td>按工具分类（OpenCode 区 / Pi 区）</td><td>按<b>职责</b>分类，工具作为标签；同一角色跨工具只维护一份说明</td></tr>
+          <tr><td>内容粒度</td><td>长文教程</td><td>卡片 + 折叠细节：先给结论，再给配置</td></tr>
+          <tr><td>个性化</td><td>登录后云端收藏</td><td>本地收藏 + JSON 导出，零账号</td></tr>
+          <tr><td>演进</td><td>一次性文档</td><td>目录结构固定，内容可增量；后续接目录扫描</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">信息架构</h2></div>
+
+    <p>五个一级模块，按「找 → 学 → 用 → 管」的顺序排列。首页只做分发与搜索，不承载全部内容。</p>
+
+    <div class="ia" style="display:grid;gap:10px;margin:20px 0 24px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div class="card" style="text-align:center;padding:15px 12px"><div class="small" style="color:var(--muted);font-family:var(--mono);font-size:10.5px">A</div><b>总览</b><div class="small">搜索 + 快捷入口</div></div>
+        <div class="card" style="text-align:center;padding:15px 12px;border-color:#cfd9f3;background:var(--accent-soft)"><div class="small" style="color:var(--accent);font-family:var(--mono);font-size:10.5px">B</div><b>Agent 目录</b><div class="small">角色卡 + 筛选</div></div>
+        <div class="card" style="text-align:center;padding:15px 12px"><div class="small" style="color:var(--muted);font-family:var(--mono);font-size:10.5px">C</div><b>技巧库</b><div class="small">按场景分组</div></div>
+        <div class="card" style="text-align:center;padding:15px 12px"><div class="small" style="color:var(--muted);font-family:var(--mono);font-size:10.5px">D</div><b>我的 Agent</b><div class="small">收藏 + 自定义</div></div>
+        <div class="card" style="text-align:center;padding:15px 12px"><div class="small" style="color:var(--muted);font-family:var(--mono);font-size:10.5px">E</div><b>模板与导出</b><div class="small">配置片段 + 清单</div></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>模块</th><th>回答的问题</th><th>关键交互</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>总览</td><td>我现在该做什么？</td><td>全局搜索、最近收藏、场景入口</td><td>P1</td></tr>
+          <tr><td>Agent 目录</td><td>有哪些角色？谁适合这件事？</td><td>关键词搜索、能力筛选（只读/可写/开箱）、详情展开</td><td>P0</td></tr>
+          <tr><td>技巧库</td><td>怎样用得更好？</td><td>按主题折叠、搜索、反模式对照</td><td>P0</td></tr>
+          <tr><td>我的 Agent</td><td>我常用哪些？怎么加自己的？</td><td>添加 / 删除 / 标记常用 / 导出</td><td>P0</td></tr>
+          <tr><td>模板与导出</td><td>怎么落到两个工具里？</td><td>复制 OpenCode / Pi 片段、导出 JSON、导出目录</td><td>P1</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">导航规则</span>
+      任何时候只保留一层侧边导航；不引入二级菜单。搜索是全局入口，筛选是目录内局部动作。移动端导航变为顶部横向滚动条。
+    </div>
+  </section>
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">Agent 目录</h2></div>
+    <p class="lead-in">12 个按职责划分的角色卡。工具标签表示「该角色在两个运行时里是否已有现成实现」，不是限制——任何角色都可以用一份 Markdown 在任一端落地。</p>
+
+    <div class="callout warn" style="margin:18px 0">
+      <span class="t">关于 Pi 的现状</span>
+      Pi 核心刻意保持精简，<b>子代理不是内置能力</b>：需要安装 <code>pi-subagents</code> 一类扩展后，<code>~/.pi/agent/agents/</code> 或 <code>.pi/agents/</code> 下的角色文件才会被加载。OpenCode 则内置 <code>build</code> / <code>plan</code> 及 <code>explore</code> / <code>scout</code> 等子代理。下表按「开箱 / 需配置」标注。
+    </div>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按能力筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="ro" aria-pressed="false">只读</button>
+        <button class="chip" type="button" data-filter="rw" aria-pressed="false">可写</button>
+        <button class="chip" type="button" data-filter="ready" aria-pressed="false">开箱可用</button>
+        <button class="chip" type="button" data-filter="config" aria-pressed="false">需配置</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="cardSearch">搜索 Agent</label>
+        <input id="cardSearch" type="search" placeholder="搜索角色、场景、标签…" autocomplete="off">
+      </div>
+    </div>
+    <p class="result-line" id="cardCount" role="status" aria-live="polite">显示 12 / 12 个角色</p>
+
+    <div class="agent-grid" id="agentGrid">
+
+      <article class="agent" data-flags="ro ready" data-name="explore 侦察者 代码侦察 只读">
+        <div class="agent-top"><div><div class="agent-name">explore</div><div class="agent-zh">侦察者 · 代码地形</div></div><span class="tier">快模型</span></div>
+        <p>只读地摸清仓库：入口、调用链、相关文件、既有约定，返回一份可直接施工的压缩上下文。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>新任务开局、上下文不够、要判断改哪里</dd></div>
+          <div><dt>别用它</dt><dd>需要动手改代码或跑构建</dd></div>
+          <div><dt>权限</dt><dd>read / grep / glob，禁 edit 与 shell</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode 内置</span><span class="tag pi">Pi 需扩展</span><span class="tag ro">只读</span><span class="tag">开箱</span></div>
+      </article>
+
+      <article class="agent" data-flags="ro ready" data-name="plan 规划者 方案 拆解 只读">
+        <div class="agent-top"><div><div class="agent-name">planner</div><div class="agent-zh">规划者 · 方案与步骤</div></div><span class="tier">强推理</span></div>
+        <p>把模糊需求拆成有顺序、有依赖、有验收点的步骤清单，不碰文件。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>多文件改动、架构选择、需求含糊</dd></div>
+          <div><dt>别用它</dt><dd>一行就能改完的小修小补</dd></div>
+          <div><dt>权限</dt><dd>只读；输出计划，不输出补丁</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode plan</span><span class="tag pi">prompt 模板</span><span class="tag ro">只读</span><span class="tag">开箱</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw ready" data-name="builder 实现者 编码 施工 可写">
+        <div class="agent-top"><div><div class="agent-name">builder</div><div class="agent-zh">实现者 · 按计划施工</div></div><span class="tier">强推理</span></div>
+        <p>拿到明确目标与验收标准后动手：小步修改、每步验证、失败先回滚。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>计划已清楚，进入执行</dd></div>
+          <div><dt>别用它</dt><dd>需求还没定、边界不清</dd></div>
+          <div><dt>权限</dt><dd>可写；shell 限项目内命令</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode build</span><span class="tag pi">默认主角色</span><span class="tag rw">可写</span><span class="tag">开箱</span></div>
+      </article>
+
+      <article class="agent" data-flags="ro config" data-name="reviewer 审查者 代码审查 diff 只读">
+        <div class="agent-top"><div><div class="agent-name">reviewer</div><div class="agent-zh">审查者 · 代码与风险</div></div><span class="tier">强推理</span></div>
+        <p>独立审查 diff：正确性、边界条件、安全、可维护性，按严重度给出带行号的结论。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>提交前、合并前、接手他人改动</dd></div>
+          <div><dt>别用它</dt><dd>让它顺手把问题改掉（会污染审查视角）</dd></div>
+          <div><dt>权限</dt><dd>只读 + 禁 shell，只输出 findings</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode 可建</span><span class="tag pi">pi-subagents</span><span class="tag ro">只读</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw config" data-name="tester 测试者 测试 用例 可写">
+        <div class="agent-top"><div><div class="agent-name">tester</div><div class="agent-zh">测试者 · 用例与回归</div></div><span class="tier">均衡</span></div>
+        <p>补测试而不是补代码：先列用例矩阵（正常 / 边界 / 异常），再写最小可验证断言。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>修复 bug 后、重构前、覆盖率洼地</dd></div>
+          <div><dt>别用它</dt><dd>要求它「顺便修一下实现」</dd></div>
+          <div><dt>权限</dt><dd>可写测试目录；生产代码只读</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode 可建</span><span class="tag pi">skill / prompt</span><span class="tag rw">可写</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw ready" data-name="debugger 排障者 报错 日志 可写">
+        <div class="agent-top"><div><div class="agent-name">debugger</div><div class="agent-zh">排障者 · 假设与验证</div></div><span class="tier">均衡</span></div>
+        <p>从报错与日志出发建立假设，用最小实验逐个排除，最后给出根因与回归测试。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>可复现的失败、CI 红了、性能退化</dd></div>
+          <div><dt>别用它</dt><dd>不可复现且没有日志的「偶发问题」</dd></div>
+          <div><dt>权限</dt><dd>可写；要求先写失败测试再修</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">build 兼任</span><span class="tag pi">skill / prompt</span><span class="tag rw">可写</span><span class="tag">开箱</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw ready" data-name="refactorer 重构者 重构 结构 可写">
+        <div class="agent-top"><div><div class="agent-name">refactorer</div><div class="agent-zh">重构者 · 行为不变</div></div><span class="tier">强推理</span></div>
+        <p>在不改变外部行为的前提下调整结构：先补护栏测试，再小步搬迁，每步可回滚。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>重复代码、职责混乱、准备加新功能前</dd></div>
+          <div><dt>别用它</dt><dd>没有测试护栏的老代码（先在 plan 里补）</dd></div>
+          <div><dt>权限</dt><dd>可写；禁止顺手改需求</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">build 兼任</span><span class="tag pi">prompt 模板</span><span class="tag rw">可写</span><span class="tag">开箱</span></div>
+      </article>
+
+      <article class="agent" data-flags="ro config" data-name="researcher 调研者 文档 依赖 只读">
+        <div class="agent-top"><div><div class="agent-name">researcher</div><div class="agent-zh">调研者 · 外部资料</div></div><span class="tier">均衡</span></div>
+        <p>查官方文档、版本变更、依赖生态，带回「结论 + 出处 + 适用版本」。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>版本升级、陌生库、API 变更</dd></div>
+          <div><dt>别用它</dt><dd>让它凭记忆回答版本相关问题</dd></div>
+          <div><dt>权限</dt><dd>只读 + 联网（可选），禁 edit</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">scout 兼任</span><span class="tag pi">需装检索扩展</span><span class="tag ro">只读</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw config" data-name="orchestrator 编排者 多代理 分派 可写">
+        <div class="agent-top"><div><div class="agent-name">orchestrator</div><div class="agent-zh">编排者 · 分派与汇总</div></div><span class="tier">强推理</span></div>
+        <p>只做拆解与分派：把任务交给侦察 / 实现 / 审查，回收结论后合成，不亲自改文件。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>跨模块大任务、可并行的独立子任务</dd></div>
+          <div><dt>别用它</dt><dd>单文件小改动（调度成本高于收益）</dd></div>
+          <div><dt>权限</dt><dd>白名单子代理；自身禁 edit</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">subagent 工具</span><span class="tag pi">pi-subagents</span><span class="tag rw">可写</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="rw config" data-name="documenter 文档者 README 说明 可写">
+        <div class="agent-top"><div><div class="agent-name">documenter</div><div class="agent-zh">文档者 · 说明与示例</div></div><span class="tier">均衡</span></div>
+        <p>从代码事实生成文档：先读实现与测试，再写用法、边界与最小示例，不编造未实现的行为。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>新模块、接口变更、交接前</dd></div>
+          <div><dt>别用它</dt><dd>代码本身还在剧烈变动时</dd></div>
+          <div><dt>权限</dt><dd>可写文档目录；源码只读</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode 可建</span><span class="tag pi">skill / prompt</span><span class="tag rw">可写</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="ro config" data-name="security 安全审计 依赖 密钥 只读">
+        <div class="agent-top"><div><div class="agent-name">security</div><div class="agent-zh">安全审计员 · 风险面</div></div><span class="tier">强推理</span></div>
+        <p>检查注入面、密钥泄漏、权限过宽、依赖漏洞与危险默认值，输出可复现的风险清单。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>上线前、引入新依赖、处理用户输入</dd></div>
+          <div><dt>别用它</dt><dd>替代真实扫描器；它只做静态推理</dd></div>
+          <div><dt>权限</dt><dd>只读；禁 shell 与网络默认开启</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">OpenCode 可建</span><span class="tag pi">pi-subagents</span><span class="tag ro">只读</span><span class="tag">需配置</span></div>
+      </article>
+
+      <article class="agent" data-flags="ro ready" data-name="analyst 数据分析 日志 指标 只读">
+        <div class="agent-top"><div><div class="agent-name">analyst</div><div class="agent-zh">分析者 · 日志与数据</div></div><span class="tier">快模型</span></div>
+        <p>对日志、指标、SQL 结果做只读分析：先描述数据形状，再给结论与不确定性。</p>
+        <dl>
+          <div><dt>何时用</dt><dd>排查趋势、核对口径、定位异常时段</dd></div>
+          <div><dt>别用它</dt><dd>需要写库或改配置的「分析」</dd></div>
+          <div><dt>权限</dt><dd>只读；查询需限定时间范围</dd></div>
+        </dl>
+        <div class="agent-foot"><span class="tag oc">plan / explore</span><span class="tag pi">prompt 模板</span><span class="tag ro">只读</span><span class="tag">开箱</span></div>
+      </article>
+
+    </div>
+
+    <div class="empty" id="cardEmpty" hidden>没有匹配的角色。试试更短的关键词，或点「全部」重置筛选。</div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="t">卡片字段为什么是这些</span>
+      「何时用 / 别用它」负责决策，「权限」负责安全，「开箱 / 需配置」负责成本。四者决定一个角色会不会被真正用起来；模型名与具体 prompt 反而应该放在可折叠的附录里，避免主视图过载。
+    </div>
+  </section>
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">技巧库</h2></div>
+    <p class="lead-in">技巧不是「更好的 prompt」，而是「更稳的工作方式」。按你遇到问题的时刻分组，而不是按工具分组。</p>
+
+    <div class="toolbar">
+      <div class="chips" aria-label="技巧主题">
+        <span class="tag">上下文与成本</span>
+        <span class="tag">任务与验收</span>
+        <span class="tag">权限与安全</span>
+        <span class="tag">工程化</span>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="tipSearch">搜索技巧</label>
+        <input id="tipSearch" type="search" placeholder="搜索技巧关键词…" autocomplete="off">
+      </div>
+    </div>
+    <p class="result-line" id="tipCount" role="status" aria-live="polite">显示 14 / 14 条技巧</p>
+
+    <details class="tip-group" open>
+      <summary>上下文与成本<span class="chev" aria-hidden="true">›</span></summary>
+      <div class="body">
+        <div class="tip">
+          <h4>先侦察，后施工</h4>
+          <p>让只读 Agent 先摸清入口、约定与影响面，再让实现 Agent 带着结论动手。省下的不是 token，是返工。</p>
+          <span class="why"><b>落地：</b>探索 → 计划 → 实现，三段式；第一段强制只读。</span>
+        </div>
+        <div class="tip">
+          <h4>子代理只回传结论</h4>
+          <p>子代理的价值是把噪音留在它自己的上下文里。要求它输出「文件:行号 + 一句话结论 + 未确认项」，不要整段粘贴源码。</p>
+          <span class="why"><b>落地：</b>在子代理 prompt 里写死「≤ 15 行摘要，禁止粘贴超过 5 行的代码」。</span>
+        </div>
+        <div class="tip">
+          <h4>便宜模型做广度，贵模型做判断</h4>
+          <p>枚举文件、扫文档、跑格式化交给快模型；架构取舍、审查、难 bug 交给强模型。把预算花在分歧点上。</p>
+          <span class="why"><b>落地：</b>角色卡上的「推荐档位」就是给这件事用的。</span>
+        </div>
+        <div class="tip">
+          <h4>长会话及时收口</h4>
+          <p>一个会话只服务一个目标。话题切换时开新会话，把结论带走；不要在旧上下文里「顺便再问一个」。</p>
+          <span class="why"><b>落地：</b>任务完成先让 Agent 输出「交接摘要」，再新开会话粘贴。</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="tip-group" open>
+      <summary>任务与验收<span class="chev" aria-hidden="true">›</span></summary>
+      <div class="body">
+        <div class="tip">
+          <h4>一个 Agent 一个职责</h4>
+          <p>「顺便把文档也写了、测试也补了」是多角色任务，应该拆给三个角色。职责越单一，输出越可预测。</p>
+          <span class="why"><b>落地：</b>若一个角色卡需要写两个「何时用」且互不相关，就该拆。</span>
+        </div>
+        <div class="tip">
+          <h4>先写验收标准</h4>
+          <p>在 prompt 里先列出「怎样算完成」：命令、预期输出、不能动的文件。没有验收标准的任务，Agent 只能猜。</p>
+          <span class="why"><b>落地：</b>模板：目标 / 约束 / 验收命令 / 不允许做的事。</span>
+        </div>
+        <div class="tip">
+          <h4>小步提交，每步可回滚</h4>
+          <p>一次只改一个可解释的单元；每步跑最小验证。失败时先回滚到上一个绿点，而不是在红树上继续叠补丁。</p>
+          <span class="why"><b>落地：</b>要求 Agent 在每步结束时报告「改了哪些文件、跑了什么命令、结果如何」。</span>
+        </div>
+        <div class="tip">
+          <h4>审查者与实现者分离</h4>
+          <p>让同一个 Agent 审查自己的改动，等于让它给自己打分。审查应使用独立会话、最好独立模型与只读权限。</p>
+          <span class="why"><b>落地：</b>实现结束后另起 reviewer，输入只有 diff 与需求，不带实现过程。</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="tip-group" open>
+      <summary>权限与安全<span class="chev" aria-hidden="true">›</span></summary>
+      <div class="body">
+        <div class="tip">
+          <h4>只读角色默认 deny</h4>
+          <p>审查、调研、分析类角色，默认关闭 edit 与 shell。权限是边界，不是建议；能写就会写。</p>
+          <span class="why"><b>落地：</b>OpenCode 用 <code>permission</code> 规则；Pi 通过 <code>tools</code> 白名单限定。</span>
+        </div>
+        <div class="tip">
+          <h4>项目指令是契约</h4>
+          <p><code>AGENTS.md</code> 不是装饰。把「不许 commit」「测试命令是哪个」「目录约定」写进去，比每次在对话里重复有效。</p>
+          <span class="why"><b>落地：</b>两工具都读 <code>AGENTS.md</code>；Pi 还支持 <code>SYSTEM.md</code> / <code>APPEND_SYSTEM.md</code> 做全局注入。</span>
+        </div>
+        <div class="tip">
+          <h4>密钥永不进 Agent 文件</h4>
+          <p>角色文件会进 Git、会被分享。任何 key、token、内部地址都不该出现在 prompt 或示例里。</p>
+          <span class="why"><b>落地：</b>用环境变量引用；导出/分享前跑一次关键词扫描。</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="tip-group" open>
+      <summary>工程化<span class="chev" aria-hidden="true">›</span></summary>
+      <div class="body">
+        <div class="tip">
+          <h4>Agent 文件纳入版本库</h4>
+          <p>角色是资产。放进项目 <code>.opencode/agents/</code> 或 <code>.pi/agents/</code>，随代码一起 review 与回滚。</p>
+          <span class="why"><b>落地：</b>团队共用就进项目；个人通用放全局目录并单独备份。</span>
+        </div>
+        <div class="tip">
+          <h4>命名即接口</h4>
+          <p>用「动词-对象」或稳定职责名：<code>review</code>、<code>scout</code>、<code>test-writer</code>。避免 <code>my-agent-2</code> 这种一次性命名。</p>
+          <span class="why"><b>落地：</b>文件名 = 角色 ID；中文名只出现在卡片展示层。</span>
+        </div>
+        <div class="tip">
+          <h4>定期清理，变更留痕</h4>
+          <p>每季度用 <code>opencode agent list</code> / Pi 的 <code>/agents</code> 盘点一次：删掉三个月没用的，合并重复的。重要 prompt 改动写一句原因。</p>
+          <span class="why"><b>落地：</b>在角色卡 YAML 里保留 <code>version</code> 与 <code>updated</code> 字段。</span>
+        </div>
+      </div>
+    </details>
+
+    <h3>五个反模式</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>反模式</th><th>为什么会坏</th><th>替代做法</th></tr></thead>
+        <tbody>
+          <tr><td>万能 Agent</td><td>职责漂移，输出不可预测，prompt 越写越长</td><td>按「侦察 / 规划 / 实现 / 审查」拆开</td></tr>
+          <tr><td>让实现者自审</td><td>自洽偏差，问题被自己的假设掩盖</td><td>独立 reviewer + 只读权限</td></tr>
+          <tr><td>无边界并行</td><td>子代理互相改同一批文件，冲突难追</td><td>只并行只读任务；写任务串行或限定文件集</td></tr>
+          <tr><td>把长文档塞进 prompt</td><td>上下文被占满，关键约束被稀释</td><td>先摘要 / 检索，再按需引用原文</td></tr>
+          <tr><td>只靠记忆复用</td><td>技巧不可检索，经验随时间丢失</td><td>沉淀进技巧库与角色卡，定期回看</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">我的 Agent</h2></div>
+    <p class="lead-in">这是整个工作台里唯一「会长大」的部分：内置目录负责通用知识，我的清单负责你的个人习惯。</p>
+
+    <div class="grid g2" style="margin:18px 0">
+      <div class="card">
+        <h4 style="margin-top:0">三种录入方式</h4>
+        <ol class="small" style="margin:0;padding-left:1.2em">
+          <li><b>手动添加</b>：名称 + 用途 + 偏好工具，30 秒完成。</li>
+          <li><b>从目录收藏</b>：点角色卡上的「加入我的」，保留原始字段。</li>
+          <li><b>导入 Markdown</b>：粘贴已有 frontmatter，自动解析 <code>name</code> / <code>description</code> / <code>tools</code>。</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">存储与导出</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>默认存浏览器 <code>localStorage</code>，不上传。</li>
+          <li>导出 <code>mine.json</code>，可进 Git 或换机恢复。</li>
+          <li>「生成配置」把条目渲染成 OpenCode / Pi 的 Markdown 片段。</li>
+          <li>冲突时以本地为准，导入前展示差异预览。</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>原型：现在就能试</h3>
+    <p class="small">下面的表单是真实可用的本地原型（数据只写进当前浏览器）。它演示「主动添加常用 Agent」的最小闭环：添加 → 列出 → 删除 → 持久化。</p>
+
+    <form class="mine-form" id="mineForm" autocomplete="off">
+      <label>名称
+        <input id="mineName" name="name" type="text" placeholder="例如：log-triage" maxlength="40" required>
+      </label>
+      <label>用途
+        <input id="mineUse" name="use" type="text" placeholder="一句话说明它帮你做什么" maxlength="80">
+      </label>
+      <label>工具
+        <select id="mineTool" name="tool">
+          <option value="OpenCode">OpenCode</option>
+          <option value="Pi">Pi</option>
+          <option value="两者">两者</option>
+        </select>
+      </label>
+      <div class="add-wrap"><button class="btn" type="submit">加入我的</button></div>
+    </form>
+
+    <ul class="mine-list" id="mineList" aria-live="polite"></ul>
+    <p class="hint" id="mineHint">还没有自定义 Agent。添加一个，或到 <a href="#s05">Agent 目录</a> 里收藏现成的角色。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn ghost" type="button" id="mineExport">导出 JSON</button>
+      <button class="btn ghost" type="button" id="mineSeed">填入示例</button>
+      <button class="btn ghost" type="button" id="mineClear">清空</button>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <span class="t">为什么不做「自动发现」放在第一阶段</span>
+      自动扫描 <code>~/.config/opencode/agents</code> 与 <code>~/.pi/agent/agents</code> 需要本地进程权限，且要处理两套 frontmatter 方言。先把「手动 + 收藏 + 导出」跑顺，再让脚本做同步，风险更低。
+    </div>
+  </section>
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">双工具落地</h2></div>
+    <p class="lead-in">同一张角色卡，落到两个运行时只需要换一层「外壳」。下面是概念映射与可直接复制的最小模板。</p>
+
+    <h3>概念映射</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>概念</th><th>OpenCode</th><th>Pi</th></tr></thead>
+        <tbody>
+          <tr><td>全局 Agent 目录</td><td><code>~/.config/opencode/agents/</code></td><td><code>~/.pi/agent/agents/</code>（需子代理扩展）</td></tr>
+          <tr><td>项目 Agent 目录</td><td><code>.opencode/agents/</code>（子路径会成为 ID）</td><td><code>.pi/agents/</code></td></tr>
+          <tr><td>定义格式</td><td>Markdown frontmatter：<code>description</code> / <code>mode</code> / <code>model</code> / <code>permissions</code></td><td>Markdown frontmatter：<code>name</code> / <code>description</code> / <code>tools</code> / <code>model</code> / <code>thinking</code></td></tr>
+          <tr><td>主 / 子</td><td><code>mode: primary / subagent / all</code></td><td>由子代理扩展的调用策略决定</td></tr>
+          <tr><td>调用方式</td><td><code>Tab</code> 切换主角色；<code>@agent</code> 委派子代理</td><td>自然语言请求委派；<code>/agents</code> 管理面板</td></tr>
+          <tr><td>项目指令</td><td><code>AGENTS.md</code></td><td><code>AGENTS.md</code>，另有 <code>SYSTEM.md</code> / <code>APPEND_SYSTEM.md</code></td></tr>
+          <tr><td>可复用命令</td><td><code>.opencode/commands/*.md</code> → <code>/name</code></td><td><code>.pi/prompts/*.md</code> → slash 命令</td></tr>
+          <tr><td>扩展能力</td><td>skills / plugins / MCP</td><td>extensions / packages / skills / MCP</td></tr>
+          <tr><td>配置排查</td><td><code>opencode debug config</code>、<code>opencode debug agent &lt;name&gt;</code></td><td><code>/reload</code> 重新加载；扩展自带诊断命令</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">版本注意</span>
+      OpenCode 的配置在 v1 / v2 之间存在差异（例如顶层 <code>agent</code> 与 <code>agents</code>、agent 文件 frontmatter 字段的调整）。写模板时以你本地版本为准，改完先跑 <code>opencode debug config</code> 确认解析结果，不要假设文档与本地一致。
+    </div>
+
+    <h3>模板 A · OpenCode</h3>
+    <div class="code">
+      <div class="code-head"><span class="file">~/.config/opencode/agents/reviewer.md</span><button class="copy" type="button">复制</button></div>
+      <pre><code>---
+description: 只读审查代码变更，输出带行号的结论
+mode: subagent
+model: anthropic/claude-sonnet-4-5
+temperature: 0.1
+permission:
+  edit: deny
+  bash: deny
+---
+
+你是独立的代码审查员。
+
+输入：需求描述 + diff（或文件清单）。
+输出：按「阻断 / 建议 / 疑问」三档排序的问题，每条必须包含
+      文件路径:行号、问题、为什么是问题、最小修复方向。
+
+约束：
+- 不修改任何文件。
+- 不运行命令。
+- 不确定的地方标为「疑问」，不要猜。
+- 不超过 15 条；超过就说明主要风险集中在哪里。</code></pre>
+    </div>
+
+    <h3>模板 B · Pi</h3>
+    <div class="code">
+      <div class="code-head"><span class="file">.pi/agents/reviewer.md（配合 pi-subagents 类扩展）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>---
+name: reviewer
+description: 只读审查代码变更，输出带行号的结论
+tools: read, grep, find, ls
+model: anthropic/claude-sonnet-4-6
+thinking: low
+---
+
+你是一名严格的代码审查员，只读工作区。
+
+规则：
+- 先读 diff 与相关上下文，再给结论。
+- 只输出「文件:行号 + 严重度 + 问题 + 修复方向」。
+- 不修改文件，不执行写入类命令。
+- 信息不足时明确列出需要补充的输入。</code></pre>
+    </div>
+
+    <h3>落地检查清单</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">OpenCode</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li><code>opencode agent list</code> 能看到新角色</li>
+          <li><code>opencode debug agent reviewer</code> 字段符合预期</li>
+          <li>主角色用 <code>Tab</code> 可切换，子代理可被 <code>@</code> 调起</li>
+          <li>只读角色确实无法 edit / bash</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">Pi</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>子代理扩展已安装并加载</li>
+          <li><code>/agents</code> 面板能看到角色</li>
+          <li><code>tools</code> 白名单生效（无写工具）</li>
+          <li>改完配置执行 <code>/reload</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">目录与数据模型</h2></div>
+
+    <h3>建议的仓库结构</h3>
+    <p>在现有的 <code>Agents/</code> 下按「数据 / 模板 / 脚本 / 产物」分层。报告与原型放在根目录，避免一开始就过度嵌套。</p>
+    <div class="code">
+      <div class="code-head"><span class="file">Agents/</span><button class="copy" type="button">复制</button></div>
+      <pre class="tree">Agents/
+├── README.md                  <span class="c"># 定位、字段说明、如何贡献</span>
+├── index.html                 <span class="c"># 工作台（单文件，离线可用）</span>
+├── data/
+│   ├── agents.json            <span class="c"># 内置角色目录（唯一事实源）</span>
+│   ├── tips.json              <span class="c"># 技巧库</span>
+│   └── mine.json              <span class="c"># 我的清单导出（可 gitignore）</span>
+├── schema/
+│   └── agent.schema.json      <span class="c"># 字段校验，防止手写漂移</span>
+├── library/
+│   ├── opencode/              <span class="c"># 可直接拷进 ~/.config/opencode/agents</span>
+│   └── pi/                    <span class="c"># 可直接拷进 ~/.pi/agent/agents</span>
+├── templates/
+│   ├── opencode-agent.md
+│   ├── pi-agent.md
+│   └── card.md
+├── scripts/
+│   ├── validate.mjs           <span class="c"># 校验 data/*.json</span>
+│   └── sync.mjs               <span class="c"># 扫描/导出（阶段 3）</span>
+└── exports/                   <span class="c"># 生成的清单与快照</span></pre>
+    </div>
+
+    <h3>统一数据模型</h3>
+    <p>目录里的每张卡对应一条 JSON。两个运行时各自的 Markdown 由它派生，而不是反向解析，避免方言差异污染数据源。</p>
+    <div class="code">
+      <div class="code-head"><span class="file">data/agents.json（单条）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>{
+  "id": "reviewer",
+  "display": "审查者",
+  "role": "review",
+  "summary": "独立审查 diff，按严重度输出带行号的结论。",
+  "tools": ["opencode", "pi"],
+  "mode": "subagent",
+  "permissions": { "edit": "deny", "shell": "deny" },
+  "modelTier": "strong",
+  "triggers": ["提交前", "合并前", "接手他人改动"],
+  "avoidWhen": ["需要顺手修复问题"],
+  "risk": "low",
+  "tags": ["只读", "审查", "PR"],
+  "files": {
+    "opencode": "library/opencode/reviewer.md",
+    "pi": "library/pi/reviewer.md"
+  },
+  "updated": "2026-10-29"
+}</code></pre>
+    </div>
+
+    <h3>三阶段技术路径</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>阶段</th><th>做法</th><th>收益</th><th>代价 / 风险</th></tr></thead>
+        <tbody>
+          <tr><td><b>A · 单文件原型</b><br><span class="small">本期</span></td><td>内容直接写在 HTML；搜索 / 筛选 / 收藏用原生 JS + localStorage</td><td>零依赖、可离线、可进 Git，验证信息架构最快</td><td>数据与视图耦合，条目多后维护成本上升</td></tr>
+          <tr><td><b>B · 数据驱动</b></td><td>内容抽到 <code>data/*.json</code>；构建时内联进 HTML，仍是单文件产物</td><td>改内容不碰视图；可校验、可复用</td><td>需要一个很轻的构建脚本（Node，无框架也可）</td></tr>
+          <tr><td><b>C · 本地同步</b></td><td><code>sync.mjs</code> 扫描两个 agents 目录，生成清单与冲突报告；写入需显式确认</td><td>真实资产与工作台不再脱节</td><td>要处理 frontmatter 方言、路径差异与误覆盖</td></tr>
+          <tr><td><b>D · 可选扩展</b></td><td>CLI（<code>agent list/search</code>）或 OpenCode / Pi 内的快捷入口</td><td>不离开终端也能查</td><td>维护两套界面；非必要不优先</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">同步脚本的安全底线</span>
+      默认只读、只生成报告；任何写入（覆盖用户 agents 目录）都必须 <code>--write</code> 显式开启，并在写入前输出 diff 预览与备份路径。
+    </div>
+  </section>
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">路线图</h2></div>
+    <p>按「能独立验收」切片。前三阶段一周内可以完成；阶段 4 只有在内容确实开始膨胀时才值得做。</p>
+
+    <ol class="timeline">
+      <li>
+        <div class="ph"><b>Phase 0 · 内容定稿</b><span class="when">0.5–1 天</span></div>
+        <p>锁定字段字典，写满 12 张角色卡与 14 条技巧，确认每条的适用边界与权限标注。</p>
+        <div class="out">产出：<code>data/agents.json</code> 草案、<code>schema/agent.schema.json</code>、本报告</div>
+      </li>
+      <li>
+        <div class="ph"><b>Phase 1 · 目录与筛选</b><span class="when">1–2 天</span></div>
+        <p>把角色卡做成可搜索、可筛选的网格；补齐空态、计数、键盘操作与窄屏布局。</p>
+        <div class="out">验收：任意角色在 2 次交互内被找到；360px 宽度无横向滚动</div>
+      </li>
+      <li>
+        <div class="ph"><b>Phase 2 · 我的 Agent</b><span class="when">1–2 天</span></div>
+        <p>添加、收藏、删除、导出；本地持久化与恢复路径跑通。</p>
+        <div class="out">验收：刷新不丢；导出 JSON 可重新导入并还原清单</div>
+      </li>
+      <li>
+        <div class="ph"><b>Phase 3 · 双工具模板</b><span class="when">1 天</span></div>
+        <p>为每个角色生成 OpenCode / Pi 两份 Markdown，附检查清单，实机各建一个角色验证。</p>
+        <div class="out">验收：<code>opencode agent list</code> 与 Pi 的 <code>/agents</code> 都能看到新角色</div>
+      </li>
+      <li>
+        <div class="ph"><b>Phase 4 · 数据抽离与同步</b><span class="when">2–3 天 · 可选</span></div>
+        <p>内容搬到 JSON，构建时内联；<code>sync.mjs</code> 只读扫描两个 agents 目录并输出冲突报告。</p>
+        <div class="out">验收：冲突报告能准确指出「同名不同内容」与「只在一边存在」</div>
+      </li>
+    </ol>
+
+    <div class="callout good">
+      <span class="t">建议的推进方式</span>
+      先交付 Phase 0 + 1 的可点版本（本报告已经覆盖大部分），用一周真实使用来验证字段是否够用；再决定要不要投入同步脚本。不要先写脚本，后补内容。
+    </div>
+  </section>
+
+  <section id="s11" aria-labelledby="h11">
+    <div class="sec-head"><span class="sec-no">11</span><h2 id="h11">验收标准</h2></div>
+    <p>逐项勾选。全部通过才算「可用」，而不是「做完」。</p>
+
+    <ul class="checklist">
+      <li><input type="checkbox" id="c1"><label for="c1">断网、双击本地文件即可打开，控制台无报错、无外部请求。</label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">12 张角色卡的「开箱 / 需配置」「只读 / 可写」与两个工具的实际能力一致。</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">搜索与筛选可组合，结果计数准确，有清空与空态提示。</label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">技巧搜索会同时收起无结果的整组，并能恢复。</label></li>
+      <li><input type="checkbox" id="c5"><label for="c5">「我的 Agent」添加、删除、刷新持久化均正常，导出 JSON 结构完整。</label></li>
+      <li><input type="checkbox" id="c6"><label for="c6">全部交互可键盘完成，焦点样式清晰可见。</label></li>
+      <li><input type="checkbox" id="c7"><label for="c7">360px 窄屏无横向溢出，表格可横向滚动且首列不丢。</label></li>
+      <li><input type="checkbox" id="c8"><label for="c8">打印 / 导出 PDF 时，折叠内容展开、导航与按钮隐藏、卡片不跨页断裂。</label></li>
+      <li><input type="checkbox" id="c9"><label for="c9">配置片段复制后可直接落盘使用，字段与本地版本匹配。</label></li>
+      <li><input type="checkbox" id="c10"><label for="c10">仓库中无密钥、无本机绝对路径、无个人隐私信息。</label></li>
+    </ul>
+  </section>
+
+  <section id="s12" aria-labelledby="h12">
+    <div class="sec-head"><span class="sec-no">12</span><h2 id="h12">风险与取舍</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>风险</th><th>影响</th><th>对策</th></tr></thead>
+        <tbody>
+          <tr><td>两个工具迭代快，配置字段会变</td><td>模板过时，复制后不生效</td><td>每条记录 <code>updated</code> 与核验来源；季度复核；模板只保留稳定字段</td></tr>
+          <tr><td>Pi 的子代理依赖第三方扩展</td><td>角色文件放了却不加载</td><td>卡片明确标注「需扩展」；提供无扩展时的 prompt 降级用法</td></tr>
+          <tr><td>同步脚本误改用户配置</td><td>破坏现有 Agent</td><td>默认只读；<code>--write</code> 才写；写前 diff + 备份</td></tr>
+          <tr><td>localStorage 被清理</td><td>个人清单丢失</td><td>一键导出 JSON；建议把 <code>mine.json</code> 纳入版本库</td></tr>
+          <tr><td>内容膨胀变成文档垃圾场</td><td>搜索变差，维护成本上升</td><td>每类角色设上限；季度合并；卡片只保留决策信息</td></tr>
+          <tr><td>投入产出比下降</td><td>花时间建设，使用频率低</td><td>以「两周内是否减少重复配置」为继续投入的判断线</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">一个明确的取舍</span>
+      不做「自动读取你所有会话并推荐 Agent」。那需要侵入式权限与长期维护，收益不确定；本方案只做静态知识 + 手动清单，先把确定性价值拿到。
+    </div>
+  </section>
+
+  <section id="s13" aria-labelledby="h13">
+    <div class="sec-head"><span class="sec-no">13</span><h2 id="h13">附录</h2></div>
+
+    <h3>A · 字段字典</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>string</td><td>稳定标识，小写连字符，与文件名一致</td></tr>
+          <tr><td><code>display</code></td><td>string</td><td>中文展示名，仅用于界面</td></tr>
+          <tr><td><code>role</code></td><td>enum</td><td>explore / plan / build / review / test / debug / refactor / research / orchestrate / document / security / analyze</td></tr>
+          <tr><td><code>summary</code></td><td>string</td><td>一句话职责，不超过 60 字</td></tr>
+          <tr><td><code>tools</code></td><td>array</td><td>支持该角色的运行时：<code>opencode</code> / <code>pi</code></td></tr>
+          <tr><td><code>mode</code></td><td>enum</td><td>primary / subagent / all（Pi 端由扩展映射）</td></tr>
+          <tr><td><code>permissions</code></td><td>object</td><td>edit / shell 的 allow / deny / ask 摘要</td></tr>
+          <tr><td><code>modelTier</code></td><td>enum</td><td>fast / balanced / strong，用于选择模型而不绑定具体型号</td></tr>
+          <tr><td><code>triggers</code></td><td>array</td><td>「何时用」，2–4 条</td></tr>
+          <tr><td><code>avoidWhen</code></td><td>array</td><td>「别用它」，至少 1 条，防止滥用</td></tr>
+          <tr><td><code>risk</code></td><td>enum</td><td>low / medium / high，按写权限与影响面评估</td></tr>
+          <tr><td><code>tags</code></td><td>array</td><td>≤ 5 个，用于检索</td></tr>
+          <tr><td><code>files</code></td><td>object</td><td>两个运行时的 Markdown 路径</td></tr>
+          <tr><td><code>updated</code></td><td>date</td><td>最近核验日期（ISO）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>B · 命名规范</h3>
+    <ul>
+      <li><b>ID</b>：职责优先，<code>review</code>、<code>test-writer</code>、<code>log-triage</code>；避免 <code>my-agent-2</code>。</li>
+      <li><b>文件</b>：<code>&lt;id&gt;.md</code>；同一角色在两个工具下保持同名，减少心智负担。</li>
+      <li><b>版本</b>：<code>version</code> 用语义化版本，<code>updated</code> 用 ISO 日期；两者都进 card。</li>
+      <li><b>标签</b>：只放能力与边界（只读 / 可写 / 联网 / 高成本），不放情绪词。</li>
+    </ul>
+
+    <h3>C · 本次核验来源</h3>
+    <ul class="small">
+      <li><a href="https://opencode.ai/docs/agents" target="_blank" rel="noopener noreferrer">OpenCode · Agents</a>：内置角色、Markdown/JSON 配置、<code>opencode agent create/list</code></li>
+      <li><a href="https://v2.opencode.ai/docs/agents" target="_blank" rel="noopener noreferrer">OpenCode v2 · Agents</a>：<code>agents</code> 配置、<code>permissions</code> 规则、子代理调用与 <code>@</code> 提及</li>
+      <li><a href="https://pi.dev/docs/latest/configuration" target="_blank" rel="noopener noreferrer">Pi · Configuration</a>：<code>~/.pi/agent</code> 目录、<code>SYSTEM.md</code> / <code>APPEND_SYSTEM.md</code>、项目 <code>.pi</code></li>
+      <li><a href="https://pi.dev/packages/pi-subagents" target="_blank" rel="noopener noreferrer">Pi · pi-subagents</a>：子代理扩展、内置角色与 <code>/agents</code> 面板</li>
+      <li><a href="https://github.com/earendil-works/pi" target="_blank" rel="noopener noreferrer">earendil-works/pi</a>：工具链组成与「子代理非核心内置」的现状</li>
+    </ul>
+    <p class="small">以上链接仅作为出处，离线打开本页时不需要访问。</p>
+
+    <h3>D · 术语</h3>
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">主代理 / 子代理</h4><p class="small" style="margin:0">主代理直接面向你；子代理由主代理按任务派发，拥有独立上下文。</p></div>
+      <div class="card"><h4 style="margin-top:0">开箱 / 需配置</h4><p class="small" style="margin:0">开箱指当前运行时已有等价能力；需配置指需要自建 Markdown 或安装扩展。</p></div>
+      <div class="card"><h4 style="margin-top:0">只读 / 可写</h4><p class="small" style="margin:0">只读角色禁用编辑与执行写入命令；可写角色需明确影响面与回滚方式。</p></div>
+      <div class="card"><h4 style="margin-top:0">事实源</h4><p class="small" style="margin:0">本方案中唯一可编辑的数据文件；界面与模板都由它派生，避免多份真相。</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Agent 工作台 · 设计方案 v0.1 · 2026-10-29</span>
+    <span>离线单文件 · 数据与配置字段以你本地版本为准</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    if (docEl.scrollTop > 600) { topBtn.classList.add("show"); }
+    else { topBtn.classList.remove("show"); }
+    spy();
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function spy() {
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  /* ---------- agent catalog ---------- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".agent"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-filter]"));
+  var cardSearch = document.getElementById("cardSearch");
+  var cardCount = document.getElementById("cardCount");
+  var cardEmpty = document.getElementById("cardEmpty");
+  var activeFilter = "all";
+
+  function matchesFilter(card, filter) {
+    if (filter === "all") { return true; }
+    var flags = (card.getAttribute("data-flags") || "").split(/\s+/);
+    return flags.indexOf(filter) !== -1;
+  }
+
+  function applyCards() {
+    var q = (cardSearch.value || "").trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (card) {
+      var ok = matchesFilter(card, activeFilter);
+      if (ok && q) { ok = card.textContent.toLowerCase().indexOf(q) !== -1; }
+      card.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    cardCount.textContent = "显示 " + shown + " / " + cards.length + " 个角色";
+    cardEmpty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      activeFilter = chip.getAttribute("data-filter");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      applyCards();
+    });
+  });
+  cardSearch.addEventListener("input", applyCards);
+
+  /* ---------- tips ---------- */
+  var tipGroups = Array.prototype.slice.call(document.querySelectorAll(".tip-group"));
+  var tipSearch = document.getElementById("tipSearch");
+  var tipCount = document.getElementById("tipCount");
+  var totalTips = 0;
+  tipGroups.forEach(function (g) { totalTips += g.querySelectorAll(".tip").length; });
+
+  function applyTips() {
+    var q = (tipSearch.value || "").trim().toLowerCase();
+    var shown = 0;
+    tipGroups.forEach(function (group) {
+      var tips = Array.prototype.slice.call(group.querySelectorAll(".tip"));
+      var visible = 0;
+      tips.forEach(function (tip) {
+        var ok = !q || tip.textContent.toLowerCase().indexOf(q) !== -1;
+        tip.hidden = !ok;
+        if (ok) { visible++; }
+      });
+      group.hidden = visible === 0;
+      if (q && visible > 0) { group.open = true; }
+      shown += visible;
+    });
+    tipCount.textContent = "显示 " + shown + " / " + totalTips + " 条技巧";
+  }
+  tipSearch.addEventListener("input", applyTips);
+
+  /* ---------- my agents ---------- */
+  var KEY = "agentWorkbench.mine.v1";
+  var form = document.getElementById("mineForm");
+  var nameInput = document.getElementById("mineName");
+  var useInput = document.getElementById("mineUse");
+  var toolInput = document.getElementById("mineTool");
+  var listEl = document.getElementById("mineList");
+  var hint = document.getElementById("mineHint");
+  var mine = [];
+
+  function loadMine() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveMine() {
+    try { localStorage.setItem(KEY, JSON.stringify(mine)); } catch (e) { /* storage may be unavailable */ }
+  }
+
+  function renderMine() {
+    listEl.textContent = "";
+    mine.forEach(function (item, index) {
+      var li = document.createElement("li");
+      var nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = item.name;
+      var use = document.createElement("span");
+      use.className = "use";
+      use.textContent = item.use || "（未填写用途）";
+      var tool = document.createElement("span");
+      tool.className = "tag";
+      tool.textContent = item.tool || "两者";
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "del";
+      del.textContent = "删除";
+      del.setAttribute("aria-label", "删除 " + item.name);
+      del.addEventListener("click", function () {
+        mine.splice(index, 1);
+        saveMine();
+        renderMine();
+      });
+      li.appendChild(nm);
+      li.appendChild(use);
+      li.appendChild(tool);
+      li.appendChild(del);
+      listEl.appendChild(li);
+    });
+    hint.hidden = mine.length > 0;
+  }
+
+  function addMine(name, use, tool) {
+    mine.push({ name: name, use: use, tool: tool, added: new Date().toISOString() });
+    saveMine();
+    renderMine();
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    addMine(name, useInput.value.trim(), toolInput.value);
+    form.reset();
+    nameInput.focus();
+  });
+
+  document.getElementById("mineClear").addEventListener("click", function () {
+    if (!mine.length) { return; }
+    if (window.confirm("清空「我的 Agent」清单？此操作只影响当前浏览器。")) {
+      mine = [];
+      saveMine();
+      renderMine();
+    }
+  });
+
+  document.getElementById("mineSeed").addEventListener("click", function () {
+    var seeds = [
+      { name: "log-triage", use: "按时间段过滤日志，先给结论再给证据", tool: "两者" },
+      { name: "pr-desc", use: "把 diff 改写成可读的 PR 描述", tool: "OpenCode" },
+      { name: "sql-check", use: "只读校验查询口径与索引使用", tool: "Pi" }
+    ];
+    seeds.forEach(function (s) {
+      var exists = mine.some(function (m) { return m.name === s.name; });
+      if (!exists) { mine.push({ name: s.name, use: s.use, tool: s.tool, added: new Date().toISOString() }); }
+    });
+    saveMine();
+    renderMine();
+  });
+
+  document.getElementById("mineExport").addEventListener("click", function () {
+    var data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      agents: mine
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "mine-agents.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  /* ---------- copy buttons ---------- */
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (!pre) { return; }
+      var text = pre.innerText;
+      var done = function () {
+        var old = btn.textContent;
+        btn.textContent = "已复制";
+        setTimeout(function () { btn.textContent = old; }, 1200);
+      };
+      var fallback = function () {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+        document.body.removeChild(ta);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  });
+
+  /* ---------- print: open collapsed content ---------- */
+  var openedForPrint = [];
+  window.addEventListener("beforeprint", function () {
+    openedForPrint = [];
+    Array.prototype.slice.call(document.querySelectorAll("details")).forEach(function (d) {
+      if (!d.open) { d.open = true; openedForPrint.push(d); }
+    });
+  });
+  window.addEventListener("afterprint", function () {
+    openedForPrint.forEach(function (d) { d.open = false; });
+    openedForPrint = [];
+  });
+
+  /* ---------- init ---------- */
+  mine = loadMine();
+  renderMine();
+  applyCards();
+  applyTips();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
