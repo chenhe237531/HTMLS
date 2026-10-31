@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="MiniMax Code 团队 17 个 Skill 的中文逐篇拆解：问题、机制、规则、落地场景与边界。">
+<title>AI 编程技能解析 · 17 个团队 Skill 中文拆解</title>
+<style>
+{{STYLE}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">Skill Atlas</a>
+  <span class="crumb">17 个团队 Skill · {{BUILT}}</span>
+  <nav class="pager"><a href="#paths">阅读路径</a><a href="#all">全部 17 篇</a></nav>
+</header>
+
+<main class="wrap" id="main">
+  <div class="hero">
+    <div class="eyebrow"><span class="dot"></span>MiniMax Code · mcode-stack</div>
+    <h1>17 个团队 Skill<br><em>逐个拆开看</em></h1>
+    <p class="lede">不是 prompt 合集，是 MiniMax Code 团队每天在自己项目上跑的工作流。这个系列把每个 Skill 拆成六块：它治什么病、机制、规则要点、能落到你哪个场景、什么时候不该用、以及和谁配套。</p>
+    <div class="kpis">
+      <div class="kpi"><div class="n">17<span>篇</span></div><div class="l">ronny 15 + jiachen 2</div></div>
+      <div class="kpi"><div class="n">6<span>组</span></div><div class="l">按场景归并</div></div>
+      <div class="kpi"><div class="n">4<span>条</span></div><div class="l">阅读路径</div></div>
+      <div class="kpi"><div class="n">0<span>依赖</span></div><div class="l">离线可开</div></div>
+    </div>
+  </div>
+
+  <section id="paths">
+    <h2><span class="no">01</span>先选一条路径</h2>
+    <div class="paths">{{PATHS}}</div>
+  </section>
+
+  <section id="all">
+    <h2><span class="no">02</span>全部 {{TOTAL}} 篇</h2>
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按场景筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        {{CHIPS}}
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5 21 21"></path></svg>
+        <input id="q" type="search" placeholder="搜索技能名或关键词（按 / 聚焦）" aria-label="搜索技能">
+      </div>
+    </div>
+    <p class="result-line" id="count" role="status" aria-live="polite">共 {{TOTAL}} 篇</p>
+    <div class="cards" id="cards">{{CARDS}}</div>
+    <div class="empty" id="empty" hidden>没有匹配的条目。清空搜索或换个筛选。</div>
+  </section>
+
+  <section id="about">
+    <h2><span class="no">03</span>关于这个系列</h2>
+    <div class="note">
+      {{CREDITS}}
+      <div class="card">
+        <h3>怎么维护</h3>
+        <p>唯一事实来源是 <code>_data/skills.json</code>，改内容只改它，然后 <code>python3 build.py</code> 重新生成封面和 17 个页面。模板在 <code>_templates/</code>，样式只有一份。</p>
+      </div>
+      <div class="card">
+        <h3>怎么读</h3>
+        <p>每篇结构固定，可以横向比：01 问题 → 02 机制 → 03 规则（含英文原句）→ 04 你的场景 → 05 边界 → 06 关联。原文链接在页脚，改动请回上游核对。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>来源：<a href="https://github.com/MiniMax-AI/mcode-stack" rel="noreferrer">github.com/MiniMax-AI/mcode-stack</a> · 生成于 {{BUILT}}</div>
+  <span class="lic">本系列是二次解读，不是原文替代品。engineering-* 改编自 Google Engineering Practices（CC-BY 3.0），其余以 MIT 发布。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#cards .card'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var group = 'all';
+
+  function apply(){
+    var needle = q.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var okGroup = group === 'all' || c.getAttribute('data-group') === group;
+      var okText = !needle || c.getAttribute('data-text').indexOf(needle) !== -1;
+      var show = okGroup && okText;
+      c.hidden = !show;
+      if (show) shown++;
+    });
+    count.textContent = needle || group !== 'all'
+      ? '匹配 ' + shown + ' 篇 / 共 ' + cards.length + ' 篇'
+      : '共 ' + cards.length + ' 篇';
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      group = btn.getAttribute('data-filter');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', apply);
+
+  addEventListener('keydown', function(e){
+    var tag = (e.target && e.target.tagName) || '';
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      e.preventDefault();
+      q.focus();
+      q.select();
+    } else if (e.key === 'Escape' && document.activeElement === q) {
+      q.value = '';
+      apply();
+      q.blur();
+    }
+  });
+})();
+</script>
+</body>
+</html>

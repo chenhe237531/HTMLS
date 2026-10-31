@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="{{NAME}}：{{ONELINE}}">
+<title>{{NAME}} · {{EN}} — AI 编程技能解析</title>
+<style>
+{{STYLE}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../index.html">← 解析系列</a>
+  <span class="crumb">{{STACK_LABEL}} / {{GROUP}}</span>
+  <nav class="pager" aria-label="篇目导航">{{PAGER}}</nav>
+</header>
+
+<main id="main">
+<article>
+  <div class="eyebrow"><span class="dot"></span>mcode-stack · {{EN}}</div>
+  <h1>{{NAME}}</h1>
+  <p class="lede">{{ONELINE}}</p>
+  <div class="meta-row">
+    <span class="pill">第 <b>{{ORDER}}</b> / {{TOTAL}} 篇</span>
+    <span class="pill">stack <b>{{STACK}}</b></span>
+    <span class="pill">{{GROUP}}</span>
+    {{NOTE_PILL}}
+  </div>
+
+  <section id="problem">
+    <h2><span class="no">01</span>它治什么病</h2>
+    {{PROBLEM}}
+  </section>
+
+  <section id="how">
+    <h2><span class="no">02</span>机制</h2>
+    <ol class="flow">{{MECHANISM}}</ol>
+  </section>
+
+  <section id="rules">
+    <h2><span class="no">03</span>规则要点</h2>
+    <dl class="rules">{{RULES}}</dl>
+    <details class="quote">
+      <summary>原文关键句（English）</summary>
+      <blockquote>{{QUOTE}}</blockquote>
+    </details>
+  </section>
+
+  <section id="apply">
+    <h2><span class="no">04</span>落到你的场景</h2>
+    <div class="callout good"><span class="t">可以直接用</span>{{APPLY}}</div>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">05</span>边界与反例</h2>
+    <div class="callout warn"><span class="t">别用过头</span>{{LIMITS}}</div>
+  </section>
+
+  <section id="related">
+    <h2><span class="no">06</span>关联</h2>
+    <div class="rel">{{RELATED}}</div>
+  </section>
+</article>
+</main>
+
+<footer>
+  <div>原文：<a href="{{SOURCE}}" rel="noreferrer">{{SOURCE}}</a></div>
+  <span class="lic">本页是对 MiniMax-AI/mcode-stack 的二次解读，不是原文替代品。engineering-* 系列改编自 Google Engineering Practices（CC-BY 3.0），其余以 MIT 发布。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+</script>
+</body>
+</html>
