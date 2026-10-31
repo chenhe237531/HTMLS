@@ -334,7 +334,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
       <li><a href="#s05"><span class="no">05</span><span>Agent 目录</span></a></li>
       <li><a href="#s06"><span class="no">06</span><span>技巧库</span></a></li>
       <li><a href="#s07"><span class="no">07</span><span>我的 Agent</span></a></li>
-      <li><a href="#s08"><span class="no">08</span><span>双工具落地</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>双工具与体检</span></a></li>
       <li><a href="#s09"><span class="no">09</span><span>目录与技术</span></a></li>
       <li><a href="#s10"><span class="no">10</span><span>路线图</span></a></li>
       <li><a href="#s11"><span class="no">11</span><span>验收标准</span></a></li>
@@ -885,7 +885,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     </div>
   </section>
   <section id="s08" aria-labelledby="h08">
-    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">双工具落地</h2></div>
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">双工具与 Harness 体检</h2></div>
     <p class="lead-in">同一张角色卡，落到两个运行时只需要换一层「外壳」。下面是概念映射与可直接复制的最小模板。</p>
 
     <h3>概念映射</h3>
@@ -977,6 +977,59 @@ thinking: low
           <li>改完配置执行 <code>/reload</code></li>
         </ul>
       </div>
+    </div>
+
+    <h3 id="harness">Harness 体检</h3>
+    <p>Agent 的表现不只取决于 prompt。真正决定它「能看什么、能改什么、能学到什么」的是外层 harness。工作台应当把这六层放在一起检查，而不是只收藏角色。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>层</th><th>作用</th><th>OpenCode</th><th>Pi</th><th>怎么验证</th></tr></thead>
+        <tbody>
+          <tr><td><b>1 · 入口</b></td><td>启动方式、会话、交互模式</td><td>TUI、子命令</td><td>TUI、print / JSON / RPC</td><td>能起、能切、能恢复会话</td></tr>
+          <tr><td><b>2 · 模型路由</b></td><td>主模型与轻量模型</td><td><code>model</code> / <code>small_model</code></td><td><code>defaultModel</code> / <code>models.json</code></td><td>发起一次对话确认实际模型</td></tr>
+          <tr><td><b>3 · 能力面</b></td><td>工具、MCP、外部进程</td><td><code>mcp</code>、plugins</td><td><code>mcp.json</code>、extensions、自带 <code>fd</code> / <code>rg</code></td><td>列 MCP，实际调一次工具</td></tr>
+          <tr><td><b>4 · 知识层</b></td><td>Agent、技能、命令</td><td><code>agents/</code>、<code>commands/</code>、skills</td><td><code>agents/</code>、<code>prompts/</code>、skills</td><td>清单可见、能被触发</td></tr>
+          <tr><td><b>5 · 治理层</b></td><td>权限、项目契约</td><td><code>permissions</code>、<code>AGENTS.md</code></td><td><code>tools</code> 白名单、<code>AGENTS.md</code> / <code>SYSTEM.md</code></td><td>只读角色确实写不了</td></tr>
+          <tr><td><b>6 · 可观测</b></td><td>状态、成本、会话历史</td><td>状态插件、会话记录</td><td>状态扩展、<code>sessions/</code></td><td>能看到运行状态与历史</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code">
+      <div class="code-head"><span class="file">一次性体检命令</span><button class="copy" type="button">复制</button></div>
+      <pre><code># OpenCode
+opencode debug config          # 合并后的实际配置
+opencode agent list            # 已加载的角色
+opencode debug skill           # 发现的技能
+
+# Pi（在会话内）
+/reload                        # 手改配置后重新加载
+/agents                        # 子代理清单（需扩展）
+
+# 共享资产
+ls ~/.agents/skills
+ls ~/.config/opencode/plugins ~/.pi/agent/extensions</code></pre>
+    </div>
+
+    <h4>本机盘点（2026-10-30 快照 · 仅计数）</h4>
+    <div class="kpis" style="margin:12px 0 18px">
+      <div class="kpi"><div class="n">2</div><div class="l">运行时（OpenCode / Pi）</div></div>
+      <div class="kpi"><div class="n">1</div><div class="l">MCP 服务（两端共用）</div></div>
+      <div class="kpi"><div class="n">20</div><div class="l">共享技能</div></div>
+      <div class="kpi"><div class="n">5</div><div class="l">插件 / 扩展</div></div>
+      <div class="kpi"><div class="n">0</div><div class="l">自定义 Agent 目录</div></div>
+      <div class="kpi"><div class="n">0</div><div class="l">项目级 AGENTS.md</div></div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">体检结论</span>
+      能力层（MCP、插件、技能、可观测扩展）已经齐全，真正偏薄的是<b>知识层</b>与<b>治理层</b>：两个运行时都还没有 <code>agents/</code> 目录，仓库也没有 <code>AGENTS.md</code>。下一步优先补这两块，收益远高于继续加插件。
+    </div>
+
+    <div class="callout">
+      <span class="t">在工作台里的位置</span>
+      建议把「Harness 体检」做成独立页签：上半部分是这张六层表，下半部分是落在你机器上的状态（已配置 / 缺失 / 待核验）。它可以和「我的 Agent」共用本地存储，但体检结果应允许一键导出为 Markdown，方便贴进 issue 或交接文档。
     </div>
   </section>
 
