@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>UCP 深度解析 · 让 Agent 完成发现、结账与支付</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<style>
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.cap{display:grid;grid-template-columns:160px 1fr auto;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.4px;align-items:start}
+.cap:last-child{border-bottom:0}
+.cap b{font-size:13.5px}
+.cap .tag2{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap;height:fit-content}
+@media (max-width:600px){.cap{grid-template-columns:1fr auto}.cap .d{grid-column:1/-1}}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">UCP 深度解析</div>
+      <div class="brand-sub">代理商业 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>它是什么</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>为什么需要</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>架构</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>一次结账</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>核心能力</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>支付与 AP2</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>生态与状态</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>优势与局限</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>与其它协议</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    v2026-08-25 · Apache 2.0<br>
+    Google + Shopify 共同发起<br>
+    发现 · 协商 · 结账 · 支付
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Universal Commerce Protocol<span class="dot"></span>2026-10-31</p>
+    <h1>UCP：让 Agent 学会<em>买东西</em></h1>
+    <p class="lede">UCP 是一套面向代理商业的开放协议：商家发布能力，Agent 读取并协商，然后建购物车、结账、付款。它把「AI 能不能在你店里下单」从定制集成变成标准动作。</p>
+    <div class="meta-row">
+      <span class="pill">发起 <b>Google + Shopify</b>（2026-01）</span>
+      <span class="pill">许可 <b>Apache 2.0</b></span>
+      <span class="pill">传输 <b>REST / MCP / A2A / Embed</b></span>
+      <span class="pill">最新规范 <b>2026-08-25</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">1<span>个</span></div><div class="l">发现入口（/.well-known/ucp）</div></div>
+      <div class="kpi"><div class="n">4<span>种</span></div><div class="l">传输：REST / MCP / A2A / Embedded</div></div>
+      <div class="kpi"><div class="n">9<span>项</span></div><div class="l">核心能力（目录 / 购物车 / 结账 / 订单…）</div></div>
+      <div class="kpi"><div class="n">20<span>+</span></div><div class="l">早期共建与背书方</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">它是什么</h2></div>
+    <p class="lead-in">一句话：<strong>UCP 是商家与 Agent 之间的「商业能力协商协议」</strong>。它定义商家如何声明能力、Agent 如何发现、双方如何用一个共同的交集完成购物车、结账、订单与支付。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">对商家</h4><p class="small" style="margin:0">在 <code>/.well-known/ucp</code> 发布一份 profile，声明支持的能力、版本、端点与支付方式，不必为每个 Agent 做定制集成。</p></div>
+      <div class="card"><h4 style="margin-top:0">对 Agent</h4><p class="small" style="margin:0">读 profile、算能力交集、按版本调用；结账与支付走标准原语，而不是抓页面。</p></div>
+      <div class="card"><h4 style="margin-top:0">对生态</h4><p class="small" style="margin:0">开放、可扩展、传输无关；商家始终是 merchant of record。</p></div>
+    </div>
+
+    <h3>时间线（不到一年）</h3>
+    <ol class="steps">
+      <li><b>2026-01-11 · 在 NRF 发布</b><p>Google 与 Shopify 共同发起，Etsy、Wayfair、Target、Walmart 等参与；20+ 公司背书。</p></li>
+      <li><b>2026-01 → 08 · 四个规范版本</b><p>2026-01-11、2026-01-23、2026-04-08、2026-08-25，迭代速度很快。</p></li>
+      <li><b>2026-05 · Universal Cart</b><p>Google I/O 推出跨商家购物车，结账由 UCP 驱动；在 AI Mode 与 Gemini 中落地。</p></li>
+      <li><b>2026-09 · Shopify 开放浏览器内结账</b><p>通过 WebMCP 把 UCP 能力暴露给运行在买家浏览器里的 Agent。</p></li>
+    </ol>
+
+    <div class="callout">
+      <span class="t">容易混淆</span>
+      UCP 不是 ACP（OpenAI/Stripe 的 Agentic Commerce Protocol），也不是 AP2。UCP 管「怎么买」，AP2 管「谁授权」，x402 管「怎么付」。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">为什么需要</h2></div>
+    <p>让 Agent 在电商里下单，要同时解决五件事。过去每一件都靠定制对接，UCP 试图把它们标准化。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>问题</th><th>定制集成时代</th><th>UCP 的做法</th></tr></thead>
+        <tbody>
+          <tr><td>发现</td><td>Agent 不知道这家店支持什么</td><td><code>/.well-known/ucp</code> 声明能力与端点</td></tr>
+          <tr><td>协商</td><td>版本与字段对不上就失败</td><td>能力交集 + 日期版本，双方取共同支持</td></tr>
+          <tr><td>购物车</td><td>每家接口不同</td><td>Cart 能力：创建、读取、更新、取消</td></tr>
+          <tr><td>结账</td><td>抓页面或私有 API</td><td>Checkout 能力：会话、金额、税费、履约</td></tr>
+          <tr><td>支付</td><td>写死某一种支付方式</td><td>Payment Handler 协商（Google Pay / Shop Pay / PSP）</td></tr>
+          <tr><td>人工接管</td><td>Agent 卡住就失败</td><td>动态 handoff，把控制权交回用户或商家页面</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">它不解决的事</span>
+      商品质量、价格竞争力、履约能力、退款政策——这些仍是商家自己的事。UCP 只让「接入」变便宜，不保证「卖得好」。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">架构：一份 profile 解决发现</h2></div>
+    <p>UCP 的核心设计是「profile 驱动」：商家把支持的能力、服务端点、支付方式写在一个公开 JSON 里，Agent 读它，而不是读文档或猜接口。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">https://shop.example.com/.well-known/ucp（示意）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>{
+  "ucp": {
+    "version": "2026-08-25",
+    "services": {
+      "dev.ucp.shopping": [{
+        "version": "2026-08-25",
+        "transport": "rest",
+        "endpoint": "https://shop.example.com/ucp",
+        "schema": "https://ucp.dev/2026-08-25/services/shopping/rest.openapi.json"
+      }]
+    },
+    "capabilities": {
+      "dev.ucp.shopping.checkout": [{ "version": "2026-08-25" }],
+      "dev.ucp.shopping.cart":     [{ "version": "2026-08-25" }],
+      "dev.ucp.shopping.catalog":  [{ "version": "2026-08-25" }]
+    },
+    "payment_handlers": {
+      "com.google.pay":       [{ "version": "2026-08-25" }],
+      "com.shopify.shop_pay": [{ "version": "2026-08-25" }]
+    }
+  }
+}</code></pre>
+    </div>
+
+    <h3>四个关键概念</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>概念</th><th>作用</th><th>例子</th></tr></thead>
+        <tbody>
+          <tr><td><b>Profile</b></td><td>商家能力与端点的公开声明</td><td><code>/.well-known/ucp</code></td></tr>
+          <tr><td><b>Service</b></td><td>一组能力的承载端点与传输</td><td><code>dev.ucp.shopping</code></td></tr>
+          <tr><td><b>Capability</b></td><td>反向域名 + 日期版本的原子能力</td><td><code>dev.ucp.shopping.checkout</code></td></tr>
+          <tr><td><b>Payment Handler</b></td><td>可被协商的支付方式</td><td>Google Pay、Shop Pay、PSP</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>协商：服务端选择</h3>
+    <p>Agent 通过 <code>UCP-Agent</code> 头带上自己的 profile 地址；商家取双方能力的<b>交集</b>，选版本与能力，并在每个响应里再次声明当前生效的版本。这样 Agent 永远知道这次会话到底支持什么。</p>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">四种传输</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>REST：最通用，HTTP + JSON</li>
+          <li>MCP：Agent 工具式调用</li>
+          <li>A2A：Agent 间委派</li>
+          <li>Embedded：iframe 内嵌结账</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">版本策略</h4>
+        <p class="small" style="margin:0">日期版本（<code>YYYY-MM-DD</code>），按精确版本协商；破坏性变更要求新版本，避免静默漂移。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">一次结账的流程</h2></div>
+
+    <div class="flow" aria-label="结账流程">
+      <a class="fstep" href="#f1"><span class="n">STEP 1</span><span class="s">发现 profile</span></a>
+      <a class="fstep" href="#f2"><span class="n">STEP 2</span><span class="s">协商能力</span></a>
+      <a class="fstep" href="#f3"><span class="n">STEP 3</span><span class="s">购物车</span></a>
+      <a class="fstep" href="#f4"><span class="n">STEP 4</span><span class="s">结账会话</span></a>
+      <a class="fstep" href="#f5"><span class="n">STEP 5</span><span class="s">支付与订单</span></a>
+    </div>
+
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">Agent (Platform)                      Business (Merchant)
+  │── GET /.well-known/ucp ──────────────▶│
+  │◀─ profile: services / caps / pay ─────│
+  │                                       │
+  │── POST cart（UCP-Agent: profile） ───▶│
+  │── POST checkout-sessions ────────────▶│
+  │◀─ totals / fulfillment / status ──────│
+  │                                       │
+  │   [payment handler 协商]               │
+  │── complete（凭证 / Mandate） ────────▶│
+  │◀─ order + receipt ────────────────────│</div>
+
+    <h3 id="f1">Step 1 · 发现</h3>
+    <p>Agent 读取商家 profile；如果商家已在 Google 等平台注册，平台也可能缓存能力信息，但 profile 仍是事实源。</p>
+
+    <h3 id="f2">Step 2 · 协商</h3>
+    <p>双方取能力交集：版本、能力、支付方式。没有交集就不发起结账，避免「调到一半才发现不支持」。</p>
+
+    <h3 id="f3">Step 3 · 购物车</h3>
+    <p>通过 Cart 能力创建/更新购物车。商品可以来自 Catalog 搜索，也可以由用户指定 SKU。</p>
+
+    <h3 id="f4">Step 4 · 结账会话</h3>
+    <p>Checkout 能力创建会话，返回金额明细（商品、折扣、运费、税费）、履约选项、必须的链接（隐私政策、服务条款）与状态。需要用户介入时，返回 handoff。</p>
+
+    <h3 id="f5">Step 5 · 支付与订单</h3>
+    <p>选择协商通过的 payment handler，提交支付凭证（或 AP2 Mandate），完成结账；随后通过 Order 能力查询状态、取消或售后。</p>
+
+    <div class="callout">
+      <span class="t">关键：商家仍是 merchant of record</span>
+      UCP 不让平台变成卖家。资金通过商家的 PSP 结算，退货、客服、税务仍归商家。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">核心能力</h2></div>
+    <p>能力是可组合的原子模块，商家按需声明。以下是 2026-08 规范中的主要能力。</p>
+
+    <div class="card">
+      <div class="cap"><b>Catalog</b><div class="d">商品搜索与查询：关键词、SKU、分类。</div><span class="tag2">shopping</span></div>
+      <div class="cap"><b>Cart</b><div class="d">创建、读取、更新、取消购物车。</div><span class="tag2">shopping</span></div>
+      <div class="cap"><b>Checkout</b><div class="d">结账会话、金额明细、状态、完成与错误处理。</div><span class="tag2">shopping</span></div>
+      <div class="cap"><b>Order</b><div class="d">订单状态、取消、售后入口。</div><span class="tag2">shopping</span></div>
+      <div class="cap"><b>Identity Linking</b><div class="d">OAuth 2.0 账号绑定，支持登录后价格与权益。</div><span class="tag2">common</span></div>
+      <div class="cap"><b>Fulfillment</b><div class="d">配送方式、时效、费用与地址校验。</div><span class="tag2">extension</span></div>
+      <div class="cap"><b>Discounts</b><div class="d">促销码与自动折扣。</div><span class="tag2">extension</span></div>
+      <div class="cap"><b>Loyalty</b><div class="d">积分与会员权益。</div><span class="tag2">extension</span></div>
+      <div class="cap"><b>Location</b><div class="d">门店与本地库存/自提。</div><span class="tag2">common</span></div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">扩展模型</span>
+      核心能力保持稳定，垂直需求用 <code>com.{vendor}.*</code> 扩展。商家可以只实现自己需要的组合，不必全量。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">支付与 AP2</h2></div>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">Payment Handler</h4>
+        <p class="small" style="margin:0">支付方式也是协商出来的：Google Pay、Shop Pay、各 PSP。商家声明支持哪些，Agent 选一个可用的，避免写死。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">AP2 扩展</h4>
+        <p class="small" style="margin:0">UCP 的 checkout 可挂 AP2 Mandates 扩展：用 Checkout / Payment Mandate 证明用户授权，尤其适合人不在场的代理购买。</p>
+      </div>
+    </div>
+
+    <h3>两种结账形态</h3>
+    <ul>
+      <li><b>Native checkout</b>：在 Agent / 平台界面内完成，使用商家的 checkout 会话与支付 handler。</li>
+      <li><b>Embedded checkout</b>：把商家结账页以 iframe 嵌入（Embedded Commerce Protocol），适合品牌定制强的商家。</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">安全边界</span>
+      支付凭证只在协商通过的 handler 与商家/PSP 之间流转；平台不应长期保存卡号。AP2 的 Mandate 只证明授权，不携带卡号。
+    </div>
+  </section>
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">生态与状态</h2></div>
+
+    <h3>谁在推动</h3>
+    <p>UCP 由 Google 与 Shopify 共同发起，早期参与方包括 Etsy、Wayfair、Target、Walmart；背书名单覆盖 Adyen、American Express、Stripe、Visa、Mastercard、Best Buy、Home Depot 等 20+ 公司。ucp.dev 的协作方名单还在扩展。</p>
+
+    <div class="grid g2" style="margin:16px 0">
+      <div class="card">
+        <h4 style="margin-top:0">Google 侧</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>AI Mode 与 Gemini 内的直接结账（部分商家）</li>
+          <li>Universal Cart：跨商家购物车</li>
+          <li>从美国扩展到加拿大、澳大利亚、英国</li>
+          <li>后续进入 YouTube、酒店与本地外卖</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">Shopify 侧</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>UCP 兼容的 MCP Server</li>
+          <li>2026-09 开放 WebMCP 结账，支持浏览器内 Agent</li>
+          <li>Universal Cart API 早期访问</li>
+          <li>商家仍是 merchant of record</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>成熟度判断</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>状态（2026-10）</th></tr></thead>
+        <tbody>
+          <tr><td>规范</td><td>公开、Apache 2.0、四个日期版本；最新 2026-08-25</td></tr>
+          <tr><td>实现</td><td>Google 与 Shopify 有生产路径；大量商家仍在早期访问 / 等待名单</td></tr>
+          <tr><td>覆盖</td><td>美国优先，逐步扩到加、澳、英；品类从零售扩到酒店、外卖</td></tr>
+          <tr><td>生态</td><td>支付、云、零售多方参与，但实际可用性取决于具体商家</td></tr>
+          <tr><td>风险</td><td>版本迭代快，字段与能力可能变化</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">“支持 UCP”含金量不同</span>
+      发布 profile 只是声明能力；是否真的能完成结账，要看 checkout 端点、支付 handler 与履约是否打通。接入前请用真实商品跑通一次。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">优势与局限</h2></div>
+
+    <div class="split">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <h4 style="margin-top:0">优势</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>发现与协商标准化，接入成本从「每家定制」变成「读 profile」</li>
+          <li>传输无关：REST / MCP / A2A / Embedded 可换</li>
+          <li>能力可组合，垂直需求用扩展，不污染核心</li>
+          <li>商家保持 merchant of record，平台不夺走客户关系</li>
+          <li>与 AP2 集成，支持人不在场的授权购买</li>
+          <li>开放许可与多方共建，降低单一厂商锁定</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">局限</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>仍处早期访问，覆盖商家有限</li>
+          <li>8 个月四个版本，规范仍在快速变化</li>
+          <li>商家要改商品、库存、结账、支付与履约，工程量大</li>
+          <li>支付 handler 碎片化，跨 PSP 体验不一致</li>
+          <li>Google / Shopify 的事实主导，可能形成新的依赖</li>
+          <li>协议只解决「怎么买」，不解决信任、比价与售后</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">别把「协议」当「渠道」</span>
+      接上 UCP 不等于自动获得流量。它只是让 Agent 能买；用户会不会来，取决于商品、价格与平台分发。
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">与其它协议</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>协议</th><th>解决什么</th><th>与 UCP 的关系</th></tr></thead>
+        <tbody>
+          <tr><td><b>UCP</b></td><td>商品发现、购物车、结账、订单</td><td>本页主角，商业流程层</td></tr>
+          <tr><td><b>AP2</b></td><td>用户授权与支付凭证</td><td>UCP 的支付扩展；UCP 流程 + AP2 授权</td></tr>
+          <tr><td><b>x402</b></td><td>按请求付款</td><td>可作为支付轨道；与 UCP 结账并行，不替代流程</td></tr>
+          <tr><td><b>ACP（Commerce）</b></td><td>OpenAI/Stripe 的产品 feed 与对话内结账</td><td>同层竞争，目标相似，生态不同</td></tr>
+          <tr><td><b>MCP</b></td><td>工具与数据接入</td><td>UCP 的一种传输绑定；Shopify 用 MCP 暴露商店能力</td></tr>
+          <tr><td><b>WebMCP</b></td><td>浏览器内 Agent 调用页面工具</td><td>Shopify 用它把 UCP 能力暴露给买家浏览器里的 Agent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">用户意图
+   │
+   ▼
+UCP：发现 → 协商 → 购物车 → 结账
+   │
+   ├── AP2：授权（Mandate）
+   │
+   └── Payment Handler：Google Pay / Shop Pay / PSP / x402
+            │
+            ▼
+        商家订单（merchant of record）</div>
+
+    <div class="callout">
+      <span class="t">一句话</span>
+      UCP 负责「把商品放进购物车并完成结账」，AP2 负责「证明用户允许这笔钱」，支付 handler 负责「钱怎么走」。
+    </div>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">来源</h2></div>
+    <p class="small">状态截至 2026-10-31；规范与商家覆盖以 ucp.dev 与各平台当期文档为准。</p>
+    <ul class="small">
+      <li><a href="https://ucp.dev/" target="_blank" rel="noopener noreferrer">UCP 官网与规范</a> · <a href="https://ucp.dev/specification/overview/" target="_blank" rel="noopener noreferrer">规范总览</a> · <a href="https://github.com/Universal-Commerce-Protocol/ucp" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://www.shopify.com/ucp" target="_blank" rel="noopener noreferrer">Shopify UCP</a> · <a href="https://shopify.dev/docs/ucp" target="_blank" rel="noopener noreferrer">Shopify 开发者文档</a> · <a href="https://www.shopify.com/news/ai-commerce-at-scale" target="_blank" rel="noopener noreferrer">Shopify 发布公告</a></li>
+      <li><a href="https://developers.google.com/merchant/ucp" target="_blank" rel="noopener noreferrer">Google UCP 指南</a> · <a href="https://developers.google.com/merchant/ucp/guides/overview/ucp-profile" target="_blank" rel="noopener noreferrer">Profile 指南</a></li>
+      <li><a href="https://blog.google/products-and-platforms/products/shopping/google-shopping-cart" target="_blank" rel="noopener noreferrer">Google：Universal Cart 与 UCP</a> · <a href="https://techcrunch.com/2026/09/28/shopify-opens-checkout-to-browser-based-ai-agents" target="_blank" rel="noopener noreferrer">Shopify WebMCP 结账（2026-09）</a></li>
+      <li><a href="https://ucp.dev/documentation/ucp-and-ap2/" target="_blank" rel="noopener noreferrer">UCP 与 AP2</a></li>
+    </ul>
+    <div class="callout">
+      <span class="t">口径</span>
+      本页区分「声明支持」与「可完成交易」：前者指 profile 声明，后者指真实商品可走通结账。两者差距很大。
+    </div>
+  </section>
+
+  <footer>
+    <span>UCP 深度解析 · 2026-10-31 · 单文件离线版</span>
+    <span>读 profile，协商能力，完成结账</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agent Sandbox 技术白皮书：隔离、防护、调度与利用率（2026-10）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;--accent-line:#cfd9f3;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --violet:#5b3f8f;--violet-soft:#efeaf7;
+  --code-bg:#171a1f;--code-ink:#e9e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.78),rgba(255,254,251,.34));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:22px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:16.5px;line-height:1.25}
+.brand-sub{font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-note{margin-top:22px;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:12px;line-height:1.65;color:var(--muted)}
+.side-note b{display:block;color:var(--ink-2);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.side-foot{margin-top:20px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.65}
+main{min-width:0;padding:44px clamp(20px,4.6vw,60px) 96px;max-width:1100px}
+.hero{margin-bottom:44px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5vw,54px);line-height:1.1;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:17.5px;line-height:1.75;color:var(--ink-2);max-width:48em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.15;letter-spacing:-.02em}
+.kpi .n span{font-size:12px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+section{scroll-margin-top:22px;margin-bottom:58px}
+.sec-head{display:flex;gap:13px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:22px}
+.sec-no{font-family:var(--mono);font-size:11.5px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(23px,2.9vw,30px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17px;line-height:1.5;margin:30px 0 10px}
+h4{font-size:13.5px;margin:18px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 13px}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow:auto;font:12.5px/1.65 var(--mono);margin:12px 0 18px;border:1px solid #2a2f38}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.small{font-size:12.5px;color:var(--muted)}
+.lead-in{font-size:16px;color:var(--ink-2);max-width:54em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 17px;margin:18px 0;font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.danger{background:var(--red-soft);border-color:#efcfcd;border-left-color:var(--red)}
+.callout.ok{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout b{color:var(--ink)}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid;vertical-align:1px;white-space:nowrap}
+.tag.fact{color:var(--green);background:var(--green-soft);border-color:#cfe3d8}
+.tag.infer{color:var(--violet);background:var(--violet-soft);border-color:#ddd2ef}
+.tag.risk{color:var(--red);background:var(--red-soft);border-color:#efcfcd}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:16px 0 20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.card h4{margin-top:0}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.table-wrap{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.6;min-width:620px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);font-weight:600;position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600}
+.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+details{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:10px 0;overflow:hidden}
+details[open]{box-shadow:var(--shadow)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;gap:9px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);font-weight:400}
+details[open]>summary::before{content:"−"}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.details-body{padding:0 16px 14px;border-top:1px solid var(--line);margin-top:0}
+.details-body>*:first-child{margin-top:12px}
+.formula{font-family:var(--mono);font-size:13px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:10px;padding:12px 15px;margin:12px 0;color:var(--ink-2);overflow-x:auto}
+.formula b{color:var(--accent);font-weight:600}
+.filter-bar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:16px 0 12px}
+.filter-bar .lbl{font-size:12px;color:var(--muted);margin-right:3px}
+.fbtn{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.fbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.threats{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.threat{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:13px 15px}
+.threat .t-top{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:5px}
+.threat .t-top strong{font-size:14px}
+.threat .cat{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.threat p{font-size:13px;margin:0 0 6px;color:var(--ink-2)}
+.threat .fix{font-size:12.5px;color:var(--ink-2);border-top:1px dashed var(--line);padding-top:6px;margin-top:6px}
+.threat .fix b{color:var(--green)}
+.empty{border:1px dashed var(--line-strong);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin:18px 0}
+.calc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.field input{width:100%;padding:7px 9px;border:1px solid var(--line-strong);border-radius:8px;font:14px/1.4 var(--sans);background:#fff;color:var(--ink)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.calc-out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.out{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.out .k{font-size:11px;color:var(--muted)}
+.out .v{font-family:var(--mono);font-size:17px;margin-top:2px;color:var(--accent)}
+.calc-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.btn{font:inherit;font-size:12.5px;padding:6px 13px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink-2)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:18px 0}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+body{overflow-x:hidden}
+.hero .kpi .n{color:var(--ink)}
+.src{font-size:13px}
+.src li{margin:7px 0}
+.anchor{scroll-margin-top:22px}
+.top-link{display:block;text-align:right;font-size:11.5px;color:var(--muted);text-decoration:none;margin-top:8px}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px}
+  .toc{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .side-note,.side-foot{display:none}
+  main{padding:30px 18px 80px}
+  table{min-width:560px}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  body{font-size:15px}
+}
+@media (max-width:760px){
+  .calc-grid,.calc-out{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:480px){
+  .calc-grid,.calc-out{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+@media print{
+  .sidebar,.progress,.filter-bar,.calc-actions,.top-link,.skip{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  body{background:#fff}
+  section{page-break-inside:auto;margin-bottom:26px}
+  details{border:0}
+  details>summary{display:none}
+  details .details-body{border:0;padding:0}
+  a{color:inherit;text-decoration:none}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  th{position:static}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<nav class="sidebar" aria-label="目录">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Agent Sandbox</div>
+      <div class="brand-sub">Isolation · Security</div>
+    </div>
+  </div>
+  <ol class="toc" id="toc">
+    <li><a href="#s1"><span class="no">01</span><span>先厘清边界</span></a></li>
+    <li><a href="#s2"><span class="no">02</span><span>隔离技术全景</span></a></li>
+    <li><a href="#s3"><span class="no">03</span><span>威胁模型与防护</span></a></li>
+    <li><a href="#s4"><span class="no">04</span><span>资源调度</span></a></li>
+    <li><a href="#s5"><span class="no">05</span><span>资源利用与成本</span></a></li>
+    <li><a href="#s6"><span class="no">06</span><span>可观测性与运维</span></a></li>
+    <li><a href="#s7"><span class="no">07</span><span>参考部署</span></a></li>
+    <li><a href="#s8"><span class="no">08</span><span>选型与结论</span></a></li>
+    <li><a href="#s9"><span class="no">09</span><span>来源与说明</span></a></li>
+  </ol>
+  <div class="side-note">
+    <b>读法</b>
+    第 2–3 章讲「边界」，第 4–5 章讲「效率」。如果只做一件事：先确认你没把 <code>Sandbox</code> 当成隔离实现本身。
+  </div>
+  <div class="side-foot">
+    基于公开文档与基准整理，访问日期 2026-10-31。数字随版本变化，落地前请复测。
+  </div>
+</nav>
+
+<main id="main">
+<div class="hero">
+  <div class="eyebrow"><span class="dot"></span><span>技术拆解</span><span>·</span><span>Kubernetes SIG Apps</span><span>·</span><span>2026-10</span></div>
+  <h1>Agent 沙箱：<em>隔离</em>、<em>防护</em>与<em>调度</em></h1>
+  <p class="lede">当 Agent 开始自己写代码、开浏览器、调工具，「一个 Agent 一个容器」就不再是可运营的模型。这份文档拆开 agent-sandbox 这一类编排层：它到底隔离了什么、默认挡住了哪些攻击、资源从哪里省出来，以及哪些数字是真 benchmark、哪些只是营销。</p>
+  <div class="meta-row">
+    <span class="pill"><b>agent-sandbox</b> v1.x · SIG Apps</span>
+    <span class="pill">API <b>v1beta1</b></span>
+    <span class="pill">Apache-2.0</span>
+    <span class="pill">gVisor / Kata / microVM</span>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">~300<span>/s</span></div><div class="l">预热池突发领取上限（单集群，p90 ≤ 200ms）</div></div>
+    <div class="kpi"><div class="n">70–85<span>/s</span></div><div class="l">单个 WarmPool 持续补充上限</div></div>
+    <div class="kpi"><div class="n">92<span>ms</span></div><div class="l">热采用 p50（45/s 持续到达）</div></div>
+    <div class="kpi"><div class="n">42–50<span>s</span></div><div class="l">冷启动 p50（GKE 实测）</div></div>
+  </div>
+</div>
+
+<section id="s1">
+  <div class="sec-head"><span class="sec-no">01</span><h2>先厘清边界：编排层不等于隔离层</h2></div>
+  <p class="lead-in">这是最容易搞错的一点，也是所有安全评审的第一道题。</p>
+  <p>agent-sandbox 自己在 README 里写得很直白：它是一个 <b>sandbox orchestrator</b>，把底层隔离委托给 gVisor、Kata Containers 这类 <b>Sandbox Runtime</b>，通过 <code>RuntimeClass</code> 挂到 Pod 上。换句话说：</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>编排层负责</h4>
+      <ul>
+        <li>单例、有状态、稳定身份的生命周期</li>
+        <li>从预热池领取（claim）与回收</li>
+        <li>Pod / Service / PVC 的创建与收养</li>
+        <li>暂停、恢复、快照、定时销毁</li>
+        <li>为租户生成默认拒绝的 NetworkPolicy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>运行时负责</h4>
+      <ul>
+        <li>系统调用拦截或硬件虚拟化边界</li>
+        <li>内核攻击面收敛（gVisor 用户态内核 / Kata 独立内核）</li>
+        <li>文件系统与网络的重定向（Gofer、virtio-fs、netstack）</li>
+        <li>单沙箱内的资源与设备可见性</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout danger"><b>结论：</b>只装 agent-sandbox、不配 <code>runtimeClassName</code>，你得到的是一个「生命周期更好管的普通 Pod」，不是安全沙箱。默认值能挡一部分网络与身份问题，但挡不住容器逃逸。</div>
+
+  <h3>为什么 Deployment / StatefulSet 不够</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>需求</th><th>Deployment</th><th>StatefulSet</th><th>Sandbox CRD</th></tr></thead>
+    <tbody>
+      <tr><td>单实例、稳定 hostname</td><td class="no">否</td><td class="mid">序号化</td><td class="yes">是，名称即身份</td></tr>
+      <tr><td>从预热池「领取」而非新建</td><td class="no">否</td><td class="no">否</td><td class="yes">SandboxClaim 收养</td></tr>
+      <tr><td>挂起 / 恢复 / 快照</td><td class="no">否</td><td class="no">否</td><td class="yes">operatingMode + Snapshot</td></tr>
+      <tr><td>到期自动删除</td><td class="no">否</td><td class="no">否</td><td class="yes">shutdownTime / shutdownPolicy</td></tr>
+      <tr><td>默认安全基线</td><td class="no">无</td><td class="no">无</td><td class="mid">模板可注入</td></tr>
+      <tr><td>按租户生成网络策略</td><td class="no">否</td><td class="no">否</td><td class="yes">可选 managed NetworkPolicy</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">用 StatefulSet(size=1) + Service + PVC 硬凑是可行的，但你得自己补 claim、hibernation、稳定身份和默认拒绝策略——这些正是这个项目存在的理由。</p>
+
+  <h3>控制面与数据面</h3>
+  <figure class="figure">
+    <svg viewBox="0 0 920 430" role="img" aria-labelledby="fig1t fig1d">
+      <title id="fig1t">agent-sandbox 的组件关系</title>
+      <desc id="fig1d">客户端创建 SandboxClaim，扩展控制器从 SandboxWarmPool 收养 Sandbox，核心控制器创建 Pod、Service 与 PVC，Pod 通过 RuntimeClass 使用 gVisor 或 Kata 运行时；可选 Router 负责数据面转发。</desc>
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8d9099"></path>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" fill="#3c3f45">
+        <rect x="16" y="24" width="170" height="58" rx="10" fill="#e9eefb" stroke="#cfd9f3"></rect>
+        <text x="101" y="48" text-anchor="middle" font-weight="600">客户端 / Agent</text>
+        <text x="101" y="66" text-anchor="middle" font-size="11" fill="#6f7279">SDK · kubectl · HTTP</text>
+
+        <rect x="246" y="24" width="190" height="58" rx="10" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="341" y="48" text-anchor="middle" font-weight="600">Sandbox Router（可选）</text>
+        <text x="341" y="66" text-anchor="middle" font-size="11" fill="#6f7279">按 X-Sandbox-ID 转发</text>
+
+        <rect x="500" y="16" width="404" height="210" rx="12" fill="#fbfaf6" stroke="#e3ded3" stroke-dasharray="5 4"></rect>
+        <text x="516" y="36" font-size="11" fill="#9a5712" letter-spacing="1">控制面（可信）</text>
+
+        <rect x="520" y="48" width="112" height="46" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="576" y="67" text-anchor="middle">SandboxTemplate</text>
+        <text x="576" y="82" text-anchor="middle" font-size="10" fill="#6f7279">安全基线</text>
+
+        <rect x="648" y="48" width="112" height="46" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="704" y="67" text-anchor="middle">SandboxWarmPool</text>
+        <text x="704" y="82" text-anchor="middle" font-size="10" fill="#6f7279">预热副本</text>
+
+        <rect x="776" y="48" width="112" height="46" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="832" y="67" text-anchor="middle">SandboxClaim</text>
+        <text x="832" y="82" text-anchor="middle" font-size="10" fill="#6f7279">领取请求</text>
+
+        <rect x="648" y="118" width="240" height="46" rx="8" fill="#e9eefb" stroke="#cfd9f3"></rect>
+        <text x="768" y="137" text-anchor="middle" font-weight="600">Sandbox Controller</text>
+        <text x="768" y="152" text-anchor="middle" font-size="10" fill="#6f7279">reconcile · 收养 · 默认策略</text>
+
+        <rect x="520" y="118" width="112" height="46" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="576" y="137" text-anchor="middle">Kubernetes API</text>
+        <text x="576" y="152" text-anchor="middle" font-size="10" fill="#6f7279">etcd · watch</text>
+
+        <rect x="500" y="250" width="404" height="150" rx="12" fill="#fbfaf6" stroke="#e3ded3" stroke-dasharray="5 4"></rect>
+        <text x="516" y="270" font-size="11" fill="#98302f" letter-spacing="1">数据面（不可信）</text>
+
+        <rect x="520" y="284" width="112" height="52" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="576" y="304" text-anchor="middle">Sandbox CR</text>
+        <text x="576" y="320" text-anchor="middle" font-size="10" fill="#6f7279">单例 · 稳定身份</text>
+
+        <rect x="656" y="284" width="112" height="52" rx="8" fill="#fffefb" stroke="#cfc7b8"></rect>
+        <text x="712" y="304" text-anchor="middle">Pod</text>
+        <text x="712" y="320" text-anchor="middle" font-size="10" fill="#6f7279">runtimeClassName</text>
+
+        <rect x="792" y="284" width="96" height="52" rx="8" fill="#e6f1eb" stroke="#cfe3d8"></rect>
+        <text x="840" y="304" text-anchor="middle">gofer / guest</text>
+        <text x="840" y="320" text-anchor="middle" font-size="10" fill="#22654e">gVisor · Kata</text>
+
+        <rect x="656" y="356" width="232" height="30" rx="7" fill="#efece4" stroke="#e3ded3"></rect>
+        <text x="772" y="376" text-anchor="middle" font-size="11" fill="#6f7279">PVC / 快照对象存储 / 工作区</text>
+
+        <rect x="16" y="250" width="200" height="150" rx="12" fill="#fffefb" stroke="#e3ded3"></rect>
+        <text x="30" y="272" font-size="11" fill="#6f7279" letter-spacing="1">隔离边界</text>
+        <text x="30" y="296" font-size="12">共享内核容器：namespace +</text>
+        <text x="30" y="314" font-size="12">cgroup + seccomp + LSM</text>
+        <text x="30" y="338" font-size="12" fill="#9a5712">gVisor：Sentry 用户态内核</text>
+        <text x="30" y="356" font-size="12" fill="#9a5712">Kata：每 Pod 一个轻量 VM</text>
+        <text x="30" y="374" font-size="12" fill="#9a5712">Firecracker：最小化 microVM</text>
+
+        <path d="M186 53 H246" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M436 53 H500" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M832 94 V118" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M704 94 V118" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M648 141 H632" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M768 164 V284" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M632 310 H656" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M768 310 H792" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M576 336 V356" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+      </g>
+    </svg>
+    <figcaption>图 1：控制面负责「想要什么」，运行时负责「真的隔开」。Router 只参与数据面，不改变隔离强度。</figcaption>
+  </figure>
+
+  <h3>CRD 各自管什么</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>对象</th><th>作用</th><th>关键点</th></tr></thead>
+    <tbody>
+      <tr><td><code>Sandbox</code></td><td>单例有状态工作负载</td><td>可直接创建；<code>podTemplate</code> 可内联；稳定 hostname</td></tr>
+      <tr><td><code>SandboxTemplate</code></td><td>可复用的沙箱蓝图</td><td>安全基线应固化在这里，而不是让租户自己填</td></tr>
+      <tr><td><code>SandboxWarmPool</code></td><td>预热的 Sandbox 副本池</td><td><code>replicas</code> 即常驻容量；补充有速率上限</td></tr>
+      <tr><td><code>SandboxClaim</code></td><td>从池中领取一个沙箱</td><td>领取可「收养」已有 Pod，省掉冷启动</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">API 组：核心为 <code>agents.x-k8s.io/v1beta1</code>，扩展为 <code>extensions.agents.x-k8s.io/v1beta1</code>。版本会随 release 变化，写 YAML 前用 <code>kubectl explain</code> 核对。</p>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="sec-no">02</span><h2>隔离技术全景：四种边界，四种代价</h2></div>
+  <p class="lead-in">隔离强度、启动速度、系统调用兼容性构成一个不可能三角。选型不是选「最安全」，而是选「你的威胁模型能接受哪一种代价」。</p>
+
+  <h3>2.1 基线：共享内核的容器</h3>
+  <p>普通容器靠 Linux 原语把进程「关起来」，但内核是同一个：</p>
+  <ul>
+    <li><b>namespace</b>：PID、网络、挂载、IPC、UTS、user、cgroup、time。决定「看得见什么」。</li>
+    <li><b>cgroup v2</b>：CPU、内存、IO、PID 限额。决定「能用多少」。</li>
+    <li><b>capabilities</b>：把 root 拆成细粒度权限；默认应全部 drop，只留必要项。</li>
+    <li><b>seccomp-bpf</b>：系统调用白名单/黑名单；<code>RuntimeDefault</code> 是 K8s 的合理下限。</li>
+    <li><b>LSM</b>：AppArmor / SELinux 做路径与标签级约束。</li>
+    <li><b>user namespace</b>：容器内 root 映射为非 root，降低部分逃逸收益。</li>
+  </ul>
+  <p>问题在于：<b>内核攻击面完全共享</b>。一个内核提权漏洞、一个错误的 <code>hostPath</code>、一个多余的 <code>CAP_SYS_ADMIN</code>、一个 <code>privileged: true</code>，边界就没了。对「LLM 生成的、会执行任意命令的代码」，这层通常不够。</p>
+  <div class="callout warn"><b>什么时候够用：</b>代码可信、只是需要资源隔离与生命周期管理；或者沙箱里没有凭据、没有内网访问、节点本身是一次性的。</div>
+
+  <h3>2.2 gVisor：把系统调用关进用户态内核</h3>
+  <p>gVisor 的 <code>runsc</code> 不让应用直接碰宿主内核，而是把系统调用交给用 Go 实现的 <b>Sentry</b>。Sentry 自己实现了一套 Linux 系统调用语义，文件访问通过 <b>Gofer</b> 进程代理，网络走用户态 <b>netstack</b>。</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>拦截平台</h4>
+      <ul>
+        <li><b>systrap</b>：较新版本的主力路径，用 seccomp 陷入 + 共享内存加速，兼顾性能与可移植性。</li>
+        <li><b>ptrace</b>：兼容性最好，系统调用密集时开销明显。</li>
+        <li><b>KVM</b>：把 Sentry 跑在 VM 里，减少陷入成本，但需要 <code>/dev/kvm</code>。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>实际取舍</h4>
+      <ul>
+        <li><b>优点</b>：不需要嵌套虚拟化；密度高；单沙箱内存开销小；启动通常在百毫秒级；内核攻击面显著收敛。</li>
+        <li><b>代价</b>：不是 100% 系统调用兼容；<code>ioctl</code>、部分设备、GPU、eBPF、嵌套容器等能力受限；IO 与系统调用密集负载有可测开销。</li>
+        <li><b>适合</b>：代码解释器、浏览器自动化、不可信脚本、多租户 SaaS。</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small"><span class="tag fact">事实</span> agent-sandbox 的 gVisor 示例与快照能力都以 <code>RuntimeClass: gvisor</code> 为前提；快照依赖 GKE 的 <code>podsnapshot.gke.io</code>。<span class="tag infer">推断</span> 对 GPU 推理类 Agent，gVisor 往往不是首选，需先验证设备与驱动路径。</p>
+
+  <h3>2.3 Kata Containers：每个 Pod 一个轻量 VM</h3>
+  <p>Kata 用硬件虚拟化把边界拉到 hypervisor：每个 Pod 有独立 guest 内核，容器进程跑在 VM 里。上层仍是 OCI 镜像与 K8s Pod，下面由 <code>kata-runtime</code>（shim v2）负责启动 VMM。</p>
+  <ul>
+    <li><b>VMM 可选</b>：QEMU、Cloud Hypervisor、Dragonball、Firecracker。不同 VMM 在启动时间、设备模型、GPU 支持上差异很大。</li>
+    <li><b>文件与网络</b>：virtio-fs / virtio-9p 共享目录，vsock 做宿主通信，CNI 仍负责 Pod 网络。</li>
+    <li><b>优势</b>：兼容完整 Linux 用户态；支持设备直通与 GPU；可叠加机密容器（如 AMD SEV-SNP、Intel TDX）。</li>
+    <li><b>代价</b>：需要 VT-x / AMD-V 或云上嵌套虚拟化；每个 Pod 有 guest 内核与 VMM 的内存开销；启动通常比 runc 慢一个量级。</li>
+  </ul>
+  <p class="small">agent-sandbox 在 AKS、GKE 都有 Kata 示例；托管集群要确认节点池支持嵌套虚拟化或裸金属实例。</p>
+
+  <h3>2.4 Firecracker 与 microVM：更小的设备面</h3>
+  <p>Firecracker 是 Rust 写的极简 VMM，只保留 virtio-net、virtio-block、串口等必要设备，配合 <code>jailer</code> 与 seccomp 收敛攻击面。AWS 对外宣称可在约 125ms 内启动、VMM 内存开销约 5MiB——这也是它适合「每请求一个沙箱」的原因。</p>
+  <p>在 K8s 里它有两条路：一是作为 Kata 的 VMM 后端；二是像 E2B 那样自建控制面（Firecracker + 调度器 + 网络/存储编排）。后者能力强，但运维成本远高于 <code>helm install</code>。</p>
+
+  <h3>2.5 更轻的边界：Hyperlight、urunc、WASM</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方案</th><th>边界</th><th>适合</th><th>不适合</th></tr></thead>
+    <tbody>
+      <tr><td>Hyperlight</td><td>函数级 microVM，guest 极小，无完整 Linux 用户态</td><td>短时工具调用、插件、单函数执行</td><td>需要完整发行版、包管理、浏览器</td></tr>
+      <tr><td>urunc</td><td>把 unikernel 当容器镜像运行</td><td>单进程、极致启动速度</td><td>多进程、动态依赖</td></tr>
+      <tr><td>WASM（Wasmtime 等）</td><td>字节码级能力模型，默认无系统调用</td><td>不可信插件、表达式、数据变换</td><td>需要原生二进制、GPU、任意 syscall</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">这些方案不是「更弱的 gVisor」，而是不同粒度的边界。用错粒度，要么性能白白损失，要么根本没隔离住。</p>
+
+  <h3>2.6 横向对比</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>维度</th><th>runc 容器</th><th>gVisor</th><th>Kata</th><th>Firecracker</th><th>WASM</th></tr></thead>
+    <tbody>
+      <tr><td>隔离边界</td><td class="no">共享内核</td><td class="mid">用户态内核</td><td class="yes">hypervisor</td><td class="yes">hypervisor</td><td class="yes">字节码能力模型</td></tr>
+      <tr><td>内核攻击面</td><td class="no">完整宿主内核</td><td class="mid">Sentry 实现面</td><td class="yes">独立 guest 内核</td><td class="yes">独立 guest 内核</td><td class="yes">无内核</td></tr>
+      <tr><td>启动</td><td class="yes">最快</td><td class="mid">百毫秒级</td><td class="no">百毫秒到秒级</td><td class="mid">约百毫秒</td><td class="yes">毫秒级</td></tr>
+      <tr><td>Linux 兼容性</td><td class="yes">完整</td><td class="mid">大部分，非全部</td><td class="yes">完整</td><td class="yes">完整（guest 内）</td><td class="no">需编译到 WASM</td></tr>
+      <tr><td>硬件要求</td><td>无</td><td>无（KVM 平台除外）</td><td class="no">需虚拟化</td><td class="no">需 KVM</td><td>无</td></tr>
+      <tr><td>GPU / 设备</td><td class="yes">支持</td><td class="no">很有限</td><td class="yes">支持直通</td><td class="mid">有限</td><td class="no">不支持</td></tr>
+      <tr><td>单实例开销</td><td class="yes">低</td><td class="mid">中</td><td class="no">较高</td><td class="mid">低</td><td class="yes">很低</td></tr>
+      <tr><td>K8s 接入</td><td>默认</td><td>RuntimeClass</td><td>RuntimeClass</td><td>Kata 后端或自建</td><td>sidecar / SDK</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">表中「启动」「开销」是量级判断，不是基准值；同一方案在不同镜像、CNI、存储下差异很大。<span class="tag infer">推断</span></p>
+
+  <h3>2.7 选型规则</h3>
+  <div class="callout ok">
+    <p><b>默认从 gVisor 开始</b>：不需要嵌套虚拟化、密度高、对「执行 LLM 代码」这个主场景足够。</p>
+    <p><b>需要完整内核能力、GPU、机密计算时换 Kata</b>：代价是节点池必须支持虚拟化，单 Pod 开销更高。</p>
+    <p><b>需要每请求一个隔离单元、且能自建控制面时考虑 Firecracker</b>：不要把「能用 Firecracker」误当成「应该自己运维 Firecracker」。</p>
+    <p><b>只跑工具/插件时用 WASM 或 Hyperlight</b>：别为了跑一个 20 行的转换函数起一个 VM。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="sec-no">03</span><h2>威胁模型与防护：默认值能挡什么，挡不住什么</h2></div>
+  <p class="lead-in">agent-sandbox 的威胁模型把「控制面」视为可信、「Sandbox Pod」视为不可信。所有防护都围绕这条线展开。</p>
+
+  <h3>3.1 五条信任边界</h3>
+  <ol>
+    <li><b>用户 → K8s API</b>：必须经过认证与 RBAC，不能靠「不知道名字」当安全。</li>
+    <li><b>控制面 → 工作负载</b>：Controller 与 Router 可信，Pod 不可信。</li>
+    <li><b>租户 ↔ 租户</b>：不同 Sandbox 之间默认不应互通。</li>
+    <li><b>工作负载 → 宿主</b>：不可信代码不能打到节点内核。</li>
+    <li><b>工作负载 → 控制面</b>：默认不允许访问 API Server。</li>
+  </ol>
+
+  <h3>3.2 六类威胁与控制</h3>
+  <div class="filter-bar" role="group" aria-label="按类别筛选威胁">
+    <span class="lbl">筛选</span>
+    <button class="fbtn" type="button" data-filter="all" aria-pressed="true">全部</button>
+    <button class="fbtn" type="button" data-filter="escape" aria-pressed="false">逃逸</button>
+    <button class="fbtn" type="button" data-filter="network" aria-pressed="false">网络</button>
+    <button class="fbtn" type="button" data-filter="identity" aria-pressed="false">身份</button>
+    <button class="fbtn" type="button" data-filter="resource" aria-pressed="false">资源</button>
+    <button class="fbtn" type="button" data-filter="control" aria-pressed="false">控制面</button>
+    <button class="fbtn" type="button" data-filter="supply" aria-pressed="false">供应链</button>
+    <span class="small" id="threat-count" aria-live="polite"></span>
+  </div>
+  <ul class="threats" id="threat-list">
+    <li class="threat" data-cat="escape">
+      <div class="t-top"><strong>容器逃逸</strong><span class="cat">逃逸</span></div>
+      <p>恶意代码利用内核漏洞、错误挂载或过高权限打到宿主，进而影响同节点其他租户。</p>
+      <p class="fix"><b>控制：</b>用 gVisor / Kata 的 <code>RuntimeClass</code>；禁止 <code>privileged</code>、<code>hostPath</code>、<code>hostNetwork</code>、<code>hostPID</code>；drop 全部 capabilities；<code>seccompProfile: RuntimeDefault</code>；只读根文件系统。</p>
+    </li>
+    <li class="threat" data-cat="escape">
+      <div class="t-top"><strong>工作负载篡改模板元数据</strong><span class="cat">逃逸</span></div>
+      <p>租户在 <code>podTemplate.metadata</code> 里伪造 <code>agents.x-k8s.io/*</code> 系统标签，把别人的 Service 流量劫持到自己的 Pod。</p>
+      <p class="fix"><b>控制：</b>控制器把系统前缀键视为保留字，创建与收养路径都会过滤；Service 选择器标签在合并用户标签之后由控制器写入，无法覆盖。<b>不要</b>自己再绕过控制器直接改 Pod 标签。</p>
+    </li>
+    <li class="threat" data-cat="network">
+      <div class="t-top"><strong>跨租户网络攻击</strong><span class="cat">网络</span></div>
+      <p>被攻陷的沙箱扫描并攻击同集群其他沙箱、内部服务或云元数据端点。</p>
+      <p class="fix"><b>控制：</b>使用 <code>SandboxTemplate.networkPolicy</code> 生成托管策略：入站仅允许 Router，出站默认拒绝，只放行公网，阻断 RFC1918 与 <code>169.254.169.254</code>；需要 DNS 时显式放行 53 端口。</p>
+    </li>
+    <li class="threat" data-cat="network">
+      <div class="t-top"><strong>Router SSRF 与代理滥用</strong><span class="cat">网络</span></div>
+      <p>攻击者伪造 <code>X-Sandbox-Pod-IP</code> 让 Router 代理到元数据服务或任意内网地址；或绕过 Router 直连 Pod。</p>
+      <p class="fix"><b>控制：</b>Router 校验 IP 字面量并拒绝本地/受限网段；<b>但默认 authorizer 是 <code>AllowAll</code></b>（为了 Python 客户端兼容），生产必须配置自定义 authorizer。用 NetworkPolicy 保证只有 Router 能进 Pod。</p>
+    </li>
+    <li class="threat" data-cat="identity">
+      <div class="t-top"><strong>滥用 ServiceAccount Token 访问 API</strong><span class="cat">身份</span></div>
+      <p>Pod 自动挂载的 token 让沙箱内的代码直接读写集群资源。</p>
+      <p class="fix"><b>控制：</b>模板路径下 <code>automountServiceAccountToken</code> 默认 <code>false</code>；裸 <code>Sandbox</code> 需用准入策略强制。确实需要时，用最小权限的专用 ServiceAccount + <code>TokenRequest</code> 短时令牌。</p>
+    </li>
+    <li class="threat" data-cat="identity">
+      <div class="t-top"><strong>凭据进入模型上下文</strong><span class="cat">身份</span></div>
+      <p>把云密钥、数据库密码写进环境变量，Agent 在推理或工具调用中把它们带出去。</p>
+      <p class="fix"><b>控制：</b>沙箱内只放占位符，真实凭据由出网代理注入；按工具拆分凭据；使用工作负载身份而非长期密钥；对出站请求做域名白名单与审计。</p>
+    </li>
+    <li class="threat" data-cat="resource">
+      <div class="t-top"><strong>资源耗尽</strong><span class="cat">资源</span></div>
+      <p>沙箱跑满 CPU/内存/磁盘/PID，拖垮节点上的其他租户；或大量创建沙箱刷爆 API Server。</p>
+      <p class="fix"><b>控制：</b>requests = limits（不可信负载不要 Burstable）；<code>LimitRange</code> 设默认与上限；<code>ResourceQuota</code> 限制命名空间总量；<code>emptyDir.sizeLimit</code>；PID 上限；对 claim 速率做准入或队列。</p>
+    </li>
+    <li class="threat" data-cat="control">
+      <div class="t-top"><strong>未授权创建 / 越权领取</strong><span class="cat">控制面</span></div>
+      <p>任意用户创建 Sandbox 消耗容量，或领取不属于自己的预热沙箱。</p>
+      <p class="fix"><b>控制：</b>RBAC 限定 <code>sandbox</code>、<code>sandboxclaim</code>、<code>sandboxtemplate</code> 的 verbs；按命名空间隔离租户；对 claim 的 label 域做 allowlist（默认 <code>sandbox.users.io</code>）。</p>
+    </li>
+    <li class="threat" data-cat="control">
+      <div class="t-top"><strong>控制面被刷爆</strong><span class="cat">控制面</span></div>
+      <p>大批量创建导致 watch 饥饿、etcd 膨胀、API Server 排队，正常领取被拖慢。</p>
+      <p class="fix"><b>控制：</b>APF 隔离（FlowSchema + PriorityLevel）；补充限速；多池分片；独立 watch 连接；关闭非必要 Event；缓存按标签收敛。</p>
+    </li>
+    <li class="threat" data-cat="supply">
+      <div class="t-top"><strong>镜像与依赖投毒</strong><span class="cat">供应链</span></div>
+      <p>使用可变标签、未签名镜像，或镜像内预置后门。</p>
+      <p class="fix"><b>控制：</b>按 digest 固定；cosign / Sigstore 验签；生成并核对 SBOM；私有仓库 + 准入校验；禁止 <code>:latest</code>；基础镜像最小化。</p>
+    </li>
+    <li class="threat" data-cat="supply">
+      <div class="t-top"><strong>工具与 MCP 服务器越权</strong><span class="cat">供应链</span></div>
+      <p>Agent 通过 MCP 工具拿到超出预期的文件系统或网络权限。</p>
+      <p class="fix"><b>控制：</b>每个 MCP 服务器独立容器/独立文件系统；工具级 allowlist 与审批；出网策略按工具身份而不是按 Pod 统一放行。</p>
+    </li>
+  </ul>
+  <div class="empty" id="threat-empty" hidden>该分类下暂无条目。<button class="btn" type="button" id="threat-reset">显示全部</button></div>
+
+  <h3>3.3 三个最容易被忽略的坑</h3>
+  <details>
+    <summary>坑一：只配了 gVisor，没配网络策略</summary>
+    <div class="details-body">
+      <p>隔离解决的是「打到宿主」，不解决「横向移动」。没有 NetworkPolicy 时，沙箱之间、沙箱到内网、沙箱到云元数据端点都是通的。托管策略是<b>默认拒绝</b>，但它会连 sidecar 端口一起挡掉，健康检查会挂——需要显式放行。</p>
+    </div>
+  </details>
+  <details>
+    <summary>坑二：把 Router 当成认证层</summary>
+    <div class="details-body">
+      <p>Router 只按 <code>X-Sandbox-ID</code> 拼目标地址，默认 authorizer 为 <code>AllowAll</code>。它能防「拼错地址」，不能防「知道别人 ID 的人」。认证与授权要在前面做：TokenReview、mTLS、网关鉴权，并校验 Claim UID 仍然存活。</p>
+    </div>
+  </details>
+  <details>
+    <summary>坑三：用 ConfigMap/Secret 挂载当凭据隔离</summary>
+    <div class="details-body">
+      <p>挂进容器的 Secret 对容器内所有进程可读，Agent 执行 <code>cat</code> 就能拿到。真正的隔离是「凭据不进入沙箱」：由代理在出站时附加，沙箱只看到占位符。这需要在网络层做，而不是在文件权限上做。</p>
+    </div>
+  </details>
+
+  <h3>3.4 网络与出网</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>控制点</th><th>作用</th><th>落地方式</th></tr></thead>
+    <tbody>
+      <tr><td>入站默认拒绝</td><td>只允许 Router / 网关进入</td><td><code>SandboxTemplate.networkPolicy.ingress</code></td></tr>
+      <tr><td>出站默认拒绝</td><td>阻断横向移动与 API Server</td><td>同上，<code>egress</code> 只列必要端口</td></tr>
+      <tr><td>DNS 放行</td><td>否则解析全挂</td><td>显式 UDP/TCP 53</td></tr>
+      <tr><td>公网白名单</td><td>只让 Agent 访问必要域名</td><td>Cilium FQDN、网关、<code>ClusterNetworkPolicy</code></td></tr>
+      <tr><td>元数据端点</td><td>防凭据窃取</td><td><code>ipBlock.except</code> 排除 <code>169.254.169.254</code>、RFC1918</td></tr>
+      <tr><td>凭据注入</td><td>密钥不进沙箱</td><td>出网代理 / egress gateway</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <pre><code>networkPolicy:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: gateway }
+          podSelector:
+            matchLabels: { app: sandbox-router }
+      ports:
+        - { protocol: TCP, port: 8888 }
+  egress:
+    - ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.169.254/32]</code></pre>
+  <p class="small">上面的 CIDR 只是示例。实际要结合云厂商的元数据地址、VPC 网段、IPv6 段一起排除；能用工具有状态的白名单就不要用「排除法」。</p>
+
+  <h3>3.5 身份与凭据</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>三层身份</h4>
+      <ul>
+        <li><b>调用者身份</b>：谁在创建/领取沙箱（RBAC + OIDC）。</li>
+        <li><b>沙箱身份</b>：Pod 的 ServiceAccount 或 x509 证书/mTLS，用于服务间认证。</li>
+        <li><b>出网身份</b>：出口代理代表沙箱去取云资源，凭据只在代理侧。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>推荐做法</h4>
+      <ul>
+        <li>默认不挂载 SA token；需要时用 <code>TokenRequest</code> 申请分钟级令牌。</li>
+        <li>按工具拆 ServiceAccount，一个工具一个最小权限集。</li>
+        <li>出网请求带可审计的沙箱 ID，便于追责。</li>
+        <li>定期轮换，禁止把长期密钥写进镜像或环境变量。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>3.6 准入与供应链</h3>
+  <ul>
+    <li><b>Pod Security Standards</b>：命名空间至少 <code>baseline</code>，理想是 <code>restricted</code>。</li>
+    <li><b>ValidatingAdmissionPolicy</b>：强制 <code>runtimeClassName</code>、禁止特权、强制资源上限。项目仓库提供了示例。</li>
+    <li><b>Gatekeeper / Kyverno</b>：跨命名空间的统一策略，适合已有 OPA 体系的团队。</li>
+    <li><b>镜像</b>：digest 固定 + 验签 + SBOM；镜像拉取用私有仓库与 imagePullSecret 的最小权限账号。</li>
+  </ul>
+  <pre><code>apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: sandbox-baseline
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["agents.x-k8s.io"]
+        apiVersions: ["v1beta1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["sandboxes"]
+  validations:
+    - expression: >-
+        object.spec.podTemplate.spec.runtimeClassName == 'gvisor'
+      message: "Sandbox 必须使用 gvisor RuntimeClass"
+    - expression: >-
+        !has(object.spec.podTemplate.spec.containers.exists(c,
+          has(c.securityContext) && has(c.securityContext.privileged) && c.securityContext.privileged))
+      message: "禁止 privileged 容器"</code></pre>
+  <p class="small">CEL 写法随 K8s 版本略有差异，上线前用 <code>kubectl apply --dry-run=server</code> 验证。</p>
+
+  <h3>3.7 运行时检测</h3>
+  <ul>
+    <li><b>OpenTelemetry</b>：Controller 与 SDK 都能出 trace；把 trace context 透传到沙箱，才能把「一次 Agent 行为」与「一次内核拒绝」串起来。</li>
+    <li><b>eBPF</b>：Tetragon / Falco 观察进程、网络、文件行为；比日志更早发现异常执行。</li>
+    <li><b>审计</b>：K8s audit log 记录谁创建了哪个 Sandbox；出口代理记录每次外联。</li>
+  </ul>
+
+  <h3>3.8 多租户分级</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>级别</th><th>租户关系</th><th>最低配置</th></tr></thead>
+    <tbody>
+      <tr><td><b>L1 单团队</b></td><td>代码基本可信</td><td>runc + PSS restricted + 资源限额 + 默认拒绝网络</td></tr>
+      <tr><td><b>L2 多团队</b></td><td>互相不可信，但同一组织</td><td>gVisor + 每租户命名空间 + 托管 NetworkPolicy + 准入策略</td></tr>
+      <tr><td><b>L3 对外多租户</b></td><td>完全不可信，可能恶意</td><td>Kata / microVM + 节点池隔离 + 出网代理 + 凭据不落地 + 审计与检测</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout"><b>一句话：</b>L1 靠配置，L2 靠运行时，L3 靠「假设已经失陷」的纵深防御。级别越高，越不能只依赖 K8s 的默认行为。</div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="sec-no">04</span><h2>资源调度：真正卡住你的往往不是 CPU</h2></div>
+  <p class="lead-in">Agent 沙箱的调度有两个平面：Kubernetes 调度 Pod，Controller 调度「领取」。后者先成为瓶颈。</p>
+
+  <h3>4.1 一次领取完整经过什么</h3>
+  <ol>
+    <li><b>创建 Claim</b>：客户端提交 <code>SandboxClaim</code>，指定 warm pool 与命名空间。</li>
+    <li><b>选择候选</b>：控制器在池中找 Ready 的 Sandbox；新 Sandbox 需要等 Pod IP 上报，默认最多等 2 秒（<code>--sandbox-claim-warm-candidate-grace-period</code>）。</li>
+    <li><b>收养或冷建</b>：能收养就直接改归属；否则按 Template 冷建。注意：Claim 一旦设置 <code>spec.env</code> 或 <code>spec.volumeClaimTemplates</code>，<b>永远走冷建</b>，因为运行中的 Pod 无法安全注入这些配置。</li>
+    <li><b>创建资源</b>：核心控制器建 Pod、headless Service、可选 PVC；写入 Sandbox 状态。</li>
+    <li><b>K8s 调度</b>：<code>kube-scheduler</code> 绑定节点；RuntimeClass 的 overhead 会参与资源计算。</li>
+    <li><b>运行时就绪</b>：CNI 分配 IP、镜像拉取、runsc/kata 启动、就绪探针通过；Claim 变为 Ready，Router/SDK 才能连。</li>
+  </ol>
+  <div class="callout warn"><b>性能分水岭：</b>热采用是「改一个对象的归属」；冷启动是「创建 Pod + 调度 + 拉镜像 + 起运行时」。官方实测冷启动 p50 约 42–50 秒，热采用 p50 约 92 毫秒——差两个数量级。</div>
+
+  <h3>4.2 容量有三种状态</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>Warm（热）</h4>
+      <p>已存在、已调度、已就绪，等一个 Claim。它占资源但不干活，是「用钱买延迟」。</p>
+    </div>
+    <div class="card">
+      <h4>Cold（冷）</h4>
+      <p>按需创建。省资源，但首请求承担 40 秒级延迟；突发流量下会同时压 API Server、调度器、镜像仓库和 CNI。</p>
+    </div>
+    <div class="card">
+      <h4>Paused / Snapshotted（挂起）</h4>
+      <p>状态落盘，计算资源释放。恢复要重新调度并回放状态，适合「多轮对话之间长时间空闲」。</p>
+    </div>
+  </div>
+  <p>三种状态不是互斥选项，而是同一条流水线上的三段。成熟部署通常同时存在：小热池兜底延迟、冷建承接长尾、快照回收空闲会话。</p>
+
+  <h3>4.3 与 Kubernetes 调度器的交互</h3>
+  <ul>
+    <li><b>RuntimeClass overhead</b>：gVisor/Kata 的额外内存与 CPU 应计入 <code>overhead</code>，否则节点会被超卖到 OOM。</li>
+    <li><b>专用节点池</b>：用 taint/toleration 把沙箱固定到装了 <code>runsc</code> 或支持嵌套虚拟化的节点；不要让普通业务 Pod 混部。</li>
+    <li><b>拓扑</b>：<code>topologySpreadConstraints</code> 打散故障域；但热池副本本身要保留局部性，避免全部跨 AZ。</li>
+    <li><b>中断预算</b>：长会话沙箱配 <code>PodDisruptionBudget</code>，节点轮转时不要一次清空。</li>
+    <li><b>调度门</b>：需要「先建对象、后决定调度」时用 scheduling gates，避免 Pod 在镜像/网络未就绪时被反复驱逐。</li>
+  </ul>
+  <div class="callout danger"><b>默认参数会咬人：</b><code>kube-scheduler</code> 的 <code>--kube-api-qps</code> 默认是 50。单池持续补充上限 70–85/s 就是被它和每池串行 reconcile 共同卡住的。要更高吞吐，必须同时调调度器与控制器，而不是只加 worker。</div>
+
+  <h3>4.4 队列、配额与公平</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>机制</th><th>解决的问题</th><th>注意</th></tr></thead>
+    <tbody>
+      <tr><td><b>ResourceQuota</b></td><td>命名空间级别的总量上限</td><td>对 Sandbox 的间接资源（Pod/PVC）也要设</td></tr>
+      <tr><td><b>LimitRange</b></td><td>给未写 requests/limits 的容器兜底</td><td>默认值要偏保守，否则等于没有</td></tr>
+      <tr><td><b>Kueue</b></td><td>批处理/RL 类沙箱的排队与配额借用</td><td>项目有集成示例；交互式 Agent 不建议排长队</td></tr>
+      <tr><td><b>APF</b></td><td>保护 claim 收养写入不被补充流量挤掉</td><td>需要 FlowSchema + PriorityLevel，按集群规模算 seat</td></tr>
+      <tr><td><b>HPA / KEDA</b></td><td>按队列长度或自定义指标扩缩 WarmPool</td><td>扩池有冷启动延迟，指标要提前量</td></tr>
+      <tr><td><b>Cluster Autoscaler / NAP</b></td><td>节点不足时扩容</td><td>GPU/嵌套虚拟化节点池扩容慢，热池要覆盖这段时间</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">APF 的价值在官方 benchmark 里很直接：默认 <code>--max-requests-inflight=400</code>、<code>--max-mutating-requests-inflight=200</code> 时，给 <code>agent-sandbox-critical</code> 只剩约 77 个并发 seat；补充流量和领取流量混在 <code>workload-low</code> 里会互相排队。</p>
+
+  <h3>4.5 控制面吞吐工程</h3>
+  <p>这部分最不像「AI」，但决定了 10 个 Agent 和 10,000 个 Agent 的差别。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>机制</th><th>发生了什么</th><th>调法</th></tr></thead>
+    <tbody>
+      <tr><td>Expectations gate</td><td>建完一批 Sandbox 后，等 informer 看到 ADD 事件才继续建；watch 一慢，整池停摆，最长等 5 分钟兜底</td><td>独立 watch 连接 + 多 API 连接；必要时升级控制面</td></tr>
+      <tr><td>Per-pool 串行</td><td>同一个 WarmPool 的 reconcile 串行，加 worker 只对「不同池」有效</td><td>大池拆成多个（如 4×450 而非 1×1800）</td></tr>
+      <tr><td>无节流补充</td><td>一次 reconcile 最多建 300 个，每个 Sandbox 在 etcd 里约 10KB</td><td>设 <code>--sandbox-warm-pool-max-refill-rate</code>，把突发变令牌桶</td></tr>
+      <tr><td>写放大</td><td>每个生命周期都发 Event、写注解，和领取抢 API 配额</td><td>高吞吐时关闭非必要 Event 与观测注解</td></tr>
+      <tr><td>缓存过大</td><td>informer 缓存全集群 Pod</td><td><code>--cache-label-selectors</code> 收敛到沙箱 Pod</td></tr>
+      <tr><td>连接上限</td><td>单个 HTTP/2 连接默认 100 个并发流，worker 再多也白搭</td><td><code>--api-connections=4</code> + <code>--separate-watch-connection</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <details>
+    <summary>推荐的 worker 配比从哪来</summary>
+    <div class="details-body">
+      <p>官方在 75 并发 claim 的 GKE 实测中比较了多组配置，推荐 <code>sandbox/claim/warm-pool/template = 200/150/2/1</code>：它同时优于 1000/1000/500/100（API 争用过多）与 50/50/1/1（reconcile 不够）。注意 warm-pool worker 要按「不同池的数量」来配，单池加 worker 无效。</p>
+      <p class="small">这只是一种负载下的最优点，不是通用常数。上线前用你自己的到达率做一轮 A/B。</p>
+    </div>
+  </details>
+
+  <h3>4.6 常见调度故障</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>现象</th><th>根因</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>热池 10s–5min 不补充</td><td>watch ADD 事件被写流量挤住，expectations gate 不关</td><td>独立 watch 连接、多连接、分片、升级 K8s</td></tr>
+      <tr><td>有热沙箱但领取仍慢</td><td>补充写入与领取写入在 APF 同优先级排队</td><td>上 APF 隔离；补充限速</td></tr>
+      <tr><td>大量 409 Conflict</td><td>worker 太多，同一对象 resourceVersion 冲突</td><td>回落到 200/150；必要时开 write-behind</td></tr>
+      <tr><td>Pod 一直 Pending</td><td>RuntimeClass 节点不足、GPU/虚拟化资源不够</td><td>专用节点池 + 自动扩容；检查 overhead 与亲和性</td></tr>
+      <tr><td>沙箱卡在非 Ready</td><td>镜像大、CNI 慢、就绪探针不合理</td><td>调 readiness grace；预热镜像；探针加 <code>initialDelaySeconds</code></td></tr>
+      <tr><td>领取超时后冷建</td><td>候选 Pod 2 秒内没上报 IP</td><td>调大 <code>--sandbox-claim-warm-candidate-grace-period</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="sec-no">05</span><h2>资源利用：从「一 Agent 一 Pod」到「一池多用」</h2></div>
+  <p class="lead-in">Agent 的负载曲线和 Web 服务相反：长时间空闲、短时爆发、状态必须保留。按 Web 的方式做容量规划，钱一定花在闲置上。</p>
+
+  <h3>5.1 三种利用率模型</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>模型</th><th>资源占用</th><th>启动延迟</th><th>状态保留</th><th>适用</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pod per Agent</b></td><td class="no">最高，空闲也占满</td><td class="yes">已运行时为 0</td><td class="yes">内存 + 磁盘</td><td>少量长期在线 Agent</td></tr>
+      <tr><td><b>Warm Pool + Claim</b></td><td class="mid">中，池容量是常数成本</td><td class="yes">热采用亚秒级</td><td class="yes">收养后保留</td><td>交互式、突发领取</td></tr>
+      <tr><td><b>Actor 多路复用 + 快照</b></td><td class="yes">最低，多个 Agent 共享少量 worker</td><td class="mid">从快照恢复，非冷启动</td><td class="yes">快照到对象存储</td><td>海量低频 Agent</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">第三行参考 kagent 的 Agent Substrate：WorkerPool + Actor，空闲 Actor 快照到对象存储、按需回填，用少量预热 worker 承载远多于 Pod 数的 Agent。<span class="tag fact">事实</span> 它解决的是「空闲也占 Pod」的浪费，不是隔离强度问题——每个 Actor 仍在 gVisor 沙箱里。</p>
+
+  <h3>5.2 用 Little's law 算池子</h3>
+  <p>最容易被忽略的公式，却能挡住大部分拍脑袋容量规划：</p>
+  <div class="formula"><b>N</b> = λ × W　　（并发数 = 到达率 × 平均停留时间）</div>
+  <p>热池还要覆盖「补充延迟」：在冷启动的 T 秒里，新请求仍在到达。</p>
+  <div class="formula"><b>N_warm</b> ≈ ceil( λ_peak × (W + T_cold) × safety )</div>
+  <div class="formula"><b>Pods</b> ≈ N_warm　（agent-sandbox 是单例 Pod）<br><b>Nodes</b> = max( ceil(Pods × cpu_req / cpu_alloc), ceil(Pods × mem_req / mem_alloc) )</div>
+  <p class="small">λ 用峰值而不是均值；W 包含模型思考、工具调用、人工审批的全部挂起时间。若 Agent 会在等审批时挂几小时，W 会被严重低估——这类会话应改用暂停/快照，而不是一直占着热池。</p>
+
+  <h3>5.3 暂停、恢复与快照</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>两条路径</h4>
+      <ul>
+        <li><b>PVC 挂起/恢复</b>：<code>operatingMode</code> 切到 Suspended，保留 PVC，缩到 0；恢复时重新挂载。只保文件系统。</li>
+        <li><b>Pod Snapshot</b>：GKE 的 <code>podsnapshot.gke.io</code>，冻结 gVisor 容器状态，保留内存与文件系统；恢复后进程接着跑。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>两种用法</h4>
+      <ul>
+        <li><b>按会话快照</b>：同一个 Sandbox 在两次用户提问之间挂起，省掉空闲成本。</li>
+        <li><b>黄金快照</b>：预热一个装好依赖的沙箱，把快照共享给整个 WarmPool，新沙箱直接从「已初始化」状态启动。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn"><b>限制要提前知道：</b>快照能力目前是 Python SDK 提供、依赖 GKE Pod Snapshot；Go SDK 尚未封装。默认按 <code>sandbox-name-hash</code> 分组，一个沙箱只恢复自己的快照；要跨沙箱共享，需要用按模板标签分组的 <code>PodSnapshotPolicy</code>。</div>
+
+  <h3>5.4 超卖：省钱的边界在哪</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>负载类型</th><th>requests / limits</th><th>QoS</th><th>风险</th></tr></thead>
+    <tbody>
+      <tr><td>不可信代码、对外多租户</td><td class="yes">requests = limits</td><td>Guaranteed</td><td>成本高，但行为可预测，不会被邻居挤爆</td></tr>
+      <tr><td>内部团队、可信 Agent</td><td class="mid">requests &lt; limits</td><td>Burstable</td><td>节点压力下被限流或驱逐</td></tr>
+      <tr><td>批处理 / RL / 评测</td><td class="mid">低 requests，高 limits</td><td>Burstable / BestEffort</td><td>只适合可重试、可中断的任务</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>对 L3 多租户，不要用超卖换密度：一次 OOM 驱逐会同时打断多个租户的会话，而且很难解释。真正该省的是「空闲」，不是「限额」。</p>
+
+  <h3>5.5 规划计算器</h3>
+  <p>把上面的公式做成可调估算。默认值是一个中等规模交互式 Agent 平台的示例，不是推荐配置。</p>
+  <div class="calc" id="calc">
+    <div class="calc-grid">
+      <div class="field"><label for="c-rate">峰值领取率 λ（claim/s）</label><input id="c-rate" type="number" min="0.01" step="0.1" value="2" inputmode="decimal"></div>
+      <div class="field"><label for="c-life">平均会话时长 W（秒）</label><input id="c-life" type="number" min="1" step="10" value="300" inputmode="numeric"></div>
+      <div class="field"><label for="c-cold">冷启动 T（秒）</label><input id="c-cold" type="number" min="1" step="1" value="45" inputmode="numeric"></div>
+      <div class="field"><label for="c-safety">安全系数</label><input id="c-safety" type="number" min="1" max="3" step="0.05" value="1.3" inputmode="decimal"></div>
+      <div class="field"><label for="c-cpu">单沙箱 CPU 请求（核）</label><input id="c-cpu" type="number" min="0.1" step="0.1" value="1" inputmode="decimal"></div>
+      <div class="field"><label for="c-mem">单沙箱内存请求（GiB）</label><input id="c-mem" type="number" min="0.1" step="0.5" value="2" inputmode="decimal"></div>
+      <div class="field"><label for="c-cpu-alloc">单节点可分配 CPU（核）</label><input id="c-cpu-alloc" type="number" min="1" step="1" value="30" inputmode="numeric"></div>
+      <div class="field"><label for="c-mem-alloc">单节点可分配内存（GiB）</label><input id="c-mem-alloc" type="number" min="1" step="1" value="110" inputmode="numeric"></div>
+      <div class="field"><label for="c-price">节点单价（美元/小时）</label><input id="c-price" type="number" min="0" step="0.01" value="0.40" inputmode="decimal"></div>
+    </div>
+    <div class="calc-out" aria-live="polite">
+      <div class="out"><div class="k">并发会话 N</div><div class="v" id="o-conc">—</div></div>
+      <div class="out"><div class="k">建议热池副本</div><div class="v" id="o-pool">—</div></div>
+      <div class="out"><div class="k">节点数（取较大者）</div><div class="v" id="o-nodes">—</div></div>
+      <div class="out"><div class="k">热池活跃占比</div><div class="v" id="o-util">—</div></div>
+      <div class="out"><div class="k">月成本（730h）</div><div class="v" id="o-cost">—</div></div>
+      <div class="out"><div class="k">每千次会话成本</div><div class="v" id="o-unit">—</div></div>
+    </div>
+    <div class="calc-actions">
+      <button class="btn primary" type="button" id="calc-run">重新计算</button>
+      <button class="btn" type="button" id="calc-reset">恢复默认</button>
+      <span class="small">只估计算与调度容量，不含存储、出口流量、控制面与模型调用费用。</span>
+    </div>
+  </div>
+
+  <h3>5.6 官方基准里能直接用的数字</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>指标</th><th>数值</th><th>条件</th></tr></thead>
+    <tbody>
+      <tr><td>突发热采用</td><td class="num">~300 claims/s</td><td>12 秒内 3,600 次领取，池内有 3,700 个副本，p90 ≤ 200ms</td></tr>
+      <tr><td>持续热采用 p50 / p90 / p99</td><td class="num">92 / 182 / 376 ms</td><td>45/s 泊松到达，4 个池，每命名空间 113 副本</td></tr>
+      <tr><td>单池持续补充</td><td class="num">70–85 /s</td><td>受每池串行与 scheduler QPS=50 限制</td></tr>
+      <tr><td>冷启动 p50</td><td class="num">42–50 s</td><td>GKE，20×e2-standard-16 worker</td></tr>
+      <tr><td>补充限速收益</td><td class="num">p50 −15%</td><td>50.4s → 41.4–42.2s；p90 88.2s → 74.2–75.3s</td></tr>
+      <tr><td>write-behind 250ms</td><td class="num">409 −44%</td><td>但持续场景 p50 +58%，只在突发型负载开</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">来源与测试条件见第 9 节。这些是特定集群、特定版本下的结果，不是 SLA；但它们给出了正确的数量级和瓶颈位置。</p>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="sec-no">06</span><h2>可观测性与运维：把「沙箱」当生产系统</h2></div>
+  <p class="lead-in">沙箱的故障很少是「挂了」，更多是「慢」和「悄悄不隔离了」。指标要覆盖生命周期、控制面与安全三类。</p>
+
+  <h3>6.1 先看状态条件</h3>
+  <p><code>Sandbox</code> 通过 conditions 暴露生命周期。排障顺序应该是「先看 Ready，再看 reason」，而不是先翻 Pod 日志。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>信号</th><th>含义</th><th>下一步</th></tr></thead>
+    <tbody>
+      <tr><td><code>Ready=True</code></td><td>Pod 就绪，可接收流量</td><td>正常</td></tr>
+      <tr><td><code>Ready=False / MultiplePods</code></td><td>控制器发现同一 Sandbox 有多个受控 Pod，安全失败关闭</td><td>检查是否有外部工具手工建了 Pod；清理后再等 reconcile</td></tr>
+      <tr><td><code>Ready=False / InvalidMetadata</code></td><td>Claim 的附加标签域不在 allowlist</td><td>改标签域，或调整 <code>allowed-label-domains</code></td></tr>
+      <tr><td>长时间 Pending</td><td>调度不上去：资源、RuntimeClass、亲和性</td><td>看 scheduler event 与节点池容量</td></tr>
+      <tr><td>反复重启</td><td>OOM、探针失败、入口命令退出</td><td>先看 limits 与探针，再看运行时日志</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>6.2 三层指标</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>生命周期</h4>
+      <ul>
+        <li>claim → ready 的 p50/p90/p99</li>
+        <li>热采用 vs 冷建的比例</li>
+        <li>热池缺口（deficit）与补充速率</li>
+        <li>挂起/恢复耗时与失败率</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>控制面</h4>
+      <ul>
+        <li>reconcile 次数、耗时、错误率</li>
+        <li>workqueue 深度与重试</li>
+        <li>409 Conflict 速率</li>
+        <li><code>rest_client_*</code>：API 延迟、重试、限流等待</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>安全</h4>
+      <ul>
+        <li>被拒绝的出站连接与目标域名</li>
+        <li>提权/异常 exec/eBPF 告警</li>
+        <li>镜像验签失败与准入拒绝</li>
+        <li>SA token 使用与异常 API 调用</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>资源</h4>
+      <ul>
+        <li>每沙箱 CPU/内存实际使用 vs 请求</li>
+        <li>节点可分配余量与装箱碎片</li>
+        <li>OOMKilled、驱逐、PDB 阻塞</li>
+        <li>PVC 容量与快照存储增长</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small">控制器指标的具体名称以 <code>/metrics</code> 与项目的 Controller Metrics Reference 为准；指标会随版本增加，别把面板写死在未公开的名字上。</p>
+
+  <h3>6.3 建议的 SLO</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>SLO</th><th>目标（示例）</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>热采用延迟</td><td class="num">p90 &lt; 500ms</td><td>超过就说明池子不够或有控制面争用</td></tr>
+      <tr><td>冷启动延迟</td><td class="num">p90 &lt; 90s</td><td>受镜像、CNI、节点扩容影响</td></tr>
+      <tr><td>领取成功率</td><td class="num">&gt; 99.9%</td><td>排除用户参数错误</td></tr>
+      <tr><td>热池有货率</td><td class="num">&gt; 95% 时间</td><td>deficit 为 0 的时间占比</td></tr>
+      <tr><td>沙箱 OOM 率</td><td class="num">&lt; 0.1%</td><td>高于此值说明限额或镜像有问题</td></tr>
+      <tr><td>隔离策略漂移</td><td class="num">0</td><td>非 gVisor/Kata、特权容器、公网直连都应告警</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>6.4 运维手册（按症状）</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>症状</th><th>先查</th><th>动作</th></tr></thead>
+    <tbody>
+      <tr><td>领取变慢但池子有货</td><td>APF 排队、409、workqueue</td><td>上 APF 隔离；降 worker；补充限速</td></tr>
+      <tr><td>池子持续见底</td><td>到达率 vs 补充上限（70–85/s/池）</td><td>拆池、提高限速、加节点；检查是否有泄漏的 Claim</td></tr>
+      <tr><td>冷启动突然变长</td><td>镜像仓库、CNI、节点扩容、runtime 启动</td><td>预热镜像、调 grace period、检查 RuntimeClass</td></tr>
+      <tr><td>沙箱内异常外联</td><td>出口代理日志、DNS 查询、eBPF</td><td>隔离沙箱、保留快照、轮换可能泄露的凭据</td></tr>
+      <tr><td>疑似逃逸</td><td>节点内核日志、Tetragon、运行时告警</td><td>隔离节点、取证、升级运行时与内核；不要只删 Pod</td></tr>
+      <tr><td>镜像验签失败</td><td>cosign 身份、仓库凭证</td><td>修签名链，别用 <code>failurePolicy: Ignore</code> 绕过</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout"><b>取证原则：</b>发现异常先 <b>快照 + 隔离网络</b>，再终止。直接删 Pod 会丢掉内存态与临时文件，事后无法判断是提示注入、依赖投毒还是运行时逃逸。</div>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="sec-no">07</span><h2>参考部署：一份能改的基线</h2></div>
+  <p class="lead-in">下面不是「复制即生产」，而是一份把关键默认值都显式写出来的基线。空缺处才是你需要按环境决定的部分。</p>
+
+  <h3>7.1 前置</h3>
+  <ul>
+    <li>集群已安装 gVisor 的 <code>runsc</code>，并注册了名为 <code>gvisor</code> 的 RuntimeClass；或改用 Kata 的 RuntimeClass。</li>
+    <li>节点池带 taint，只允许沙箱调度；已预留容量给 WarmPool。</li>
+    <li>已安装控制器（core + extensions），并确认 CRD 存在。</li>
+  </ul>
+  <pre><code>kubectl get crd sandboxes.agents.x-k8s.io
+kubectl get crd sandboxclaims.extensions.agents.x-k8s.io
+kubectl -n agent-sandbox-system get deploy agent-sandbox-controller</code></pre>
+
+  <h3>7.2 RuntimeClass 与安全模板</h3>
+  <pre><code>apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+handler: runsc
+overhead:
+  podFixed:
+    cpu: "250m"
+    memory: "64Mi"
+scheduling:
+  nodeSelector:
+    sandbox.runtime: gvisor
+  tolerations:
+    - key: sandbox-only
+      operator: Exists
+      effect: NoSchedule
+---
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxTemplate
+metadata:
+  name: agent-baseline
+  namespace: agents
+spec:
+  podTemplate:
+    metadata:
+      labels:
+        app: agent-sandbox
+    spec:
+      runtimeClassName: gvisor
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: runtime
+          image: registry.example.com/agent-runtime@sha256:REPLACE_ME
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: "1", memory: "2Gi", ephemeral-storage: "4Gi" }
+            limits:   { cpu: "1", memory: "2Gi", ephemeral-storage: "4Gi" }
+          ports:
+            - { name: http, containerPort: 8888 }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - { name: workspace, mountPath: /workspace }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+  volumeClaimTemplatesPolicy: Overrides
+  volumeClaimTemplates:
+    - metadata: { name: workspace }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: { storage: 5Gi }
+  networkPolicy:
+    ingress:
+      - from:
+          - namespaceSelector:
+              matchLabels: { kubernetes.io/metadata.name: gateway }
+            podSelector:
+              matchLabels: { app: sandbox-router }
+    egress:
+      - ports:
+          - { protocol: UDP, port: 53 }
+          - { protocol: TCP, port: 53 }
+      - to:
+          - ipBlock:
+              cidr: 0.0.0.0/0
+              except: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.169.254/32"]</code></pre>
+  <p class="small"><code>workspace</code> 的 PVC 模板只是示例。WarmPool 场景下 PVC 会随预热 Pod 预创建；不同存储类的挂载时间会直接影响冷启动。</p>
+
+  <h3>7.3 预热池与领取</h3>
+  <pre><code>apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxWarmPool
+metadata:
+  name: agent-pool
+  namespace: agents
+spec:
+  replicas: 20
+  updateStrategy:
+    type: Recreate
+  sandboxTemplateRef:
+    name: agent-baseline
+---
+apiVersion: extensions.agents.x-k8s.io/v1beta1
+kind: SandboxClaim
+metadata:
+  name: session-7f3c
+  namespace: agents
+spec:
+  warmPoolRef:
+    name: agent-pool
+  lifecycle:
+    shutdownPolicy: Delete
+    shutdownTime: "2026-11-01T12:00:00Z"</code></pre>
+  <div class="callout warn"><b>关键：</b>这个 Claim 一旦加上 <code>spec.env</code> 或自己的 <code>volumeClaimTemplates</code>，就会绕过 20 个热副本走冷建。需要自定义环境时，把差异固化进多个 Template / 多个池，而不是在 Claim 上临时改。</div>
+
+  <h3>7.4 控制器调优（持续高吞吐档）</h3>
+  <pre><code>args:
+  - --leader-elect=true
+  - --extensions
+  - --api-connections=4
+  - --separate-watch-connection=true
+  - --sandbox-concurrent-workers=200
+  - --sandbox-claim-concurrent-workers=150
+  - --sandbox-warm-pool-concurrent-workers=2
+  - --sandbox-warm-pool-replenish-delay=0
+  - --sandbox-warm-pool-max-refill-rate=100
+  - --cache-label-selectors=true
+  - --disable-sandbox-events=true
+  - --disable-claim-events=true
+  - --disable-claim-observability-annotations=true</code></pre>
+  <p class="small">这是官方在「持续 30–100 claims/s」场景验证的档位。突发型负载才考虑 <code>--sandbox-write-behind-window=250ms</code>；它会显著抬高持续场景的 p50。<code>--sandbox-warm-pool-replenish-delay</code> 在有过一次创建失败时会导致池子排空，非必要不开。</p>
+
+  <h3>7.5 上线检查</h3>
+  <ol>
+    <li>随机抽一个沙箱，确认 <code>runtimeClassName</code> 真的是 gVisor/Kata，而不是被模板覆盖。</li>
+    <li>从沙箱内访问 <code>169.254.169.254</code>、同命名空间其他 Pod、API Server，三者都应失败。</li>
+    <li>确认 <code>/var/run/secrets/kubernetes.io/serviceaccount</code> 不存在。</li>
+    <li>在沙箱内尝试 <code>mount</code>、<code>unshare</code>、加载内核模块，应被 seccomp/capabilities 拒绝。</li>
+    <li>压测领取：观察 p90、409、池子缺口，确认补充速率 ≥ 到达率。</li>
+    <li>杀掉一个节点，确认 PDB 与重调度不会一次清空会话。</li>
+  </ol>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="sec-no">08</span><h2>选型与结论</h2></div>
+
+  <h3>8.1 和相邻项目怎么分工</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>项目</th><th>层次</th><th>强项</th><th>你要自己补的</th></tr></thead>
+    <tbody>
+      <tr><td><b>agent-sandbox</b></td><td>沙箱编排</td><td>最小、标准、框架中立；WarmPool/Claim/快照</td><td>运行时、Agent 逻辑、网关、策略</td></tr>
+      <tr><td><b>kagent</b></td><td>Agent 控制面</td><td>Agent/Model/Tool 都是 CRD；MCP/A2A；Agent Substrate 多路复用</td><td>更细的租户隔离仍需底层运行时</td></tr>
+      <tr><td><b>E2B</b></td><td>沙箱 API / 托管运行时</td><td>Firecracker microVM；暂停恢复、fork；SDK 成熟</td><td>自建时是 Nomad/Consul 级运维</td></tr>
+      <tr><td><b>Kata / gVisor 直接上</b></td><td>运行时</td><td>成熟、可单独验证</td><td>生命周期、领取、池化、策略全要自己做</td></tr>
+      <tr><td><b>Firecracker 自建</b></td><td>IaaS 级</td><td>最强控制力与隔离</td><td>调度、网络、存储、镜像、运维团队</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>如果目标是「像 K8s 一样管 Agent」，组合通常是：<b>agent-sandbox 做沙箱编排 + gVisor/Kata 做隔离 + 上层 Agent 控制面（kagent 或自研）+ 网关做认证与出网</b>。不要指望单一项目把四层都做满。</p>
+
+  <h3>8.2 五个结论</h3>
+  <ol>
+    <li><b>编排与隔离必须分层。</b>Sandbox 不是安全边界，RuntimeClass 才是。评审时先问「runtimeClassName 是什么」。</li>
+    <li><b>默认值只覆盖一半。</b>网络默认拒绝、token 不挂载、系统标签保护是实打实的；但容器逃逸、Router 认证、凭据外泄仍要自己补。</li>
+    <li><b>瓶颈在控制面，不在节点。</b>300/s 的突发能过，70–85/s 的单池持续上限却很容易撞到；解决靠分片、限速、APF，不是加 worker。</li>
+    <li><b>利用率来自生命周期。</b>热池买延迟，快照省空闲，多路复用省 Pod。三者叠加才是「云」的成本结构。</li>
+    <li><b>不要用超卖换密度。</b>对不可信负载，Guaranteed 的稳定性比多塞几个 Pod 更值钱。</li>
+  </ol>
+
+  <h3>8.3 还没解决的事</h3>
+  <ul>
+    <li><b>没有跨厂商的 Agent spec。</b>kagent、agent-sandbox、kars 的 CRD 各成一套，迁移要重写。</li>
+    <li><b>Token 预算没有调度语义。</b>K8s 不认识「这个 Agent 这次最多花 20 万 token」，只能在外层做配额。</li>
+    <li><b>快照不通用。</b>Pod Snapshot 依赖 GKE；跨集群/跨云恢复仍是空白。</li>
+    <li><b>Router 默认不安全。</b><code>AllowAll</code> 是为了兼容性，生产必须替换；这点在文档里写了，但很容易被忽略。</li>
+    <li><b>多集群编排缺席。</b>单集群的池化已经可用，跨集群的容量调度还没有标准答案。</li>
+  </ul>
+  <div class="callout ok"><b>落地建议：</b>先用 1 个命名空间、1 个 gVisor 节点池、1 个 20 副本的 WarmPool 跑通「领取 → 执行 → 销毁」；把网络策略与准入策略当成第一天的事；等 p90 稳定在亚秒级，再谈池化与快照。</div>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="sec-no">09</span><h2>来源、口径与限制</h2></div>
+  <p>本文的事实性内容主要来自以下公开材料，访问日期均为 2026-10-31：</p>
+  <ul class="src">
+    <li><a href="https://github.com/kubernetes-sigs/agent-sandbox" target="_blank" rel="noopener noreferrer">kubernetes-sigs/agent-sandbox</a>：README、架构、CRD 语义、限制（Apache-2.0）。</li>
+    <li><a href="https://agent-sandbox.sigs.k8s.io/" target="_blank" rel="noopener noreferrer">agent-sandbox 官方文档</a>：Sandbox、Snapshots、Metrics、Runtime Templates（文档 CC BY 4.0）。</li>
+    <li><a href="https://github.com/kubernetes-sigs/agent-sandbox/blob/main/docs/security/threat_model.md" target="_blank" rel="noopener noreferrer">Threat Model</a>：信任边界、威胁与控制、系统标签保护、Router SSRF 说明。</li>
+    <li><a href="https://github.com/kubernetes-sigs/agent-sandbox/blob/main/docs/performance-tuning.md" target="_blank" rel="noopener noreferrer">Performance Tuning</a>：benchmark 条件、突发热采用、持续补充上限、worker/限速/写合并数据。</li>
+    <li><a href="https://github.com/kubernetes-sigs/agent-sandbox/blob/main/docs/configuration.md" target="_blank" rel="noopener noreferrer">Configuration</a>：控制器 flag 默认值与语义。</li>
+    <li><a href="https://kubernetes.io/blog/2026/03/20/running-agents-on-kubernetes-with-agent-sandbox/" target="_blank" rel="noopener noreferrer">Kubernetes Blog: Running Agents on Kubernetes with Agent Sandbox</a>（2026-03-20）。</li>
+    <li><a href="https://www.kagent.dev/" target="_blank" rel="noopener noreferrer">kagent</a> 与 <a href="https://kagent.dev/docs/kagent/0.x/concepts/agent-substrate/" target="_blank" rel="noopener noreferrer">Agent Substrate</a>：WorkerPool/Actor、快照复用、gVisor/microVM 沙箱类。</li>
+    <li><a href="https://e2b.dev/open-source" target="_blank" rel="noopener noreferrer">E2B Open Source</a>：Firecracker、Embed 自托管方式与许可。</li>
+  </ul>
+
+  <h3>口径</h3>
+  <ul>
+    <li><span class="tag fact">事实</span> 标记的内容可在上述材料中直接找到对应表述；具体数字均带测试条件，未做二次外推。</li>
+    <li><span class="tag infer">推断</span> 标记的是基于架构与约束的判断（例如「GPU 场景 gVisor 往往不是首选」），不是项目承诺。</li>
+    <li>所有延迟/吞吐数字来自特定集群与版本（GKE/kops，K8s 1.35–1.36，agent-sandbox v1.x 文档期）。你的 CNI、存储、镜像大小、RuntimeClass 都会改变结果。</li>
+    <li>本文不是安全认证，也不构成「按此配置即可抵御某类攻击」的保证。隔离强度需要在你自己的威胁模型下做渗透验证。</li>
+  </ul>
+
+  <h3>可复现的最小验证</h3>
+  <pre><code># 1. 安装（版本按 release 固定）
+export VERSION=v1.0.8
+kubectl apply -f https://github.com/kubernetes-sigs/agent-sandbox/releases/download/${VERSION}/sandbox-with-extensions.yaml
+
+# 2. 确认控制器与 CRD
+kubectl -n agent-sandbox-system get deploy,pod
+kubectl get crd | grep agents.x-k8s.io
+
+# 3. 应用模板 / 池 / 领取
+kubectl apply -f template.yaml -f warmpool.yaml
+kubectl apply -f claim.yaml
+
+# 4. 观察
+kubectl get sandbox,sandboxclaim,sandboxwarmpool -n agents -w
+kubectl get events -n agents --sort-by=.lastTimestamp | tail -20</code></pre>
+  <p class="small">文档会随项目快速变化；以你锁定版本的 release 与 <code>kubectl explain</code> 为准。本文只覆盖单集群、单控制面的形态，多集群与跨云调度不在范围内。</p>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  var progress = document.getElementById("progress");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  tocLinks.forEach(function(a){ linkById[a.getAttribute("href").slice(1)] = a; });
+  var ticking = false;
+
+  function onScroll(){
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (max > 0 ? Math.min(100, Math.max(0, (y / max) * 100)) : 0) + "%";
+
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++){
+      if (sections[i].getBoundingClientRect().top <= 170) current = sections[i];
+    }
+    tocLinks.forEach(function(a){ a.removeAttribute("aria-current"); });
+    if (current && linkById[current.id]) linkById[current.id].setAttribute("aria-current", "true");
+    ticking = false;
+  }
+  function requestScroll(){
+    if (!ticking){ ticking = true; window.requestAnimationFrame(onScroll); }
+  }
+  window.addEventListener("scroll", requestScroll, { passive: true });
+  window.addEventListener("resize", requestScroll);
+  onScroll();
+
+  var list = document.getElementById("threat-list");
+  var items = Array.prototype.slice.call(list.querySelectorAll(".threat"));
+  var buttons = Array.prototype.slice.call(document.querySelectorAll(".fbtn"));
+  var count = document.getElementById("threat-count");
+  var empty = document.getElementById("threat-empty");
+
+  function applyFilter(filter){
+    var visible = 0;
+    items.forEach(function(li){
+      var show = filter === "all" || li.getAttribute("data-cat") === filter;
+      li.hidden = !show;
+      if (show) visible++;
+    });
+    buttons.forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-filter") === filter));
+    });
+    count.textContent = "显示 " + visible + " / " + items.length;
+    empty.hidden = visible !== 0;
+  }
+  buttons.forEach(function(b){
+    b.addEventListener("click", function(){ applyFilter(b.getAttribute("data-filter")); });
+  });
+  var resetBtn = document.getElementById("threat-reset");
+  if (resetBtn) resetBtn.addEventListener("click", function(){ applyFilter("all"); });
+  applyFilter("all");
+
+  var defaults = {
+    "c-rate": 2,
+    "c-life": 300,
+    "c-cold": 45,
+    "c-safety": 1.3,
+    "c-cpu": 1,
+    "c-mem": 2,
+    "c-cpu-alloc": 30,
+    "c-mem-alloc": 110,
+    "c-price": 0.4
+  };
+
+  function readNum(id, fallback){
+    var el = document.getElementById(id);
+    if (!el) return fallback;
+    var v = parseFloat(el.value);
+    if (!Number.isFinite(v) || v <= 0) return fallback;
+    return v;
+  }
+  function fmtCount(n){
+    if (n >= 1000) return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Math.round(n));
+    return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 }).format(n);
+  }
+  function fmtMoney(n){
+    return "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n));
+  }
+  function put(id, text){
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function calculate(){
+    var rate = readNum("c-rate", defaults["c-rate"]);
+    var life = readNum("c-life", defaults["c-life"]);
+    var cold = readNum("c-cold", defaults["c-cold"]);
+    var safety = Math.max(1, readNum("c-safety", defaults["c-safety"]));
+    var cpu = readNum("c-cpu", defaults["c-cpu"]);
+    var mem = readNum("c-mem", defaults["c-mem"]);
+    var cpuAlloc = readNum("c-cpu-alloc", defaults["c-cpu-alloc"]);
+    var memAlloc = readNum("c-mem-alloc", defaults["c-mem-alloc"]);
+    var price = readNum("c-price", defaults["c-price"]);
+
+    var concurrent = rate * life;
+    var pool = Math.max(1, Math.ceil((concurrent + rate * cold) * safety));
+    var nodes = Math.max(
+      1,
+      Math.ceil((pool * cpu) / cpuAlloc),
+      Math.ceil((pool * mem) / memAlloc)
+    );
+    var util = Math.min(1, concurrent / pool);
+    var monthlyCost = nodes * price * 730;
+    var monthlyClaims = rate * 86400 * 30;
+    var perK = monthlyClaims > 0 ? (monthlyCost / (monthlyClaims / 1000)) : 0;
+
+    put("o-conc", fmtCount(concurrent));
+    put("o-pool", fmtCount(pool));
+    put("o-nodes", fmtCount(nodes));
+    put("o-util", (util * 100).toFixed(0) + "%");
+    put("o-cost", fmtMoney(monthlyCost));
+    put("o-unit", monthlyCost > 0 ? ("$" + perK.toFixed(2)) : "—");
+  }
+
+  Object.keys(defaults).forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", calculate);
+    el.addEventListener("change", calculate);
+  });
+  var runBtn = document.getElementById("calc-run");
+  if (runBtn) runBtn.addEventListener("click", calculate);
+  var resetCalc = document.getElementById("calc-reset");
+  if (resetCalc){
+    resetCalc.addEventListener("click", function(){
+      Object.keys(defaults).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.value = String(defaults[id]);
+      });
+      calculate();
+    });
+  }
+  calculate();
+})();
+</script>
+
+</main>
+</div>
+</body>
+</html>

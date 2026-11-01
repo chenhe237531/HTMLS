@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Prompt Engineering Guide 使用指南 · 仓库结构、学习路线与本地运行</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+
+<style>
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 230px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:10px 0 16px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<style>
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s}
+.proj:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.proj-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.proj .pname{font-size:16px;font-weight:650;line-height:1.35}
+.proj .psub{font-size:12px;color:var(--muted);margin-top:1px}
+.ptype{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono);color:var(--muted);background:var(--paper)}
+.ptype.token{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.ptype.none{color:var(--muted)}
+.proj .pdesc{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.65}
+.rows{display:grid;gap:6px;font-size:12.6px;line-height:1.55}
+.rows .r{display:grid;grid-template-columns:54px 1fr;gap:8px}
+.rows .k{color:var(--muted);font-size:11.5px;padding-top:1px}
+.rows .v{color:var(--ink-2)}
+.proj-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.proj-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
+.tag2{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap}
+.tag2.yes{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+</style>
+<style>.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:760px){.split{grid-template-columns:1fr}}</style>
+</head>
+<style>
+.tree{font-family:var(--mono);font-size:12.6px;line-height:1.85;color:var(--code-ink)}
+.tree .c{color:#8b9aac}
+.path{display:grid;gap:10px}
+.week{display:grid;grid-template-columns:64px 1fr;gap:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px 14px}
+.week .w{font-family:var(--serif);font-size:20px;color:var(--amber);line-height:1.2}
+.week b{display:block;font-size:13.8px}
+.week p{margin:2px 0 0;font-size:12.8px;color:var(--ink-2)}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checks li{display:flex;gap:10px;align-items:flex-start;font-size:13.8px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checks input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">PEG 使用指南</div>
+      <div class="brand-sub">dair-ai · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>它是什么</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>仓库结构</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>三种用法</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>学习路线</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>内容地图</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>本地运行</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>自己写提示词</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>贡献与翻译</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>局限</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    79.7k stars · MIT<br>
+    2022 至今 · 13 种翻译<br>
+    在线读 / 本地跑 / 借用
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Repository Guide<span class="dot"></span>2026-10-31</p>
+    <h1>Prompt Engineering <em>Guide</em></h1>
+    <p class="lede">dair-ai 的开源提示工程指南：从 LLM 设置、基础提示，到 CoT、RAG、ReAct、Agent 与安全。它是「教材 + 论文索引 + 可运行笔记」，不是一个提示词库。</p>
+    <div class="meta-row">
+      <span class="pill">仓库 <b>dair-ai/Prompt-Engineering-Guide</b></span>
+      <span class="pill">许可 <b>MIT</b></span>
+      <span class="pill">官网 <b>promptingguide.ai</b></span>
+      <span class="pill">技术栈 <b>Next.js + Nextra + MDX</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">79.7k<span>★</span></div><div class="l">Stars（2026-10 核对）</div></div>
+      <div class="kpi"><div class="n">8.7k<span>+</span></div><div class="l">Forks</div></div>
+      <div class="kpi"><div class="n">13<span>种</span></div><div class="l">翻译版本（另有英文）</div></div>
+      <div class="kpi"><div class="n">2022<span>年</span></div><div class="l">创建，持续更新</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">它是什么</h2></div>
+    <p class="lead-in">一句话：<strong>一份系统性的提示工程学习资料库</strong>。它把概念、技巧、论文、示例、Notebook 和模型说明组织成一本可在线阅读、也可本地运行的书。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">适合谁</h4><p class="small" style="margin:0">想系统学习提示工程的人；需要查技巧出处与论文的开发者；想给团队做培训的人。</p></div>
+      <div class="card"><h4 style="margin-top:0">不是什么</h4><p class="small" style="margin:0">不是「1000 条万能提示词」合集，也不是可直接调用的 SDK 或评测框架。</p></div>
+      <div class="card"><h4 style="margin-top:0">怎么用最值</h4><p class="small" style="margin:0">按路线读概念 → 跑 Notebook → 选一个技巧用在自己的任务上 → 做评测。</p></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>项目</th><th>信息</th></tr></thead>
+        <tbody>
+          <tr><td>仓库</td><td><code>dair-ai/Prompt-Engineering-Guide</code></td></tr>
+          <tr><td>官网</td><td><a href="https://www.promptingguide.ai/" target="_blank" rel="noopener noreferrer">promptingguide.ai</a>（在线阅读，更新通常更快）</td></tr>
+          <tr><td>许可</td><td>MIT，可用于商用与二次分发（保留版权与许可声明）</td></tr>
+          <tr><td>创建 / 更新</td><td>2022-12 创建；代码推送与内容更新以仓库为准</td></tr>
+          <tr><td>技术栈</td><td>MDX 内容 + Next.js + Nextra；内容主要在 <code>pages/</code></td></tr>
+          <tr><td>附带资源</td><td>1 小时讲座、Jupyter Notebook、幻灯片、论文索引、工具与数据集列表</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">先读官网，再读仓库</span>
+      官网是面向读者的版本，仓库是源文件与翻译协作的版本。两者内容大体一致，但官网通常更新更及时；想本地跑、想改内容或做翻译时再进仓库。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">仓库结构</h2></div>
+    <p>看懂目录，就知道该去哪里找内容、去哪里改。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">dair-ai/Prompt-Engineering-Guide</span><button class="copy" type="button">复制</button></div>
+      <pre class="tree">Prompt-Engineering-Guide/
+├── pages/                 <span class="c"># 主要内容（MDX），按主题分目录</span>
+│   ├── introduction.en.mdx
+│   ├── techniques/        <span class="c"># zero-shot / few-shot / CoT / RAG / ReAct …</span>
+│   ├── applications/      <span class="c"># function calling / RAG / coding …</span>
+│   ├── prompts/           <span class="c"># Prompt Hub：按任务分类的示例</span>
+│   ├── models/            <span class="c"># GPT / Gemini / LLaMA / Mistral …</span>
+│   ├── risks/             <span class="c"># 对抗、事实性、偏见</span>
+│   ├── agents/            <span class="c"># Agent 相关内容</span>
+│   ├── papers/            <span class="c"># 论文索引</span>
+│   └── _meta.*.json       <span class="c"># 各语言的导航配置</span>
+├── notebooks/             <span class="c"># 可运行笔记（含 pe-lecture.ipynb）</span>
+├── lecture/               <span class="c"># 讲座幻灯片 PDF</span>
+├── guides/                <span class="c"># 补充指南</span>
+├── components/            <span class="c"># 站点组件</span>
+├── public/                <span class="c"># 静态资源</span>
+├── infographic-review.html
+├── package.json           <span class="c"># pnpm / next / nextra 依赖</span>
+└── README.md</pre>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">为什么是 MDX</h4>
+        <p class="small" style="margin:0">每篇文章是 Markdown + 可嵌入组件。你既能像读文档一样读，也能在页面里放提示示例、表格和交互组件。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">多语言怎么组织</h4>
+        <p class="small" style="margin:0">同一主题有 <code>*.zh.mdx</code>、<code>*.fr.mdx</code> 等版本；<code>_meta.zh.json</code> 控制中文导航。翻译就是改这些文件。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="t">找内容的捷径</span>
+      想查技巧 → <code>pages/techniques/</code>；想找示例 → <code>pages/prompts/</code>；想看来龙去脉 → <code>pages/papers/</code>；想跑代码 → <code>notebooks/</code>。
+    </div>
+  </section>
+
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">三种用法</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>方式</th><th>适合</th><th>怎么做</th><th>代价</th></tr></thead>
+        <tbody>
+          <tr><td><b>在线读</b></td><td>学习、查资料</td><td>打开 promptingguide.ai，按左侧导航读</td><td>需要网络；内容更新以官网为准</td></tr>
+          <tr><td><b>本地跑</b></td><td>离线阅读、改内容、做翻译</td><td>clone → 安装依赖 → <code>pnpm dev</code></td><td>需要 Node 与 pnpm，首次安装较慢</td></tr>
+          <tr><td><b>只读源码</b></td><td>找原始 MDX、论文链接、示例</td><td>在 GitHub 直接浏览 <code>pages/</code></td><td>没有站点导航，长文阅读体验一般</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>大多数人只需要「在线读 + 偶尔看源码」。只有当你需要离线、批量改写、做翻译或给团队部署内部镜像时，才值得本地运行。</p>
+  </section>
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">学习路线</h2></div>
+    <p class="lead-in">不要从「技巧大全」开始读。先建立基础词汇，再挑一个技巧动手，最后补风险与论文。</p>
+
+    <h3>30 分钟快速路径</h3>
+    <ol>
+      <li>读 Introduction 的 Settings、Basics、Elements、Tips 四页。</li>
+      <li>读 Zero-Shot 与 Few-Shot，理解「示例」的作用。</li>
+      <li>在 Prompt Hub 找两个与你任务相近的例子，改写一次。</li>
+      <li>停止。不要继续刷技巧，先去用。</li>
+    </ol>
+
+    <h3>四周系统路径</h3>
+    <div class="path">
+      <div class="week"><div class="w">W1</div><div><b>基础与写法</b><p>Introduction（设置、基础、要素、技巧）→ Zero-Shot / Few-Shot → 示例页。产出：为你自己的任务写 10 条提示词，并记录失败案例。</p></div></div>
+      <div class="week"><div class="w">W2</div><div><b>推理与分解</b><p>Chain-of-Thought → Self-Consistency → Prompt Chaining → Tree of Thoughts → ReAct。产出：选一个技巧，在同一批 10 个样本上与基线对比。</p></div></div>
+      <div class="week"><div class="w">W3</div><div><b>应用与工具</b><p>Function Calling → RAG → 生成数据 / 代码 → Prompt Hub。产出：一个端到端小应用，至少包含检索或工具调用。</p></div></div>
+      <div class="week"><div class="w">W4</div><div><b>风险与论文</b><p>Adversarial、Factuality、Biases → Papers 选读 → 建立自己的评测集。产出：评分 rubric + 10 条红队用例。</p></div></div>
+    </div>
+
+    <div class="callout">
+      <span class="t">每周只做一件事</span>
+      读完技巧不等于会用。每周留一个可验收的产出，比刷完 17 个技巧更有价值。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">内容地图</h2></div>
+    <p>按「你现在要解决什么」选章节，而不是从第一页读到最后一页。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>章节</th><th>包含</th><th>什么时候读</th></tr></thead>
+        <tbody>
+          <tr><td><b>Introduction</b></td><td>LLM 设置、提示基础、要素、通用技巧、示例</td><td>刚开始，或提示总是「不稳定」时</td></tr>
+          <tr><td><b>Techniques</b></td><td>Zero/Few-Shot、CoT、Self-Consistency、Chaining、ToT、RAG、ART、APE、ReAct、多模态 CoT、Graph Prompting</td><td>需要提升推理、检索或工具使用能力时</td></tr>
+          <tr><td><b>Applications</b></td><td>Function Calling、生成数据、合成 RAG 数据集、生成代码、岗位分类案例</td><td>要把提示接进真实产品时</td></tr>
+          <tr><td><b>Prompt Hub</b></td><td>分类、编程、创意、评估、信息抽取、数学、问答、推理、摘要、真实性、对抗</td><td>需要现成示例与写法参考时</td></tr>
+          <tr><td><b>Models</b></td><td>ChatGPT、GPT-4、Gemini、LLaMA、Mistral、Mixtral、Phi-2、OLMo 等</td><td>换模型、做兼容或选型时</td></tr>
+          <tr><td><b>Risks</b></td><td>对抗提示、事实性、偏见</td><td>上线前、处理用户输入时</td></tr>
+          <tr><td><b>Papers</b></td><td>综述、方法、应用、合集</td><td>要追源头、写报告或做研究时</td></tr>
+          <tr><td><b>Tools / Notebooks / Datasets</b></td><td>工具列表、可运行笔记、数据集</td><td>要动手实验时</td></tr>
+          <tr><td><b>Agents</b></td><td>Agent 相关章节与资源</td><td>从单次提示走向多步任务时</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">注意「技巧」的适用边界</span>
+      CoT、ToT、Self-Consistency 在推理题上有效，不代表在所有任务上都更好；它们会增加 token 与延迟。先测，再决定。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">本地运行</h2></div>
+    <p>仓库是一个 Next.js + Nextra 站点。本地跑起来只需要 Node 与 pnpm。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">终端</span><button class="copy" type="button">复制</button></div>
+      <pre><code>git clone https://github.com/dair-ai/Prompt-Engineering-Guide.git
+cd Prompt-Engineering-Guide
+
+node -v          # 需要 >= 18
+pnpm -v          # 没有就先装 pnpm
+
+pnpm install
+pnpm dev
+
+# 打开 http://localhost:3000/</code></pre>
+    </div>
+
+    <p class="small">README 里也给出了显式安装命令：<code>pnpm i next react react-dom nextra nextra-theme-docs</code>。如果 <code>pnpm install</code> 因锁文件或版本报错，可以按 README 的命令重试。</p>
+
+    <h3>常见问题</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>现象</th><th>原因</th><th>处理</th></tr></thead>
+        <tbody>
+          <tr><td><code>pnpm: command not found</code></td><td>未安装 pnpm</td><td><code>corepack enable</code> 或 <code>npm i -g pnpm</code></td></tr>
+          <tr><td>安装时报 Node 版本错误</td><td>Node &lt; 18</td><td>升级 Node（建议 LTS）</td></tr>
+          <tr><td>端口 3000 被占用</td><td>已有服务</td><td>停掉旧进程，或改端口启动</td></tr>
+          <tr><td>页面 404 / 导航缺失</td><td>内容或 <code>_meta</code> 文件未生效</td><td>重启 <code>pnpm dev</code>；确认改的是对应语言文件</td></tr>
+          <tr><td>依赖安装很慢</td><td>网络</td><td>配置 npm/pnpm 镜像后重试</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>跑 Notebook</h3>
+    <p>仓库的 <code>notebooks/</code> 里有配套代码，包括讲座用的 <code>pe-lecture.ipynb</code>。用 Jupyter 打开前先准备模型 API Key，并注意不要把 Key 提交回仓库。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">Notebook</span><button class="copy" type="button">复制</button></div>
+      <pre><code>pip install jupyter
+jupyter notebook notebooks/pe-lecture.ipynb</code></pre>
+    </div>
+  </section>
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">把指南用在自己的任务上</h2></div>
+    <p class="lead-in">阅读的终点不是「知道 CoT」，而是「知道什么时候该用、怎么验证它真的更好」。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>你的任务</th><th>先读</th><th>可试技巧</th><th>验收</th></tr></thead>
+        <tbody>
+          <tr><td>分类 / 打标</td><td>Prompt Hub → Classification</td><td>Few-Shot + 明确标签集</td><td>混淆矩阵与误判样本</td></tr>
+          <tr><td>信息抽取</td><td>Applications → Function Calling</td><td>结构化输出 + 校验重试</td><td>字段完整率与准确率</td></tr>
+          <tr><td>知识问答</td><td>Techniques → RAG</td><td>检索 + 引用 + 拒答</td><td>引用正确率与幻觉率</td></tr>
+          <tr><td>数学 / 推理</td><td>Techniques → CoT / Self-Consistency / ToT</td><td>分步推理 + 多次采样</td><td>准确率 vs token 成本</td></tr>
+          <tr><td>工具 / 多步任务</td><td>Techniques → ReAct；Agents</td><td>思考-行动-观察循环</td><td>任务成功率与越权率</td></tr>
+          <tr><td>内容创作</td><td>Prompt Hub → Creativity</td><td>约束 + 多版本 + 选优</td><td>人工评分 rubric</td></tr>
+          <tr><td>上线前安全</td><td>Risks → Adversarial / Factuality</td><td>红队用例 + 拒答策略</td><td>攻击成功率</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>一个改写示例：从 CoT 页到自己的提示词</h3>
+    <div class="code">
+      <div class="code-head"><span class="file">基于 Chain-of-Thought 改写的任务模板</span><button class="copy" type="button">复制</button></div>
+      <pre><code>你是一位严谨的问题解决者。
+
+问题：{{问题}}
+约束：{{时限 / 可用工具 / 不允许的做法}}
+
+请按步骤处理：
+1. 用自己的话复述问题与约束，标出不确定的地方。
+2. 列出已知条件、未知条件与可能需要的假设。
+3. 给出 2–3 种解法，比较成本与风险。
+4. 选择一种，写出完整推理过程。
+5. 只输出：最终答案、关键步骤摘要、仍需确认的假设。
+
+如果信息不足，先提问，不要编造。</code></pre>
+    </div>
+    <p class="small">这不是「官方模板」。它把 CoT 的思路（显式推理 + 多解比较）和工程约束（成本、假设、拒答）合在一起；使用前用你自己的 10–20 个样本测试。</p>
+
+    <div class="callout warn">
+      <span class="t">不要直接复制指南里的示例</span>
+      指南里的示例通常为了演示技巧而简化。真实任务需要补充：数据边界、输出格式、失败处理、权限与成本限制。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">贡献与翻译</h2></div>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">可以贡献什么</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>修正错别字、失效链接与过时描述</li>
+          <li>补充新的技巧、论文或应用案例</li>
+          <li>翻译：仓库支持 13 种语言，按 <code>*.zh.mdx</code> 等命名</li>
+          <li>改进 Notebook 与示例代码</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">提 PR 的注意点</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>先开 issue 说明动机，避免大改被拒</li>
+          <li>保持与现有 MDX 结构和导航文件一致</li>
+          <li>只改对应语言文件，别动其他翻译</li>
+          <li>代码与命令要能复现；不要提交密钥</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>引用</h3>
+    <div class="code">
+      <div class="code-head"><span class="file">BibTeX</span><button class="copy" type="button">复制</button></div>
+      <pre><code>@article{Saravia_Prompt_Engineering_Guide_2022,
+  author = {Saravia, Elvis},
+  journal = {https://github.com/dair-ai/Prompt-Engineering-Guide},
+  month = {12},
+  title = {{Prompt Engineering Guide}},
+  year = {2022}
+}</code></pre>
+    </div>
+
+    <div class="callout">
+      <span class="t">许可</span>
+      MIT。用于课程、内部培训或二次分发时，保留版权与许可声明；如果要大量复制内容进商业产品，先读一遍 LICENSE。
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">局限与注意</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>局限</th><th>说明</th><th>应对</th></tr></thead>
+        <tbody>
+          <tr><td>内容有「年代感」</td><td>部分模型页与示例写于早期模型时代</td><td>以官网最新页与当前模型文档为准</td></tr>
+          <tr><td>技巧不等于收益</td><td>CoT / ToT 等会增加 token 与延迟</td><td>用同一批任务做 A/B，算单位成本</td></tr>
+          <tr><td>示例偏简化</td><td>演示用提示词缺少生产约束</td><td>补边界、格式、权限、失败处理</td></tr>
+          <tr><td>不是提示词库</td><td>Prompt Hub 是示例，不是生产模板</td><td>把它当参考，不是复制粘贴的来源</td></tr>
+          <tr><td>安全内容有限</td><td>对抗与注入的攻防在快速变化</td><td>结合 OWASP LLM Top 10 等资料</td></tr>
+          <tr><td>仓库与官网可能不同步</td><td>官网通常更新更快</td><td>先读官网，再回仓库看源文件</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">不要把「提示工程」当万能药</span>
+      很多问题不是提示词能解决的：知识缺失要靠检索，权限问题要靠系统设计，稳定性要靠评测与工程约束。提示词只是其中一层。
+    </div>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">来源</h2></div>
+    <ul class="small">
+      <li><a href="https://github.com/dair-ai/Prompt-Engineering-Guide" target="_blank" rel="noopener noreferrer">GitHub 仓库</a> · <a href="https://raw.githubusercontent.com/dair-ai/Prompt-Engineering-Guide/main/README.md" target="_blank" rel="noopener noreferrer">README</a> · <a href="https://github.com/dair-ai/Prompt-Engineering-Guide/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer">LICENSE</a></li>
+      <li><a href="https://www.promptingguide.ai/" target="_blank" rel="noopener noreferrer">Prompt Engineering Guide 官网</a></li>
+      <li><a href="https://github.com/dair-ai/Prompt-Engineering-Guide/tree/main/pages" target="_blank" rel="noopener noreferrer">pages/ 目录</a> · <a href="https://github.com/dair-ai/Prompt-Engineering-Guide/tree/main/notebooks" target="_blank" rel="noopener noreferrer">notebooks/</a> · <a href="https://github.com/dair-ai/Prompt-Engineering-Guide/tree/main/lecture" target="_blank" rel="noopener noreferrer">lecture/</a></li>
+      <li><a href="https://youtu.be/dOxUroR57xs" target="_blank" rel="noopener noreferrer">1 小时讲座视频</a></li>
+      <li>仓库统计（stars / forks / license）读取于 2026-10-31；数值会变。</li>
+    </ul>
+    <div class="callout">
+      <span class="t">一句话总结</span>
+      把它当教材与索引，不要当模板库；按路线读、动手跑、用评测收尾。
+    </div>
+  </section>
+
+  <footer>
+    <span>Prompt Engineering Guide 使用指南 · 2026-10-31</span>
+    <span>先读官网，再跑本地，最后用自己的任务验收</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

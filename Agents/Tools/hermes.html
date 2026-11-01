@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="本地优先的通用 agent：CLI/TUI、消息网关、持久记忆、技能、定时任务和沙箱在一个运行时里。">
+<title>Hermes Agent · Agent 工具调研</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
+  --muted:#6d7078;--line:#e1dbcf;--line-2:#cfc7b8;--accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;--green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;--code:#171a20;--code-ink:#ece8de;--code-line:#2b3039;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --radius:14px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+    --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+    --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+    --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+  --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+  --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+  --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:0}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:var(--paper);background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px clamp(18px,4vw,40px);display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--amber);margin:0 4px}
+.topnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topnav a,.topnav button{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:5px 9px;text-decoration:none;cursor:pointer}
+.topnav a:hover,.topnav button:hover{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.topnav button:focus-visible,.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero{padding:clamp(34px,6vw,70px) 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.06;letter-spacing:-.02em;margin:0 0 16px}
+.lede{max-width:52em;margin:0 0 22px;font-size:clamp(17px,2vw,19px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.v-card.yes h2{color:var(--green)}.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,54px);align-items:start;padding:34px 0 70px}
+.toc{position:sticky;top:74px;font-size:13px;min-width:0}
+.layout>*{min-width:0}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);min-width:0}
+.toc a{display:block;padding:4px 0 4px 12px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.6}
+article{min-width:0}
+.sec{margin:0 0 56px;scroll-margin-top:96px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:9px;margin-bottom:20px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,29px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 14px}
+.fact-list{margin:0;padding-left:20px}
+.fact-list li{margin:7px 0;color:var(--ink-2)}
+.ref{font-family:var(--mono);font-size:10.5px;color:var(--amber);vertical-align:super;margin-left:2px;text-decoration:none}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 18px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cap{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 15px}
+.cap h3{font-size:14px}
+.cap p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.steps{margin:0;padding-left:22px}
+.steps li{margin:0 0 12px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.cmd{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:var(--surface)}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cmd-head button{font:inherit;font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:7px;padding:3px 9px;cursor:pointer}
+.cmd-head button:hover{color:var(--ink);border-color:var(--accent)}
+.cmd pre{margin:0;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.cmd-note{margin:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:15px 17px}
+.panel h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.list.pos li::marker{color:var(--green)}
+.list.neg li::marker{color:var(--red)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+.note b{color:var(--ink)}
+.sources{margin:0;padding-left:22px;font-size:13.5px;color:var(--ink-2)}
+.sources li{margin:0 0 9px}
+.sources a{word-break:break-word}
+.sources .src-note{display:block;color:var(--muted);font-size:12px}
+
+.calc{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 14px;box-shadow:var(--shadow)}
+.calc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.calc-out{margin-top:11px;padding:11px 13px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper-2);font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-line;color:var(--ink-2)}
+.calc-out[data-state="ok"]{border-color:var(--green);background:var(--green-soft)}
+.calc-out[data-state="bad"]{border-color:var(--red);background:var(--red-soft)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checklist li{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--ink-2)}
+.checklist label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:3px;accent-color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.use{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.use code{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all}
+p code,li code,td code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.use p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.eco-group{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.eco-group h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-list{list-style:none;margin:0;padding:0}
+.eco-list li{padding:8px 0;border-top:1px solid var(--line)}
+.eco-list li:first-child{border-top:0;padding-top:0}
+.eco-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.eco-head a,.eco-head b{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.eco-head a:hover{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--muted)}
+.badge.official{color:var(--green);border-color:var(--green)}
+.badge.community{color:var(--accent);border-color:var(--accent)}
+.badge.thirdparty{color:var(--amber);border-color:var(--amber)}
+.eco-list p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-list code{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px;font-size:13.5px}
+.pager a{text-decoration:none}
+/* index */
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;min-width:210px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.filters button{font:inherit;font-size:13px;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--ink-2)}
+.filters button:hover{border-color:var(--accent);color:var(--ink)}
+#count{font-size:12.5px;color:var(--muted);margin-left:auto;padding-bottom:9px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.tool-card .card-top{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-card .lic{color:var(--amber)}
+.tool-card h3{font-family:var(--serif);font-size:24px;line-height:1.2;margin:8px 0 2px}
+.tool-card h3 a{color:var(--ink);text-decoration:none}
+.tool-card h3 a:hover{color:var(--accent)}
+.tool-card .en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 8px}
+.tool-card .desc{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:0 0 10px}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12px}
+.mini dt{color:var(--muted)}
+.mini dd{margin:0;color:var(--ink-2)}
+.card-verdict{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:12px;color:var(--muted)}
+.card-foot a{text-decoration:none;font-weight:600}
+.empty{border:1px dashed var(--line-2);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.matrix td:first-child{white-space:nowrap}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scenario{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.scenario h3{font-size:14px;color:var(--accent)}
+.scenario p{margin:0;font-size:13.5px;color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){
+  .filters{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .filters input,.filters select{width:100%;min-width:0}
+  #count{margin-left:0;padding-bottom:0}
+  .topnav{width:100%;justify-content:flex-start}
+  .hero{padding-top:28px}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .toc{position:static;order:-1}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;border-left:0;padding-bottom:4px}
+  .toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .toc-note{display:none}
+  .verdict,.two,.scenarios,.cmd-grid,.eco-grid,.checklist{grid-template-columns:1fr}
+  #count{margin-left:0;padding-bottom:0}
+}
+@media print{
+  .topbar,.toc,.pager,.filters,.cmd-head button,[data-theme-toggle],[data-print]{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .layout{display:block}
+  .tool-card,.panel,.callout,.cmd{box-shadow:none}
+  a{color:#000;text-decoration:underline}
+  .sec{break-inside:avoid}
+  .calc,.checklist li{break-inside:avoid}
+  table{min-width:0}
+  .table-wrap{overflow:visible;border:0}
+  .tool-grid{display:block}
+  .tool-card{margin-bottom:10px}
+}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="topbar-in">
+<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<nav class="topnav" aria-label="站内导航">
+<a href="./index.html">工具索引</a>
+<a href="../agents-hub/index.html">Agent 全景</a>
+<button type="button" data-print>打印</button>
+<button type="button" data-theme-toggle aria-pressed="false">深色</button>
+</nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>通用个人 Agent / 网关</span></p>
+<h1>Hermes Agent</h1>
+<p class="lede">本地优先的通用 agent：CLI/TUI、消息网关、持久记忆、技能、定时任务和沙箱在一个运行时里。</p>
+<div class="pills"><span class="pill"><b>类型</b>通用个人 Agent / 网关</span><span class="pill"><b>界面</b>CLI / TUI / 桌面 / 消息平台 / ACP IDE</span><span class="pill"><b>许可证</b>MIT</span><span class="pill"><b>最新</b>v0.22.5 · 2026-10-23</span><span class="pill"><b>调研</b>2026-10-31</span></div>
+<div class="verdict">
+<div class="v-card yes"><h2>适合</h2><ul><li>想要跨平台、有记忆的常驻个人/团队助手</li><li>需要 cron、子 agent、消息网关与多 provider 路由</li><li>接受较大安装体积，换取自动化和本地数据</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>只做仓库内编码、追求最小依赖的人</li><li>不愿维护网关与权限配置的人</li><li>期待零配置强沙箱的人</li></ul></div>
+</div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#derivatives">10 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">11 社区与玩友生态</a></li><li><a href="#sources">12 来源与口径</a></li></ol>
+<div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
+<article>
+<section id="what" class="sec">
+<div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
+<div class="callout"><p><b>一句话：</b>Hermes 想当“一直在的助手”：你在终端或 Telegram 找它，它记得你、会加载技能、能定时干活，也能派子 agent。</p></div><p>Hermes Agent 由 Nous Research 开发。它不是只面向仓库的编码 agent，而是把对话、工具、记忆、技能、消息网关和自动化放进同一个本地运行时；代码任务只是其中一类。</p><ul class="fact-list"><li>MIT；v0.22.5（2026-10-23）；GitHub 259,218 stars。<span class="ref">[6]</span></li><li>可接 Telegram、Discord、Slack、WhatsApp、Signal、Email 等；一个网关服务多平台/多用户。<span class="ref">[3]</span></li><li>记忆分 MEMORY.md 与 USER.md；技能是按需加载的 SKILL.md；兼容 agentskills.io 标准。<span class="ref">[2][5]</span></li><li>支持 cron、delegate_task 子 agent、execute_code、event hooks、MCP、ACP IDE 集成。<span class="ref">[2]</span></li><li>沙箱后端包括 local、Docker、SSH、Singularity、Modal；官方称容器加固与命名空间隔离。<span class="ref">[1]</span></li><li>官方 FAQ 称不收集 telemetry，对话/记忆/技能存本地 <code>~/.hermes/</code>；任何 OpenAI-compatible provider 可用。<span class="ref">[4]</span></li><li>安装脚本会管理 Python 3.14、Node、ripgrep、FFmpeg 等依赖；本次安装跳过浏览器/computer-use 后 <code>~/.hermes</code> 约 2.1GB（本机实测，非官方基准）。<span class="ref">[7]</span></li></ul>
+</section>
+<section id="capabilities" class="sec">
+<div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
+<div class="grid"><div class="cap"><h3>消息网关</h3><p>一个 Hermes 实例接多个聊天平台；支持 allowlist、DM pairing、多用户。</p></div><div class="cap"><h3>持久记忆</h3><p>MEMORY.md 存环境/经验，USER.md 存偏好；跨会话注入，可用 session_search 搜历史。</p></div><div class="cap"><h3>技能系统</h3><p>SKILL.md 按需加载，安装后自动变成 slash command；避免每次把全部说明塞进上下文。</p></div><div class="cap"><h3>自动化</h3><p>自然语言/cron 定时任务；delegate_task 派子 agent；hooks 做日志、告警、拦截。</p></div><div class="cap"><h3>沙箱与执行</h3><p>local/Docker/SSH/Singularity/Modal 五种后端；execute_code 用 RPC 跑多步流程。</p></div><div class="cap"><h3>多入口</h3><p>CLI、TUI、桌面、消息平台、ACP 兼容编辑器；同一份记忆与技能。</p></div></div>
+</section>
+<section id="how" class="sec">
+<div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
+<ol class="steps"><li><b>安装</b><br>官方脚本装到 <code>~/.local/bin/hermes</code>，数据在 <code>~/.hermes</code>；装完 <code>source ~/.zprofile</code>。</li><li><b>配模型</b><br><code>hermes setup --portal</code> 或 <code>hermes model</code>；也可在 <code>.env</code> 填任意 OpenAI-compatible key。</li><li><b>先跑通对话</b><br><code>hermes</code> 或 <code>hermes --tui</code>，确认普通对话与工具调用正常。</li><li><b>接消息平台</b><br><code>hermes gateway setup</code> 选 Telegram/Discord/Slack 等，配置 allowlist。</li><li><b>加技能与定时</b><br><code>hermes skills browse/install</code>；稳定后再上 cron 与多 agent 委派。</li></ol>
+</section>
+<section id="install" class="sec">
+<div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
+<div class="cmd"><div class="cmd-head"><span>macOS / Linux / WSL2</span><button type="button" data-copy="curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash">复制</button></div><pre><code>curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash</code></pre><p class="cmd-note">交互式安装；<code>--non-interactive</code> 跳过需要输入的阶段，<code>--skip-browser --skip-computer-use</code> 可省下载量。</p></div><div class="cmd"><div class="cmd-head"><span>启动与重载</span><button type="button" data-copy="source ~/.zprofile
+hermes --version
+hermes doctor">复制</button></div><pre><code>source ~/.zprofile
+hermes --version
+hermes doctor</code></pre><p class="cmd-note">安装器会把 <code>~/.local/bin</code> 加进 PATH；新终端也可直接运行 <code>hermes</code>。</p></div><div class="cmd"><div class="cmd-head"><span>配置 provider</span><button type="button" data-copy="hermes setup --portal   # Nous Portal
+hermes model            # 手动选 provider/key">复制</button></div><pre><code>hermes setup --portal   # Nous Portal
+hermes model            # 手动选 provider/key</code></pre><p class="cmd-note">Portal 是可选托管；也可以完全用自己的 key 或本地模型。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>hermes</code><p>启动 CLI；hermes --tui 进入完整 TUI。</p></div><div class="use"><code>hermes dashboard</code><p>本地 Web 仪表盘：配置、会话、技能、网关管理。</p></div><div class="use"><code>hermes desktop</code><p>打开桌面应用；首次可能需要下载桌面组件。</p></div><div class="use"><code>hermes gateway setup</code><p>配置 Telegram/Discord/Slack/WhatsApp 等消息平台。</p></div><div class="use"><code>hermes skills browse / install</code><p>浏览/安装技能；安装前会跑安全扫描。</p></div><div class="use"><code>hermes plugins install &lt;name&gt;</code><p>安装插件；社区插件要读源码，尤其是会发网络请求的。</p></div><div class="use"><code>hermes sessions list</code><p>查看历史会话；agent 也可用 session_search 搜旧对话。</p></div></div>
+</section>
+<section id="cost" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
+<div class="two"><div class="panel"><h3>软件</h3><p>MIT，软件免费；Nous Portal 是可选托管订阅，本地模型可以完全免费运行。</p></div><div class="panel"><h3>使用</h3><p>费用只来自你选择的 LLM provider/API；消息平台、云主机、第三方 MCP/技能各自的成本另算。</p></div></div><p>Hermes 支持任意 OpenAI-compatible 端点，并带 provider 路由、fallback 和 credential pool。它不附带模型额度；Portal 只是可选的聚合入口。</p>
+</section>
+<section id="strengths" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>覆盖面广：编码、研究、写作、自动化、消息助手都能用同一个运行时。</li><li>记忆 + 技能 + 网关组合少见：跨会话、跨平台保持上下文。</li><li>自动化能力强：cron、子 agent、hooks、批量任务都是内置能力。</li><li>provider 自由度高：可接 300+ 模型（Portal）或任意兼容端点，也支持本地模型。</li><li>沙箱后端多，适合把高风险任务丢进 Docker/SSH/Modal。</li><li>官方称无 telemetry，数据默认本地。</li></ul></div>
+</section>
+<section id="limits" class="sec">
+<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li>功能多导致配置面大：模型、工具、网关、记忆、技能、沙箱都要理解。</li><li>安装体积和依赖明显高于单文件 CLI（本机约 2.1GB），首次安装时间长。</li><li>默认不是“只读审阅”工具；给终端/文件权限后，风险取决于工具配置与沙箱。</li><li>消息网关是常驻服务，需要维护 allowlist、token 和升级；多用户场景要额外隔离。</li><li>技能/插件/MCP 来自第三方时要信任其代码；官方“无 telemetry”不等于第三方扩展无网络访问。</li><li>不是专门的代码 diff 审阅器；编码体验不如专注终端的 agent 紧凑。</li></ul></div>
+</section>
+<section id="compare" class="sec">
+<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>Goose</b></td><td>两者都是通用本地 agent；Hermes 强在消息网关、记忆、cron 与多平台常驻，Goose 强在 MCP 扩展与 recipes。</td></tr><tr><td><b>Orca</b></td><td>Hermes 是“一个助手到处在”；Orca 是“一个控制台管很多编码 agent”。重叠很少。</td></tr><tr><td><b>OpenCode</b></td><td>OpenCode 专注仓库内编码循环；Hermes 把编码当众多工具之一，适合跨应用自动化。</td></tr></tbody></table></div>
+</section>
+<section id="fit" class="sec">
+<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你想要一个跨 CLI/聊天工具、有记忆的常驻助手。</li><li>你需要定时任务、子 agent、消息网关或家庭/团队共享入口。</li><li>你想用本地模型或任意 OpenAI 兼容端点，且在意数据留在本地。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你只需要在 repo 里改代码，越轻越好。</li><li>你不愿维护常驻网关和多种配置。</li><li>你要求开箱即用的强隔离，且不愿配置沙箱后端。</li></ul></div></div>
+</section>
+
+<section id="derivatives" class="sec">
+<div class="sec-head"><span class="sec-no">10</span><h2>衍生项目：GUI / Web / 手机</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>官方界面</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noopener noreferrer">Hermes Dashboard</a><span class="badge official">官方</span></div><p>本地 Web 仪表盘，v0.9 起内置；管理配置、会话、技能和网关。</p></li><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener noreferrer">Hermes Desktop</a><span class="badge official">官方</span></div><p>官方桌面应用；<code>hermes desktop</code> 启动。</p></li><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noopener noreferrer">Termux / Android</a><span class="badge official">官方</span></div><p>在 Android 上原生跑 Hermes；不是远程客户端，而是把 agent 装在手机上。</p></li><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/overview" target="_blank" rel="noopener noreferrer">ACP IDE 集成</a><span class="badge official">官方</span></div><p>在 VS Code、Zed、JetBrains 等 ACP 编辑器里使用 Hermes。</p></li></ul></div><div class="eco-group"><h3>社区 Web / 桌面</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/nesquena/hermes-webui" target="_blank" rel="noopener noreferrer">Hermes WebUI</a><span class="badge community">社区</span></div><p>零依赖的 Python + 原生 JS Web UI，移动端响应式，支持 passkey/OIDC。</p></li><li><div class="eco-head"><a href="https://github.com/outsourc-e/hermes-workspace" target="_blank" rel="noopener noreferrer">Hermes Workspace</a><span class="badge community">社区</span></div><p>Web 工作区：聊天、终端、记忆浏览器、技能管理和 agent 检查器。</p></li><li><div class="eco-head"><a href="https://github.com/fathah/hermes-desktop" target="_blank" rel="noopener noreferrer">Hermes Desktop（fathah）</a><span class="badge community">社区</span></div><p>第三方桌面伴侣，安装、配置、聊天一体化。</p></li><li><div class="eco-head"><a href="https://github.com/EKKOLearnAI/ekko-studio" target="_blank" rel="noopener noreferrer">Ekko Studio</a><span class="badge community">社区</span></div><p>Web 仪表盘：多平台聊天、会话、定时任务、用量和渠道配置。</p></li></ul></div><div class="eco-group"><h3>手机 / 移动</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/hy4ri/hermes-mobile" target="_blank" rel="noopener noreferrer">Hermes Mobile（hy4ri）</a><span class="badge community">社区</span></div><p>原生 Android 客户端：聊天、cron、技能、模型、日志、Kanban，连 Hermes dashboard。</p></li><li><div class="eco-head"><a href="https://github.com/uzairansaruzi/hermex" target="_blank" rel="noopener noreferrer">Hermex</a><span class="badge community">社区</span></div><p>SwiftUI iOS 客户端，配对 hermes-webui，支持流式聊天和工具调用可视化。</p></li><li><div class="eco-head"><a href="https://github.com/stasstepv/hermes-pwa" target="_blank" rel="noopener noreferrer">hermes-pwa</a><span class="badge community">社区</span></div><p>Hermes Dashboard 插件，把 PWA 装到手机主屏；复用 Dashboard 登录。</p></li></ul></div><div class="eco-group"><h3>插件与多 agent 管理</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/plugins/hermes-mobile" target="_blank" rel="noopener noreferrer">hermes-mobile adapter</a><span class="badge official">官方</span></div><p>官方插件目录里的 WebSocket 平台，让你的 App 直接接 Hermes 网关。</p></li><li><div class="eco-head"><a href="https://github.com/farion1231/cc-switch" target="_blank" rel="noopener noreferrer">cc-switch</a><span class="badge thirdparty">第三方</span></div><p>跨 Claude Code、Codex、OpenCode、OpenClaw、Hermes 的账号/配置管理器。</p></li><li><div class="eco-head"><a href="https://github.com/iOfficeAI/AionUi" target="_blank" rel="noopener noreferrer">AionUi</a><span class="badge thirdparty">第三方</span></div><p>本地 cowork 桌面应用，可接 Hermes、OpenClaw、Claude Code、Codex、OpenCode 等。</p></li></ul></div></div><div class="note">截至调研，Hermes 官方没有原生手机 App；移动端主要是消息平台、Termux 原生运行和社区客户端。社区 Web/手机项目很多，但都不是 Nous 官方支持，升级后 API/鉴权可能变化。</div>
+</section>
+<section id="ecosystem" class="sec">
+<div class="sec-head"><span class="sec-no">11</span><h2>社区与玩友生态</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>技能与标准</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/getting-started/quickstart" target="_blank" rel="noopener noreferrer">Skills Hub</a><span class="badge official">官方</span></div><p>浏览/安装 SKILL.md；技能按需加载，安装前有安全扫描。</p></li><li><div class="eco-head"><b>agentskills.io</b><span class="badge community">社区</span></div><p>跨 agent 的技能标准；Hermes 技能与之兼容。</p></li><li><div class="eco-head"><b>superpowers</b><span class="badge community">社区</span></div><p>社区技能框架，提供开发方法论和可复用技能。</p></li></ul></div><div class="eco-group"><h3>插件与记忆</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/" target="_blank" rel="noopener noreferrer">Plugin catalog</a><span class="badge official">官方</span></div><p>官方插件目录：平台适配、工具、记忆、设计/支付等。</p></li><li><div class="eco-head"><b>Memory providers</b><span class="badge official">官方</span></div><p>RetainDB、ByteRover 内置；Honcho、Mem0、Supermemory 等可从目录安装。</p></li><li><div class="eco-head"><a href="https://hermes-agent.nousresearch.com/docs/plugins/hermes-mobile" target="_blank" rel="noopener noreferrer">hermes-mobile adapter</a><span class="badge official">官方</span></div><p>让自建 App 通过 WebSocket 接网关，复用同一套会话/记忆。</p></li></ul></div><div class="eco-group"><h3>社区入口</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://hermesatlas.com/ecosystem/" target="_blank" rel="noopener noreferrer">Hermes Atlas</a><span class="badge community">社区</span></div><p>社区维护的 280+ 工具/技能/集成索引，带 GitHub 数据。</p></li><li><div class="eco-head"><b>Discord</b><span class="badge official">官方</span></div><p>官方社区；入口见官网/仓库。</p></li><li><div class="eco-head"><b>r/hermesagent</b><span class="badge community">社区</span></div><p>Reddit 社区，用例、排错和经验帖集中。</p></li></ul></div><div class="eco-group"><h3>经典玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>多平台网关</b><span class="badge official">官方</span></div><p>一个实例接 Telegram/Discord/Slack/WhatsApp/Signal/Email，手机端零安装。</p></li><li><div class="eco-head"><b>Cron 简报</b><span class="badge official">官方</span></div><p>定时跑报告、备份、提醒，结果推回聊天平台。</p></li><li><div class="eco-head"><b>子 agent 委派</b><span class="badge official">官方</span></div><p>delegate_task 开隔离子 agent，默认并发 3 个。</p></li><li><div class="eco-head"><b>OpenClaw 导入</b><span class="badge official">官方</span></div><p>首次 setup 可从 OpenClaw/Claude Code/Codex/Cursor 导入配置。</p></li></ul></div></div><div class="note">社区客户端和插件不是 Nous 官方支持；它们可能读取你的会话、密钥或文件。尤其注意 Web UI 的鉴权配置和手机客户端的服务器地址，不要直接暴露到公网。</div>
+</section>
+<section id="sources" class="sec">
+<div class="sec-head"><span class="sec-no">12</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://hermes-agent.nousresearch.com/" target="_blank" rel="noopener noreferrer">Hermes Agent 官网</a><span class="src-note">定位、消息平台、记忆、沙箱、MIT 与定价。</span></li><li><a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/overview" target="_blank" rel="noopener noreferrer">Features Overview</a><span class="src-note">工具、技能、记忆、cron、子 agent、MCP、沙箱。</span></li><li><a href="https://hermes-agent.nousresearch.com/docs/getting-started/quickstart" target="_blank" rel="noopener noreferrer">Quickstart</a><span class="src-note">安装、provider、首次对话、gateway。</span></li><li><a href="https://hermes-agent.nousresearch.com/docs/reference/faq" target="_blank" rel="noopener noreferrer">FAQ</a><span class="src-note">provider 列表、数据与 telemetry、成本、多用户。</span></li><li><a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/memory" target="_blank" rel="noopener noreferrer">Memory</a><span class="src-note">MEMORY.md / USER.md、session_search、外部记忆。</span></li><li><a href="https://github.com/NousResearch/hermes-agent" target="_blank" rel="noopener noreferrer">NousResearch/hermes-agent</a><span class="src-note">源码、安装方式、MIT。</span></li><li><a href="https://hermes-agent.nousresearch.com/docs/getting-started/installation" target="_blank" rel="noopener noreferrer">Installation</a><span class="src-note">安装选项与依赖管理；本机体积为本次安装观察。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+</section>
+<div class="pager"><a href="./opencode.html">← OpenCode</a><a href="./pi.html">Pi →</a></div>
+</article>
+</div>
+</main>
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('tools-theme');if(saved)root.dataset.theme=saved;}catch(e){}
+  function isDark(){return root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  var tbtn=document.querySelector('[data-theme-toggle]');
+  function paint(){if(!tbtn)return;tbtn.textContent=isDark()?'浅色':'深色';tbtn.setAttribute('aria-pressed',isDark()?'true':'false');}
+  if(tbtn){paint();tbtn.addEventListener('click',function(){root.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('tools-theme',root.dataset.theme);}catch(e){}paint();});}
+  document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print();});});
+  document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+    var cmd=b.closest('.cmd');var pre=cmd?cmd.querySelector('pre'):null;var text=pre?pre.textContent:b.getAttribute('data-copy');var old=b.textContent;
+    function done(){b.textContent='已复制';setTimeout(function(){b.textContent=old;},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,fallback);}else{fallback();}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='复制失败';setTimeout(function(){b.textContent=old;},1200);}document.body.removeChild(ta);}
+  });});
+  var sc=document.getElementById('sc-total');
+  if(sc){
+    var ids=['sc-total','sc-active','sc-agent','sc-wt','sc-batch','sc-ram','sc-disk'];
+    function val(id){var el=document.getElementById(id);var n=el?parseFloat(el.value):0;return isFinite(n)?n:0;}
+    function calcScale(){
+      var total=val('sc-total'),active=val('sc-active'),agent=val('sc-agent'),wt=val('sc-wt'),batch=val('sc-batch'),ram=val('sc-ram'),disk=val('sc-disk');
+      var ramNeed=1.2+active*agent/1024;
+      var diskNeed=total*wt/1024;
+      var waves=batch>0?Math.ceil(total/batch):0;
+      var cap=Math.max(1,Math.floor((ram*0.7-1.2)*1024/Math.max(1,agent)));
+      var bad=[];
+      if(ramNeed>ram*0.7)bad.push('内存超过本机 70% 预算：降活跃数或改用 SSH/远程。');
+      if(diskNeed>disk*0.8)bad.push('磁盘超过可用空间 80%：先清理 worktree 或外置。');
+      if(active>cap)bad.push('活跃数超过本机建议上限（约 '+cap+' 个）。');
+      if(!bad.length)bad.push('在预算内；仍建议先跑 10 个窗口验证。');
+      var out=document.getElementById('scale-out');
+      out.textContent='活跃内存粗算：'+ramNeed.toFixed(1)+' GB（预算 '+(ram*0.7).toFixed(1)+' GB）\n'
+        +'总磁盘粗算：'+diskNeed.toFixed(1)+' GB（可用 '+disk+' GB）\n'
+        +'波数：'+waves+' 波 × '+batch+' 个\n'
+        +'本机建议活跃上限：约 '+cap+' 个\n'
+        +bad.join('\n');
+      out.dataset.state=(ramNeed>ram*0.7||diskNeed>disk*0.8||active>cap)?'bad':'ok';
+    }
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calcScale);});
+    calcScale();
+  }
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  if(links.length&&'IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(!en.isIntersecting)return;var a=map[en.target.id];if(!a)return;links.forEach(function(x){x.removeAttribute('aria-current');});a.setAttribute('aria-current','true');});
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    document.querySelectorAll('article section[id]').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>

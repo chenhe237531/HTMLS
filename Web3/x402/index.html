@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>x402 与 Web3 · 项目图谱与代币经济模型</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+
+<style>
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 230px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:10px 0 16px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<style>
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s}
+.proj:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.proj-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.proj .pname{font-size:16px;font-weight:650;line-height:1.35}
+.proj .psub{font-size:12px;color:var(--muted);margin-top:1px}
+.ptype{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono);color:var(--muted);background:var(--paper)}
+.ptype.token{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.ptype.none{color:var(--muted)}
+.proj .pdesc{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.65}
+.rows{display:grid;gap:6px;font-size:12.6px;line-height:1.55}
+.rows .r{display:grid;grid-template-columns:54px 1fr;gap:8px}
+.rows .k{color:var(--muted);font-size:11.5px;padding-top:1px}
+.rows .v{color:var(--ink-2)}
+.proj-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.proj-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
+.tag2{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap}
+.tag2.yes{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">x402 × Web3</div>
+      <div class="brand-sub">代币经济图谱 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>先看结论</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>代币分层</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>项目卡片</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>代币经济对比</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>价值捕获</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>风险与识别</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>评估清单</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>趋势</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    14 个项目 · 10 个有代币<br>
+    协议本身 0 协议费<br>
+    核验 2026-10-31 · 离线可用
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>x402 × Web3<span class="dot"></span>2026-10-31</p>
+    <h1>x402 的<em>代币地图</em></h1>
+    <p class="lede">x402 协议本身没有代币，也没有协议费。围绕它的 Web3 价值，分布在稳定币、结算链、facilitator 与 Agent 平台四层。看清「谁收费、谁必需代币」，比看概念板块更重要。</p>
+    <div class="meta-row">
+      <span class="pill">范围 <b>14 个项目 / 4 层</b></span>
+      <span class="pill">协议费 <b>0</b></span>
+      <span class="pill">结算资产 <b>USDC 为主</b></span>
+      <span class="pill">不引用实时价格</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">14<span>个</span></div><div class="l">已核验的相关项目</div></div>
+      <div class="kpi"><div class="n">10<span>个</span></div><div class="l">有可交易代币</div></div>
+      <div class="kpi"><div class="n">4<span>个</span></div><div class="l">无协议代币（基金会 / 公司 / L2）</div></div>
+      <div class="kpi"><div class="n">4<span>层</span></div><div class="l">资产 / 链 / 服务商 / 平台</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">先看结论</h2></div>
+    <p class="lead-in">x402 是一个开放支付标准，不是代币项目。它的治理在 Linux Foundation 下的 x402 Foundation，协议本身不收协议费。因此，绝大多数「x402 代币」并不是协议代币，而是<strong>围绕支付流量做生意的项目代币</strong>。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">协议层</h4><p class="small" style="margin:0">x402 Foundation 无代币；Coinbase、Cloudflare 是公司，只有股权（COIN、NET），没有协议币。</p></div>
+      <div class="card"><h4 style="margin-top:0">结算层</h4><p class="small" style="margin:0">USDC 是主要结算资产；SOL、MON、XLM、XRP 等承担 gas 与安全，代币是链的必需品。</p></div>
+      <div class="card"><h4 style="margin-top:0">服务层</h4><p class="small" style="margin:0">PayAI、Heurist、Meridian、Dexter 等 facilitator 有代币，但收费通常用 USDC 或 credits。</p></div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">最容易被误导的地方</span>
+      交易所的「x402 生态」板块会把「沾边」项目都放进去。判断标准只有一个：<b>它的收入是否来自 x402 支付流量，代币是否捕获这部分收入？</b> 两者缺一，就只是概念关联。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">代币分层</h2></div>
+    <p>把项目按「钱在哪里产生」分层，比按市值排序有用。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>层</th><th>代币角色</th><th>代表</th><th>价值捕获</th></tr></thead>
+        <tbody>
+          <tr><td><b>结算资产</b></td><td>支付本身</td><td>USDC（Circle）</td><td>储备利息、发行规模</td></tr>
+          <tr><td><b>结算链</b></td><td>Gas、安全、质押</td><td>Solana、Base（ETH）、Monad、Stellar、XRP Ledger</td><td>手续费、质押、生态活动</td></tr>
+          <tr><td><b>Facilitator</b></td><td>服务费、质押、返现</td><td>PayAI、Heurist、Meridian、Dexter</td><td>每笔结算费、订阅、增值服务</td></tr>
+          <tr><td><b>Agent 平台</b></td><td>准入、治理、分成</td><td>Virtuals 等</td><td>平台费、代币发行、交易费</td></tr>
+          <tr><td><b>协议 / 基础设施</b></td><td>无代币</td><td>x402 Foundation、Coinbase、Cloudflare、Base</td><td>不通过协议币捕获</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">用户 / Agent
+   │ 付 USDC（x402）
+   ▼
+结算链（Base / Solana / Monad / Stellar / XRPL）
+   │  gas / 安全
+   ▼
+Facilitator（PayAI / Heurist / Meridian / Dexter）
+   │  验证 + 结算，收 USDC 或 credits
+   ▼
+商户 / 服务方
+   │
+   └── 平台代币（若存在）：治理、准入、返现、质押</div>
+
+    <div class="callout">
+      <span class="t">读法</span>
+      越靠近「支付本身」，代币越像货币（USDC）；越靠近「服务」，代币越像股权替代品（费用、质押、返现）；越靠近「协议」，越可能没有代币。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">项目卡片</h2></div>
+    <p class="lead-in">按层筛选。每张卡只回答四个问题：与 x402 的关系、有没有代币、代币怎么运转、价值从哪里来。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按层筛选">
+        <button class="chip" type="button" data-cat="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-cat="protocol" aria-pressed="false">协议 / 基础设施</button>
+        <button class="chip" type="button" data-cat="asset" aria-pressed="false">结算资产</button>
+        <button class="chip" type="button" data-cat="chain" aria-pressed="false">结算链</button>
+        <button class="chip" type="button" data-cat="facilitator" aria-pressed="false">Facilitator</button>
+        <button class="chip" type="button" data-cat="platform" aria-pressed="false">平台</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="projSearch">搜索项目</label>
+        <input id="projSearch" type="search" placeholder="搜索项目、代币、机制…" autocomplete="off">
+      </div>
+    </div>
+    <p class="result-line" id="projCount" role="status" aria-live="polite">显示 14 / 14 个项目</p>
+
+    <div class="proj-grid" id="projGrid">
+
+      <article class="proj" data-cat="protocol" data-name="x402 Foundation 基金会 Linux Foundation 无代币">
+        <div class="proj-top"><div><div class="pname">x402 Foundation</div><div class="psub">Linux Foundation · 协议治理</div></div><span class="ptype none">无代币</span></div>
+        <p class="pdesc">x402 标准的中立治理机构，2026-07 正式运营，40 家成员，协议本身零协议费。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">标准与治理层，不运营支付业务</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">无。不要期待「x402 官方币」</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">会员制、工作组、开源治理</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">不通过代币；价值体现在生态采用</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">中立治理</span><span class="tag2 no">零协议费</span><a href="https://www.x402.org/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="protocol" data-name="Coinbase COIN 股权 CDP facilitator 无代币">
+        <div class="proj-top"><div><div class="pname">Coinbase</div><div class="psub">协议发起方 · CDP Facilitator</div></div><span class="ptype none">无代币</span></div>
+        <p class="pdesc">x402 的发起者，运营最大的 facilitator；通过 CDP 向商户收取结算费。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">协议起源 + 生产 facilitator + Base 生态</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">无协议币；公开市场标的是股权 COIN</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">CDP 每月前 1,000 笔免费，之后 $0.001/笔</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">结算费、云服务、交易与托管业务</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">COIN 股权</span><span class="tag2 no">无协议币</span><a href="https://www.coinbase.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="protocol" data-name="Cloudflare NET 股权 Agents SDK 无代币">
+        <div class="proj-top"><div><div class="pname">Cloudflare</div><div class="psub">基金会共同发起 · 边缘与 Agent 平台</div></div><span class="ptype none">无代币</span></div>
+        <p class="pdesc">与 Coinbase 共同发起 x402 Foundation，并把 x402 接入 Agents SDK、Workers 与 MCP Server。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">基础设施 + 支付集成，非链上结算方</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">无；公开标的是股权 NET</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">云订阅 + 边缘支付/Agent 服务</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">平台使用费，不依赖代币</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">NET 股权</span><span class="tag2 no">无协议币</span><a href="https://www.cloudflare.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="asset" data-name="Circle USDC 稳定币 储备 利息">
+        <div class="proj-top"><div><div class="pname">Circle · USDC</div><div class="psub">主要结算资产</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">x402 支付几乎都用 USDC 计价与结算。USDC 是法币储备支撑的稳定币，不是「x402 项目币」。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">结算资产；Circle 提供发行与赎回</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">USDC；公开市场另有 Circle 股权 CRCL</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">1:1 法币/短债储备；Circle 赚取储备利息</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">发行规模 × 利率；不靠手续费</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">稳定币</span><span class="tag2 yes">结算层</span><a href="https://www.circle.com/usdc" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="chain" data-name="Solana SOL 结算链 70% 质押 gas">
+        <div class="proj-top"><div><div class="pname">Solana</div><div class="psub">高频结算主战场</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">2026 年拿下约 70% 的 x402 月交易量，低费用与快速确认适合微支付。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">结算链；大量 facilitator 与商户在此</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">SOL，用于 gas、质押与网络安全</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">通胀逐步下降至约 1.5%；部分手续费销毁</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">交易费 + 质押需求 + 生态活动</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">结算链</span><span class="tag2 yes">代币必需</span><a href="https://solana.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="chain" data-name="Base Coinbase L2 ETH gas 无代币">
+        <div class="proj-top"><div><div class="pname">Base</div><div class="psub">Coinbase 的 L2</div></div><span class="ptype none">无代币</span></div>
+        <p class="pdesc">x402 的诞生地与 Coinbase 生态入口，以 ETH 支付 gas，没有 Base 原生代币。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">EVM 结算与分发层，CDP facilitator 主场</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">无 Base 代币；gas 用 ETH</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">L2 手续费 + Coinbase 分发</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">归 Coinbase 与排序器，不通过新币</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">EVM L2</span><span class="tag2 no">无代币</span><a href="https://base.org/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="chain" data-name="Monad MON 基金会成员 EVM L1 gas">
+        <div class="proj-top"><div><div class="pname">Monad</div><div class="psub">并行 EVM L1</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">x402 Foundation 成员，被 CDP facilitator 支持；以高吞吐 EVM 吸引 Agent 支付。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">结算链之一；Foundation 成员</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">MON，用于 gas 与质押</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">L1 通胀/质押经济（细节以官方为准）</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">手续费与安全预算；取决于生态用量</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">L1</span><span class="tag2 yes">代币必需</span><a href="https://monad.xyz/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+      <article class="proj" data-cat="chain" data-name="Stellar XLM 结算链 固定供应 USDC facilitator">
+        <div class="proj-top"><div><div class="pname">Stellar</div><div class="psub">支付型公链</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">面向支付的公链，已有生产级 x402 facilitator 与 USDC 结算，主打低费用与合规场景。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">结算链；第三方 facilitator 支持 SEP-41 资产</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">XLM，固定总量 500 亿</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">手续费极低；账户储备与反垃圾；无增发</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">网络使用与储备需求，费用规模很小</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">支付链</span><span class="tag2 yes">代币必需</span><a href="https://stellar.org/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="chain" data-name="XRP Ledger XRP RLUSD T54 facilitator 结算">
+        <div class="proj-top"><div><div class="pname">XRP Ledger</div><div class="psub">支付链 + RLUSD</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">低费用支付链，T54 等 facilitator 支持 XRP/RLUSD 的 x402 结算。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">结算链；法币稳定币 RLUSD 提供计价</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">XRP，1000 亿预挖，托管释放</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">手续费销毁；无挖矿通胀</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">支付流量与 RLUSD 发行；费用极小</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">支付链</span><span class="tag2 yes">代币必需</span><a href="https://xrpl.org/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="facilitator" data-name="PayAI PAYAI Solana facilitator 1B 国库 Token Gateway">
+        <div class="proj-top"><div><div class="pname">PayAI Network</div><div class="psub">Solana-first facilitator</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">按交易量排名第二的 x402 facilitator，支持 Solana 与多条 EVM 链，强调 gas 赞助与低费率。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">验证与结算服务；Bazaar 发现；批量结算</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">PAYAI，总量 10 亿，上线即全流通</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">20% 国库（半数做市、半数一年线性释放）；Token Gateway 做持仓准入</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">结算费以 USDC/credits 计；代币更多是生态与治理预期</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">多链</span><span class="tag2 yes">服务商代币</span><a href="https://payai.network/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="facilitator" data-name="Heurist HEU 算力 facilitator 质押 50% APR vending machine">
+        <div class="proj-top"><div><div class="pname">Heurist</div><div class="psub">算力 + x402 facilitator</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">去中心化 GPU 算力网络，同时运营 x402 facilitator 与面向 Agent 服务的发射台。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">facilitator + AI 服务支付 + 算力</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">HEU，最大 10 亿</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">50% 用于挖矿/质押（120 个月）；团队 15%、国库 16.7%；质押基础 50% APR + 收入分成；Heurist Chain gas</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">AI 服务费、质押通胀、链上 gas；x402 费以 USDC 计</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">算力</span><span class="tag2 yes">高排放</span><a href="https://heurist.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="facilitator" data-name="Meridian MRDN 代理 facilitator 返现 1% 费 LayerZero OFT">
+        <div class="proj-top"><div><div class="pname">Meridian</div><div class="psub">代理型 x402 结算</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">用「代理 facilitator」取代直接转账：资金先进合约，再结算给商户并计费，支持托管、跨链与返现。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">facilitator 扩展：托管、跨链、争议、返现</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">MRDN，Base 固定 10 亿，LayerZero OFT</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">Base 上 1% 协议费；返现以 MRDN 发放，2% 起、每 5000 万枚减半、单笔上限 $5</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">协议费进国库；返现制造代币需求；治理预留</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">托管/跨链</span><span class="tag2 yes">返现型</span><a href="https://mrdn.finance/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="facilitator" data-name="Dexter DEXTER Solana facilitator 免费 11 链">
+        <div class="proj-top"><div><div class="pname">Dexter</div><div class="psub">免费多链 facilitator</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">免费 facilitator，覆盖 Solana 与多条 EVM 链；代币用于其服务生态与支付。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">验证/结算；智能钱包与 agent 工具</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">DEXTER</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">公开资料有限；代币用于服务支付与生态激励</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">不靠 facilitator 费（免费），靠增值服务</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">免费</span><span class="tag2 yes">资料有限</span><a href="https://dexter.cash/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proj" data-cat="platform" data-name="Virtuals Protocol VIRTUAL Agent 平台 facilitator">
+        <div class="proj-top"><div><div class="pname">Virtuals Protocol</div><div class="psub">Agent 发行与共持平台</div></div><span class="ptype token">有代币</span></div>
+        <p class="pdesc">Agent 平台，也被列为 x402 facilitator 之一；代币经济围绕 Agent 发行、共持与交易。</p>
+        <div class="rows">
+          <div class="r"><span class="k">关系</span><span class="v">Agent 平台 + 支付入口（x402 为其中一条轨道）</span></div>
+          <div class="r"><span class="k">代币</span><span class="v">VIRTUAL + 各 Agent 代币</span></div>
+          <div class="r"><span class="k">模型</span><span class="v">创建 Agent 需锁定/消耗 VIRTUAL；Agent 代币分成与交易费</span></div>
+          <div class="r"><span class="k">捕获</span><span class="v">平台费、发行与交易活动；并非 x402 专属</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">平台</span><span class="tag2 yes">非 x402 专属</span><a href="https://www.virtuals.io/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+    </div>
+    <div class="empty" id="projEmpty" hidden>没有匹配的项目。试试更短的关键词，或重置筛选。</div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="t">卡片之外的名单</span>
+      「x402 生态」榜单里还有 Daydreams、OpenServ、Orbofi、heyAura 等代币。它们与 x402 的关系强弱不一，本页只收录能明确说明「关系 + 代币机制」的项目；其余不展开，避免把概念关联当成业务关联。
+    </div>
+  </section>
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">代币经济对比</h2></div>
+    <p>只看「有没有币」没有意义，关键是供给、释放与费用去向。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>项目</th><th>层</th><th>代币</th><th>供给</th><th>核心机制</th><th>与 x402 的关系</th></tr></thead>
+        <tbody>
+          <tr><td>Circle</td><td>结算资产</td><td>USDC</td><td>无上限，1:1 储备</td><td>储备利息；发行/赎回</td><td>主要计价与结算资产</td></tr>
+          <tr><td>Solana</td><td>链</td><td>SOL</td><td>通胀递减</td><td>Gas、质押、部分手续费销毁</td><td>约 70% 月交易量</td></tr>
+          <tr><td>Monad</td><td>链</td><td>MON</td><td>以官方为准</td><td>Gas、质押</td><td>CDP 支持的 EVM 链</td></tr>
+          <tr><td>Stellar</td><td>链</td><td>XLM</td><td>固定 500 亿</td><td>低费用、账户储备</td><td>USDC facilitator</td></tr>
+          <tr><td>XRP Ledger</td><td>链</td><td>XRP</td><td>1000 亿预挖</td><td>手续费销毁、托管释放</td><td>RLUSD / XRP 结算</td></tr>
+          <tr><td>PayAI</td><td>Facilitator</td><td>PAYAI</td><td>10 亿，全流通</td><td>20% 国库；Token Gateway 准入</td><td>第二大 facilitator</td></tr>
+          <tr><td>Heurist</td><td>Facilitator</td><td>HEU</td><td>10 亿</td><td>50% 挖矿/质押；50% APR + 收入分成；gas</td><td>facilitator + AI 服务</td></tr>
+          <tr><td>Meridian</td><td>Facilitator</td><td>MRDN</td><td>10 亿固定（Base）</td><td>1% 费；MRDN 返现；减半释放</td><td>代理型结算</td></tr>
+          <tr><td>Dexter</td><td>Facilitator</td><td>DEXTER</td><td>以官方为准</td><td>免费 facilitator；代币用于服务生态</td><td>多链结算</td></tr>
+          <tr><td>Virtuals</td><td>平台</td><td>VIRTUAL</td><td>以官方为准</td><td>Agent 发行、共持、交易费</td><td>平台支付入口之一</td></tr>
+          <tr><td>基金会 / Coinbase / Cloudflare / Base</td><td>协议 / 基础设施</td><td>无</td><td>—</td><td>会员制、股权、L2 手续费</td><td>标准、facilitator、分发</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">一个容易被忽略的事实</span>
+      代币供给数字很具体，但「代币如何从 x402 收入中获益」往往很模糊。供给表可以抄，价值捕获必须自己推。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">价值捕获</h2></div>
+    <p>把「谁付钱、付给谁、代币是否参与」拆开，就能看出哪些代币有真实支撑，哪些只是叙事。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>层</th><th>谁付钱</th><th>收入规模</th><th>代币是否必需</th><th>代币捕获方式</th></tr></thead>
+        <tbody>
+          <tr><td>协议</td><td>没人（0 协议费）</td><td>0</td><td>否</td><td>无</td></tr>
+          <tr><td>结算资产</td><td>付款方</td><td>与支付量等比</td><td>是（资产本身）</td><td>储备利息 + 发行</td></tr>
+          <tr><td>结算链</td><td>付款方 / facilitator</td><td>单笔极小，量大</td><td>是（gas）</td><td>手续费 + 质押</td></tr>
+          <tr><td>Facilitator</td><td>商户</td><td>$0.001/笔量级</td><td>通常否</td><td>费用、质押、返现、治理</td></tr>
+          <tr><td>Agent 平台</td><td>开发者 / 用户</td><td>平台费</td><td>看设计</td><td>发行、交易、分成</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>算一笔账</h3>
+    <p>假设某 facilitator 每天结算 100 万笔、每笔收 $0.001：日收入 $1,000，年收入约 $36.5 万。若其代币完全稀释估值是 5000 万美元，市销率约 137 倍。这个量级的收入，很难支撑「支付赛道的千倍叙事」。</p>
+
+    <div class="callout warn">
+      <span class="t">费用战已经开始</span>
+      Dexter 等 facilitator 直接免 facilitator 费；Coinbase 每月前 1,000 笔免费；PayAI 有免费额度。费用被压到接近零时，代币只能靠质押、返现或生态准入来制造需求。
+    </div>
+
+    <h3>四种代币模型</h3>
+    <div class="split">
+      <div class="card"><h4 style="margin-top:0">费用型</h4><p class="small" style="margin:0">协议费/服务费进国库或分给质押者。最扎实，但前提是真有收入和分配机制。</p></div>
+      <div class="card"><h4 style="margin-top:0">返现型</h4><p class="small" style="margin:0">Meridian 用 MRDN 返现，制造使用激励；本质是补贴，需看排放与减半曲线。</p></div>
+      <div class="card"><h4 style="margin-top:0">质押型</h4><p class="small" style="margin:0">Heurist 50% APR + 收入分成，靠通胀吸引锁定；高 APR 往往意味着高稀释。</p></div>
+      <div class="card"><h4 style="margin-top:0">准入/治理型</h4><p class="small" style="margin:0">PayAI 的 Token Gateway、平台治理；需求取决于生态是否真的需要持仓。</p></div>
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">风险与识别</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>风险</th><th>为什么</th><th>怎么识别</th></tr></thead>
+        <tbody>
+          <tr><td>概念关联</td><td>「x402 生态」榜单把沾边项目都收进来</td><td>问：收入是否来自 x402？占比多少？</td></tr>
+          <tr><td>代币不必要</td><td>facilitator 费用用 USDC 支付，代币可被绕过</td><td>看代币是否是使用服务的必要条件</td></tr>
+          <tr><td>费用压缩</td><td>免费 facilitator 与 $0.001 定价</td><td>看单笔收入与年收入，而非交易笔数</td></tr>
+          <tr><td>高排放</td><td>50% APR、返现减半机制</td><td>看年化排放 / 流通市值</td></tr>
+          <tr><td>低流通高 FDV</td><td>解锁带来持续卖压</td><td>看解锁表与流通比例</td></tr>
+          <tr><td>数据不可验证</td><td>交易量可能自报或刷量</td><td>用链上浏览器与独立统计交叉验证</td></tr>
+          <tr><td>监管</td><td>稳定币、证券属性、跨境支付</td><td>看牌照、储备审计、司法辖区</td></tr>
+          <tr><td>集中度</td><td>多数结算集中在少数 facilitator</td><td>看市场分布与单点依赖</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">一句话</span>
+      如果一条链上找不到「这个代币因为 x402 收入而被回购/分配/销毁」的证据，它大概率只是「x402 概念」。概念可以交易，但不能当基本面。
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">评估清单</h2></div>
+    <p>看任何一个「x402 代币」前，先过这七问。答不上三项以上，就先放回观察列表。</p>
+
+    <ul class="checklist">
+      <li><input type="checkbox" id="q1"><label for="q1">它是否真的处理 x402 支付？有链上结算记录与独立统计可查？</label></li>
+      <li><input type="checkbox" id="q2"><label for="q2">收入来自哪里？是结算费、服务费，还是只有代币升值？</label></li>
+      <li><input type="checkbox" id="q3"><label for="q3">代币是否是使用服务的必要条件？不用代币能不能完成同样的事？</label></li>
+      <li><input type="checkbox" id="q4"><label for="q4">费用是否流向代币持有人（回购、分配、销毁、质押奖励）？</label></li>
+      <li><input type="checkbox" id="q5"><label for="q5">供给与解锁：流通比例、年化排放、团队/投资人 Cliff 是否清楚？</label></li>
+      <li><input type="checkbox" id="q6"><label for="q6">收入 / 估值是否匹配？用年收入与 FDV 算一遍市销率。</label></li>
+      <li><input type="checkbox" id="q7"><label for="q7">监管与托管：稳定币储备、证券属性、团队与审计是否可核验？</label></li>
+    </ul>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">趋势</h2></div>
+
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">1 · 协议与代币继续分离</h4><p class="small" style="margin:0">x402 无币、零费、基金会治理。未来更可能出现「支付标准无币、周边服务有币」的稳定结构。</p></div>
+      <div class="card"><h4 style="margin-top:0">2 · 稳定币拿走最大价值</h4><p class="small" style="margin:0">USDC 的储备收益与发行规模，远大于 facilitator 的每笔费用。支付越普及，稳定币越发受益。</p></div>
+      <div class="card"><h4 style="margin-top:0">3 · Facilitator 费用趋零</h4><p class="small" style="margin:0">免费与补贴会持续，代币模型转向质押、返现、准入与增值服务。</p></div>
+      <div class="card"><h4 style="margin-top:0">4 · 链方补贴支付流量</h4><p class="small" style="margin:0">Solana、Monad、Stellar 等用低费与激励争夺 Agent 支付，链代币捕获 gas 与质押。</p></div>
+      <div class="card"><h4 style="margin-top:0">5 · 返现与积分化</h4><p class="small" style="margin:0">Meridian 的 MRDN 返现是一种「用代币买增长」；可持续性取决于真实留存，而非补贴。</p></div>
+      <div class="card"><h4 style="margin-top:0">6 · 监管决定上限</h4><p class="small" style="margin:0">稳定币立法、证券认定与跨境合规，会决定哪些项目能服务企业客户。</p></div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">判断</span>
+      短期看，x402 更像「稳定币 + 链」的采用故事，而不是「新代币」的故事。Facilitator 代币的机会在细分服务与真实收入，不在「协议币」叙事。
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">来源</h2></div>
+    <p class="small">截至 2026-10-31。不引用实时价格与市值；代币参数以官方文档为准，可能已变化。</p>
+    <ul class="small">
+      <li><a href="https://www.x402.org/" target="_blank" rel="noopener noreferrer">x402 / 基金会</a> · <a href="https://www.linuxfoundation.org/press/linux-foundation-announces-operational-launch-of-x402-foundation-to-standardize-internet-native-payments-for-ai-agents-and-applications" target="_blank" rel="noopener noreferrer">LF 运营公告</a></li>
+      <li><a href="https://docs.cdp.coinbase.com/x402/seller/facilitator" target="_blank" rel="noopener noreferrer">Coinbase CDP Facilitator</a> · <a href="https://developers.cloudflare.com/agents/tools/payments" target="_blank" rel="noopener noreferrer">Cloudflare Agentic Payments</a></li>
+      <li><a href="https://www.circle.com/usdc" target="_blank" rel="noopener noreferrer">Circle USDC</a> · <a href="https://solana.com/" target="_blank" rel="noopener noreferrer">Solana</a> · <a href="https://base.org/" target="_blank" rel="noopener noreferrer">Base</a> · <a href="https://monad.xyz/" target="_blank" rel="noopener noreferrer">Monad</a> · <a href="https://stellar.org/" target="_blank" rel="noopener noreferrer">Stellar</a> · <a href="https://xrpl.org/" target="_blank" rel="noopener noreferrer">XRPL</a></li>
+      <li><a href="https://payai.network/" target="_blank" rel="noopener noreferrer">PayAI</a> · <a href="https://docs.payai.network/x402/facilitators/introduction" target="_blank" rel="noopener noreferrer">PayAI 文档</a></li>
+      <li><a href="https://docs.heurist.ai/protocol-overview/tokenomics" target="_blank" rel="noopener noreferrer">Heurist Tokenomics</a> · <a href="https://docs.heurist.ai/x402-products/facilitator" target="_blank" rel="noopener noreferrer">Heurist x402 Facilitator</a></li>
+      <li><a href="https://docs.mrdn.finance/tokenomics" target="_blank" rel="noopener noreferrer">Meridian Tokenomics</a> · <a href="https://docs.mrdn.finance/payments/smart-contracts" target="_blank" rel="noopener noreferrer">Meridian 合约</a> · <a href="https://dexter.cash/" target="_blank" rel="noopener noreferrer">Dexter</a> · <a href="https://www.virtuals.io/" target="_blank" rel="noopener noreferrer">Virtuals</a></li>
+      <li><a href="https://coinmarketcap.com/view/x402-ecosystem/" target="_blank" rel="noopener noreferrer">CoinMarketCap x402 Ecosystem（仅作名单参考）</a> · <a href="https://x402stats.io/facilitators" target="_blank" rel="noopener noreferrer">x402stats 市场分布</a></li>
+    </ul>
+    <div class="callout">
+      <span class="t">免责声明</span>
+      本页是协议与代币模型的结构分析，不构成投资建议。代币价格、市值、APR 与解锁计划变化很快，请以官方与链上数据为准。
+    </div>
+  </section>
+
+  <footer>
+    <span>x402 × Web3 · 2026-10-31 · 单文件离线版</span>
+    <span>先看收入，再看代币</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var projs = Array.prototype.slice.call(document.querySelectorAll(".proj"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-cat]"));
+  var search = document.getElementById("projSearch");
+  var count = document.getElementById("projCount");
+  var empty = document.getElementById("projEmpty");
+  var active = "all";
+
+  function apply() {
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    projs.forEach(function (el) {
+      var ok = active === "all" || el.getAttribute("data-cat") === active;
+      if (ok && q) { ok = el.textContent.toLowerCase().indexOf(q) !== -1; }
+      el.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    count.textContent = "显示 " + shown + " / " + projs.length + " 个项目";
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      active = chip.getAttribute("data-cat");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+  search.addEventListener("input", apply);
+
+  apply();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

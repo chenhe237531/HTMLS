@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="极小核心、可自我扩展的终端 agent harness：四个工具起步，其余能力用 TypeScript 扩展和包拼。">
+<title>Pi · Agent 工具调研</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
+  --muted:#6d7078;--line:#e1dbcf;--line-2:#cfc7b8;--accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;--green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;--code:#171a20;--code-ink:#ece8de;--code-line:#2b3039;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --radius:14px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+    --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+    --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+    --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+  --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+  --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+  --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:0}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:var(--paper);background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px clamp(18px,4vw,40px);display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--amber);margin:0 4px}
+.topnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topnav a,.topnav button{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:5px 9px;text-decoration:none;cursor:pointer}
+.topnav a:hover,.topnav button:hover{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.topnav button:focus-visible,.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero{padding:clamp(34px,6vw,70px) 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.06;letter-spacing:-.02em;margin:0 0 16px}
+.lede{max-width:52em;margin:0 0 22px;font-size:clamp(17px,2vw,19px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.v-card.yes h2{color:var(--green)}.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,54px);align-items:start;padding:34px 0 70px}
+.toc{position:sticky;top:74px;font-size:13px;min-width:0}
+.layout>*{min-width:0}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);min-width:0}
+.toc a{display:block;padding:4px 0 4px 12px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.6}
+article{min-width:0}
+.sec{margin:0 0 56px;scroll-margin-top:96px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:9px;margin-bottom:20px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,29px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 14px}
+.fact-list{margin:0;padding-left:20px}
+.fact-list li{margin:7px 0;color:var(--ink-2)}
+.ref{font-family:var(--mono);font-size:10.5px;color:var(--amber);vertical-align:super;margin-left:2px;text-decoration:none}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 18px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cap{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 15px}
+.cap h3{font-size:14px}
+.cap p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.steps{margin:0;padding-left:22px}
+.steps li{margin:0 0 12px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.cmd{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:var(--surface)}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cmd-head button{font:inherit;font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:7px;padding:3px 9px;cursor:pointer}
+.cmd-head button:hover{color:var(--ink);border-color:var(--accent)}
+.cmd pre{margin:0;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.cmd-note{margin:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:15px 17px}
+.panel h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.list.pos li::marker{color:var(--green)}
+.list.neg li::marker{color:var(--red)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+.note b{color:var(--ink)}
+.sources{margin:0;padding-left:22px;font-size:13.5px;color:var(--ink-2)}
+.sources li{margin:0 0 9px}
+.sources a{word-break:break-word}
+.sources .src-note{display:block;color:var(--muted);font-size:12px}
+
+.calc{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 14px;box-shadow:var(--shadow)}
+.calc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.calc-out{margin-top:11px;padding:11px 13px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper-2);font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-line;color:var(--ink-2)}
+.calc-out[data-state="ok"]{border-color:var(--green);background:var(--green-soft)}
+.calc-out[data-state="bad"]{border-color:var(--red);background:var(--red-soft)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checklist li{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--ink-2)}
+.checklist label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:3px;accent-color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.use{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.use code{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all}
+p code,li code,td code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.use p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.eco-group{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.eco-group h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-list{list-style:none;margin:0;padding:0}
+.eco-list li{padding:8px 0;border-top:1px solid var(--line)}
+.eco-list li:first-child{border-top:0;padding-top:0}
+.eco-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.eco-head a,.eco-head b{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.eco-head a:hover{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--muted)}
+.badge.official{color:var(--green);border-color:var(--green)}
+.badge.community{color:var(--accent);border-color:var(--accent)}
+.badge.thirdparty{color:var(--amber);border-color:var(--amber)}
+.eco-list p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-list code{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px;font-size:13.5px}
+.pager a{text-decoration:none}
+/* index */
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;min-width:210px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.filters button{font:inherit;font-size:13px;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--ink-2)}
+.filters button:hover{border-color:var(--accent);color:var(--ink)}
+#count{font-size:12.5px;color:var(--muted);margin-left:auto;padding-bottom:9px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.tool-card .card-top{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-card .lic{color:var(--amber)}
+.tool-card h3{font-family:var(--serif);font-size:24px;line-height:1.2;margin:8px 0 2px}
+.tool-card h3 a{color:var(--ink);text-decoration:none}
+.tool-card h3 a:hover{color:var(--accent)}
+.tool-card .en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 8px}
+.tool-card .desc{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:0 0 10px}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12px}
+.mini dt{color:var(--muted)}
+.mini dd{margin:0;color:var(--ink-2)}
+.card-verdict{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:12px;color:var(--muted)}
+.card-foot a{text-decoration:none;font-weight:600}
+.empty{border:1px dashed var(--line-2);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.matrix td:first-child{white-space:nowrap}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scenario{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.scenario h3{font-size:14px;color:var(--accent)}
+.scenario p{margin:0;font-size:13.5px;color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){
+  .filters{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .filters input,.filters select{width:100%;min-width:0}
+  #count{margin-left:0;padding-bottom:0}
+  .topnav{width:100%;justify-content:flex-start}
+  .hero{padding-top:28px}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .toc{position:static;order:-1}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;border-left:0;padding-bottom:4px}
+  .toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .toc-note{display:none}
+  .verdict,.two,.scenarios,.cmd-grid,.eco-grid,.checklist{grid-template-columns:1fr}
+  #count{margin-left:0;padding-bottom:0}
+}
+@media print{
+  .topbar,.toc,.pager,.filters,.cmd-head button,[data-theme-toggle],[data-print]{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .layout{display:block}
+  .tool-card,.panel,.callout,.cmd{box-shadow:none}
+  a{color:#000;text-decoration:underline}
+  .sec{break-inside:avoid}
+  .calc,.checklist li{break-inside:avoid}
+  table{min-width:0}
+  .table-wrap{overflow:visible;border:0}
+  .tool-grid{display:block}
+  .tool-card{margin-bottom:10px}
+}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="topbar-in">
+<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<nav class="topnav" aria-label="站内导航">
+<a href="./index.html">工具索引</a>
+<a href="../agents-hub/index.html">Agent 全景</a>
+<button type="button" data-print>打印</button>
+<button type="button" data-theme-toggle aria-pressed="false">深色</button>
+</nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>终端编码 / 可扩展 Harness</span></p>
+<h1>Pi</h1>
+<p class="lede">极小核心、可自我扩展的终端 agent harness：四个工具起步，其余能力用 TypeScript 扩展和包拼。</p>
+<div class="pills"><span class="pill"><b>类型</b>终端编码 / 可扩展 Harness</span><span class="pill"><b>界面</b>终端 TUI / print-JSON / RPC / SDK</span><span class="pill"><b>许可证</b>MIT</span><span class="pill"><b>最新</b>v1.4.0 · 2026-10-21</span><span class="pill"><b>调研</b>2026-10-31</span></div>
+<div class="verdict">
+<div class="v-card yes"><h2>适合</h2><ul><li>想要极小、可改造、可自我扩展的编码 harness</li><li>会写 TypeScript，想把 agent 嵌进自己的工作流</li><li>需要 RPC/SDK、树状会话和包生态</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>想要开箱即用的审批/沙箱/plan 的人</li><li>不愿审查第三方包代码的人</li><li>想要固定产品体验的团队</li></ul></div>
+</div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#derivatives">10 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">11 社区与玩友生态</a></li><li><a href="#sources">12 来源与口径</a></li></ol>
+<div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
+<article>
+<section id="what" class="sec">
+<div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
+<div class="callout"><p><b>一句话：</b>Pi 把 agent 内核做得很小：默认只有 read/write/edit/bash；子 agent、plan、MCP、权限门都交给扩展或包。</p></div><p>Pi 由 Mario Zechner 发起、现在由 Earendil 维护。它刻意不做“全家桶”：默认工具只有四个，系统提示很短，把子 agent、plan mode、权限、MCP 等能力下放给 TypeScript 扩展、skills、prompt templates、themes 和 packages。你甚至可以让 Pi 修改它自己，然后 /reload 继续。</p><ul class="fact-list"><li>MIT；v1.4.0（2026-10-21）；GitHub 119,218 stars。<span class="ref">[2]</span></li><li>安装器支持 macOS/Linux/Windows，npm 需要 Node.js 22.19+；也可用 Nix。<span class="ref">[1]</span></li><li>四种模式：交互 TUI、print/JSON、RPC（stdin/stdout JSON）、TypeScript SDK。<span class="ref">[2][3]</span></li><li>默认只有 read、write、edit、bash 四个工具；子 agent、plan mode、MCP、权限门都要靠扩展/包补。<span class="ref">[2][3]</span></li><li>官方明确说明：Pi 没有内置的文件系统/进程/网络/凭据权限系统，默认以启动用户权限运行。<span class="ref">[2]</span></li><li>会话是树结构，可用 /tree 回到任意分支；/export 导出 HTML，/share 上传到 GitHub gist。<span class="ref">[3]</span></li><li>OpenClaw 用 Pi 的 SDK 做真实集成，说明 Pi 也能当其他 agent 的底座。<span class="ref">[2][3]</span></li></ul>
+</section>
+<section id="capabilities" class="sec">
+<div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
+<div class="grid"><div class="cap"><h3>极小内核</h3><p>默认四个工具、短系统提示；模型看到的上下文更小，行为更容易预测。</p></div><div class="cap"><h3>四种模式</h3><p>交互、print/JSON、RPC、SDK；同一引擎服务人、脚本和其他程序。</p></div><div class="cap"><h3>包与扩展</h3><p>TypeScript 扩展可加工具、命令、快捷键、事件、TUI；打包成 Pi package 发 npm/git。</p></div><div class="cap"><h3>自我修改</h3><p>让 Pi 写自己的扩展/主题，/reload 立即生效；适合把工作流做成个人工具。</p></div><div class="cap"><h3>树状会话</h3><p>/tree 在历史分支间跳转；/export 出 HTML，/share 生成可分享链接。</p></div><div class="cap"><h3>多 provider</h3><p>pi-ai 统一多家 API；支持订阅登录、API key、本地/自定义端点。</p></div></div>
+</section>
+<section id="how" class="sec">
+<div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
+<ol class="steps"><li><b>安装</b><br>用官方安装器（会 pin 依赖）或 npm；确认 <code>pi --version</code>。</li><li><b>登录</b><br>在项目目录运行 <code>pi</code>，再 <code>/login</code> 选 provider；或用环境变量 API key。</li><li><b>给任务</b><br>直接描述目标；默认只有 read/write/edit/bash，必要时让它先读代码。</li><li><b>补能力</b><br>用 <code>pi install npm:...</code> 装 subagent/MCP/权限/主题包；或让 Pi 自己写。</li><li><b>保存与分享</b><br><code>/tree</code> 回分支、<code>/export</code> 出 HTML、<code>/share</code> 生成 gist 链接。</li></ol>
+</section>
+<section id="install" class="sec">
+<div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
+<div class="cmd"><div class="cmd-head"><span>macOS / Linux 安装器</span><button type="button" data-copy="curl -fsSL https://pi.dev/install.sh | sh">复制</button></div><pre><code>curl -fsSL https://pi.dev/install.sh | sh</code></pre><p class="cmd-note">安装器 pin 依赖，升级用 <code>pi update</code>；不会自动装一堆系统包。</p></div><div class="cmd"><div class="cmd-head"><span>Windows PowerShell</span><button type="button" data-copy="powershell -c &quot;irm https://pi.dev/install.ps1 | iex&quot;">复制</button></div><pre><code>powershell -c &quot;irm https://pi.dev/install.ps1 | iex&quot;</code></pre><p class="cmd-note">原生 Windows 安装；也可在 WSL/Termux 里用 POSIX 脚本。</p></div><div class="cmd"><div class="cmd-head"><span>npm / Nix</span><button type="button" data-copy="npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+nix profile add github:earendil-works/pi/stable">复制</button></div><pre><code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+nix profile add github:earendil-works/pi/stable</code></pre><p class="cmd-note">npm 需 Node 22.19+；Nix 从源码构建，<code>pi update</code> 不能更新 Nix 安装。</p></div><div class="cmd"><div class="cmd-head"><span>首次运行</span><button type="button" data-copy="cd /path/to/project
+pi
+/login">复制</button></div><pre><code>cd /path/to/project
+pi
+/login</code></pre><p class="cmd-note"><code>/login</code> 选订阅或 API key；之后 <code>/model</code> 可切换。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>pi</code><p>在项目目录启动交互 TUI；默认工具是 read/write/edit/bash。</p></div><div class="use"><code>/login  /model</code><p>连接订阅或 API key；切换模型/provider。</p></div><div class="use"><code>pi -p &quot;...&quot;</code><p>print 模式：跑一次，输出结果；适合脚本。</p></div><div class="use"><code>pi --mode json</code><p>JSON 事件流；适合管道和程序消费。</p></div><div class="use"><code>pi --mode rpc</code><p>stdin/stdout JSON-RPC；给非 Node 程序集成。</p></div><div class="use"><code>pi install npm:&lt;pkg&gt;</code><p>安装扩展/主题/subagent/MCP 包；也支持 git: 源。</p></div><div class="use"><code>/tree  /export  /share</code><p>在会话树里跳分支；导出 HTML；分享到 GitHub gist。</p></div><div class="use"><code>~/.pi/agent/</code><p>配置、凭据、会话和已安装包；卸载不会自动删除。</p></div></div>
+</section>
+<section id="cost" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
+<div class="two"><div class="panel"><h3>软件</h3><p>MIT，软件免费；没有 seat fee。</p></div><div class="panel"><h3>使用</h3><p>按你选择的 provider/订阅计费；本地模型只消耗本机算力。</p></div></div><p>Pi 本身不卖模型；pi-ai 统一多家 provider。扩展/包可能引入额外 API（搜索、图像、记忆），要单独看它们的成本。</p>
+</section>
+<section id="strengths" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>内核极小：默认上下文和工具面小，容易理解、调试和替换。</li><li>扩展性极强：工具、命令、TUI、权限、子 agent 都能用 TypeScript 写，且可让 Pi 自己写。</li><li>四种模式覆盖人、脚本、其他程序；SDK 适合做二次产品。</li><li>树状会话 + 导出/分享，探索分支很自然。</li><li>包生态活跃：npm 上大量 pi-package，主题、subagent、MCP、Web UI 都有。</li><li>MIT，改和分发都自由。</li></ul></div>
+</section>
+<section id="limits" class="sec">
+<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li>默认没有权限系统/容器隔离：agent 以你的用户权限跑，误删/误执行风险由你承担。</li><li>极简意味着“开箱即用”弱：plan、subagent、MCP、权限门都要自己装/写。</li><li>包可以执行代码并影响 agent 行为；第三方包供应链风险高。</li><li>Node 运行时依赖；不像 Go/Rust 单二进制那样零依赖。</li><li>生态迭代快，包与核心版本可能不兼容；升级前看 package 的 peer 版本。</li><li>不适合想要固定产品体验/审批 UI 的团队；那是 OpenCode/Orca 的强项。</li></ul></div>
+</section>
+<section id="compare" class="sec">
+<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>OpenCode</b></td><td>OpenCode 是“带电池”的编码 agent；Pi 是“只有发动机”的 harness。要开箱即用选 OpenCode，要自己拼工作流选 Pi。</td></tr><tr><td><b>Hermes</b></td><td>Hermes 是常驻个人助手（网关/记忆/cron）；Pi 是本地编码 harness。两者都能被 OpenClaw/Orca 之类编排。</td></tr><tr><td><b>Goose</b></td><td>Goose 以 MCP 扩展和 recipes 为中心；Pi 以 TypeScript 包和极小内核为中心。</td></tr></tbody></table></div>
+</section>
+<section id="fit" class="sec">
+<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你想完全掌控 agent 的工具、提示和 TUI，而不是接受一套固定产品。</li><li>你会写一点 TypeScript，或愿意让 Pi 自己写扩展。</li><li>你需要 print/JSON/RPC/SDK 把 agent 嵌进脚本或应用。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你想要开箱即用的 plan/审批/子 agent/权限系统。</li><li>你不能接受第三方包执行代码的供应链风险。</li><li>你不想维护 Node/包版本。</li></ul></div></div>
+</section>
+
+<section id="derivatives" class="sec">
+<div class="sec-head"><span class="sec-no">10</span><h2>衍生项目：GUI / Web / 手机</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>GUI / Web</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://pi.dev/packages/pi-web-ui" target="_blank" rel="noopener noreferrer">pi-web-ui</a><span class="badge community">社区</span></div><p>浏览器/Electron 工作区：聊天、文件、终端、Git、远程 SSH，一个标签页搞定。</p></li><li><div class="eco-head"><b>pi-web</b><span class="badge community">社区</span></div><p>本地 Web UI：浏览会话、实时聊天、管理技能。</p></li><li><div class="eco-head"><b>pi-gui</b><span class="badge community">社区</span></div><p>Electron 桌面壳，列 workspace/session、创建会话、持久化 UI 状态。</p></li><li><div class="eco-head"><b>pi-desktop</b><span class="badge community">社区</span></div><p>Tauri + Lit 的原生桌面壳，extension-first、多会话。</p></li><li><div class="eco-head"><b>pi-chamber</b><span class="badge community">社区</span></div><p>远程浏览器控制室：并发会话、文件、真实终端，另一台设备可接管。</p></li><li><div class="eco-head"><a href="https://github.com/twcrews/crust" target="_blank" rel="noopener noreferrer">Crust</a><span class="badge community">社区</span></div><p>VS Code 扩展：会话浏览、IDE 上下文、diff、回滚，像 Claude Code 扩展的 Pi 版。</p></li><li><div class="eco-head"><b>pilish</b><span class="badge community">社区</span></div><p>Emacs 前端；Pi 生态里确实有 Emacs 玩家。</p></li></ul></div><div class="eco-group"><h3>手机 / 远程</h3><ul class="eco-list"><li><div class="eco-head"><b>pi-mobile</b><span class="badge community">社区</span></div><p>Android 客户端，通过 Tailscale 连 Pi 会话。</p></li><li><div class="eco-head"><a href="https://pi.dev/packages?name=remote-pi" target="_blank" rel="noopener noreferrer">remote-pi</a><span class="badge community">社区</span></div><p>手机扫码配对、实时看工具调用、本地多 Pi 会话 mesh。</p></li><li><div class="eco-head"><b>Pi Pocket</b><span class="badge community">社区</span></div><p>mobile-first 多人 Web app，基于 Pi Durable，支持 LAN/Cloudflare/Tailscale。</p></li><li><div class="eco-head"><b>PiApp</b><span class="badge community">社区</span></div><p>macOS/iOS 实验 App，带 Claude 聊天、文件浏览和终端。</p></li><li><div class="eco-head"><b>harness-remote</b><span class="badge community">社区</span></div><p>从手机/桌面控制 OMP、Pi、OpenCode、Claude Code 等 harness。</p></li></ul></div><div class="eco-group"><h3>分支与移植</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/can1357/oh-my-pi" target="_blank" rel="noopener noreferrer">oh-my-pi（omp）</a><span class="badge community">社区</span></div><p>最大的 Pi fork：LSP/DAP、60+ provider、subagent、collab、Web/桌面/手机前端。</p></li><li><div class="eco-head"><b>pi_agent_rust</b><span class="badge community">社区</span></div><p>Rust 移植，强调启动速度和低内存。</p></li><li><div class="eco-head"><b>PiG</b><span class="badge community">社区</span></div><p>Go 实现，原生二进制，跟随 Pi 参考实现。</p></li><li><div class="eco-head"><b>pz</b><span class="badge community">社区</span></div><p>Zig 单二进制 drop-in 替代。</p></li><li><div class="eco-head"><b>PiSwift</b><span class="badge community">社区</span></div><p>Swift 移植，用于在 Apple 应用里嵌 agent。</p></li></ul></div><div class="eco-group"><h3>扩展包</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://pi.dev/packages/pi-mcp-extension" target="_blank" rel="noopener noreferrer">pi-mcp-extension</a><span class="badge community">社区</span></div><p>完整 MCP：stdio/SSE/HTTP、OAuth 2.1、懒加载。</p></li><li><div class="eco-head"><a href="https://pi.dev/packages/pi-subagents" target="_blank" rel="noopener noreferrer">pi-subagents</a><span class="badge community">社区</span></div><p>单 agent 委派与脚本化多 agent 工作流。</p></li><li><div class="eco-head"><a href="https://pi.dev/packages/pi-web-access" target="_blank" rel="noopener noreferrer">pi-web-access</a><span class="badge community">社区</span></div><p>网页搜索、抓取、GitHub clone、PDF/YouTube 理解。</p></li><li><div class="eco-head"><a href="https://pi.dev/packages/pi-open-tui" target="_blank" rel="noopener noreferrer">pi-open-tui / pi-beautiful-tui</a><span class="badge community">社区</span></div><p>两套 TUI 美化：状态栏、主题、token/成本/延迟显示。</p></li><li><div class="eco-head"><a href="https://github.com/thevibeworks/awesome-pi-agent" target="_blank" rel="noopener noreferrer">pi-extensions 合集</a><span class="badge community">社区</span></div><p>多个作者的扩展合集：权限、计划、浏览器、记忆、通知等。</p></li></ul></div></div><div class="note">Pi 的核心太小，所以生态以“包 + fork + 前端”为主：Web/桌面/手机客户端几乎都是社区项目，质量、维护频率和兼容版本差异很大。oh-my-pi 是最激进的分支，几乎把 Pi 重新做成了一个完整产品。</div>
+</section>
+<section id="ecosystem" class="sec">
+<div class="sec-head"><span class="sec-no">11</span><h2>社区与玩友生态</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>包目录</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://pi.dev/packages" target="_blank" rel="noopener noreferrer">pi.dev/packages</a><span class="badge official">官方</span></div><p>官方包目录：扩展、技能、prompt 模板、主题；<code>pi install npm:...</code> 安装。</p></li><li><div class="eco-head"><a href="https://pi.dev/" target="_blank" rel="noopener noreferrer">50+ examples</a><span class="badge official">官方</span></div><p>官方扩展示例，覆盖工具、TUI、权限、子 agent 等。</p></li><li><div class="eco-head"><b>pi-package keyword</b><span class="badge community">社区</span></div><p>npm 上用 pi-package 关键字发现社区包；质量参差。</p></li></ul></div><div class="eco-group"><h3>社区索引</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/thevibeworks/awesome-pi-agent" target="_blank" rel="noopener noreferrer">awesome-pi-agent</a><span class="badge community">社区</span></div><p>最全的 Pi 生态索引：前端、扩展、fork、工具、玩法。</p></li><li><div class="eco-head"><b>piagent.fyi</b><span class="badge community">社区</span></div><p>Pi 资源地图与新闻，带 GitHub 数据。</p></li><li><div class="eco-head"><a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener noreferrer">OpenClaw</a><span class="badge thirdparty">第三方</span></div><p>真实世界集成：用 Pi SDK 把 Pi 嵌进 OpenClaw。</p></li></ul></div><div class="eco-group"><h3>经典玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>让 Pi 改自己</b><span class="badge official">官方</span></div><p>让 agent 写扩展/主题/命令，<code>/reload</code> 立即生效；再决定是否打包分享。</p></li><li><div class="eco-head"><b>会话树</b><span class="badge official">官方</span></div><p><code>/tree</code> 回到任意分支继续，不必重开对话。</p></li><li><div class="eco-head"><b>分享会话</b><span class="badge official">官方</span></div><p><code>/export</code> 出 HTML，<code>/share</code> 上传 gist 生成可渲染链接。</p></li><li><div class="eco-head"><b>自建权限/子 agent</b><span class="badge community">社区</span></div><p>用扩展加路径保护、命令审批、沙箱、subagent；核心不内置这些。</p></li><li><div class="eco-head"><b>换前端</b><span class="badge community">社区</span></div><p>同一个 Pi 内核可接 Web、桌面、VS Code、Emacs、手机控制端。</p></li></ul></div></div><div class="note">Pi 包会执行 TypeScript 代码并影响 agent 行为；官方也明确核心没有内置权限系统。安装第三方包前读源码，敏感仓库建议配合容器/独立用户运行。</div>
+</section>
+<section id="sources" class="sec">
+<div class="sec-head"><span class="sec-no">12</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://pi.dev/docs/latest/quickstart" target="_blank" rel="noopener noreferrer">Pi Quickstart</a><span class="src-note">安装、登录、启动、卸载与配置位置。</span></li><li><a href="https://github.com/earendil-works/pi" target="_blank" rel="noopener noreferrer">earendil-works/pi</a><span class="src-note">MIT、四种模式、包列表、无内置权限系统。</span></li><li><a href="https://pi.dev/" target="_blank" rel="noopener noreferrer">Pi 官网</a><span class="src-note">极简定位、扩展/包、会话树、/share。</span></li><li><a href="https://pi.dev/packages" target="_blank" rel="noopener noreferrer">Pi Package Catalog</a><span class="src-note">扩展、技能、主题、Web UI 等社区包。</span></li><li><a href="https://github.com/thevibeworks/awesome-pi-agent" target="_blank" rel="noopener noreferrer">awesome-pi-agent</a><span class="src-note">社区维护的前端、扩展、fork 与玩法索引。</span></li><li><a href="https://github.com/can1357/oh-my-pi" target="_blank" rel="noopener noreferrer">oh-my-pi</a><span class="src-note">最大的 Pi fork：LSP/DAP、60+ provider、collab。</span></li><li><a href="https://earendil.com/posts/pi-1-0/" target="_blank" rel="noopener noreferrer">Pi 1.0</a><span class="src-note">1.0 的新能力与 Pi Durable。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+</section>
+<div class="pager"><a href="./hermes.html">← Hermes Agent</a><a href="./goose.html">Goose →</a></div>
+</article>
+</div>
+</main>
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('tools-theme');if(saved)root.dataset.theme=saved;}catch(e){}
+  function isDark(){return root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  var tbtn=document.querySelector('[data-theme-toggle]');
+  function paint(){if(!tbtn)return;tbtn.textContent=isDark()?'浅色':'深色';tbtn.setAttribute('aria-pressed',isDark()?'true':'false');}
+  if(tbtn){paint();tbtn.addEventListener('click',function(){root.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('tools-theme',root.dataset.theme);}catch(e){}paint();});}
+  document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print();});});
+  document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+    var cmd=b.closest('.cmd');var pre=cmd?cmd.querySelector('pre'):null;var text=pre?pre.textContent:b.getAttribute('data-copy');var old=b.textContent;
+    function done(){b.textContent='已复制';setTimeout(function(){b.textContent=old;},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,fallback);}else{fallback();}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='复制失败';setTimeout(function(){b.textContent=old;},1200);}document.body.removeChild(ta);}
+  });});
+  var sc=document.getElementById('sc-total');
+  if(sc){
+    var ids=['sc-total','sc-active','sc-agent','sc-wt','sc-batch','sc-ram','sc-disk'];
+    function val(id){var el=document.getElementById(id);var n=el?parseFloat(el.value):0;return isFinite(n)?n:0;}
+    function calcScale(){
+      var total=val('sc-total'),active=val('sc-active'),agent=val('sc-agent'),wt=val('sc-wt'),batch=val('sc-batch'),ram=val('sc-ram'),disk=val('sc-disk');
+      var ramNeed=1.2+active*agent/1024;
+      var diskNeed=total*wt/1024;
+      var waves=batch>0?Math.ceil(total/batch):0;
+      var cap=Math.max(1,Math.floor((ram*0.7-1.2)*1024/Math.max(1,agent)));
+      var bad=[];
+      if(ramNeed>ram*0.7)bad.push('内存超过本机 70% 预算：降活跃数或改用 SSH/远程。');
+      if(diskNeed>disk*0.8)bad.push('磁盘超过可用空间 80%：先清理 worktree 或外置。');
+      if(active>cap)bad.push('活跃数超过本机建议上限（约 '+cap+' 个）。');
+      if(!bad.length)bad.push('在预算内；仍建议先跑 10 个窗口验证。');
+      var out=document.getElementById('scale-out');
+      out.textContent='活跃内存粗算：'+ramNeed.toFixed(1)+' GB（预算 '+(ram*0.7).toFixed(1)+' GB）\n'
+        +'总磁盘粗算：'+diskNeed.toFixed(1)+' GB（可用 '+disk+' GB）\n'
+        +'波数：'+waves+' 波 × '+batch+' 个\n'
+        +'本机建议活跃上限：约 '+cap+' 个\n'
+        +bad.join('\n');
+      out.dataset.state=(ramNeed>ram*0.7||diskNeed>disk*0.8||active>cap)?'bad':'ok';
+    }
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calcScale);});
+    calcScale();
+  }
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  if(links.length&&'IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(!en.isIntersecting)return;var a=map[en.target.id];if(!a)return;links.forEach(function(x){x.removeAttribute('aria-current');});a.setAttribute('aria-current','true');});
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    document.querySelectorAll('article section[id]').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>

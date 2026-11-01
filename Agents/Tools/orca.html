@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="把多个编码 agent 放进各自独立 worktree 的控制台；它提供工作台，不提供模型。">
+<title>Orca · Agent 工具调研</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
+  --muted:#6d7078;--line:#e1dbcf;--line-2:#cfc7b8;--accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;--green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;--code:#171a20;--code-ink:#ece8de;--code-line:#2b3039;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --radius:14px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+    --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+    --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+    --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+  --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+  --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+  --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:0}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:var(--paper);background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px clamp(18px,4vw,40px);display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--amber);margin:0 4px}
+.topnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topnav a,.topnav button{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:5px 9px;text-decoration:none;cursor:pointer}
+.topnav a:hover,.topnav button:hover{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.topnav button:focus-visible,.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero{padding:clamp(34px,6vw,70px) 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.06;letter-spacing:-.02em;margin:0 0 16px}
+.lede{max-width:52em;margin:0 0 22px;font-size:clamp(17px,2vw,19px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.v-card.yes h2{color:var(--green)}.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,54px);align-items:start;padding:34px 0 70px}
+.toc{position:sticky;top:74px;font-size:13px;min-width:0}
+.layout>*{min-width:0}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);min-width:0}
+.toc a{display:block;padding:4px 0 4px 12px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.6}
+article{min-width:0}
+.sec{margin:0 0 56px;scroll-margin-top:96px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:9px;margin-bottom:20px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,29px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 14px}
+.fact-list{margin:0;padding-left:20px}
+.fact-list li{margin:7px 0;color:var(--ink-2)}
+.ref{font-family:var(--mono);font-size:10.5px;color:var(--amber);vertical-align:super;margin-left:2px;text-decoration:none}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 18px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cap{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 15px}
+.cap h3{font-size:14px}
+.cap p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.steps{margin:0;padding-left:22px}
+.steps li{margin:0 0 12px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.cmd{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:var(--surface)}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cmd-head button{font:inherit;font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:7px;padding:3px 9px;cursor:pointer}
+.cmd-head button:hover{color:var(--ink);border-color:var(--accent)}
+.cmd pre{margin:0;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.cmd-note{margin:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:15px 17px}
+.panel h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.list.pos li::marker{color:var(--green)}
+.list.neg li::marker{color:var(--red)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+.note b{color:var(--ink)}
+.sources{margin:0;padding-left:22px;font-size:13.5px;color:var(--ink-2)}
+.sources li{margin:0 0 9px}
+.sources a{word-break:break-word}
+.sources .src-note{display:block;color:var(--muted);font-size:12px}
+
+.calc{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 14px;box-shadow:var(--shadow)}
+.calc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.calc-out{margin-top:11px;padding:11px 13px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper-2);font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-line;color:var(--ink-2)}
+.calc-out[data-state="ok"]{border-color:var(--green);background:var(--green-soft)}
+.calc-out[data-state="bad"]{border-color:var(--red);background:var(--red-soft)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checklist li{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--ink-2)}
+.checklist label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:3px;accent-color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.use{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.use code{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all}
+p code,li code,td code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.use p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.eco-group{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.eco-group h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-list{list-style:none;margin:0;padding:0}
+.eco-list li{padding:8px 0;border-top:1px solid var(--line)}
+.eco-list li:first-child{border-top:0;padding-top:0}
+.eco-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.eco-head a,.eco-head b{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.eco-head a:hover{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--muted)}
+.badge.official{color:var(--green);border-color:var(--green)}
+.badge.community{color:var(--accent);border-color:var(--accent)}
+.badge.thirdparty{color:var(--amber);border-color:var(--amber)}
+.eco-list p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-list code{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px;font-size:13.5px}
+.pager a{text-decoration:none}
+/* index */
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;min-width:210px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.filters button{font:inherit;font-size:13px;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--ink-2)}
+.filters button:hover{border-color:var(--accent);color:var(--ink)}
+#count{font-size:12.5px;color:var(--muted);margin-left:auto;padding-bottom:9px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.tool-card .card-top{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-card .lic{color:var(--amber)}
+.tool-card h3{font-family:var(--serif);font-size:24px;line-height:1.2;margin:8px 0 2px}
+.tool-card h3 a{color:var(--ink);text-decoration:none}
+.tool-card h3 a:hover{color:var(--accent)}
+.tool-card .en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 8px}
+.tool-card .desc{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:0 0 10px}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12px}
+.mini dt{color:var(--muted)}
+.mini dd{margin:0;color:var(--ink-2)}
+.card-verdict{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:12px;color:var(--muted)}
+.card-foot a{text-decoration:none;font-weight:600}
+.empty{border:1px dashed var(--line-2);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.matrix td:first-child{white-space:nowrap}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scenario{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.scenario h3{font-size:14px;color:var(--accent)}
+.scenario p{margin:0;font-size:13.5px;color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){
+  .filters{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .filters input,.filters select{width:100%;min-width:0}
+  #count{margin-left:0;padding-bottom:0}
+  .topnav{width:100%;justify-content:flex-start}
+  .hero{padding-top:28px}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .toc{position:static;order:-1}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;border-left:0;padding-bottom:4px}
+  .toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .toc-note{display:none}
+  .verdict,.two,.scenarios,.cmd-grid,.eco-grid,.checklist{grid-template-columns:1fr}
+  #count{margin-left:0;padding-bottom:0}
+}
+@media print{
+  .topbar,.toc,.pager,.filters,.cmd-head button,[data-theme-toggle],[data-print]{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .layout{display:block}
+  .tool-card,.panel,.callout,.cmd{box-shadow:none}
+  a{color:#000;text-decoration:underline}
+  .sec{break-inside:avoid}
+  .calc,.checklist li{break-inside:avoid}
+  table{min-width:0}
+  .table-wrap{overflow:visible;border:0}
+  .tool-grid{display:block}
+  .tool-card{margin-bottom:10px}
+}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="topbar-in">
+<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<nav class="topnav" aria-label="站内导航">
+<a href="./index.html">工具索引</a>
+<a href="../agents-hub/index.html">Agent 全景</a>
+<button type="button" data-print>打印</button>
+<button type="button" data-theme-toggle aria-pressed="false">深色</button>
+</nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>编排器 / Agent IDE</span></p>
+<h1>Orca</h1>
+<p class="lede">把多个编码 agent 放进各自独立 worktree 的控制台；它提供工作台，不提供模型。</p>
+<div class="pills"><span class="pill"><b>类型</b>编排器 / Agent IDE</span><span class="pill"><b>界面</b>macOS / Windows / Linux 桌面；iOS / Android 伴侣</span><span class="pill"><b>许可证</b>MIT</span><span class="pill"><b>最新</b>v1.4.245 · 2026-10-30</span><span class="pill"><b>调研</b>2026-10-31</span><span class="pill"><b>实战</b>100+ 窗口教程</span></div>
+<div class="verdict">
+<div class="v-card yes"><h2>适合</h2><ul><li>同时跑多个编码 agent、需要隔离 worktree 与 diff 审阅的人</li><li>需要 SSH/远程/手机接管，且已有自己的 agent 订阅</li><li>想把 OpenCode、Hermes、Goose 等 CLI 放进一个控制台</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>只偶尔用单个 agent 的轻量用户</li><li>不愿为编排层付出桌面应用开销</li><li>期待工具自带模型额度的人</li></ul></div>
+</div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#scale">10 100+ 会话窗口实战教程</a></li><li><a href="#derivatives">11 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">12 社区与玩友生态</a></li><li><a href="#sources">13 来源与口径</a></li></ol>
+<div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
+<article>
+<section id="what" class="sec">
+<div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
+<div class="callout"><p><b>一句话：</b>Orca 是“agent 的 IDE”：你带自己的 agent CLI，它负责隔离、并行、审阅、远程和手机接管。</p></div><p>Orca 由 Stably 开发，定位是 Agent Development Environment（ADE）。它不内置某个模型，也不绑定某一家 agent；Claude Code、Codex、OpenCode、Hermes、Goose 等 CLI 都可以在 Orca 里启动，每个任务落到独立的 git worktree。</p><ul class="fact-list"><li>MIT 许可，桌面覆盖 macOS、Windows、Linux；移动端是 iOS/Android 伴侣应用。<span class="ref">[3]</span></li><li>官方称支持 27 个以上 agent CLI，包括 OpenCode、Hermes、Goose 等；Orca 本身不是模型。<span class="ref">[1]</span></li><li>每个任务独立 git worktree；标签页可拆成任意窗格；内嵌 Chromium 与 Design Mode；diff 行内评论可回传 agent。<span class="ref">[2]</span></li><li>远程支持 SSH target、自托管 Orca Server、自带云账号的 per-workspace VM；官方明确不卖托管 VPS。<span class="ref">[4]</span></li><li>手机伴侣处于 beta；Relay 配对需要登录，局域网/Tailscale 直连可以不用账号。<span class="ref">[2]</span></li><li>软件免费、无个人订阅；成本来自你接入的 agent/模型与自有云资源。<span class="ref">[1][3]</span></li></ul>
+</section>
+<section id="capabilities" class="sec">
+<div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
+<div class="grid"><div class="cap"><h3>并行 worktree</h3><p>每个任务一个真实 git worktree，多个 agent 同时改不同分支，减少互相踩文件。</p></div><div class="cap"><h3>审阅与回传</h3><p>diff 行内评论直接送回 agent；PR、issue、project board 在应用内浏览。</p></div><div class="cap"><h3>终端与浏览器</h3><p>Ghostty 级终端、任意分屏、内嵌 Chromium；Design Mode 可点选 UI 元素取 HTML/CSS/截图。</p></div><div class="cap"><h3>远程运行</h3><p>SSH target、自托管 Orca Server、按 workspace 启动的云 VM；计算资源仍归你。</p></div><div class="cap"><h3>手机接管</h3><p>伴侣应用查看 agent 状态、回消息、切账号；适合离开桌面时保持任务推进。</p></div><div class="cap"><h3>CLI 与集成</h3><p>Orca CLI 可创建 worktree、截图、点击、填表；支持 MCP、hooks、skills。</p></div></div>
+</section>
+<section id="how" class="sec">
+<div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
+<ol class="steps"><li><b>添加仓库</b><br>Add Repo 指向本地 checkout；Orca 读取 git 状态，默认分支作为新 worktree 的 base ref。</li><li><b>新建 worktree</b><br>每个任务独立目录与分支；可在同一窗口并排开多个。</li><li><b>选择 agent</b><br>在终端 combobox 里选 Claude Code、Codex、OpenCode、Hermes 等；Orca 负责工作目录与凭据转发。</li><li><b>并行与审阅</b><br>分屏看终端、浏览器和 diff；在 diff 行内评论，把修改意见回传 agent。</li><li><b>合并与清理</b><br>worktree 是普通 git worktree；用你熟悉的 git/PR 流程合并，删掉不再需要的目录。</li></ol>
+</section>
+<section id="install" class="sec">
+<div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
+<div class="cmd"><div class="cmd-head"><span>macOS · Homebrew</span><button type="button" data-copy="brew install --cask stablyai/orca/orca">复制</button></div><pre><code>brew install --cask stablyai/orca/orca</code></pre><p class="cmd-note">官方提醒：bare <code>orca</code> 是无关的 Plotly cask，必须用完整 cask 名。</p></div><div class="cmd"><div class="cmd-head"><span>手动安装</span><button type="button" data-copy="下载 DMG → 拖入 /Applications → 首次启动添加仓库">复制</button></div><pre><code>下载 DMG → 拖入 /Applications → 首次启动添加仓库</code></pre><p class="cmd-note">官网提供 Apple Silicon / Intel 两种 DMG；Windows 与 Linux 也有对应安装包。</p></div><div class="cmd"><div class="cmd-head"><span>首次配置</span><button type="button" data-copy="Settings → Agents → 选择默认 agent / 配置账号">复制</button></div><pre><code>Settings → Agents → 选择默认 agent / 配置账号</code></pre><p class="cmd-note">Orca 复用你已有的 agent 登录态；本地使用不需要 Orca 账号。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>Settings → Plugins</code><p>安装图标主题、语法高亮和自定义编辑器；会运行代码的插件需要你授权，且拥有完整本机权限。</p></div><div class="use"><code>orca open --json</code><p>从终端或 agent 打开/连接 Orca 运行时；JSON 输出便于脚本判断。</p></div><div class="use"><code>orca skills get orca-cli</code><p>加载与当前 Orca 版本匹配的 CLI 指南；不要照旧教程猜参数。</p></div><div class="use"><code>orca.yaml</code><p>在仓库根写 hooks、setup、environmentRecipes；新 worktree 会读取对应配置。</p></div><div class="use"><code>orca vm recipe doctor</code><p>检查 per-workspace 环境配方，不实际 provision；付费步骤仍要人工确认。</p></div></div>
+</section>
+<section id="cost" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
+<div class="two"><div class="panel"><h3>软件</h3><p>MIT，个人使用免费，没有 seat fee。企业部署与支持是单独的商业沟通。</p></div><div class="panel"><h3>使用</h3><p>你自带 Claude Code、Codex、OpenCode、Hermes 等 agent 的订阅或 API key；SSH/云 VM 由你的云账号计费。Orca 不转售模型额度。</p></div></div><p>Orca 做的是账号切换、用量/限额读取和 CLI 启动；额度仍由各 provider 计算。把它当成“调度层”，不要期待自带免费模型。</p>
+</section>
+<section id="strengths" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>隔离做得彻底：worktree 是真实 git 目录，不是虚拟文件层，合并与回滚都走普通 git。</li><li>审阅链路完整：终端、浏览器、diff、PR 在同一窗口，行内评论能直接回到 agent。</li><li>远程与移动是差异点：SSH/自托管 server/手机接管，覆盖“人不在电脑前”的场景。</li><li>厂商中立：不绑定模型或单一 agent，已有订阅可以继续用。</li><li>本地优先：代码、会话和 agent 进程默认在你的机器或你自己的服务器上。</li></ul></div>
+</section>
+<section id="limits" class="sec">
+<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li><span class="tag infer">推断</span>Electron 桌面应用，内存与启动开销高于纯 CLI；低配机器同时开多个 worktree 要留意。</li><li>不是模型，也不附送额度；第一次用仍要自己配置 agent 和 key。</li><li>功能面很宽（worktree、远程、移动、CLI），学习和配置成本高于单一 TUI。</li><li>手机伴侣仍是 beta；Relay 需要账号，跨网络体验依赖网络条件。</li><li>安全边界取决于你启动的 agent CLI：Orca 提供隔离与审阅，不等于给 agent 加了系统级沙箱。</li><li>“27+”是厂商口径；不同 agent 的集成深度不一致，需要逐个验证。</li></ul></div>
+</section>
+<section id="compare" class="sec">
+<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>OpenCode</b></td><td>OpenCode 是单个 agent 的终端体验；Orca 是多个 agent 的编排与审阅层。两者可叠加：在 Orca 里启动 OpenCode。</td></tr><tr><td><b>Hermes</b></td><td>Hermes 是常驻个人助手（网关/记忆/自动化）；Orca 是编码工作台。重叠在“启动 agent”，不重叠在消息渠道与长期记忆。</td></tr><tr><td><b>OpenHands</b></td><td>OpenHands 强在沙箱内自治跑完整任务；Orca 强在人在环的并行与审阅。前者像 worker，后者像控制台。</td></tr></tbody></table></div>
+</section>
+<section id="fit" class="sec">
+<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你已经在用 2 个以上 agent CLI，想让它们并行且互不污染。</li><li>你重视 diff 审阅、行内评论和合并前检查。</li><li>你需要在 SSH/远程机器或手机上接管 agent。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你只偶尔用一个 agent，终端 + git 已经够。</li><li>你拒绝 Electron 应用，或需要完全自托管的审计链路。</li><li>你想让工具自带模型额度、开箱即用。</li></ul></div></div>
+</section>
+<section id="scale" class="sec">
+<div class="sec-head"><span class="sec-no">10</span><h2>100+ 会话窗口实战教程</h2></div>
+
+<div class="note"><b>先校准预期：</b>100+ 窗口应理解为 100+ 个 worktree/会话总量，而不是 100 个同时流式输出的 agent。Orca 官方把 agent session 定义为一个 worktree 里的一个终端，并在侧栏/Agent Dashboard 显示 Needs You / Working / Done / Idle [8]；官方示例展示的是 40 worktrees / 5 active。按本机资源与审查带宽粗算，真正需要同时活跃的通常是 20–40 个，其余排队、暂停或归档（推断）。Orca CLI 可以脚本化创建 worktree、发提示、读终端 [7]，但并发上限取决于你的机器、provider 限额和审查带宽。</div>
+<div class="calc" aria-labelledby="calc-title">
+<p class="calc-title" id="calc-title">规模粗算器</p>
+<div class="calc-grid">
+<label>总窗口<input id="sc-total" type="number" min="1" value="120"></label>
+<label>同时活跃<input id="sc-active" type="number" min="1" value="24"></label>
+<label>每个活跃 agent 内存 / MB<input id="sc-agent" type="number" min="100" step="50" value="700"></label>
+<label>每个 worktree 磁盘 / MB<input id="sc-wt" type="number" min="50" step="50" value="350"></label>
+<label>每波创建<input id="sc-batch" type="number" min="1" value="20"></label>
+<label>本机内存 / GB<input id="sc-ram" type="number" min="8" value="32"></label>
+<label>可用磁盘 / GB<input id="sc-disk" type="number" min="20" value="120"></label>
+</div>
+<div id="scale-out" class="calc-out" aria-live="polite"></div>
+<p class="fine">这是容量粗算，不是 Orca 官方限制；agent CLI、依赖安装、浏览器标签和模型流式输出都会显著改变实际占用。</p>
+</div>
+<h3 class="sub">窗口怎么分配</h3>
+<div class="table-wrap"><table><thead><tr><th>档位</th><th>总窗口</th><th>同时活跃</th><th>内存</th><th>磁盘</th><th>场景</th></tr></thead><tbody><tr><td><b>试点</b></td><td>10–20</td><td>5–8</td><td>16 GB</td><td>30–60 GB</td><td>单仓库、短任务；先验证 setup 与审阅流程</td></tr><tr><td><b>小团队</b></td><td>40–60</td><td>10–20</td><td>32 GB</td><td>80–150 GB</td><td>2–3 个仓库；日常并行开发</td></tr><tr><td><b>100+ 批量</b></td><td>100–150</td><td>20–40</td><td>64 GB</td><td>200 GB+</td><td>单机 + SSH/远程 host；按波次推进</td></tr><tr><td><b>极限/远程</b></td><td>150+</td><td>40–60</td><td>64–128 GB + 远程</td><td>500 GB+</td><td>拆到多台 host；不建议单机硬扛</td></tr></tbody></table></div>
+<h3 class="sub">120 个窗口的案例</h3>
+<div class="callout"><p>把 120 个 issue 拆成 6 波 × 20 个窗口：每波 10 个实现、5 个审查、3 个验证、2 个文档/清理。同一时刻只让 20–30 个活跃；每波结束先合并/关闭，再开下一波。这样“120 个对话窗口”是总量，不是 120 个同时烧 token。</p></div>
+<div class="table-wrap"><table><thead><tr><th>角色</th><th>数量</th><th>做什么</th><th>建议权限</th></tr></thead><tbody><tr><td><b>实现</b></td><td>60</td><td>写代码、补测试、修 lint/type error</td><td>可写；限制目录与命令</td></tr><tr><td><b>审查</b></td><td>30</td><td>读 diff、找风险、留评论、给修复建议</td><td>只读 / plan；不直接改</td></tr><tr><td><b>验证</b></td><td>20</td><td>跑测试、复现、回归、检查构建</td><td>可执行测试；禁止改源码</td></tr><tr><td><b>文档/清理</b></td><td>10</td><td>changelog、PR 描述、归档与 worktree 清理</td><td>只读 + 写文档</td></tr></tbody></table></div>
+<h3 class="sub">分波上线</h3>
+<ol class="steps"><li><b>第 0 步：先跑 3 个</b><br>按官方 3-agent 流程走一遍：添加 repo、建 worktree、选 agent、分屏、审 diff。确认 setup、凭据、测试命令都正常。</li><li><b>第 1 步：10 个压测</b><br>记录内存、磁盘、首 token 延迟、429、Needs You 数量；同时用 Agent Dashboard 的 Needs You/Working/Done 过滤，别靠肉眼翻侧栏。任何一项明显恶化就停在这个规模。</li><li><b>第 2 步：20 个/波</b><br>用脚本批量创建，每波结束暂停。先审阅、合并或关闭，再开下一波；不要 100 个一次性全开。</li><li><b>第 3 步：50 个</b><br>按模块/目录拆任务；审查 agent 只读；把重活放到 SSH/远程 host，避免本机 swap。</li><li><b>第 4 步：100+</b><br>连续 3 波无阻塞后再扩；保持 20–40 个活跃，其余排队；每天清理已完成 worktree。</li><li><b>收尾</b><br>合并赢家、关闭失败 worktree、<code>git worktree prune</code>、清理缓存与临时分支；把可复用提示词/规则写回 orca.yaml 或技能。</li></ol>
+<h3 class="sub">可复制脚本</h3>
+<div class="cmd"><div class="cmd-head"><span>预检</span><button type="button" data-copy="orca status --json
+orca repo list --json
+orca worktree ps --agent-wait --json">复制</button></div><pre><code>orca status --json
+orca repo list --json
+orca worktree ps --agent-wait --json</code></pre><p class="cmd-note">先确认 runtime、repo id 和当前等待中的 agent；<code>--json</code> 便于脚本消费。</p></div><div class="cmd"><div class="cmd-head"><span>分波创建 100 个 worktree</span><button type="button" data-copy="#!/usr/bin/env bash
+set -euo pipefail
+TOTAL=&quot;${1:-100}&quot;
+BATCH=&quot;${2:-20}&quot;
+STEM=&quot;${3:-batch}&quot;
+SETUP=&quot;${SETUP:-inherit}&quot;
+for start in $(seq 1 &quot;$BATCH&quot; &quot;$TOTAL&quot;); do
+  end=$((start + BATCH - 1))
+  [ &quot;$end&quot; -gt &quot;$TOTAL&quot; ] &amp;&amp; end=$TOTAL
+  for n in $(seq &quot;$start&quot; &quot;$end&quot;); do
+    name=$(printf &#x27;%s-%03d&#x27; &quot;$STEM&quot; &quot;$n&quot;)
+    orca worktree create --name &quot;$name&quot; --setup &quot;$SETUP&quot; --json \
+      &gt; &quot;/tmp/orca-$name.json&quot;
+  done
+  echo &quot;已创建 $start-$end；检查 Orca 后按 Enter 开下一波&quot;
+  read -r
+done">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+TOTAL=&quot;${1:-100}&quot;
+BATCH=&quot;${2:-20}&quot;
+STEM=&quot;${3:-batch}&quot;
+SETUP=&quot;${SETUP:-inherit}&quot;
+for start in $(seq 1 &quot;$BATCH&quot; &quot;$TOTAL&quot;); do
+  end=$((start + BATCH - 1))
+  [ &quot;$end&quot; -gt &quot;$TOTAL&quot; ] &amp;&amp; end=$TOTAL
+  for n in $(seq &quot;$start&quot; &quot;$end&quot;); do
+    name=$(printf &#x27;%s-%03d&#x27; &quot;$STEM&quot; &quot;$n&quot;)
+    orca worktree create --name &quot;$name&quot; --setup &quot;$SETUP&quot; --json \
+      &gt; &quot;/tmp/orca-$name.json&quot;
+  done
+  echo &quot;已创建 $start-$end；检查 Orca 后按 Enter 开下一波&quot;
+  read -r
+done</code></pre><p class="cmd-note">在 Orca 管理的 worktree 内运行，省略 --repo 让 Orca 推断仓库；默认 <code>--setup inherit</code> 走仓库 hooks；压测时可用 <code>SETUP=skip</code> 先跳过 100 次 setup。不要加 --activate，避免 UI 被 100 个窗口打断。</p></div><div class="cmd"><div class="cmd-head"><span>查看编排状态</span><button type="button" data-copy="orca worktree ps --json &gt; /tmp/orca-ps.json
+jq . /tmp/orca-ps.json | head -80">复制</button></div><pre><code>orca worktree ps --json &gt; /tmp/orca-ps.json
+jq . /tmp/orca-ps.json | head -80</code></pre><p class="cmd-note">先看一次 JSON 结构再写 jq 过滤；不同版本字段可能变化。需要等待态时用 --agent-wait。</p></div><div class="cmd"><div class="cmd-head"><span>批量催任务 / 读输出</span><button type="button" data-copy="orca terminal send --terminal &lt;term_id&gt; --text &quot;run the focused tests&quot; --enter --json
+orca terminal read --terminal &lt;term_id&gt; --limit 2000 --json">复制</button></div><pre><code>orca terminal send --terminal &lt;term_id&gt; --text &quot;run the focused tests&quot; --enter --json
+orca terminal read --terminal &lt;term_id&gt; --limit 2000 --json</code></pre><p class="cmd-note">用 worktree/terminal id，不要按标题模糊匹配；批量操作前先小范围验证。</p></div><div class="cmd"><div class="cmd-head"><span>标记待审</span><button type="button" data-copy="orca worktree set --worktree active --workspace-status in-review --unread --json">复制</button></div><pre><code>orca worktree set --worktree active --workspace-status in-review --unread --json</code></pre><p class="cmd-note">把完成/待审的窗口标出来，Dashboard 过滤和待办更清楚。</p></div><div class="cmd"><div class="cmd-head"><span>清理（确认后执行）</span><button type="button" data-copy="orca worktree list --json &gt; /tmp/orca-wt.json
+# 人工审阅后，对确认的 id 逐个执行：
+orca worktree rm --worktree &#x27;id:&lt;repo&gt;::&lt;path&gt;&#x27; --force --json
+git worktree prune">复制</button></div><pre><code>orca worktree list --json &gt; /tmp/orca-wt.json
+# 人工审阅后，对确认的 id 逐个执行：
+orca worktree rm --worktree &#x27;id:&lt;repo&gt;::&lt;path&gt;&#x27; --force --json
+git worktree prune</code></pre><p class="cmd-note">删除不可逆；先合并/备份分支。archive hooks 默认不跑，需要时加 --run-hooks。</p></div>
+<h3 class="sub">监控与门禁</h3>
+<div class="two"><div class="panel"><h3>什么时候停止加窗口</h3><ul class="list neg"><li>活跃 agent 超过本机粗算上限（先用上面的计算器）</li><li>Needs You &gt; 10：先处理审批/问题，不要再建新窗口</li><li>429/rate limit 明显上升：降并发或使用合法额度，不要轮换账号规避限额</li><li>待审 diff &gt; 20 或 review lag &gt; 1 天：先清积压</li><li>磁盘 &lt; 20%、swap 持续增长、终端明显卡顿</li><li>同一波失败率 &gt; 10%：暂停，修 setup/提示词/测试命令</li></ul></div><div class="panel"><h3>看哪些指标</h3><ul class="list pos"><li>合并率：合并 PR / 创建窗口数</li><li>周期：创建窗口 → 合并/关闭</li><li>审查积压：等待 review 的窗口数</li><li>token/合并 PR：按 provider 账单估算</li><li>返工率：同一窗口二次修改的比例</li><li>agent 失败/超时率：按 agent CLI 统计</li></ul></div></div>
+<h3 class="sub">上线前检查</h3>
+<ul class="checklist"><li><label><input type="checkbox"> <span>repo 的 base ref、setup hooks、测试命令已确认</span></label></li><li><label><input type="checkbox"> <span>orca.yaml 的 setup 可重复执行，依赖缓存已预热</span></label></li><li><label><input type="checkbox"> <span>已把高风险 agent 的启动参数从全自治改为审批/只读</span></label></li><li><label><input type="checkbox"> <span>已确认 provider 限额与合法账号策略</span></label></li><li><label><input type="checkbox"> <span>worktree 目录有足够磁盘，node_modules/venv 不会每窗一份</span></label></li><li><label><input type="checkbox"> <span>有明确的命名、workspace 状态与清理规则</span></label></li><li><label><input type="checkbox"> <span>先用 10 个窗口跑通，再扩到 50/100</span></label></li><li><label><input type="checkbox"> <span>关键分支已备份；删除 worktree 前已合并</span></label></li><li><label><input type="checkbox"> <span>secrets 不写进 worktree、提示词或脚本</span></label></li><li><label><input type="checkbox"> <span>有停止条件与回滚方案</span></label></li></ul>
+<div class="note"><b>安全：</b>Orca 文档说明：从 agent combobox 启动的 agent 默认带全自治参数（Claude 的 --dangerously-skip-permissions、Codex 的 --dangerously-bypass-approvals-and-sandbox、Gemini 的 --yolo 等）[8]。100 个窗口同时全自治，等于 100 个拥有你本机权限的进程。先在 Settings → Agents 改启动参数，审查/验证类窗口用只读或 plan；worktree 隔离不是安全沙箱。不要用多账号轮换规避 provider 限额。</div>
+
+</section>
+<section id="derivatives" class="sec">
+<div class="sec-head"><span class="sec-no">11</span><h2>衍生项目：GUI / Web / 手机</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>官方客户端</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.onorca.dev/download" target="_blank" rel="noopener noreferrer">Orca Desktop</a><span class="badge official">官方</span></div><p>macOS / Windows / Linux 的 Electron 桌面应用，worktree、终端、浏览器、diff 全在一个窗口。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/docs/mobile" target="_blank" rel="noopener noreferrer">Orca Mobile</a><span class="badge official">官方</span></div><p>iOS / Android 伴侣应用：看 agent 状态、回消息、切账号；Relay 配对需登录。</p></li><li><div class="eco-head"><a href="https://github.com/stablyai/orca" target="_blank" rel="noopener noreferrer">Orca CLI</a><span class="badge official">官方</span></div><p>让 agent/脚本创建 worktree、截图、点击、填表；也用于加载版本匹配的技能指南。</p></li></ul></div><div class="eco-group"><h3>官方远程与服务端</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.onorca.dev/docs/ways-to-run" target="_blank" rel="noopener noreferrer">Orca Server</a><span class="badge official">官方</span></div><p>自托管 always-on 运行时，桌面/手机连接；计算与数据仍在你自己的机器。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/docs/ways-to-run" target="_blank" rel="noopener noreferrer">SSH worktrees</a><span class="badge official">官方</span></div><p>在远程开发机/GPU 机器上跑 agent，保留文件编辑、git、终端和自动重连。</p></li><li><div class="eco-head"><a href="https://github.com/stablyai/orca/blob/main/skill-guides/orca-per-workspace-env.md" target="_blank" rel="noopener noreferrer">Cloud VM recipes</a><span class="badge official">官方</span></div><p>每个 workspace 按 orca.yaml 启动一次性 VM/容器；云账号和账单都是你的。</p></li></ul></div><div class="eco-group"><h3>官方扩展</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.onorca.dev/changelog" target="_blank" rel="noopener noreferrer">Orca Plugins</a><span class="badge official">官方</span></div><p>v1.4.245 起支持插件：图标主题、语法高亮、自定义编辑器；运行代码需授权。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/changelog" target="_blank" rel="noopener noreferrer">Shared skills</a><span class="badge official">官方</span></div><p>把技能共享到 20+ agent 工具，Orca 负责发现与安装位置。</p></li><li><div class="eco-head"><a href="https://github.com/stablyai/orca/blob/main/skill-guides/orca-per-workspace-env.md" target="_blank" rel="noopener noreferrer">orca.yaml 配方</a><span class="badge official">官方</span></div><p>hooks、setup、环境生命周期脚本；把仓库级工作流固化下来。</p></li></ul></div><div class="eco-group"><h3>社区与第三方</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/stablyai/orca/tree/main/examples/plugins" target="_blank" rel="noopener noreferrer">examples/plugins</a><span class="badge community">社区</span></div><p>仓库内的插件示例，适合作为写 Orca 插件的起点。</p></li><li><div class="eco-head"><a href="https://github.com/stablyai/orca/tree/main/skill-guides" target="_blank" rel="noopener noreferrer">skill-guides</a><span class="badge community">社区</span></div><p>Orca 团队/社区维护的技能指南，包括 orca-cli、per-workspace env 等。</p></li><li><div class="eco-head"><b>独立 Web / 手机客户端</b><span class="badge community">社区</span></div><p>截至调研未发现成规模的第三方 Orca GUI/手机端；官方桌面 + 伴侣应用是主路径。</p></li></ul></div></div><div class="note">Orca 本身就是 GUI，所以它的衍生生态不在“再做一层界面”，而在 agent 兼容、插件/技能、orca.yaml 配方和远程运行。第三方独立前端很少，看到旧教程里的 Web 客户端要先确认是否仍在维护。</div>
+</section>
+<section id="ecosystem" class="sec">
+<div class="sec-head"><span class="sec-no">12</span><h2>社区与玩友生态</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>插件与技能</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.onorca.dev/changelog" target="_blank" rel="noopener noreferrer">Orca Plugins</a><span class="badge official">官方</span></div><p>主题、语法高亮、自定义编辑器；运行代码的插件等于把本机权限交给作者。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/changelog" target="_blank" rel="noopener noreferrer">Shared skills</a><span class="badge official">官方</span></div><p>跨 agent 共享技能，减少每个 CLI 各自维护一套。</p></li><li><div class="eco-head"><a href="https://github.com/stablyai/orca/tree/main/examples/plugins" target="_blank" rel="noopener noreferrer">examples/plugins</a><span class="badge community">社区</span></div><p>从示例开始写自己的插件，再决定是否发布。</p></li></ul></div><div class="eco-group"><h3>工作流配方</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/stablyai/orca" target="_blank" rel="noopener noreferrer">Fan-out 多个 agent</a><span class="badge official">官方</span></div><p>同一提示分给多个 agent，各自 worktree，比较结果后合并赢家。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/docs" target="_blank" rel="noopener noreferrer">Diff 行内评论</a><span class="badge official">官方</span></div><p>在 diff 行上写评论，直接回传给对应 agent，减少复制粘贴。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/docs/mobile" target="_blank" rel="noopener noreferrer">手机接管</a><span class="badge official">官方</span></div><p>离开桌面时用伴侣应用回消息、切账号、看状态。</p></li></ul></div><div class="eco-group"><h3>社区入口</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/stablyai/orca#community--support" target="_blank" rel="noopener noreferrer">Discord</a><span class="badge official">官方</span></div><p>Orca 社区讨论与支持；链接在仓库 README 的 Community 区。</p></li><li><div class="eco-head"><a href="https://x.com/orca_build" target="_blank" rel="noopener noreferrer">X / Twitter</a><span class="badge official">官方</span></div><p>版本发布与更新公告。</p></li><li><div class="eco-head"><a href="https://www.onorca.dev/changelog" target="_blank" rel="noopener noreferrer">Changelog</a><span class="badge official">官方</span></div><p>功能迭代很快，插件/技能能力以 changelog 为准。</p></li></ul></div><div class="eco-group"><h3>经典玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>Worktree 隔离</b><span class="badge official">官方</span></div><p>一个任务一个真实 git worktree；失败就删目录，不污染主分支。</p></li><li><div class="eco-head"><b>远程开发机</b><span class="badge official">官方</span></div><p>SSH 到性能机跑 agent，本地只做审阅和合并。</p></li><li><div class="eco-head"><b>Design Mode</b><span class="badge official">官方</span></div><p>点选浏览器里的 UI 元素，把 HTML/CSS/截图送进 agent 提示。</p></li></ul></div></div><div class="note">Orca 插件会执行代码，官方明确说明运行代码的插件拥有完整本机访问权限；只安装你信任来源的插件。社区里“一键装插件”的脚本尤其要读源码。</div>
+</section>
+<section id="sources" class="sec">
+<div class="sec-head"><span class="sec-no">13</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://www.onorca.dev/" target="_blank" rel="noopener noreferrer">Orca 官网</a><span class="src-note">定位、支持 agent 列表、桌面与移动端。</span></li><li><a href="https://www.onorca.dev/docs" target="_blank" rel="noopener noreferrer">Orca Docs</a><span class="src-note">首次会话、tabs/panes、移动配对与运行模式。</span></li><li><a href="https://github.com/stablyai/orca" target="_blank" rel="noopener noreferrer">stablyai/orca</a><span class="src-note">MIT 许可证、功能列表、安装方式。</span></li><li><a href="https://www.onorca.dev/docs/ways-to-run" target="_blank" rel="noopener noreferrer">Ways to run Orca</a><span class="src-note">Local / SSH / Remote Server / Cloud VM；不卖托管 VPS。</span></li><li><a href="https://www.onorca.dev/enterprise" target="_blank" rel="noopener noreferrer">Orca Enterprise</a><span class="src-note">企业部署与支持入口。</span></li><li><a href="https://api.github.com/repos/stablyai/orca" target="_blank" rel="noopener noreferrer">GitHub REST API · stablyai/orca</a><span class="src-note">star 数与 latest release 于 2026-10-31 读取。</span></li><li><a href="https://www.onorca.dev/docs/cli/reference" target="_blank" rel="noopener noreferrer">Orca CLI reference</a><span class="src-note">worktree / terminal 命令、参数与 JSON 输出。</span></li><li><a href="https://www.onorca.dev/docs/model/agents-sessions" target="_blank" rel="noopener noreferrer">Agents &amp; sessions</a><span class="src-note">agent session 定义、状态、Agent Dashboard 与默认自治启动参数。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+</section>
+<div class="pager"><a href="./index.html">← 返回工具索引</a><a href="./opencode.html">OpenCode →</a></div>
+</article>
+</div>
+</main>
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('tools-theme');if(saved)root.dataset.theme=saved;}catch(e){}
+  function isDark(){return root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  var tbtn=document.querySelector('[data-theme-toggle]');
+  function paint(){if(!tbtn)return;tbtn.textContent=isDark()?'浅色':'深色';tbtn.setAttribute('aria-pressed',isDark()?'true':'false');}
+  if(tbtn){paint();tbtn.addEventListener('click',function(){root.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('tools-theme',root.dataset.theme);}catch(e){}paint();});}
+  document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print();});});
+  document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+    var cmd=b.closest('.cmd');var pre=cmd?cmd.querySelector('pre'):null;var text=pre?pre.textContent:b.getAttribute('data-copy');var old=b.textContent;
+    function done(){b.textContent='已复制';setTimeout(function(){b.textContent=old;},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,fallback);}else{fallback();}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='复制失败';setTimeout(function(){b.textContent=old;},1200);}document.body.removeChild(ta);}
+  });});
+  var sc=document.getElementById('sc-total');
+  if(sc){
+    var ids=['sc-total','sc-active','sc-agent','sc-wt','sc-batch','sc-ram','sc-disk'];
+    function val(id){var el=document.getElementById(id);var n=el?parseFloat(el.value):0;return isFinite(n)?n:0;}
+    function calcScale(){
+      var total=val('sc-total'),active=val('sc-active'),agent=val('sc-agent'),wt=val('sc-wt'),batch=val('sc-batch'),ram=val('sc-ram'),disk=val('sc-disk');
+      var ramNeed=1.2+active*agent/1024;
+      var diskNeed=total*wt/1024;
+      var waves=batch>0?Math.ceil(total/batch):0;
+      var cap=Math.max(1,Math.floor((ram*0.7-1.2)*1024/Math.max(1,agent)));
+      var bad=[];
+      if(ramNeed>ram*0.7)bad.push('内存超过本机 70% 预算：降活跃数或改用 SSH/远程。');
+      if(diskNeed>disk*0.8)bad.push('磁盘超过可用空间 80%：先清理 worktree 或外置。');
+      if(active>cap)bad.push('活跃数超过本机建议上限（约 '+cap+' 个）。');
+      if(!bad.length)bad.push('在预算内；仍建议先跑 10 个窗口验证。');
+      var out=document.getElementById('scale-out');
+      out.textContent='活跃内存粗算：'+ramNeed.toFixed(1)+' GB（预算 '+(ram*0.7).toFixed(1)+' GB）\n'
+        +'总磁盘粗算：'+diskNeed.toFixed(1)+' GB（可用 '+disk+' GB）\n'
+        +'波数：'+waves+' 波 × '+batch+' 个\n'
+        +'本机建议活跃上限：约 '+cap+' 个\n'
+        +bad.join('\n');
+      out.dataset.state=(ramNeed>ram*0.7||diskNeed>disk*0.8||active>cap)?'bad':'ok';
+    }
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calcScale);});
+    calcScale();
+  }
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  if(links.length&&'IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(!en.isIntersecting)return;var a=map[en.target.id];if(!a)return;links.forEach(function(x){x.removeAttribute('aria-current');});a.setAttribute('aria-current','true');});
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    document.querySelectorAll('article section[id]').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>

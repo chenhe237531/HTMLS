@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Prompt 工作台 · 常用提示词与开源项目</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+
+<style>
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 230px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:10px 0 16px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+<style>
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s}
+.proj:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.proj-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.proj .pname{font-size:16px;font-weight:650;line-height:1.35}
+.proj .psub{font-size:12px;color:var(--muted);margin-top:1px}
+.ptype{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono);color:var(--muted);background:var(--paper)}
+.ptype.token{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.ptype.none{color:var(--muted)}
+.proj .pdesc{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.65}
+.rows{display:grid;gap:6px;font-size:12.6px;line-height:1.55}
+.rows .r{display:grid;grid-template-columns:54px 1fr;gap:8px}
+.rows .k{color:var(--muted);font-size:11.5px;padding-top:1px}
+.rows .v{color:var(--ink-2)}
+.proj-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.proj-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
+.tag2{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap}
+.tag2.yes{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+</style>
+</head>
+<style>
+.prompt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px}
+.prompt-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.p-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.p-head h3{margin:0;font-size:15.5px;line-height:1.4}
+.p-use{font-size:12px;color:var(--muted);margin-top:2px}
+.p-tags{display:flex;flex-wrap:wrap;gap:5px}
+.p-text{margin:0;white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--mono);font-size:12.2px;line-height:1.65;color:var(--ink-2);max-height:280px;overflow:auto}
+.p-head .copy{flex:0 0 auto}
+@media (max-width:600px){.prompt-grid{grid-template-columns:1fr}}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Prompt 工作台</div>
+      <div class="brand-sub">提示词 · 开源项目 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>怎么用</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>提示词库</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>开源项目</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>测试与迭代</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>注意事项</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    25 条常用提示词 · 6 类<br>
+    11 个开源项目<br>
+    离线单文件 · 可复制
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Prompt Library<span class="dot"></span>2026-10-31</p>
+    <h1>提示词<em>工作台</em></h1>
+    <p class="lede">25 条可以直接改用的提示词，覆盖写作、编程、分析、学习、产品与 Agent；再加 11 个值得收藏的开源项目。复制之前，先替换变量。</p>
+    <div class="meta-row">
+      <span class="pill">结构 <b>角色 / 任务 / 约束 / 输出</b></span>
+      <span class="pill">变量 <b>{{双花括号}}</b></span>
+      <span class="pill">不依赖网络</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">25<span>条</span></div><div class="l">可直接改用的提示词</div></div>
+      <div class="kpi"><div class="n">6<span>类</span></div><div class="l">写作 / 编程 / 分析 / 学习 / 产品 / Agent</div></div>
+      <div class="kpi"><div class="n">11<span>个</span></div><div class="l">开源提示词 / 评测项目</div></div>
+      <div class="kpi"><div class="n">1<span>页</span></div><div class="l">可离线、可复制</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">怎么用</h2></div>
+    <p class="lead-in">提示词不是咒语。它是一份任务说明：谁来做、做什么、边界在哪、交付长什么样。下面所有模板都按这四件事写。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">先替换变量</h4><p class="small" style="margin:0">把 <code>{{主题}}</code>、<code>{{读者}}</code>、<code>{{字数}}</code> 换成真实信息；空着的变量会让模型自由发挥。</p></div>
+      <div class="card"><h4 style="margin-top:0">给验收标准</h4><p class="small" style="margin:0">写清「怎样算完成」：格式、长度、必须包含的字段、不能做的事。</p></div>
+      <div class="card"><h4 style="margin-top:0">先跑一次再改</h4><p class="small" style="margin:0">用真实任务测试；不行就改约束或输出格式，不要只加「请更专业一点」。</p></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>要素</th><th>作用</th><th>例子</th></tr></thead>
+        <tbody>
+          <tr><td><b>角色</b></td><td>限定视角与标准</td><td>「你是只读的代码审查员」</td></tr>
+          <tr><td><b>任务</b></td><td>一句话说清要交付什么</td><td>「审查这段 diff，找出阻断问题」</td></tr>
+          <tr><td><b>约束</b></td><td>边界、禁止项、不确定性处理</td><td>「不修改文件；不确定标为疑问」</td></tr>
+          <tr><td><b>输出</b></td><td>格式、长度、必填字段</td><td>「按严重度排序，每条带 file:line」</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">使用顺序</span>
+      选模板 → 替换变量 → 先小样本试一次 → 按结果加约束（不是加形容词）→ 固定成自己的模板。
+    </div>
+  </section>
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">提示词库</h2></div>
+    <p class="lead-in">按场景筛选，点「复制」拿走。所有模板都用 <code>{{变量}}</code> 标出需要替换的部分。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按场景筛选">
+        <button class="chip" type="button" data-cat="all" aria-pressed="true">全部 25</button>
+        <button class="chip" type="button" data-cat="writing" aria-pressed="false">写作 4</button>
+        <button class="chip" type="button" data-cat="coding" aria-pressed="false">编程 5</button>
+        <button class="chip" type="button" data-cat="analysis" aria-pressed="false">分析 4</button>
+        <button class="chip" type="button" data-cat="learning" aria-pressed="false">学习 4</button>
+        <button class="chip" type="button" data-cat="product" aria-pressed="false">产品 4</button>
+        <button class="chip" type="button" data-cat="agent" aria-pressed="false">Agent 4</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="promptSearch">搜索提示词</label>
+        <input id="promptSearch" type="search" placeholder="搜索场景、关键词…" autocomplete="off">
+      </div>
+    </div>
+    <p class="result-line" id="promptCount" role="status" aria-live="polite">显示 25 / 25 条提示词</p>
+
+    <div class="prompt-grid" id="promptGrid">
+
+      <article class="prompt-card" data-cat="writing" data-name="文章初稿 写作 结构">
+        <div class="p-head"><div><h3>文章初稿：先选结构再写</h3><div class="p-use">适合从零写一篇有观点的长文</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：主题 / 读者 / 目标</span></div>
+        <pre class="p-text">你是一位资深编辑。
+
+主题：{{主题}}
+读者：{{读者}}
+目标：读完后他们能做出什么决定或行动
+
+步骤：
+1. 先给 3 种不同的文章结构，各用一句话说明适合什么读者。
+2. 选最合适的一种，写出 800–1200 字初稿。
+3. 事实、引用与个人观点必须分开标注。
+4. 结尾给 3 条可执行的下一步。
+
+不要用「在当今时代」这类套话开场。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="writing" data-name="精简改写 压缩 保留事实">
+        <div class="p-head"><div><h3>精简改写：不丢信息</h3><div class="p-use">把冗长草稿压到目标字数</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：字数 / 原文</span></div>
+        <pre class="p-text">把下面的文字压缩到 {{字数}} 字左右。
+
+要求：
+- 保留所有事实、数字、时间与限定条件。
+- 删除重复、空话与自我引用。
+- 不改变原意，不新增信息。
+
+输出：
+1. 改写稿
+2. 不超过 3 条修改说明（删了什么、为什么）
+
+原文：
+{{粘贴原文}}</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="writing" data-name="多平台改写 邮件 公众号 微博 Slack">
+        <div class="p-head"><div><h3>同一内容，改写四个平台</h3><div class="p-use">一次写作，多渠道分发</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：原始内容</span></div>
+        <pre class="p-text">把下面这份内容改写成四个版本，事实必须一致：
+
+1. 邮件：主题行 + 200 字以内正文，结论先行。
+2. 公众号：600 字，有标题、小标题、结尾互动。
+3. 微博：140 字以内，保留一个数字或反常识点。
+4. Slack：3 条以内消息，每条不超过两行。
+
+每个版本标明适合的读者与使用场景。
+
+原始内容：
+{{粘贴内容}}</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="writing" data-name="事实核查 主张 来源 验证">
+        <div class="p-head"><div><h3>事实核查：把主张拆开</h3><div class="p-use">发布前检查文章里的事实</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：待核查文本</span></div>
+        <pre class="p-text">逐条列出下文中所有事实性主张，并为每条标注：
+
+- 类型：可验证事实 / 观点 / 预测 / 定义
+- 核查方法：应查什么来源（官方文档、论文、财报、监管文件）
+- 当前判断：支持 / 存疑 / 无法判断
+- 风险：如果错了，会影响什么
+
+不要编造来源；不确定就写「无法判断」。
+
+文本：
+{{粘贴文本}}</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="coding" data-name="代码侦察 只读 file:line">
+        <div class="p-head"><div><h3>代码侦察：先摸清地形</h3><div class="p-use">开工前只读分析仓库</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：任务</span></div>
+        <pre class="p-text">你是只读的代码侦察员。
+
+任务：{{要完成的功能或要排查的问题}}
+
+请只读分析仓库，输出：
+1. 入口文件与关键调用链（每条带 file:line）
+2. 相关测试与它们覆盖的行为
+3. 既有约定（命名、错误处理、目录结构）
+4. 改动风险点与未知项
+
+限制：
+- 不修改任何文件，不执行写操作。
+- 不粘贴超过 5 行的代码。
+- 结论不超过 15 行，细节放在附录。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="coding" data-name="代码审查 diff 只读 严重度">
+        <div class="p-head"><div><h3>代码审查：只读、按严重度</h3><div class="p-use">提交前或合并前审查</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：需求 / diff</span></div>
+        <pre class="p-text">你是独立代码审查员，只读工作区。
+
+需求：{{这次改动要解决什么}}
+改动：{{粘贴 diff 或文件清单}}
+
+输出按三档排序：
+- 阻断：会导致错误、数据损坏或安全问题
+- 建议：可维护性、性能、边界
+- 疑问：需要作者确认的假设
+
+每条必须包含：file:line、问题、为什么是问题、最小修复方向。
+不修改文件；不超过 12 条；不确定标为疑问。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="coding" data-name="调试 假设 实验 根因 回归">
+        <div class="p-head"><div><h3>调试：假设 → 实验 → 根因</h3><div class="p-use">可复现的报错、CI 失败、性能退化</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：现象 / 日志</span></div>
+        <pre class="p-text">你是排障工程师。
+
+现象：{{报错或异常行为}}
+环境：{{版本 / 平台 / 最近改动}}
+日志：{{关键日志，最多 30 行}}
+
+请：
+1. 提出 3 个假设，按验证成本排序。
+2. 每次只做一个最小实验，说明预期与结果。
+3. 找到根因后，先写一个会失败的回归测试，再给最小修复。
+4. 最后说明还有哪些未排除的可能。
+
+不要一次改多个地方。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="coding" data-name="重构 行为不变 护栏测试">
+        <div class="p-head"><div><h3>重构：行为不变</h3><div class="p-use">重复代码、职责混乱、加功能前整理</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：模块 / 目标</span></div>
+        <pre class="p-text">在不改变外部行为的前提下重构 {{模块}}。
+
+步骤：
+1. 先列出当前行为与调用方，指出哪些是公开契约。
+2. 补最小护栏测试；测试通过后再动结构。
+3. 小步修改，每步只做一件事，并说明改了什么。
+4. 每步结束跑验证命令，报告结果。
+
+约束：
+- 不顺手改需求，不改公开 API。
+- 失败时先回滚到上一个绿点，不要叠加补丁。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="coding" data-name="测试矩阵 边界 异常 并发">
+        <div class="p-head"><div><h3>测试矩阵：先列格子再写</h3><div class="p-use">补测试、修复后防回归</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：功能</span></div>
+        <pre class="p-text">为 {{功能}} 设计测试矩阵。
+
+维度：正常路径 / 边界 / 异常输入 / 并发或重试 / 权限与越权。
+每格给出：输入、预期结果、优先级（P0–P2）。
+
+然后：
+1. 先写 P0 用例，保持最小可运行。
+2. 每个断言必须能因实现错误而失败，避免「永真」测试。
+3. 最后列出尚未覆盖的风险。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="analysis" data-name="问题拆解 MECE 假设">
+        <div class="p-head"><div><h3>问题拆解：MECE 三层</h3><div class="p-use">面对模糊、复杂的问题</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：问题</span></div>
+        <pre class="p-text">用 MECE 原则拆解：{{问题}}
+
+要求：
+1. 给出三层结构，第一层 3–5 个分支。
+2. 标出哪些是事实、哪些是假设、哪些未知。
+3. 对每个未知，给出最低成本的验证方法。
+4. 最后给 3 个本周就能执行的动作，并说明成功信号。
+
+不要用「加强重视」「提升能力」这类无法验证的表述。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="analysis" data-name="决策矩阵 权重 敏感性">
+        <div class="p-head"><div><h3>决策矩阵：打分 + 敏感性</h3><div class="p-use">在几个方案之间做选择</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：选项 / 标准 / 权重</span></div>
+        <pre class="p-text">帮我做一个决策矩阵。
+
+选项：{{A / B / C}}
+标准与权重：{{标准 1=40%，标准 2=30%，标准 3=30%}}
+
+要求：
+1. 每个选项按 1–5 打分，并给打分的依据。
+2. 计算加权总分。
+3. 做敏感性分析：权重变化多少会改变结论？
+4. 指出矩阵无法捕捉的因素，并给一个「如果只能选一个」的建议。
+
+不要为了凑满分数而编造数据。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="analysis" data-name="红队 反方 失败原因">
+        <div class="p-head"><div><h3>红队：这个方案会怎么失败</h3><div class="p-use">上线前、投资前、重大决策前</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：方案</span></div>
+        <pre class="p-text">站在最聪明的反方立场，攻击这个方案：
+
+{{方案}}
+
+输出：
+1. 5 个最可能导致失败的原因，按「概率 × 影响」排序。
+2. 每个原因给一个早期信号（怎样在两周内发现）。
+3. 每个原因给一个低成本应对。
+4. 最后回答：如果只能修一个，修哪个？
+
+不要为了平衡而弱化问题。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="analysis" data-name="日志分析 数据形状 相关因果">
+        <div class="p-head"><div><h3>日志 / 数据分析：先描述再结论</h3><div class="p-use">排查趋势、定位异常、核对口径</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：数据说明 / 日志</span></div>
+        <pre class="p-text">分析下面的日志或数据。
+
+数据说明：{{时间范围 / 字段 / 采集方式}}
+数据：{{粘贴样本，最多 50 行}}
+
+请按顺序：
+1. 描述数据形状：时间范围、缺失、异常值。
+2. 列出观察到的现象，每条附证据。
+3. 区分相关与因果；没有证据的因果解释标为假设。
+4. 明确写出「这些数据无法回答什么」。
+
+不要用总数掩盖分布问题。</pre>
+      </article>
+      <article class="prompt-card" data-cat="learning" data-name="费曼解释 类比 边界 自测">
+        <div class="p-head"><div><h3>费曼解释：讲给两种人听</h3><div class="p-use">快速真正理解一个概念</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：概念</span></div>
+        <pre class="p-text">用费曼法解释 {{概念}}。
+
+1. 先给一个 12 岁读者能懂的版本（不超过 150 字），必须用一个生活类比。
+2. 再给一个同行版本：关键机制、术语、边界条件。
+3. 列出 3 个常见误解，并逐一纠正。
+4. 给 3 道自测题（不要答案），覆盖定义、应用与边界。
+
+如果某个部分需要前提知识，先说明前提。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="learning" data-name="七天入门 路线 交付物">
+        <div class="p-head"><div><h3>7 天入门路线</h3><div class="p-use">从零接触一个新领域</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：主题 / 每天时长</span></div>
+        <pre class="p-text">为零基础学习者设计 {{主题}} 的 7 天入门路线。
+
+约束：每天 {{1 小时}}，只用一个免费资源。
+
+每天给出：
+- 一个具体目标
+- 一个 30–60 分钟的学习动作
+- 一个可交付物（笔记 / 小脚本 / 一页图）
+- 一个验收标准（怎样算学会）
+
+不要列书单，不要安排「看视频」作为唯一动作。
+最后给第 8 天的自测任务。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="learning" data-name="苏格拉底 提问 引导">
+        <div class="p-head"><div><h3>苏格拉底式引导</h3><div class="p-use">想自己想明白，而不是被灌输</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：主题</span></div>
+        <pre class="p-text">不要直接给我答案。用苏格拉底式提问引导我理解 {{主题}}。
+
+规则：
+- 每次只问一个问题，等我回答后再继续。
+- 从我的现有理解出发，逐步暴露矛盾。
+- 如果我答错，用一个反例让我自己发现，而不是直接纠正。
+- 5 轮后，让我用自己的话总结，你再补充遗漏。
+
+现在开始第一个问题。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="learning" data-name="文档精读 摘要 概念 误解">
+        <div class="p-head"><div><h3>文档 / 论文精读</h3><div class="p-use">读长文档时避免只记住结论</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：文档</span></div>
+        <pre class="p-text">精读下面这份文档。
+
+文档：{{粘贴或给出链接/路径}}
+
+输出：
+1. 5 句话摘要（问题、方法、结论、限制、适用场景）。
+2. 关键概念与它们之间的关系（用列表表示）。
+3. 作者明确说了什么、推断的是什么、没说什么。
+4. 我作为 {{角色}} 最可能误解的 3 个点。
+5. 3 个值得追问的问题。
+
+不要补充文档之外的事实；需要外部知识时明确标注。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="product" data-name="需求澄清 验收 非目标">
+        <div class="p-head"><div><h3>需求澄清：把一句话变成可执行</h3><div class="p-use">接到模糊需求时</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：原始需求</span></div>
+        <pre class="p-text">把这条需求澄清成可执行说明：
+
+{{原始需求}}
+
+输出：
+- 用户与场景
+- 要解决的问题（不是功能清单）
+- 成功指标（可量化）
+- 非目标（这次明确不做什么）
+- 验收标准（怎样算完成）
+- 5 个必须向需求方确认的问题，按重要性排序
+
+不要替需求方做假设；把假设单独列出。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="product" data-name="用户访谈 提纲 追问">
+        <div class="p-head"><div><h3>用户访谈提纲</h3><div class="p-use">验证需求，而不是推销方案</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：目标 / 用户</span></div>
+        <pre class="p-text">为 {{研究目标}} 设计一份 30 分钟用户访谈提纲，对象是 {{用户类型}}。
+
+要求：
+- 8 个主问题，多问过去行为，少问「你会不会」。
+- 每个主问题配 1–2 个追问。
+- 避免引导性、二元式与假设性问题。
+- 开头 3 分钟建立语境，结尾 3 分钟问「还有什么我没问到的」。
+- 另附：3 个不能问的问题及原因。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="product" data-name="周报 结果 风险 计划">
+        <div class="p-head"><div><h3>周报：结果先行</h3><div class="p-use">把流水账整理成可读周报</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：本周记录</span></div>
+        <pre class="p-text">把这周的记录整理成一份周报。
+
+记录：{{粘贴流水账 / 提交 / 会议要点}}
+
+结构：
+1. 结果：3 条以内，每条带数字或可验证产出。
+2. 进展：比上周多了什么。
+3. 风险与阻塞：需要谁在什么时候做什么。
+4. 下周计划：3 件事，每件有验收标准。
+
+删除过程细节与「参与了」这类不可验证表述。没有数字就写「无数据」。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="product" data-name="会议纪要 决定 行动项">
+        <div class="p-head"><div><h3>会议纪要：只留决定与行动</h3><div class="p-use">会后 5 分钟整理</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：会议记录</span></div>
+        <pre class="p-text">把会议记录整理成三部分：
+
+1. 已决定：每条一句话，注明决策人与依据。
+2. 行动项：任务 / 负责人 / 截止时间 / 验收标准。
+3. 未决问题：为什么没定、下一步谁来推动。
+
+规则：
+- 不编造未讨论的内容。
+- 讨论过程不写，除非它解释了某个决定。
+- 信息不足的字段写「待确认」。
+
+会议记录：
+{{粘贴记录}}</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="agent" data-name="侦察子代理 只读 摘要">
+        <div class="p-head"><div><h3>只读侦察子代理</h3><div class="p-use">主代理开工前的上下文压缩</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：任务</span></div>
+        <pre class="p-text">你是只读侦察子代理。
+
+目标：为「{{任务}}」收集施工前所需的最小上下文。
+
+输出（≤ 15 行）：
+- 相关文件与符号，每条带 file:line
+- 现有约定与测试入口
+- 风险与未知项
+- 建议的下一步（不超过 3 条）
+
+禁止：编辑文件、执行写入命令、粘贴超过 5 行代码。
+不确定的内容标为「未确认」，不要猜。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="agent" data-name="审查子代理 只读 独立">
+        <div class="p-head"><div><h3>独立审查子代理</h3><div class="p-use">与实现者分离，避免自审偏差</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：需求 / diff</span></div>
+        <pre class="p-text">你是独立代码审查子代理，只读。
+
+输入：需求 {{需求}} + diff {{diff}}
+
+只输出 findings，按 阻断 / 建议 / 疑问 排序。
+每条：file:line、问题、为什么、最小修复方向。
+
+约束：
+- 不修改文件，不运行命令。
+- 不评价实现者的过程，只看结果。
+- 不超过 10 条；不确定标为疑问。
+- 最后给一句总体判断：可以合并 / 修完再合 / 需要重做。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="agent" data-name="规划代理 只输出计划">
+        <div class="p-head"><div><h3>规划代理：只出计划</h3><div class="p-use">多文件改动前的拆解</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：目标 / 约束</span></div>
+        <pre class="p-text">你是规划代理，只输出计划，不写代码。
+
+目标：{{目标}}
+约束：{{必须遵守的规则 / 不能动的部分}}
+
+输出：
+1. 目标与非目标
+2. 步骤清单：每步一个可独立验证的改动
+3. 每步的验收命令与预期结果
+4. 风险、回滚点与需要人工确认的地方
+5. 建议的执行顺序（哪些可并行）
+
+如果信息不足，先列问题，不要假设。</pre>
+      </article>
+
+      <article class="prompt-card" data-cat="agent" data-name="编排者 分派 汇总">
+        <div class="p-head"><div><h3>编排者：只分派不施工</h3><div class="p-use">大任务拆分给多个子代理</div></div><button class="copy" type="button">复制</button></div>
+        <div class="p-tags"><span class="tag2">变量：任务 / 可用代理</span></div>
+        <pre class="p-text">你是编排者。只做拆解、分派与汇总，不亲自修改文件。
+
+任务：{{任务}}
+可用子代理：{{侦察 / 规划 / 实现 / 审查}}
+
+请：
+1. 拆成 3–6 个可独立验收的子任务。
+2. 为每个子任务指定代理、输入、输出格式与验收标准。
+3. 标出依赖关系与可并行部分。
+4. 汇总时只保留结论、冲突与未决项，不粘贴过程。
+
+不要派发职责重叠的任务。</pre>
+      </article>
+
+    </div>
+    <div class="empty" id="promptEmpty" hidden>没有匹配的提示词。试试更短的关键词，或重置筛选。</div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">开源项目</h2></div>
+    <p class="lead-in">从「抄提示词」到「管理、评测、优化提示词」，下面 11 个项目覆盖了完整链路。许可以仓库为准。</p>
+
+    <div class="proj-grid">
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">awesome-chatgpt-prompts</div><div class="psub">f/awesome-chatgpt-prompts</div></div><span class="ptype">CC0</span></div>
+        <p class="pdesc">最大的提示词合集之一，按角色组织，适合找灵感与对照写法。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">快速找模板、看别人怎么设定角色</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">质量参差，很多是「扮演某某」，缺少验收标准</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">合集</span><a href="https://github.com/f/awesome-chatgpt-prompts" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Prompt Engineering Guide</div><div class="psub">dair-ai/Prompt-Engineering-Guide</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">系统性的提示工程教程，覆盖基础技巧、论文与模型差异，适合建立完整认知。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">系统学习，而不是收集模板</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">偏原理与论文，落地模板较少</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">教程</span><a href="https://github.com/dair-ai/Prompt-Engineering-Guide" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">LangGPT</div><div class="psub">结构化提示词语言</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">用 Role / Profile / Rules / Workflow 等结构写提示词，把「一段话」变成可维护的模块。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">复杂角色、团队共享、版本管理</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">结构本身不保证效果，仍需评测</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">结构</span><a href="https://github.com/langgptai/LangGPT" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">promptfoo</div><div class="psub">提示词评测与红队</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">把提示词当代码测试：数据集、断言、多模型对比、CI 集成与安全红队。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">上线前回归、A/B、防退化</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">需要自己准备高质量测试集</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">评测</span><a href="https://github.com/promptfoo/promptfoo" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">DSPy</div><div class="psub">程序化提示与优化</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">把提示词写成程序模块，用指标和优化器自动搜索更好的指令与示例。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">有明确指标、需要批量调优的场景</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">学习曲线陡，简单任务过度设计</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">优化</span><a href="https://github.com/stanfordnlp/dspy" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Guidance</div><div class="psub">受控生成</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">在生成过程中插入约束、分支与工具调用，让输出严格按模板走。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">结构化输出、多步骤模板</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">与模型/后端耦合，迁移需评估</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">受控</span><a href="https://github.com/guidance-ai/guidance" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Instructor</div><div class="psub">结构化输出</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">用 Pydantic 定义输出结构，自动校验、重试与纠错，适合把 LLM 接进程序。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">抽取、分类、表单填写</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">复杂嵌套结构的错误处理要设计</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">结构化</span><a href="https://github.com/jxnl/instructor" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Outlines</div><div class="psub">约束解码</div></div><span class="ptype">Apache-2.0</span></div>
+        <p class="pdesc">在解码层保证输出符合 JSON Schema、正则或语法，减少「格式对了内容不对」的重试。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">本地模型、严格格式</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">依赖推理后端支持</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">解码</span><a href="https://github.com/dottxt-ai/outlines" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Langfuse</div><div class="psub">可观测与提示管理</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">开源 LLM 可观测平台：追踪调用、管理提示版本、跑评测、看成本与延迟。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">团队协作、线上监控</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">自托管需要运维；注意敏感数据</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">可观测</span><a href="https://github.com/langfuse/langfuse" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">Fabric</div><div class="psub">CLI 模式库</div></div><span class="ptype">MIT</span></div>
+        <p class="pdesc">把常用提示词做成命令行 pattern，可直接对文本、代码、网页运行并输出结果。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">个人工作流、批量处理</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">pattern 质量不一，需筛选</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">CLI</span><a href="https://github.com/danielmiessler/fabric" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+      <article class="proj">
+        <div class="proj-top"><div><div class="pname">PromptSource</div><div class="psub">数据集提示模板</div></div><span class="ptype">Apache-2.0</span></div>
+        <p class="pdesc">为大量数据集提供可复用的提示模板与评测接口，偏研究与系统化实验。</p>
+        <div class="rows">
+          <div class="r"><span class="k">适合</span><span class="v">研究、批量评测</span></div>
+          <div class="r"><span class="k">注意</span><span class="v">项目较早，维护活跃度需确认</span></div>
+        </div>
+        <div class="proj-foot"><span class="tag2">研究</span><a href="https://github.com/bigscience-workshop/promptsource" target="_blank" rel="noopener noreferrer">GitHub →</a></div>
+      </article>
+
+    </div>
+
+    <div class="callout warn">
+      <span class="t">选型建议</span>
+      只想找模板：awesome-chatgpt-prompts + Fabric。想系统学：Prompt Engineering Guide。要把提示词工程化：promptfoo（评测）+ Langfuse（观测）+ Instructor/Outlines（结构化）。想做自动优化：DSPy。
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">测试与迭代</h2></div>
+    <p>提示词的效果不是「感觉更好」，而是在固定任务集上的可重复结果。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>阶段</th><th>做什么</th><th>产出</th></tr></thead>
+        <tbody>
+          <tr><td>建任务集</td><td>收集 20–50 个真实输入，覆盖正常/边界/异常</td><td>可重复的测试集</td></tr>
+          <tr><td>定评分</td><td>用规则（格式/字段）+ 人工或模型评分（准确性/可读性）</td><td>Rubric 与通过线</td></tr>
+          <tr><td>A/B</td><td>只改一个变量，跑同一批输入</td><td>差异与显著性</td></tr>
+          <tr><td>回归</td><td>把通过的样本固化，模型或提示词变更后重跑</td><td>防退化</td></tr>
+          <tr><td>成本</td><td>记录 token、延迟、失败重试</td><td>单位任务成本</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">一个常见错误</span>
+      拿一个例子调到满意就上线。提示词往往在第二个、第三个分布外输入上崩掉；测试集比「再改一版」更有价值。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">注意事项</h2></div>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">安全</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>把网页、文件、工具返回当不可信输入，防提示词注入</li>
+          <li>不要在提示词里放密钥、客户数据、内部地址</li>
+          <li>让 Agent 执行工具时，权限最小化</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">质量</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>模型与版本会改变结果，换模型要重测</li>
+          <li>提示词越长不一定越好，约束要可执行</li>
+          <li>要求「不确定就标注」，减少编造</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">版权与合规</span>
+      开源仓库的提示词也有许可证差异；商用前确认授权。不要直接复制含个人信息、内部系统说明或未公开数据的提示词。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">来源</h2></div>
+    <p class="small">项目信息与许可截至 2026-10-31；以各仓库当期 LICENSE 为准。</p>
+    <ul class="small">
+      <li><a href="https://github.com/f/awesome-chatgpt-prompts" target="_blank" rel="noopener noreferrer">awesome-chatgpt-prompts</a> · <a href="https://github.com/dair-ai/Prompt-Engineering-Guide" target="_blank" rel="noopener noreferrer">Prompt Engineering Guide</a> · <a href="https://github.com/langgptai/LangGPT" target="_blank" rel="noopener noreferrer">LangGPT</a></li>
+      <li><a href="https://github.com/promptfoo/promptfoo" target="_blank" rel="noopener noreferrer">promptfoo</a> · <a href="https://github.com/stanfordnlp/dspy" target="_blank" rel="noopener noreferrer">DSPy</a> · <a href="https://github.com/guidance-ai/guidance" target="_blank" rel="noopener noreferrer">Guidance</a></li>
+      <li><a href="https://github.com/jxnl/instructor" target="_blank" rel="noopener noreferrer">Instructor</a> · <a href="https://github.com/dottxt-ai/outlines" target="_blank" rel="noopener noreferrer">Outlines</a> · <a href="https://github.com/langfuse/langfuse" target="_blank" rel="noopener noreferrer">Langfuse</a></li>
+      <li><a href="https://github.com/danielmiessler/fabric" target="_blank" rel="noopener noreferrer">Fabric</a> · <a href="https://github.com/bigscience-workshop/promptsource" target="_blank" rel="noopener noreferrer">PromptSource</a></li>
+    </ul>
+    <div class="callout">
+      <span class="t">使用建议</span>
+      把本页当起点，不要当标准答案。挑一条，换成你的任务，跑 20 个真实样本，再决定是否留下。
+    </div>
+  </section>
+
+  <footer>
+    <span>Prompt 工作台 · 2026-10-31 · 单文件离线版</span>
+    <span>先替换变量，再谈效果</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".prompt-card"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-cat]"));
+  var search = document.getElementById("promptSearch");
+  var count = document.getElementById("promptCount");
+  var empty = document.getElementById("promptEmpty");
+  var active = "all";
+
+  function apply() {
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (el) {
+      var ok = active === "all" || el.getAttribute("data-cat") === active;
+      if (ok && q) { ok = el.textContent.toLowerCase().indexOf(q) !== -1; }
+      el.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    count.textContent = "显示 " + shown + " / " + cards.length + " 条提示词";
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      active = chip.getAttribute("data-cat");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+  search.addEventListener("input", apply);
+
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll(".prompt-card .copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var card = btn.closest(".prompt-card");
+      var pre = card ? card.querySelector(".p-text") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  apply();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

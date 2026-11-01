@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="把开发任务丢进沙箱自主执行的 agent 平台：Canvas + SDK + Agent Server。">
+<title>OpenHands · Agent 工具调研</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
+  --muted:#6d7078;--line:#e1dbcf;--line-2:#cfc7b8;--accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;--green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;--code:#171a20;--code-ink:#ece8de;--code-line:#2b3039;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --radius:14px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+    --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+    --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+    --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+  --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+  --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+  --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:0}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:var(--paper);background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px clamp(18px,4vw,40px);display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--amber);margin:0 4px}
+.topnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topnav a,.topnav button{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:5px 9px;text-decoration:none;cursor:pointer}
+.topnav a:hover,.topnav button:hover{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.topnav button:focus-visible,.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero{padding:clamp(34px,6vw,70px) 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.06;letter-spacing:-.02em;margin:0 0 16px}
+.lede{max-width:52em;margin:0 0 22px;font-size:clamp(17px,2vw,19px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.v-card.yes h2{color:var(--green)}.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,54px);align-items:start;padding:34px 0 70px}
+.toc{position:sticky;top:74px;font-size:13px;min-width:0}
+.layout>*{min-width:0}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);min-width:0}
+.toc a{display:block;padding:4px 0 4px 12px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.6}
+article{min-width:0}
+.sec{margin:0 0 56px;scroll-margin-top:96px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:9px;margin-bottom:20px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,29px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 14px}
+.fact-list{margin:0;padding-left:20px}
+.fact-list li{margin:7px 0;color:var(--ink-2)}
+.ref{font-family:var(--mono);font-size:10.5px;color:var(--amber);vertical-align:super;margin-left:2px;text-decoration:none}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 18px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cap{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 15px}
+.cap h3{font-size:14px}
+.cap p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.steps{margin:0;padding-left:22px}
+.steps li{margin:0 0 12px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.cmd{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:var(--surface)}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cmd-head button{font:inherit;font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:7px;padding:3px 9px;cursor:pointer}
+.cmd-head button:hover{color:var(--ink);border-color:var(--accent)}
+.cmd pre{margin:0;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.cmd-note{margin:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:15px 17px}
+.panel h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.list.pos li::marker{color:var(--green)}
+.list.neg li::marker{color:var(--red)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+.note b{color:var(--ink)}
+.sources{margin:0;padding-left:22px;font-size:13.5px;color:var(--ink-2)}
+.sources li{margin:0 0 9px}
+.sources a{word-break:break-word}
+.sources .src-note{display:block;color:var(--muted);font-size:12px}
+
+.calc{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 14px;box-shadow:var(--shadow)}
+.calc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.calc-out{margin-top:11px;padding:11px 13px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper-2);font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-line;color:var(--ink-2)}
+.calc-out[data-state="ok"]{border-color:var(--green);background:var(--green-soft)}
+.calc-out[data-state="bad"]{border-color:var(--red);background:var(--red-soft)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checklist li{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--ink-2)}
+.checklist label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:3px;accent-color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.use{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.use code{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all}
+p code,li code,td code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.use p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.eco-group{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.eco-group h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-list{list-style:none;margin:0;padding:0}
+.eco-list li{padding:8px 0;border-top:1px solid var(--line)}
+.eco-list li:first-child{border-top:0;padding-top:0}
+.eco-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.eco-head a,.eco-head b{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.eco-head a:hover{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--muted)}
+.badge.official{color:var(--green);border-color:var(--green)}
+.badge.community{color:var(--accent);border-color:var(--accent)}
+.badge.thirdparty{color:var(--amber);border-color:var(--amber)}
+.eco-list p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-list code{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px;font-size:13.5px}
+.pager a{text-decoration:none}
+/* index */
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;min-width:210px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.filters button{font:inherit;font-size:13px;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--ink-2)}
+.filters button:hover{border-color:var(--accent);color:var(--ink)}
+#count{font-size:12.5px;color:var(--muted);margin-left:auto;padding-bottom:9px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.tool-card .card-top{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-card .lic{color:var(--amber)}
+.tool-card h3{font-family:var(--serif);font-size:24px;line-height:1.2;margin:8px 0 2px}
+.tool-card h3 a{color:var(--ink);text-decoration:none}
+.tool-card h3 a:hover{color:var(--accent)}
+.tool-card .en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 8px}
+.tool-card .desc{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:0 0 10px}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12px}
+.mini dt{color:var(--muted)}
+.mini dd{margin:0;color:var(--ink-2)}
+.card-verdict{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:12px;color:var(--muted)}
+.card-foot a{text-decoration:none;font-weight:600}
+.empty{border:1px dashed var(--line-2);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.matrix td:first-child{white-space:nowrap}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scenario{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.scenario h3{font-size:14px;color:var(--accent)}
+.scenario p{margin:0;font-size:13.5px;color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){
+  .filters{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .filters input,.filters select{width:100%;min-width:0}
+  #count{margin-left:0;padding-bottom:0}
+  .topnav{width:100%;justify-content:flex-start}
+  .hero{padding-top:28px}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .toc{position:static;order:-1}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;border-left:0;padding-bottom:4px}
+  .toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .toc-note{display:none}
+  .verdict,.two,.scenarios,.cmd-grid,.eco-grid,.checklist{grid-template-columns:1fr}
+  #count{margin-left:0;padding-bottom:0}
+}
+@media print{
+  .topbar,.toc,.pager,.filters,.cmd-head button,[data-theme-toggle],[data-print]{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .layout{display:block}
+  .tool-card,.panel,.callout,.cmd{box-shadow:none}
+  a{color:#000;text-decoration:underline}
+  .sec{break-inside:avoid}
+  .calc,.checklist li{break-inside:avoid}
+  table{min-width:0}
+  .table-wrap{overflow:visible;border:0}
+  .tool-grid{display:block}
+  .tool-card{margin-bottom:10px}
+}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="topbar-in">
+<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<nav class="topnav" aria-label="站内导航">
+<a href="./index.html">工具索引</a>
+<a href="../agents-hub/index.html">Agent 全景</a>
+<button type="button" data-print>打印</button>
+<button type="button" data-theme-toggle aria-pressed="false">深色</button>
+</nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>自治 / 沙箱 Agent</span></p>
+<h1>OpenHands</h1>
+<p class="lede">把开发任务丢进沙箱自主执行的 agent 平台：Canvas + SDK + Agent Server。</p>
+<div class="pills"><span class="pill"><b>类型</b>自治 / 沙箱 Agent</span><span class="pill"><b>界面</b>Agent Canvas（浏览器）/ CLI / SDK / REST API</span><span class="pill"><b>许可证</b>MIT（主仓库）</span><span class="pill"><b>最新</b>v1.34.0 · 2026-10-27</span><span class="pill"><b>调研</b>2026-10-31</span></div>
+<div class="verdict">
+<div class="v-card yes"><h2>适合</h2><ul><li>需要沙箱内自治执行完整开发任务的人</li><li>想用 SDK/Server 构建内部 agent 平台的人</li><li>有 Docker 与算力预算、接受较重运维的人</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>日常只做小步结对编辑的人</li><li>资源紧张、不能跑 Docker 的机器</li><li>要求完全确定性成本的人</li></ul></div>
+</div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#derivatives">10 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">11 社区与玩友生态</a></li><li><a href="#sources">12 来源与口径</a></li></ol>
+<div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
+<article>
+<section id="what" class="sec">
+<div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
+<div class="callout"><p><b>一句话：</b>OpenHands 是“agent 的作业系统”：任务在隔离环境里跑，Canvas 看过程，SDK 把 agent 嵌进你自己的系统。</p></div><p>OpenHands 不是单个 CLI，而是一套软件工程 agent 平台：浏览器控制中心 Agent Canvas、Python/TS SDK、REST/WebSocket Agent Server 和沙箱执行环境。它适合把“整件任务”交给 agent，而不是逐步结对。</p><ul class="fact-list"><li>主仓库 MIT；v1.34.0（2026-10-27）；GitHub 92,377 stars；生态内各仓库有各自许可。<span class="ref">[4]</span></li><li>组件：Agent Canvas（浏览器控制中心）、Software Agent SDK、Agent Server、Automation Server、Sandbox Server。<span class="ref">[1]</span></li><li>本地安装推荐 <code>uv tool install openhands --python 3.12</code>，再 <code>openhands serve</code>；也提供 Docker 一体化命令。<span class="ref">[2]</span></li><li>沙箱隔离执行；可选本地、Docker、Kubernetes/远程后端；Cloud/Enterprise 是商业服务。<span class="ref">[1][3]</span></li><li>Canvas 可运行 OpenHands 自带 agent，也可接 Claude Code、Codex、Pi、OpenCode 等第三方 agent。<span class="ref">[5]</span></li><li>旧版 Local GUI 已弃用，当前浏览器客户端是 Agent Canvas。<span class="ref">[1]</span></li></ul>
+</section>
+<section id="capabilities" class="sec">
+<div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
+<div class="grid"><div class="cap"><h3>Agent Canvas</h3><p>浏览器控制中心：启动会话、看事件流、管理多个 agent/任务。</p></div><div class="cap"><h3>沙箱执行</h3><p>默认把 agent 放进容器/远程环境，能跑 shell、改文件、开浏览器。</p></div><div class="cap"><h3>SDK</h3><p>Python/TS/REST API 构建自定义 agent，复用工具、会话、workspace。</p></div><div class="cap"><h3>Agent Server</h3><p>通过 REST/WebSocket 暴露执行能力；可跑在 Docker/Kubernetes。</p></div><div class="cap"><h3>多 agent</h3><p>Canvas 可接 OpenHands 与第三方 agent，适合做统一控制面。</p></div><div class="cap"><h3>自托管</h3><p>本地/自建后端；Cloud/Enterprise 只是可选商业路径。</p></div></div>
+</section>
+<section id="how" class="sec">
+<div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
+<ol class="steps"><li><b>装 uv</b><br><code>uv</code> 管理隔离环境；确认 Docker Desktop/Engine 可用。</li><li><b>安装并启动</b><br><code>uv tool install openhands --python 3.12</code>，再 <code>openhands serve</code>。</li><li><b>配模型</b><br>在设置里选 provider/model/key；不存在的模型可手填兼容端点。</li><li><b>跑任务</b><br>在 Canvas 新建会话，给目标与验收标准；agent 在沙箱里执行。</li><li><b>审结果</b><br>看事件流/终端/浏览器；合并产出或让 agent 继续修复。</li></ol>
+</section>
+<section id="install" class="sec">
+<div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
+<div class="cmd"><div class="cmd-head"><span>uv（推荐）</span><button type="button" data-copy="uv tool install openhands --python 3.12
+openhands serve">复制</button></div><pre><code>uv tool install openhands --python 3.12
+openhands serve</code></pre><p class="cmd-note">会自动检查 Docker、拉镜像并启动 GUI；<code>--mount-cwd</code> 可挂当前目录。</p></div><div class="cmd"><div class="cmd-head"><span>Docker 一体化</span><button type="button" data-copy="docker run -it --rm --pull=always
+  -v /var/run/docker.sock:/var/run/docker.sock
+  -v ~/.openhands:/.openhands -p 3000:3000
+  docker.openhands.dev/openhands/openhands:1.8">复制</button></div><pre><code>docker run -it --rm --pull=always
+  -v /var/run/docker.sock:/var/run/docker.sock
+  -v ~/.openhands:/.openhands -p 3000:3000
+  docker.openhands.dev/openhands/openhands:1.8</code></pre><p class="cmd-note">命令较长，完整参数以官方 local-setup 文档为准；不要把 docker.sock 暴露给不受信任的 agent。</p></div><div class="cmd"><div class="cmd-head"><span>Agent Canvas</span><button type="button" data-copy="npm install -g @openhands/agent-canvas
+agent-canvas">复制</button></div><pre><code>npm install -g @openhands/agent-canvas
+agent-canvas</code></pre><p class="cmd-note">Canvas 可独立运行；不加沙箱时 agent 直接访问宿主机文件系统，谨慎使用。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>uv tool install openhands --python 3.12</code><p>隔离安装 CLI/服务端；需要 Docker 才能跑沙箱。</p></div><div class="use"><code>openhands serve</code><p>启动本地 GUI/Agent Server，自动检查 Docker 并拉镜像。</p></div><div class="use"><code>openhands serve --mount-cwd</code><p>把当前目录挂进沙箱；只对你信任的仓库使用。</p></div><div class="use"><code>npm install -g @openhands/agent-canvas &amp;&amp; agent-canvas</code><p>单独启动 Agent Canvas；不加沙箱时 agent 直接访问宿主机。</p></div><div class="use"><code>docker run ... ghcr.io/openhands/agent-canvas:1.34.0</code><p>Docker 一体化启动；挂载 PROJECTS_PATH 和 ~/.openhands。</p></div><div class="use"><code>openhands --help</code><p>查看当前版本的 CLI 子命令；版本迭代快，以本机帮助为准。</p></div></div>
+</section>
+<section id="cost" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
+<div class="two"><div class="panel"><h3>软件</h3><p>主仓库 MIT；SDK、Canvas、Agent Server 等生态仓库各自许可，商用前逐仓库确认。</p></div><div class="panel"><h3>使用</h3><p>按 LLM provider 计费；Docker/VM/GPU 是你的算力成本；Cloud/Enterprise 是可选商业服务。</p></div></div><p>通过 LiteLLM 接任意模型，含 Claude、OpenAI、Qwen、Devstral 等。自治任务会反复读文件/命令输出，token 消耗通常高于结对工具。</p>
+</section>
+<section id="strengths" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>真正的沙箱自治：能跑命令、看错误、迭代，适合“整件任务”而不是一问一答。</li><li>控制面完整：Canvas 看过程，SDK/Server 便于集成与自动化。</li><li>自托管友好：本地、Docker、Kubernetes；不强制用云。</li><li>可接第三方 agent，适合做统一实验/评测/运营面板。</li><li>开源且模型无关，方便做内部平台。</li></ul></div>
+</section>
+<section id="limits" class="sec">
+<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li>重：Docker、镜像、内存/磁盘开销明显高于 CLI；首次启动慢。</li><li>自治越强，token 与时间越不可控；需要预算、超时和验收标准。</li><li>配置面大：Docker、模型、沙箱、网络、凭据都要管。</li><li>生态仓库许可不统一，不能假设整个项目都是 MIT。</li><li>旧 Local GUI 已弃用，照着旧教程会踩空。</li><li>默认强隔离不等于零风险：挂载目录、docker.sock、网络访问都要收紧。</li></ul></div>
+</section>
+<section id="compare" class="sec">
+<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>Orca</b></td><td>Orca 是人在环的并行控制台；OpenHands 是把任务交给沙箱自主跑。一个偏审阅，一个偏执行。</td></tr><tr><td><b>Goose</b></td><td>Goose 是 MCP 原生的通用 agent；OpenHands 专注软件工程与沙箱执行。</td></tr><tr><td><b>Hermes</b></td><td>Hermes 是通用常驻助手；OpenHands 专注软件工程与沙箱执行。</td></tr></tbody></table></div>
+</section>
+<section id="fit" class="sec">
+<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你想把 issue/任务丢给沙箱，过一段时间收结果。</li><li>你需要 SDK/Server 把 agent 嵌进内部平台。</li><li>你有 Docker 与足够内存/磁盘，愿意做隔离配置。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你只想轻量结对改代码。</li><li>你的机器只有 8GB 内存且不愿跑 Docker。</li><li>你不能接受自治带来的 token 波动。</li></ul></div></div>
+</section>
+
+<section id="derivatives" class="sec">
+<div class="sec-head"><span class="sec-no">10</span><h2>衍生项目：GUI / Web / 手机</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>官方入口</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Agent Canvas</a><span class="badge official">官方</span></div><p>浏览器控制中心：会话、事件流、多后端、自动化。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/" target="_blank" rel="noopener noreferrer">OpenHands CLI</a><span class="badge official">官方</span></div><p>终端入口，适合脚本和本地快速任务。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/sdk" target="_blank" rel="noopener noreferrer">OpenHands SDK</a><span class="badge official">官方</span></div><p>Python/TS/REST API，构建自定义 agent、工具和 workspace。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/overview/introduction" target="_blank" rel="noopener noreferrer">Agent Server</a><span class="badge official">官方</span></div><p>REST/WebSocket 暴露执行能力，可跑 Docker/Kubernetes。</p></li><li><div class="eco-head"><a href="https://openhands.dev/" target="_blank" rel="noopener noreferrer">Cloud / Enterprise</a><span class="badge official">官方</span></div><p>托管/企业版，提供托管执行、协作、审计和预算管理。</p></li></ul></div><div class="eco-group"><h3>Web / 手机</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Agent Canvas（响应式 Web）</a><span class="badge official">官方</span></div><p>浏览器使用；手机宽度有移动导航。截至调研未见官方独立原生 App。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/openhands/usage/run-openhands/local-setup" target="_blank" rel="noopener noreferrer">自托管 Canvas</a><span class="badge official">官方</span></div><p>本地/Docker/远程后端；手机浏览器可访问你自己的实例。</p></li><li><div class="eco-head"><a href="https://openhands.dev/" target="_blank" rel="noopener noreferrer">OpenHands Cloud</a><span class="badge official">官方</span></div><p>不想运维沙箱时用托管服务；商业化入口。</p></li></ul></div><div class="eco-group"><h3>扩展与自动化</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">OpenHands/extensions</a><span class="badge official">官方</span></div><p>公开扩展注册表：skills、plugins、Canvas Apps；截至 2026-10 约 82 个扩展。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">Canvas Apps</a><span class="badge official">官方</span></div><p>把仪表盘/内部工具嵌进 Canvas；启用会在浏览器上下文执行受信 JS。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Automations</a><span class="badge official">官方</span></div><p>定时/事件驱动的 agent 任务，可接 Slack、GitHub、Linear。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">第三方 agent</a><span class="badge official">官方</span></div><p>Canvas 可接 Claude Code、Codex、Gemini、Pi、OpenCode 等 ACP agent。</p></li></ul></div><div class="eco-group"><h3>社区与集成</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.openhands.dev/community" target="_blank" rel="noopener noreferrer">OpenHands Community</a><span class="badge official">官方</span></div><p>社区 call、活动、贡献入口。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Slack / GitHub / Linear / Notion</a><span class="badge official">官方</span></div><p>自动化与通知集成；具体可用性取决于版本和部署。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">旧名 OpenDevin</a><span class="badge community">社区</span></div><p>OpenHands 的旧称；搜旧教程时注意 API/界面已变。</p></li></ul></div></div><div class="note">OpenHands 的“衍生项目”主要是官方拆分出来的组件（Canvas、SDK、Agent Server、Extensions），而不是社区另做一套 GUI；移动端截至调研未见官方原生 App，通常用手机浏览器访问自托管 Canvas。</div>
+</section>
+<section id="ecosystem" class="sec">
+<div class="sec-head"><span class="sec-no">11</span><h2>社区与玩友生态</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>扩展注册表</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">Skills / Plugins / Apps</a><span class="badge official">官方</span></div><p>一个仓库管理三类扩展；skills 是说明，plugins 带 hooks/scripts，Apps 提供 Canvas 界面。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">82 extensions</a><span class="badge official">官方</span></div><p>截至 2026-10 的注册表规模：71 skills + 11 plugins；数量会变。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/" target="_blank" rel="noopener noreferrer">Marketplace</a><span class="badge official">官方</span></div><p>Canvas 内浏览/安装/启用插件；企业可做私有市场。</p></li></ul></div><div class="eco-group"><h3>自动化玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>Issue → PR</b><span class="badge official">官方</span></div><p>用 automation 把 GitHub issue 变成分支、实现、测试和 PR。</p></li><li><div class="eco-head"><b>定时报告</b><span class="badge official">官方</span></div><p>按 cron 跑报告并推送到 Slack/Notion 等。</p></li><li><div class="eco-head"><b>多沙箱并发</b><span class="badge official">官方</span></div><p>每个会话独立 Docker 容器，适合并行任务。</p></li><li><div class="eco-head"><b>SDK 嵌入</b><span class="badge official">官方</span></div><p>把 agent 能力嵌进自己的平台/IDE/聊天机器人。</p></li></ul></div><div class="eco-group"><h3>社区</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.openhands.dev/community" target="_blank" rel="noopener noreferrer">Community calls</a><span class="badge official">官方</span></div><p>定期社区电话，更新路线图、答疑。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">GitHub</a><span class="badge official">官方</span></div><p>源码、issue、release；主仓库 MIT，生态仓库各自许可。</p></li><li><div class="eco-head"><b>Cloud / Enterprise</b><span class="badge official">官方</span></div><p>商业支持、托管执行、审计和预算；不是开源版必需。</p></li></ul></div></div><div class="note">生态仓库的许可证不统一，商用前逐仓库确认。Canvas Apps 会在浏览器上下文执行受信 JavaScript，并可能带着当前 Agent Server 的认证请求；只装你审计过的 App。</div>
+</section>
+<section id="sources" class="sec">
+<div class="sec-head"><span class="sec-no">12</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://docs.openhands.dev/overview/introduction" target="_blank" rel="noopener noreferrer">OpenHands Docs · Introduction</a><span class="src-note">Canvas、SDK、Agent Server、Sandbox Server 与许可边界。</span></li><li><a href="https://docs.openhands.dev/openhands/usage/run-openhands/local-setup" target="_blank" rel="noopener noreferrer">OpenHands · Local setup</a><span class="src-note">uv/Docker 安装、系统要求、模型配置。</span></li><li><a href="https://docs.openhands.dev/sdk" target="_blank" rel="noopener noreferrer">OpenHands SDK</a><span class="src-note">Python/REST API、工具、workspace、模型无关。</span></li><li><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">OpenHands/OpenHands</a><span class="src-note">MIT、Canvas、Docker/多沙箱方案。</span></li><li><a href="https://github.com/OpenHands/software-agent-sdk" target="_blank" rel="noopener noreferrer">OpenHands/software-agent-sdk</a><span class="src-note">SDK/Agent Server 仓库与版本信息。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+</section>
+<div class="pager"><a href="./goose.html">← Goose</a><a href="./index.html">返回工具索引 →</a></div>
+</article>
+</div>
+</main>
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('tools-theme');if(saved)root.dataset.theme=saved;}catch(e){}
+  function isDark(){return root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  var tbtn=document.querySelector('[data-theme-toggle]');
+  function paint(){if(!tbtn)return;tbtn.textContent=isDark()?'浅色':'深色';tbtn.setAttribute('aria-pressed',isDark()?'true':'false');}
+  if(tbtn){paint();tbtn.addEventListener('click',function(){root.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('tools-theme',root.dataset.theme);}catch(e){}paint();});}
+  document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print();});});
+  document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+    var cmd=b.closest('.cmd');var pre=cmd?cmd.querySelector('pre'):null;var text=pre?pre.textContent:b.getAttribute('data-copy');var old=b.textContent;
+    function done(){b.textContent='已复制';setTimeout(function(){b.textContent=old;},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,fallback);}else{fallback();}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='复制失败';setTimeout(function(){b.textContent=old;},1200);}document.body.removeChild(ta);}
+  });});
+  var sc=document.getElementById('sc-total');
+  if(sc){
+    var ids=['sc-total','sc-active','sc-agent','sc-wt','sc-batch','sc-ram','sc-disk'];
+    function val(id){var el=document.getElementById(id);var n=el?parseFloat(el.value):0;return isFinite(n)?n:0;}
+    function calcScale(){
+      var total=val('sc-total'),active=val('sc-active'),agent=val('sc-agent'),wt=val('sc-wt'),batch=val('sc-batch'),ram=val('sc-ram'),disk=val('sc-disk');
+      var ramNeed=1.2+active*agent/1024;
+      var diskNeed=total*wt/1024;
+      var waves=batch>0?Math.ceil(total/batch):0;
+      var cap=Math.max(1,Math.floor((ram*0.7-1.2)*1024/Math.max(1,agent)));
+      var bad=[];
+      if(ramNeed>ram*0.7)bad.push('内存超过本机 70% 预算：降活跃数或改用 SSH/远程。');
+      if(diskNeed>disk*0.8)bad.push('磁盘超过可用空间 80%：先清理 worktree 或外置。');
+      if(active>cap)bad.push('活跃数超过本机建议上限（约 '+cap+' 个）。');
+      if(!bad.length)bad.push('在预算内；仍建议先跑 10 个窗口验证。');
+      var out=document.getElementById('scale-out');
+      out.textContent='活跃内存粗算：'+ramNeed.toFixed(1)+' GB（预算 '+(ram*0.7).toFixed(1)+' GB）\n'
+        +'总磁盘粗算：'+diskNeed.toFixed(1)+' GB（可用 '+disk+' GB）\n'
+        +'波数：'+waves+' 波 × '+batch+' 个\n'
+        +'本机建议活跃上限：约 '+cap+' 个\n'
+        +bad.join('\n');
+      out.dataset.state=(ramNeed>ram*0.7||diskNeed>disk*0.8||active>cap)?'bad':'ok';
+    }
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calcScale);});
+    calcScale();
+  }
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  if(links.length&&'IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(!en.isIntersecting)return;var a=map[en.target.id];if(!a)return;links.forEach(function(x){x.removeAttribute('aria-current');});a.setAttribute('aria-current','true');});
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    document.querySelectorAll('article section[id]').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>
