@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Google Race Condition 拆解：1000 个 agent 跑马拉松的架构、0 LLM 调用技巧、仓库结构、本地与 GCP 复现方案、成本与可借鉴模式。">
+<title>Race Condition 拆解 · 1000 个 agent 跑马拉松，怎么复现</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:920px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+h4{font-size:13.5px;margin:18px 0 4px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+
+table{width:100%;border-collapse:collapse;font-size:13.2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+td b{font-weight:650}
+
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.steps li{counter-increment:s;position:relative;padding:12px 16px 12px 46px;background:var(--surface);border:1px solid var(--line);border-radius:11px;font-size:13.8px;color:var(--ink-2);line-height:1.72}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid #cfd9f3;color:var(--accent);font-family:var(--mono);font-size:11px;display:grid;place-items:center;line-height:1}
+.steps li b{color:var(--ink)}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:920px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs,.calc{display:none}body{background:#fff}.kpi,.panel,.figure{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../agent-fleet-at-scale.html">← 规模化报告</a>
+  <span class="crumb">race-condition / 1000 runners · 2026-10-31</span>
+  <nav class="pager"><a href="#trick">0 LLM 调用</a><a href="#repro">复现</a><a href="#borrow">可借鉴</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>Google Cloud · ADK + A2A</div>
+  <h1>1000 个 agent<br><em>跑一场马拉松</em></h1>
+  <p class="lede">Race Condition 是 Google Cloud Next '26 主题演讲上的多智能体演示，已开源。它最反直觉的地方不是 1000 个 agent，而是——这 1000 个里面，绝大多数根本不调用大模型。</p>
+  <div class="meta-row">
+    <span class="pill">Apache 2.0</span>
+    <span class="pill">Go 1.25 · Python 3.13 · Node 24</span>
+    <span class="pill">ADK 1.31 + Gemini + A2A</span>
+    <span class="pill">非官方支持产品</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">1,000<span>runners</span></div><div class="l">每个一个 ADK session</div></div>
+    <div class="kpi"><div class="n">200<span>ticks</span></div><div class="l">单场比赛上限</div></div>
+    <div class="kpi"><div class="n">2<span>模式</span></div><div class="l">实时 / 缓存回放</div></div>
+    <div class="kpi"><div class="n">$3–4<span>/场</span></div><div class="l">官方给出的 Gemini 成本</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>它是什么</h2>
+    <p class="sub">一句话：用 Google ADK 搭的多智能体马拉松仿真，一条 Vegas 赛道，从规划、环境模拟到 1000 个选手跑步，全部由 agent 组成。</p>
+
+    <p>三个角色分工，通过 <b>A2A 协议</b>互相发现和通信（各自的 agent card 在 <code>/.well-known/agent-card.json</code>）：</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>角色</th><th>做什么</th><th>关键实现</th></tr></thead>
+        <tbody>
+          <tr><td><b>Planner</b></td><td>设计赛道：路线、补给点、封路、预算</td><td>Google Maps MCP 工具（<code>search_places</code> / <code>compute_routes</code> / <code>lookup_weather</code>）；三个变体：基础、带 eval（LLM-as-Judge）、带记忆（AlloyDB）</td></tr>
+          <tr><td><b>Simulator</b></td><td>逐 tick 推进环境：天气、交通、人群、赛程</td><td><code>SequentialAgent</code> 管线：赛前准备 → <code>LoopAgent</code> 最多 200 tick → 赛后统计</td></tr>
+          <tr><td><b>Runner ×1000</b></td><td>各自决定配速、补水、策略</td><td>LLM 版用 Gemini 每 tick 决策；<code>runner_autopilot</code> 是确定性版本，零 LLM 调用</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>外面还有一个 <b>Go 网关</b>：用 WebSocket 接 Angular + Three.js 的 3D 前端，把消息按 A2A 路由给 Python agent；中间用 Redis 存会话、Pub/Sub 送遥测、PostgreSQL + pgvector 存路线记忆。</p>
+  </section>
+
+  <section id="arch">
+    <h2><span class="no">02</span>架构：一条消息怎么走</h2>
+    <p class="sub">这套架构最值得抄的是网关的“批量广播”——1000 个 runner 在同一 tick 同时说话，不做批处理会把自己打成惊群。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 820 400" role="img" aria-label="Race Condition 架构示意图">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/>
+          </marker>
+        </defs>
+
+        <rect x="300" y="14" width="220" height="46" rx="9" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="316" y="34" font-size="12" fill="#17181b">Angular + Three.js</text>
+        <text x="316" y="51" font-size="10.5" fill="#6f7279">3D 场景 · 选手位置 · 天气 · 人群</text>
+
+        <line x1="410" y1="60" x2="410" y2="80" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <text x="420" y="76" font-size="10" fill="#6f7279">WebSocket</text>
+
+        <rect x="300" y="80" width="220" height="54" rx="9" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="316" y="100" font-size="12" fill="#17181b">Gateway（Go / Gin）</text>
+        <text x="316" y="117" font-size="10.5" fill="#6f7279">会话 · 批量广播 · A2A 路由</text>
+
+        <line x1="410" y1="134" x2="410" y2="154" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+
+        <rect x="120" y="154" width="180" height="60" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="134" y="175" font-size="12" fill="#17181b">Planner</text>
+        <text x="134" y="192" font-size="10.5" fill="#6f7279">Maps MCP · 路线 · 预算</text>
+        <text x="134" y="207" font-size="10.5" fill="#6f7279">eval / memory 变体</text>
+
+        <rect x="320" y="154" width="180" height="60" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="334" y="175" font-size="12" fill="#17181b">Simulator</text>
+        <text x="334" y="192" font-size="10.5" fill="#6f7279">SequentialAgent 管线</text>
+        <text x="334" y="207" font-size="10.5" fill="#6f7279">LoopAgent · ≤200 tick</text>
+
+        <rect x="520" y="154" width="180" height="60" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="534" y="175" font-size="12" fill="#17181b">Runner ×1000</text>
+        <text x="534" y="192" font-size="10.5" fill="#6f7279">Gemini 决策 / 确定性</text>
+        <text x="534" y="207" font-size="10.5" fill="#6f7279">配速 · 补水 · 策略</text>
+
+        <line x1="300" y1="184" x2="320" y2="184" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="500" y1="184" x2="520" y2="184" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="410" y1="134" x2="210" y2="154" stroke="#9a9ea6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+        <line x1="410" y1="134" x2="610" y2="154" stroke="#9a9ea6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+        <rect x="60" y="250" width="150" height="52" rx="9" fill="#efece4" stroke="#e3ded3"/>
+        <text x="74" y="270" font-size="11.5" fill="#17181b">Redis</text>
+        <text x="74" y="287" font-size="10" fill="#6f7279">会话 · 状态 · fanout</text>
+
+        <rect x="228" y="250" width="150" height="52" rx="9" fill="#efece4" stroke="#e3ded3"/>
+        <text x="242" y="270" font-size="11.5" fill="#17181b">Pub/Sub</text>
+        <text x="242" y="287" font-size="10" fill="#6f7279">遥测流</text>
+
+        <rect x="396" y="250" width="170" height="52" rx="9" fill="#efece4" stroke="#e3ded3"/>
+        <text x="410" y="270" font-size="11.5" fill="#17181b">PostgreSQL + pgvector</text>
+        <text x="410" y="287" font-size="10" fill="#6f7279">路线记忆 · 向量</text>
+
+        <rect x="584" y="250" width="170" height="52" rx="9" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="598" y="270" font-size="11.5" fill="#17181b">Cached replay</text>
+        <text x="598" y="287" font-size="10" fill="#6f7279">NDJSON 录制回放</text>
+
+        <line x1="410" y1="214" x2="410" y2="250" stroke="#9a9ea6" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="380" y1="214" x2="300" y2="250" stroke="#9a9ea6" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="440" y1="214" x2="480" y2="250" stroke="#9a9ea6" stroke-width="1" marker-end="url(#ar)"/>
+        <line x1="330" y1="134" x2="640" y2="250" stroke="#9a9ea6" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+        <text x="60" y="340" font-size="11" fill="#6f7279">本地：Docker Compose（Redis / Pub-Sub 模拟器 / PostgreSQL）</text>
+        <text x="60" y="358" font-size="11" fill="#6f7279">云端：Cloud Run · Vertex AI Agent Engine · AlloyDB · Memorystore · Pub/Sub</text>
+        <text x="60" y="376" font-size="11" fill="#6f7279">前端默认 Cached 模式：回放录制流，不依赖网络与模型</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>关键：</b>虚线是控制/路由，实线是数据。真正让 1000 个选手同场不炸的，是网关的 batching 和缓存回放，而不是模型能力。</p>
+  </section>
+
+  <section id="trick">
+    <h2><span class="no">03</span>真相：1000 个 agent，几乎 0 次 LLM 调用</h2>
+    <p class="sub">这是整个项目最值得学的一点，也是它和 AgentSociety 那种“每个 agent 都思考”的根本区别。</p>
+
+    <p>官方短视频的标题直接就是《1000 AI agents, 0 LLM calls?》。里面讲了三件事：</p>
+
+    <ul class="check">
+      <li><b>确定性 runner</b>：<code>runner_autopilot</code> 和 LLM 版做出“同样形状”的决策，但零 API 调用。压测、演示、UI 调试都用它。</li>
+      <li><b>保留 agent，跳过模型</b>：用 <code>before_model_callback</code> 拦在模型调用之前，agent 会话照常存在，但这一 tick 不需要推理就直接返回。</li>
+      <li><b>路线规划是确定性算法</b>：路径规划本身是 NP-hard 的工程问题，用固定的骨架（他们叫 Spine）求解，不需要每步问模型。</li>
+    </ul>
+
+    <div class="callout good">
+      <span class="t">于是“1000 个 agent”在这里的真实含义</span>
+      <p>1000 个<b>并发会话 / 实体</b>，不是 1000 路同时推理。模型只在该做策略决策的少数 tick 被调用。这是把“规模”和“智能”解耦：规模靠调度与确定性逻辑，智能靠少量关键调用。</p>
+    </div>
+
+    <h3>这对成本意味着什么</h3>
+    <p>README 写得很直白：固定基础设施约 <b>$91/月</b>（Memorystore、Cloud SQL、Cloud NAT），每跑一次仿真约 <b>$3–4</b> 的 Gemini 调用。对比 AgentSociety 的万级 LLM agent，这里便宜两个数量级——因为绝大多数 step 不烧 token。</p>
+
+    <h3>算一算你自己的配置</h3>
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="runners">runner 数</label><input id="runners" type="number" min="1" step="100" value="1000" inputmode="numeric"></div>
+        <div class="field"><label for="ticks">tick 数</label><input id="ticks" type="number" min="1" step="10" value="200" inputmode="numeric"></div>
+        <div class="field"><label for="ratio">需要 LLM 的 tick 比例（%）</label><input id="ratio" type="number" min="0" max="100" step="1" value="10" inputmode="decimal"></div>
+        <div class="field"><label for="tok">每次调用 token</label><input id="tok" type="number" min="50" step="50" value="1200" inputmode="numeric"></div>
+        <div class="field"><label for="price">单价（USD/百万）</label><input id="price" type="number" min="0" step="0.01" value="0.15" inputmode="decimal"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">模型调用次数</span><span class="v" id="o-calls">—</span></div>
+        <div><span class="k">token 总量</span><span class="v" id="o-tok">—</span></div>
+        <div><span class="k">单场估算成本</span><span class="v" id="o-cost">—</span></div>
+        <div><span class="k">相对全量调用</span><span class="v" id="o-ratio">—</span></div>
+      </div>
+      <p class="hint">默认值（1000 × 200 × 10% × 1200 token × $0.15/M）≈ $3.6/场，正好落在官方给的 $3–4 区间，可以用来反推你对“哪些 tick 真的需要模型”的假设。把比例调到 100%，就是“每个 agent 每 tick 都思考”的代价。</p>
+    </div>
+  </section>
+
+  <section id="repo">
+    <h2><span class="no">04</span>仓库里有什么</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>路径</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td><code>agents/planner*</code></td><td>三个规划器变体：基础 / LLM-as-Judge 评估 / AlloyDB 记忆</td></tr>
+          <tr><td><code>agents/simulator*</code></td><td>比赛引擎（管线 + LoopAgent）；带故障注入的测试变体</td></tr>
+          <tr><td><code>agents/runner</code></td><td>LLM 版选手（Gemini / Ollama / vLLM 可切换）</td></tr>
+          <tr><td><code>agents/runner_autopilot</code></td><td>确定性选手，零 LLM 调用</td></tr>
+          <tr><td><code>cmd/gateway</code></td><td>Go WebSocket 网关 + A2A 路由</td></tr>
+          <tr><td><code>internal/ecs</code></td><td>Entity-Component-System，仿真状态</td></tr>
+          <tr><td><code>web/frontend</code></td><td>Angular 21 + Three.js 3D 场景</td></tr>
+          <tr><td><code>docker-compose.yml</code></td><td>Redis、Pub/Sub 模拟器、PostgreSQL（pgvector）</td></tr>
+          <tr><td><code>.claude/skills/</code></td><td>四份 skill：入门、读代码、部署、贡献</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">仓库根目录还有 <code>AGENTS.md</code>，Claude Code / Codex / OpenCode / Cursor 都能直接读，让 AI 带你装。</p>
+  </section>
+
+  <section id="repro">
+    <h2><span class="no">05</span>复现方案</h2>
+    <p class="sub">三条路线，按投入从低到高。先跑通缓存模式，再碰实时，最后才上云。</p>
+
+    <div class="tabs" role="tablist" aria-label="复现路线">
+      <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">A · 本地缓存（半天）</button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">B · 本地实时（1–2 天）</button>
+      <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false">C · GCP 云部署（3–5 天）</button>
+    </div>
+
+    <div class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+      <p><strong>目标：</strong>不花模型钱，先看到 1000 个 runner 跑起来，理解 UI 与回放。</p>
+      <ol class="steps">
+        <li><b>装依赖</b>：Go 1.25+、Python 3.13+、uv、Node 24+、Docker Compose。跑 <code>make check-prereqs</code> 自检。</li>
+        <li><b>初始化</b>：<code>git clone</code> 后 <code>make init</code>；它会复制 <code>.env</code>、装 Python/前端依赖、起 Docker 基础设施、编译 Go 服务。</li>
+        <li><b>启动</b>：<code>make start</code>，13 个进程由 Honcho 拉起；前端 <code>http://localhost:9119</code>，管理台 <code>:9100</code>。</li>
+        <li><b>看回放</b>：默认就是 Cached 模式，播放 NDJSON 录制流；用 <code>Ctrl+0…7</code> 切换 9 个 demo。</li>
+        <li><b>验收</b>：3D 场景里能看到队伍推进、天气变化、人群反应；<code>Ctrl+L</code> 可以在缓存/实时之间切。</li>
+      </ol>
+      <p class="sub" style="margin:10px 0 0">这条路不需要 GCP 项目、不需要 Maps key、不产生模型费用。适合先判断“这套东西值不值得继续”。</p>
+    </div>
+
+    <div class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <p><strong>目标：</strong>真正跑一次 agent 决策，先用 autopilot 压测，再换小模型。</p>
+      <ol class="steps">
+        <li><b>配 GCP</b>：<code>gcloud auth login --update-adc</code>，启用 Vertex AI 与 Gemini API，把项目 ID 写进 <code>.env</code> 的 <code>GOOGLE_CLOUD_PROJECT</code> / <code>PROJECT_ID</code>（agent 读这个文件，不读 gcloud config）。</li>
+        <li><b>先跑 autopilot</b>：<code>RUNNER_MODEL</code> 不用改，直接把 active agent 换成 <code>runner_autopilot</code>；验证 1000 runner 下网关、Redis、Pub/Sub 不崩。</li>
+        <li><b>再开 LLM</b>：默认 <code>gemini-3.1-flash-lite-preview</code>；本地免费可换 <code>ollama_chat/gemma4:e2b</code>；自建 vLLM 用 <code>openai/gemma-4-E4B-it</code> + <code>VLLM_API_URL</code>。</li>
+        <li><b>控制规模</b>：先把 runner 数降到 50–100 跑完整场，确认单 tick 延迟、失败率和账单，再回到 1000。</li>
+        <li><b>可选 Maps</b>：不配 key 也能规划，只是没有实时地图数据；配了就按 <code>GOOGLE_MAPS_API_KEY</code> → Secret Manager 的顺序解析。</li>
+      </ol>
+      <p class="sub" style="margin:10px 0 0">本地建议 16 GB 内存起步，实时 1000 runner 建议 32 GB；13 个进程 + Docker 基础设施本身就要几个 GB。</p>
+    </div>
+
+    <div class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+      <p><strong>目标：</strong>部署成可分享的实例，理解 Cloud Run + Agent Engine 的拓扑。</p>
+      <ol class="steps">
+        <li><b>项目与配额</b>：需要 Owner 或 <code>roles/aiplatform.user</code>；启用 aiplatform、generativelanguage、pubsub、iam 等 API。</li>
+        <li><b>部署</b>：<code>make deploy</code>（或 <code>scripts/deploy.sh</code>）。它会先打印成本拆分并等你确认，然后跑 Terraform + Cloud Build。</li>
+        <li><b>拓扑</b>：Cloud Run（网关、前端 BFF、autopilot）、Vertex AI Agent Engine（Python agents）、AlloyDB（路线记忆）、Memorystore（会话）、Pub/Sub（遥测）。</li>
+        <li><b>成本控制</b>：默认 <code>min_instances=0</code>，空闲缩到零；固定成本约 $91/月，主要来自 Memorystore / Cloud SQL / NAT。</li>
+        <li><b>回收</b>：<code>cd infra &amp;&amp; terraform destroy</code>。别把演示环境忘在云上。</li>
+      </ol>
+      <p class="sub" style="margin:10px 0 0">若 Cloud Build 中途失败，README 给了一段一次性恢复：先用 gcloud 删掉孤儿 Cloud Run 服务，再重跑。</p>
+    </div>
+
+    <h3>最小命令清单</h3>
+    <pre><code><span class="c"># 本地</span>
+git clone https://github.com/GoogleCloudPlatform/race-condition.git
+<span class="k">cd</span> race-condition
+make check-prereqs
+make init
+make start          <span class="c"># 前端 http://localhost:9119</span>
+
+<span class="c"># 云端</span>
+gcloud auth login --update-adc
+gcloud config set project MY_PROJECT_ID
+make deploy         <span class="c"># 会先打印成本明细并要求确认</span>
+
+<span class="c"># 收尾</span>
+make stop
+<span class="k">cd</span> infra &amp;&amp; terraform destroy</code></pre>
+
+    <div class="callout warn">
+      <span class="t">复现时最容易卡住的三处</span>
+      <ul>
+        <li><b>端口占用</b>：13 个固定端口（9119 / 9100 / 9101 / 9112 / 9111 / 9105…），先清干净再起。</li>
+        <li><b>API 传播延迟</b>：刚启用的 API 可能 403，等一两分钟再 <code>make restart</code>。</li>
+        <li><b>项目 ID 写错位置</b>：agent 读 <code>.env</code>，不是 <code>gcloud config</code>；这是官方 README 特意强调的。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="borrow">
+    <h2><span class="no">06</span>六个可以搬走的模式</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>模式</th><th>解决什么</th><th>怎么用在你自己的项目</th></tr></thead>
+        <tbody>
+          <tr><td><b>确定性与 LLM 混合</b></td><td>规模一上来，token 和延迟都不可控</td><td>把“必须判断”的 step 留给模型，其余用规则/算法；保留同一套 agent 接口</td></tr>
+          <tr><td><b>缓存回放</b></td><td>演示/测试不能依赖网络与账单</td><td>把真实运行录成 NDJSON，前端默认回放；UI 改动不用重跑模型</td></tr>
+          <tr><td><b>网关批量广播</b></td><td>上千实体同 tick 发言会惊群</td><td>在网关做 batch + 节流，别让每个 agent 直接打消息总线</td></tr>
+          <tr><td><b>规划器阶梯</b></td><td>不确定 eval / memory 到底值不值</td><td>做成三个独立 agent（基础 / +eval / +memory），而不是一个开关</td></tr>
+          <tr><td><b>后端驱动 UI</b></td><td>前端为每种返回形状写死布局</td><td>agent 直接发 UI 原语（卡片、列表、按钮），前端只负责渲染</td></tr>
+          <tr><td><b>Agent 读 AGENTS.md</b></td><td>新人装环境要问一堆问题</td><td>仓库根放 AGENTS.md + 四个 skill，让 AI 带你 setup / 部署 / 贡献</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">07</span>边界与风险</h2>
+    <ul class="check">
+      <li><b>不是官方支持产品</b>：README 明确写了 disclaimer；适合参考架构，不适合当生产依赖。</li>
+      <li><b>Google 绑定</b>：ADK、A2A、Vertex AI Agent Engine、AlloyDB、Memorystore；换云要重写不少胶水。</li>
+      <li><b>预览功能被砍</b>：主题演讲里有些能力仍在内测，开源版删掉了这些路径。</li>
+      <li><b>“1000”是会话数</b>：别拿它当“1000 路并发推理”的基准；真实 LLM 调用比例取决于你配置的策略。</li>
+      <li><b>演示优先的取舍</b>：作者自己说部分代码是为了 keynote 档期写的，边缘情况真实存在。</li>
+      <li><b>固定成本不低</b>：$91/月是空闲价，Memorystore 与 Cloud SQL 是大头；只想看效果就用本地缓存模式。</li>
+    </ul>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>来源</h2>
+    <ul class="sources">
+      <li>仓库：<a href="https://github.com/GoogleCloudPlatform/race-condition" rel="noreferrer">github.com/GoogleCloudPlatform/race-condition</a>（README、架构、成本、命令）</li>
+      <li>官方讲解：<a href="https://www.youtube.com/watch?v=WSIzaih2vq4" rel="noreferrer">How we built 1,000 AI agents that run a marathon</a>（Google Cloud Tech）</li>
+      <li>“0 LLM calls” 说明：<a href="https://www.youtube.com/shorts/EtxJJJ_7WQY" rel="noreferrer">1000 AI agents, 0 LLM calls?</a>（deterministic runner / before_model_callback / Spine）</li>
+      <li>ADK：<a href="https://google.github.io/adk-docs/" rel="noreferrer">google.github.io/adk-docs</a> · A2A：<a href="https://github.com/google/a2a" rel="noreferrer">github.com/google/a2a</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">检索与核对于 2026-10-31。成本与规模数字取自官方 README 与视频；未独立复跑。复现方案里的资源建议为工程估算。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>AgentsTeam · Race Condition 拆解 · 2026-10-31 · <a href="../agent-fleet-at-scale.html">规模化报告</a> · <a href="../agentsociety/index.html">AgentSociety</a></div>
+  <span>本页为独立拆解，与 Google 无隶属关系；配置与命令以仓库 README 为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+
+(function(){
+  function num(id, fallback){
+    var v = parseFloat(document.getElementById(id).value);
+    return isFinite(v) && v >= 0 ? v : fallback;
+  }
+  function fmt(n){
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return Math.round(n).toString();
+  }
+  function calc(){
+    var runners = Math.max(1, num('runners', 1000));
+    var ticks = Math.max(1, num('ticks', 200));
+    var ratio = Math.min(100, Math.max(0, num('ratio', 10))) / 100;
+    var tok = Math.max(50, num('tok', 1200));
+    var price = num('price', 0.15);
+
+    var calls = runners * ticks * ratio;
+    var tokens = calls * tok;
+    var cost = tokens / 1e6 * price;
+    var fullCalls = runners * ticks;
+
+    document.getElementById('o-calls').textContent = fmt(calls);
+    document.getElementById('o-tok').textContent = fmt(tokens);
+    document.getElementById('o-cost').innerHTML = '$' + fmt(cost) + ' <small>USD</small>';
+    document.getElementById('o-ratio').textContent = (fullCalls ? Math.round((calls / fullCalls) * 100) : 0) + '%';
+  }
+  ['runners','ticks','ratio','tok','price'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

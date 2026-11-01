@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="复刻 AgentSociety 的落地方案：VPS 数量估算、自动化部署与启动脚本、LLM/数据/存储对接、四周培训体系与 90 天路线图。">
+<title>复刻 AgentSociety · VPS、自动化、对接与培训方案</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:940px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+h4{font-size:13.5px;margin:18px 0 4px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+
+.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:0 0 8px}
+.ans{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:17px 18px;box-shadow:var(--shadow)}
+.ans .q{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.ans .a{font-family:var(--serif);font-size:23px;line-height:1.25;margin:5px 0 6px;letter-spacing:-.01em}
+.ans .a span{font-size:13px;font-family:var(--sans);color:var(--muted);letter-spacing:0}
+.ans p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.68}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.toggles{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12.5px;color:var(--ink-2)}
+.toggles label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.calc .hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+
+table{width:100%;border-collapse:collapse;font-size:13.2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+td b{font-weight:650}
+
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.timeline li{position:relative;padding:14px 16px 14px 96px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);font-size:13.6px;color:var(--ink-2);line-height:1.72}
+.timeline .when{position:absolute;left:16px;top:14px;font-family:var(--mono);font-size:10.5px;color:var(--amber);letter-spacing:.04em}
+.timeline b{color:var(--ink)}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:940px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+  .timeline li{padding-left:16px;padding-top:34px}
+  .timeline .when{top:12px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs,.calc{display:none}body{background:#fff}.ans,.panel,.timeline li{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">← AgentSociety 介绍</a>
+  <span class="crumb">agentsociety / 复刻方案 · 2026-10-31</span>
+  <nav class="pager"><a href="#vps">VPS</a><a href="#auto">自动化</a><a href="#train">培训</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>复刻方案 · 可执行版</div>
+  <h1>把 AgentSociety<br><em>跑在自己手里</em></h1>
+  <p class="lede">三个问题，按“先算账、再自动化、最后育人”的顺序回答。所有数字都是工程估算，公式和可调参数都放在页面里，你可以按自己的预算改。</p>
+
+  <div class="answers">
+    <div class="ans">
+      <div class="q">Q1 · VPS</div>
+      <div class="a">1 → 3 → 6<span>台</span></div>
+      <p>POC 1 台；千级 agent 3 台；万级 agent 6–8 台。瓶颈不是 CPU，是 LLM 并发配额。</p>
+    </div>
+    <div class="ans">
+      <div class="q">Q2 · 自动化</div>
+      <div class="a">3 个脚本<span>+ 1 份配置</span></div>
+      <p>bootstrap、preflight、run。用 <code>agentsociety check/run</code> 串起来，systemd 托管，run 粒度可重放。</p>
+    </div>
+    <div class="ans">
+      <div class="q">Q3 · 对接与培训</div>
+      <div class="a">4 周<span>4 个角色</span></div>
+      <p>先接 LLM 与地图，再接存储与 UI；培训分运维、实验设计、Agent 开发、数据分析四条线。</p>
+    </div>
+  </div>
+
+  <section id="scope">
+    <h2><span class="no">01</span>先定范围，再谈机器</h2>
+    <p class="sub">“复刻 AgentSociety”有两种做法，硬件和人力差一个量级。先选一个，别同时上。</p>
+
+    <div class="tabs" role="tablist" aria-label="复刻范围">
+      <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">A · 城市仿真（v1.5）</button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">B · 研究环境（v2）</button>
+    </div>
+    <div class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+      <p><strong>目标：</strong>复现“1 万个 agent 在一座城市里生活”的仿真能力，能配置实验、施加干预、导出数据分析。</p>
+      <ul>
+        <li>安装：<code>pip install agentsociety</code></li>
+        <li>依赖：Python 3.11+、Ray；v1.5 起已移除 Redis / MLflow 依赖，数据库默认 SQLite，可换 PostgreSQL</li>
+        <li>必需资产：MOSS 城市地图 <code>.pb</code> 文件（官方提供部分城市）</li>
+        <li>入口：<code>agentsociety check</code> / <code>run</code> / <code>ui</code></li>
+        <li>适合：政策预演、舆情传播、城市演化；也是本方案第 2–7 节的默认假设</li>
+      </ul>
+    </div>
+    <div class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <p><strong>目标：</strong>复现“AI 社会科学家 + 硅基被试”的端到端研究流水线，重点是可重放与可审计。</p>
+      <ul>
+        <li>安装：<code>pip install agentsociety2</code></li>
+        <li>依赖：Python 3.11+、Ray Task；组件更多（PersonAgent、workspace、ServiceProxy、JSONL replay + DuckDB）</li>
+        <li>额外需要：对象存储（轨迹）、DuckDB 查询层、MCP 工具链</li>
+        <li>适合：研究流程自动化、实验复现、论文级产物；工程量约为 A 的 1.5–2 倍</li>
+      </ul>
+      <p class="sub" style="margin:10px 0 0">建议：先用 A 把“仿真跑通、数据能出”，再决定要不要上 B。</p>
+    </div>
+  </section>
+
+  <section id="vps">
+    <h2><span class="no">02</span>要买多少台 VPS</h2>
+    <p class="sub">先给结论，再给算法，最后给一个你可以自己改数字的估算器。</p>
+
+    <h3>三档配置</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>档位</th><th>规模</th><th>节点</th><th>单机规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><b>POC</b></td><td>≤ 200 agent · 1 天</td><td>1 台</td><td>8 vCPU / 32 GB / 200 GB NVMe</td><td>跑通链路、验证地图与模型；SQLite 足够</td></tr>
+          <tr><td><b>试点</b></td><td>1,000 agent · 3–7 天</td><td>3 台</td><td>1×8C/32G（head + UI）＋ 2×8C/32G（worker）</td><td>一个完整实验；建议 PostgreSQL</td></tr>
+          <tr><td><b>生产</b></td><td>10,000 agent · 多轮</td><td>6–8 台</td><td>1 head、3–4 worker、1 DB、1 网关/监控</td><td>多实验并行、结果共享、可复盘</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">官方给的最低配置是 4 核 / 16 GB，但那是“能启动”，不是“能跑万级”。上表是工程建议，需用你的 agent 记忆大小与模型并发实测校准。</p>
+
+    <div class="callout warn">
+      <span class="t">真正的瓶颈通常不是 VPS</span>
+      <p>单进程的 LLM 并发（官方示例里 <code>concurrency: 200</code>）和供应商的 RPM / TPM 配额，才是决定“能不能跑起来”的东西。VPS 加得再多，配额不够也只是多几台机器一起排队。</p>
+    </div>
+
+    <h3>估算器</h3>
+    <p class="sub">改数字，下面会实时更新。默认：1,000 个 agent、目标并发 200、每进程并发上限 200、每 worker 承载 2,500 个 agent。</p>
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="agents">Agent 数</label><input id="agents" type="number" min="1" step="100" value="1000" inputmode="numeric"></div>
+        <div class="field"><label for="conc">目标同时请求数</label><input id="conc" type="number" min="1" step="50" value="200" inputmode="numeric"></div>
+        <div class="field"><label for="per">每进程并发上限</label><input id="per" type="number" min="1" step="50" value="200" inputmode="numeric"></div>
+        <div class="field"><label for="apw">每 worker 承载 agent</label><input id="apw" type="number" min="100" step="100" value="2500" inputmode="numeric"></div>
+        <div class="field"><label for="steps">每个 agent 步数</label><input id="steps" type="number" min="1" step="1" value="50" inputmode="numeric"></div>
+        <div class="field"><label for="tokens">每步 token</label><input id="tokens" type="number" min="100" step="100" value="3000" inputmode="numeric"></div>
+        <div class="field"><label for="price">模型单价（USD/百万）</label><input id="price" type="number" min="0" step="0.01" value="0.3" inputmode="decimal"></div>
+        <div class="field"><label for="vps">单台 VPS 月费（USD）</label><input id="vps" type="number" min="0" step="5" value="60" inputmode="decimal"></div>
+      </div>
+      <div class="toggles">
+        <label><input id="db" type="checkbox" checked> 独立数据库节点</label>
+        <label><input id="gw" type="checkbox" checked> 网关 / 监控节点</label>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">worker 数</span><span class="v" id="o-w">—</span></div>
+        <div><span class="k">VPS 总数</span><span class="v" id="o-total">—</span></div>
+        <div><span class="k">合计 vCPU / 内存</span><span class="v" id="o-cap">—</span></div>
+        <div><span class="k">基础设施 / 月</span><span class="v" id="o-infra">—</span></div>
+        <div><span class="k">单次实验 token</span><span class="v" id="o-tok">—</span></div>
+        <div><span class="k">单次实验模型费</span><span class="v" id="o-llm">—</span></div>
+      </div>
+      <p class="hint">worker 数 = max(⌈目标并发 ÷ 每进程并发⌉, ⌈agent 数 ÷ 每 worker 承载⌉)；总数再加 1 台 head，以及你勾选的 DB / 网关。没算：失败重试、缓存未命中、对象存储、带宽、人工。默认值下，模型费通常是基础设施月费的数倍——所以先控模型，再谈加机器。</p>
+    </div>
+
+    <h3>买机器时的四个硬要求</h3>
+    <ul class="check">
+      <li><b>不要用突发性能实例</b>：长时间仿真会把 CPU 积分耗光，后半程直接降速。</li>
+      <li><b>磁盘要 NVMe</b>：SQLite/PostgreSQL 写入与轨迹落盘是持续小 IO，网络盘会拖死 tick。</li>
+      <li><b>出网要稳定</b>：每步都在调模型 API，NAT 抖动会表现为“agent 随机卡住”。</li>
+      <li><b>同区域部署</b>：head 与 worker 跨区会放大 Ray 的调度延迟；模型 API 也尽量选近的区域。</li>
+    </ul>
+  </section>
+
+  <section id="auto">
+    <h2><span class="no">03</span>自动化：从裸机到一次实验</h2>
+    <p class="sub">原则：机器可重建、配置可版本化、实验可重放。不要在生产机上手工 pip install。</p>
+
+    <h3>仓库结构</h3>
+    <pre><code>as-ops/
+├─ configs/
+│  ├─ base.yaml            <span class="c"># 通用：模型、数据库、路径</span>
+│  ├─ exp-ubi.yaml         <span class="c"># 单个实验：agent 数、天数、干预</span>
+│  └─ secrets.example.env
+├─ scripts/
+│  ├─ bootstrap.sh         <span class="c"># 装 Python/Ray/agentsociety</span>
+│  ├─ preflight.py         <span class="c"># 跑前检查：配置/配额/磁盘/地图</span>
+│  └─ run.sh               <span class="c"># 加锁、建 run 目录、执行、归档</span>
+├─ deploy/
+│  ├─ ray-head.service     <span class="c"># systemd</span>
+│  ├─ ray-worker.service
+│  └─ nginx.conf           <span class="c"># UI 反代 + 鉴权</span>
+└─ runs/                   <span class="c"># 每次实验一个目录（gitignore）</span></code></pre>
+
+    <h3>1）机器初始化</h3>
+    <pre><code><span class="c">#!/usr/bin/env bash</span>
+<span class="c"># bootstrap.sh — Ubuntu 22.04 / 24.04</span>
+<span class="k">set</span> -euo pipefail
+
+apt-get update &amp;&amp; apt-get install -y python3.11 python3.11-venv build-essential curl
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+uv venv --python 3.11 /opt/as/.venv
+<span class="k">source</span> /opt/as/.venv/bin/activate
+uv pip install agentsociety==1.5.* agentsociety-community
+
+<span class="c"># Ray 版本必须全集群一致，锁死</span>
+uv pip install <span class="s">"ray[default]==2.4x.*"</span>
+
+agentsociety --help   <span class="c"># 确认 check / run / ui 三个子命令</span></code></pre>
+
+    <h3>2）Ray 集群</h3>
+    <pre><code><span class="c"># head 节点</span>
+ray start --head --port=6379 --dashboard-host=0.0.0.0 --num-cpus=8
+
+<span class="c"># worker 节点（改 IP）</span>
+ray start --address=10.0.0.10:6379 --num-cpus=8 --memory=30000000000
+
+<span class="c"># 任意节点检查</span>
+ray status</code></pre>
+    <p class="sub">Ray 的 GCS 仍用 6379 端口，但它不是 Redis 依赖——v1.5 移除的是业务层的 Redis。别把两件事混在一起。</p>
+
+    <h3>3）实验配置（最小可用）</h3>
+    <pre><code><span class="c"># configs/exp-ubi.yaml</span>
+llm:
+  - model: qwen2.5-14b-instruct
+    api_key: <span class="s">"${AS_LLM_KEY}"</span>
+    base_url: <span class="s">"https://your-endpoint/v1"</span>
+    provider: vllm
+    concurrency: 200
+    timeout: 60
+
+env:
+  db:
+    enabled: true
+    db_type: sqlite        <span class="c"># 多人协作换 postgresql</span>
+  home_dir: ./agentsociety_data
+
+map:
+  file_path: ./agentsociety_data/beijing.pb
+
+agents:
+  citizens:
+    - agent_class: SocietyAgent
+      number: 1000
+
+exp:
+  name: ubi-pilot
+  workflow:
+    - type: run
+      days: 1
+      ticks_per_step: 300
+  environment:
+    start_tick: 28800      <span class="c"># 08:00</span></code></pre>
+
+    <h3>4）跑前检查 + 执行</h3>
+    <pre><code><span class="c"># preflight：先便宜地失败</span>
+agentsociety check -c configs/exp-ubi.yaml
+
+<span class="c"># 再花 30 秒验一次模型连通性</span>
+curl -sS <span class="s">"$AS_LLM_BASE/chat/completions"</span> \
+  -H <span class="s">"Authorization: Bearer $AS_LLM_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"model":"qwen2.5-14b-instruct","messages":[{"role":"user","content":"ping"}],"max_tokens":4}'</span>
+
+<span class="c"># 正式跑：一个 run 一个目录，避免互相覆盖</span>
+RUN_ID=$(date +%Y%m%d-%H%M%S)
+mkdir -p runs/$RUN_ID
+agentsociety run -c configs/exp-ubi.yaml 2>&1 | tee runs/$RUN_ID/run.log</code></pre>
+
+    <div class="callout">
+      <span class="t">run.sh 里必须有的五件事</span>
+      <ul>
+        <li>文件锁：同一 DB/home_dir 不允许两个实验同时写</li>
+        <li>run 目录：日志、配置快照、git commit 一起存</li>
+        <li>成本闸：环境变量里写死本次预算，超了就 kill</li>
+        <li>超时：整轮墙钟上限，防止“卡住但没报错”</li>
+        <li>归档：DB 快照或导出文件，移动到对象存储</li>
+      </ul>
+    </div>
+
+    <h3>5）常驻与开机自启</h3>
+    <pre><code><span class="c"># /etc/systemd/system/ray-head.service</span>
+[Unit]
+Description=Ray head
+After=network-online.target
+
+[Service]
+Type=simple
+User=as
+ExecStart=/opt/as/.venv/bin/ray start --head --port=6379 --dashboard-host=0.0.0.0 --num-cpus=8 --block
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+    <pre><code>systemctl daemon-reload
+systemctl enable --now ray-head
+journalctl -u ray-head -f
+
+<span class="c"># Web UI 不要直接暴露：nginx 反代 + Basic Auth / SSO</span>
+agentsociety ui</code></pre>
+
+    <h3>6）CI 与回归</h3>
+    <p>把“10 个 agent × 1 天”做成冒烟测试，每次改配置或升级版本都跑一遍。它验证的是链路（配置解析、地图、DB、模型、UI），不是科研结论。冒烟通过再放量，能挡掉八成低级错误。</p>
+  </section>
+
+  <section id="integrate">
+    <h2><span class="no">04</span>对接：五个接口</h2>
+    <p class="sub">按“先通、再稳、再治理”的顺序接。每一项都给出验收标准，避免“看起来接上了”。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>接口</th><th>怎么接</th><th>验收标准</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>模型</b></td>
+            <td>任意 OpenAI 兼容端点：DeepSeek / Qwen / 智谱 / 火山 / SiliconFlow / 自建 vLLM。配置里写 <code>base_url</code> + <code>api_key</code> + <code>provider</code>，并设 <code>concurrency</code> 与 <code>timeout</code>。</td>
+            <td>10 agent × 1 天跑通；P95 延迟与失败率有记录；配额够目标并发的 1.5 倍</td>
+          </tr>
+          <tr>
+            <td><b>地图</b></td>
+            <td>MOSS 城市地图 <code>.pb</code>，官方站可下载部分城市；自定义地图按其格式生成。</td>
+            <td><code>agentsociety check</code> 的 Map 项通过；agent 能按路网移动</td>
+          </tr>
+          <tr>
+            <td><b>存储</b></td>
+            <td>默认 SQLite；多人/多实验换 PostgreSQL。轨迹与导出文件放对象存储（S3 兼容）。</td>
+            <td>两个实验并发写不冲突；能用 SQL 直接查 agent 状态与对话</td>
+          </tr>
+          <tr>
+            <td><b>界面</b></td>
+            <td><code>agentsociety ui</code> + nginx 反代；接公司 SSO 或至少 Basic Auth；只在内网/白名单开放。</td>
+            <td>未登录不可访问；实验列表与问卷能打开</td>
+          </tr>
+          <tr>
+            <td><b>下游系统</b></td>
+            <td>用 Web API 或直接读库，把实验结果送进 BI / Notebook；v2 可走 MCP 接工具。</td>
+            <td>一条 SQL / 一个 API 能拿到“实验 → agent → 行为”三层数据</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>密钥与配额</h3>
+    <ul class="check">
+      <li><b>不要把 key 写进 YAML</b>：用环境变量或 secret manager，配置文件只留 <code>${AS_LLM_KEY}</code>。</li>
+      <li><b>按实验发子 key</b>：每个实验一个额度，烧穿只影响自己。</li>
+      <li><b>模型分层</b>：规划/反思用强模型，日常动作与格式化用便宜模型；先跑小规模对比再定比例。</li>
+      <li><b>限流要主动</b>：客户端并发 ≤ 供应商配额的 80%，把 429 当常态处理。</li>
+    </ul>
+
+    <h3>合规与数据</h3>
+    <p>如果 agent profile 来自真实问卷或用户数据，先做脱敏与授权；地图数据注意来源许可；仿真结论对外发布时，必须标注“模拟结果，非预测”。这三条在“复刻”里最容易漏，也最容易出事。</p>
+  </section>
+
+  <section id="train">
+    <h2><span class="no">05</span>培训：四个人，四周</h2>
+    <p class="sub">这里的“培训”指<b>人</b>和<b>agent 调优</b>，不是训练基础模型。别把两件事混在一个预算里。</p>
+
+    <h3>角色与职责</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>角色</th><th>要会什么</th><th>交付物</th></tr></thead>
+        <tbody>
+          <tr><td><b>平台运维</b></td><td>Ray 集群、systemd、监控、备份、升级与回滚</td><td>Runbook、故障演练记录</td></tr>
+          <tr><td><b>实验设计</b></td><td>把研究问题翻译成配置：agent 数、天数、干预、指标</td><td>实验模板、变量清单</td></tr>
+          <tr><td><b>Agent 开发</b></td><td>Block 组合、自定义 agent、消息拦截器、prompt 校准</td><td>自定义 Block/Agent + 测试</td></tr>
+          <tr><td><b>数据分析</b></td><td>读库、指标提取、可视化、显著性判断</td><td>分析 Notebook、报告模板</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>四周课表</h3>
+    <div class="timeline">
+      <li><span class="when">W1 · 概念</span><b>跑通一次。</b>装环境、跑官方最小配置、看懂 check 的三项输出、用 UI 观察 agent。作业：10 个 agent 跑 1 天，导出一次对话。</li>
+      <li><span class="when">W2 · 配置</span><b>改一个变量。</b>只改 agent 数或 ticks_per_step，观察运行时间与 token 变化；学会用 run 目录对比两次实验。作业：一份变量对照表。</li>
+      <li><span class="when">W3 · 干预</span><b>加一个干预。</b>用消息拦截器做一次信息注入，或改一个 Block 的行为；写清楚“预期变什么、怎么判定”。作业：一个可重放的干预实验。</li>
+      <li><span class="when">W4 · 闭环</span><b>出一份报告。</b>从问题到配置到数据到结论，全程留痕；做一次失败复盘（限流、地图、DB 各一次）。作业：可复制的实验包。</li>
+    </div>
+
+    <h3>三道认证闸</h3>
+    <ul class="check">
+      <li><b>能独立跑：</b>给一份没见过的配置，能 check 通过并跑完，出问题能定位到是配置、地图还是模型。</li>
+      <li><b>能改行为：</b>不碰核心代码，只加一个 Block 或一条拦截规则，让某个指标发生可解释的变化。</li>
+      <li><b>能出结论：</b>拿到一份结果，能说清“这个差异是实验设计造成的，还是噪声”。</li>
+    </ul>
+
+    <div class="callout good">
+      <span class="t">培训的长期机制</span>
+      <p>每周一次实验复盘（只看看翻转的指标，不看平均分）；每月一次版本升级演练（在影子环境跑冒烟）；每次事故写一页纸：现象、根因、闸门。人和系统一起长。</p>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <h2><span class="no">06</span>90 天路线图</h2>
+    <ol class="timeline" style="list-style:none;padding:0">
+      <li><span class="when">D0–14</span><b>POC。</b>1 台 VPS，200 agent，1 天；目标只有一个：链路通、数据能查。产出：bootstrap.sh、最小配置、一次完整日志。</li>
+      <li><span class="when">D15–45</span><b>试点。</b>3 台，1,000 agent，跑 2–3 个场景；接 PostgreSQL 与 UI 鉴权；建立 run 目录与成本台账。产出：runbook、实验模板。</li>
+      <li><span class="when">D46–75</span><b>放量。</b>6–8 台，10,000 agent；做一次限流演练与一次失败重放；把冒烟测试接进 CI。产出：容量报告、故障演练记录。</li>
+      <li><span class="when">D76–90</span><b>交接。</b>四个人各过一道认证；把“怎么跑、怎么改、怎么判”写成三份文档；决定是否上 v2。</li>
+    </ol>
+
+    <div class="callout warn">
+      <span class="t">预算提醒</span>
+      <p>6–8 台 8C/32G 的月费通常在几百美元量级；而一次 1 万 agent × 50 步的实验，模型费可能是它的数倍。预算表要把“基础设施”和“模型调用”分开列，否则第一个月就会超。</p>
+    </div>
+  </section>
+
+  <section id="risks">
+    <h2><span class="no">07</span>七个会咬人的地方</h2>
+    <ul class="check">
+      <li><b>配额先于机器耗尽</b>：供应商 429 会让 agent 表现为“随机不动”；先压测配额，再谈扩容。</li>
+      <li><b>SQLite 并发写</b>：多实验共用一份库会锁；超过一个人用就换 PostgreSQL。</li>
+      <li><b>Ray 版本漂移</b>：head 与 worker 版本不一致时，报错通常很难懂；锁死版本。</li>
+      <li><b>地图不匹配</b>：换城市不是换文件那么简单，路网与 POI 会影响行为分布。</li>
+      <li><b>模型升级改变结论</b>：换模型等于换“人性”；升级后必须重跑基线。</li>
+      <li><b>把模拟当预测</b>：对外输出必须标注边界，否则一次误读就毁掉项目信誉。</li>
+      <li><b>许可例外</b>：Apache-2.0，但 <code>commercial</code> 目录另有条款；商用前读 LICENSE。</li>
+    </ul>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>依据</h2>
+    <ul class="sources">
+      <li>官方前置条件（4C/16G、Python 3.11、Linux/macOS、v1.5 移除 Redis/MLflow、SQLite 默认）：<a href="https://agentsociety.readthedocs.io/en/latest/01-get-started/01-prerequisites.html" rel="noreferrer">readthedocs</a></li>
+      <li>安装与 CLI（<code>check</code> / <code>run</code> / <code>ui</code>）：<a href="https://agentsociety.readthedocs.io/en/latest/01-get-started/02-installation.html" rel="noreferrer">readthedocs</a></li>
+      <li>配置字段与运行示例（<code>concurrency: 200</code>、<code>ticks_per_step</code>、<code>start_tick</code>）：<a href="https://agentsociety.readthedocs.io/en/latest/01-get-started/03-code.html" rel="noreferrer">readthedocs</a></li>
+      <li>仓库与许可：<a href="https://github.com/tsinghua-fib-lab/AgentSociety" rel="noreferrer">github.com/tsinghua-fib-lab/AgentSociety</a></li>
+      <li>地图：<a href="https://agentsociety.fiblab.net/maps" rel="noreferrer">agentsociety.fiblab.net/maps</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">VPS 数量、成本与工期均为工程估算，不是官方承诺；请以自己的压测结果为准。检索于 2026-10-31。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>AgentSociety 项目目录 · 复刻方案 · 2026-10-31 · <a href="index.html">项目介绍</a> · <a href="vs-smallville.html">对比小镇</a></div>
+  <span>本页为独立方案，与项目方无隶属关系；配置与命令以官方文档为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+
+(function(){
+  function num(id, fallback){
+    var v = parseFloat(document.getElementById(id).value);
+    return isFinite(v) && v >= 0 ? v : fallback;
+  }
+  function fmt(n){
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return Math.round(n).toString();
+  }
+  function calc(){
+    var agents = Math.max(1, num('agents', 1000));
+    var conc = Math.max(1, num('conc', 200));
+    var per = Math.max(1, num('per', 200));
+    var apw = Math.max(100, num('apw', 2500));
+    var steps = Math.max(1, num('steps', 50));
+    var tok = Math.max(100, num('tokens', 3000));
+    var price = num('price', 0.3);
+    var vps = num('vps', 60);
+    var db = document.getElementById('db').checked ? 1 : 0;
+    var gw = document.getElementById('gw').checked ? 1 : 0;
+
+    var workers = Math.max(1, Math.ceil(conc / per), Math.ceil(agents / apw));
+    var total = 1 + workers + db + gw;
+    var tokens = agents * steps * tok;
+    var llm = tokens / 1e6 * price;
+
+    document.getElementById('o-w').textContent = String(workers);
+    document.getElementById('o-total').textContent = String(total) + ' 台';
+    document.getElementById('o-cap').textContent = (total * 8) + 'C / ' + (total * 32) + 'G';
+    document.getElementById('o-infra').innerHTML = '$' + Math.round(total * vps) + ' <small>USD/月</small>';
+    document.getElementById('o-tok').textContent = fmt(tokens);
+    document.getElementById('o-llm').innerHTML = '$' + fmt(llm) + ' <small>USD/次</small>';
+  }
+  ['agents','conc','per','apw','steps','tokens','price','vps','db','gw'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', calc);
+    el.addEventListener('change', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

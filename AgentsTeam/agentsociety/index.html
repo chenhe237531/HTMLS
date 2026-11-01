@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="AgentSociety 深度介绍：五层架构、1 万 agent / 500 万次交互的仿真引擎、五个社会实验、v1 与 v2 的差别、快速上手与适用边界。">
+<title>AgentSociety 深度介绍 · 万级 LLM 社会仿真怎么搭</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:900px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.6vw,58px);line-height:1.08;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:28px 0 46px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+h4{font-size:14px;margin:18px 0 4px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+
+/* architecture diagram */
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+
+/* layer cards */
+.layers{display:grid;gap:10px}
+.layer{display:grid;grid-template-columns:96px 1fr;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.layer .name{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.04em;padding-top:2px}
+.layer .name b{display:block;font-family:var(--sans);font-size:14px;color:var(--ink);letter-spacing:0;margin-bottom:2px}
+.layer p{margin:0;font-size:13.6px;color:var(--ink-2);line-height:1.72}
+.layer code{font-size:.84em}
+
+/* experiments */
+.exps{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.exp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow)}
+.exp .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd9bd;border-radius:5px;padding:1px 6px;display:inline-block;margin-bottom:7px}
+.exp h4{margin:0 0 4px;font-size:14.5px;color:var(--ink)}
+.exp p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.68}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+
+/* steps */
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.steps li{counter-increment:s;position:relative;padding:12px 16px 12px 46px;background:var(--surface);border:1px solid var(--line);border-radius:11px;font-size:13.8px;color:var(--ink-2);line-height:1.72}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid #cfd9f3;color:var(--accent);font-family:var(--mono);font-size:11px;display:grid;place-items:center;line-height:1}
+.steps li b{color:var(--ink)}
+
+/* code block */
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.75;margin:0 0 14px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+
+table{width:100%;border-collapse:collapse;font-size:13.3px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+.quote{border-left:2px solid var(--line-strong);padding:2px 0 2px 16px;margin:0 0 14px;font-family:var(--serif);font-size:14.5px;color:var(--ink-2);line-height:1.85}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:900px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+  .layer{grid-template-columns:1fr;gap:4px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs{display:none}body{background:#fff}.kpi,.layer,.exp,.panel{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../agent-fleet-at-scale.html">← 规模化报告</a>
+  <span class="crumb">AgentSociety · v1 / v2 · 2026-10-31</span>
+  <nav class="pager"><a href="#arch">架构</a><a href="#run">跑起来</a><a href="#limits">边界</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>清华 FIB Lab · 万级社会仿真</div>
+  <h1>AgentSociety<br><em>给社会科学造一个对照组</em></h1>
+  <p class="lede">它不是又一个多 agent 框架，而是一台“社会显微镜”：给 1 万个带心理属性的 LLM agent 一座城市，让政策、谣言、灾难在可重放的沙盒里先发生一遍。</p>
+  <div class="meta-row">
+    <span class="pill">Apache-2.0（commercial 目录除外）</span>
+    <span class="pill">v1 论文 2025 · v2 论文 2026</span>
+    <span class="pill"><b>pip install agentsociety2</b></span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">10,000+<span>agents</span></div><div class="l">论文实际生成的 agent</div></div>
+    <div class="kpi"><div class="n">5,000,000<span>次</span></div><div class="l">agent 之间 / 与环境的交互</div></div>
+    <div class="kpi"><div class="n">5<span>个</span></div><div class="l">v1 社会实验场景</div></div>
+    <div class="kpi"><div class="n">2<span>代</span></div><div class="l">v1 城市仿真 / v2 研究环境</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>它到底是什么</h2>
+    <p class="sub">一句话：把“社会”拆成可计算的 agent、环境、消息和实验工具，让社会科学也能跑对照实验。</p>
+
+    <p>社会科学的经典困境是<strong>没法设对照组</strong>：你不可能为了研究“全民基本收入会不会让人变懒”，真的给一万人发三年钱；也不可能为了研究谣言传播，先在真实平台上放一条假消息。传统做法是问卷、访谈、观察——成本高、周期长、还只能看相关性。</p>
+
+    <p>AgentSociety 的思路是<strong>生成式社会科学</strong>：用 LLM 造出带情绪、需求、动机、认知能力的 agent，给它们一座有交通、有经济、有公共资源的城市，让它们自己上班、消费、社交、搬家。研究者则在外部施加干预（发钱、推一条消息、放一场飓风），观察系统层面涌现出什么。</p>
+
+    <div class="callout">
+      <span class="t">关键区别：它不是“让 agent 协作完成一个任务”</span>
+      <p>绝大多数多 agent 框架的目标是<strong>收敛</strong>——几个 agent 讨论出一个答案、写出一份代码。AgentSociety 的目标是<strong>发散</strong>：一万个 agent 各过各的，谁也不需要对谁负责，研究者看的是统计分布和涌现模式。这决定了它的架构（异步、无中心、重环境）和成本模型（按 token 线性增长）都完全不同。</p>
+    </div>
+
+    <h3>它不是什么</h3>
+    <table>
+      <tbody>
+        <tr><th style="width:34%">不是聊天机器人框架</th><td>没有“用户和 agent 对话”的主循环；agent 的对话对象是其他 agent 和环境。</td></tr>
+        <tr><th>不是预测器</th><td>论文的措辞是“复现已有研究中的主要定性模式、识别有信息量的偏离”，不是“预测明天会发生什么”。</td></tr>
+        <tr><th>不是开箱即用的产品</th><td>它是研究基础设施：要配 LLM key、要写实验配置、要读结果。官方有在线 demo，但严肃实验仍需工程能力。</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="arch">
+    <h2><span class="no">02</span>五层架构：v1 怎么把一万个 agent 跑起来</h2>
+    <p class="sub">v1 的论文与文档把系统拆成五层。真正决定“能不能到万级”的是最下面那层引擎，而不是 agent 有多聪明。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 760 430" role="img" aria-label="AgentSociety v1 五层架构示意图">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/>
+          </marker>
+        </defs>
+        <rect x="20" y="20" width="720" height="56" rx="10" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="38" y="44" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b4f9e">LLM / TOOL</text>
+        <text x="38" y="62" font-size="13" fill="#3c3f45">模型调用抽象（litellm：OpenAI / Qwen / DeepSeek）＋ 工具层（解析、分析、格式化）</text>
+
+        <rect x="20" y="90" width="720" height="88" rx="10" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="38" y="114" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9a5712">AGENT</text>
+        <text x="38" y="133" font-size="13" fill="#17181b">认知 · 需求 · 移动 · 计划 · 经济 · 社交 · 其他（7 类 Block 组合成一个人）</text>
+        <text x="38" y="154" font-size="12" fill="#6f7279">特殊角色：政府 agent · 银行 agent · 企业 agent · 社会 agent · NBS agent</text>
+        <text x="38" y="171" font-size="12" fill="#6f7279">每个 agent 有私有记忆与心理属性，行为由这些属性驱动，而不是由任务 prompt 驱动</text>
+
+        <rect x="20" y="192" width="720" height="64" rx="10" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="38" y="216" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#22654e">MESSAGE</text>
+        <text x="38" y="235" font-size="13" fill="#17181b">点对点（P2P）· 点对群（P2G）· 群聊；消息拦截器可在中途改写 / 阻断</text>
+        <text x="38" y="251" font-size="12" fill="#6f7279">拦截器同时是“干预手段”：推一条谣言、屏蔽某类信息，都在这一层做</text>
+
+        <rect x="20" y="270" width="720" height="64" rx="10" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="38" y="294" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b4f9e">ENVIRONMENT</text>
+        <text x="38" y="313" font-size="13" fill="#17181b">交通 / 移动（person service）· 经济（银行、企业、消费）· 地图（GeoJSON）</text>
+        <text x="38" y="329" font-size="12" fill="#6f7279">通过 gRPC 暴露给 agent，环境状态独立于 agent 存在</text>
+
+        <rect x="20" y="348" width="720" height="62" rx="10" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="38" y="372" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9a5712">ENGINE</text>
+        <text x="38" y="391" font-size="13" fill="#17181b">异步仿真引擎 ＋ Ray 分布式 ＋ agent 分组调度（v1.5 起已移除 Redis 依赖）</text>
+        <text x="38" y="404" font-size="12" fill="#6f7279">按时间步推进；同一时刻成千上万个 agent 并行思考，慢的不阻塞快的</text>
+
+        <line x1="380" y1="76" x2="380" y2="90" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="380" y1="178" x2="380" y2="192" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="380" y1="256" x2="380" y2="270" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="380" y1="334" x2="380" y2="348" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#ar)"/>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>自上而下是“能力 → 个体 → 通信 → 世界 → 调度”。箭头表示依赖，不表示数据只往下流：agent 会读环境、发消息，环境也会反过来改变 agent 的状态。</p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="name"><b>Agent 层</b>Block 组合</div>
+        <p>一个人不是一个大 prompt，而是 7 类 Block 的组合：<code>cognition</code>（认知）、<code>needs</code>（需求）、<code>mobility</code>（移动）、<code>plan</code>（计划）、<code>economy</code>（经济）、<code>social</code>（社交）、<code>other</code>。想改行为，替换或新增 Block 即可，不用重写整个 agent。</p>
+      </div>
+      <div class="layer">
+        <div class="name"><b>环境层</b>World</div>
+        <p>城市不是背景图，是有状态的服务：路网与移动、银行与企业、地图数据（GeoJSON）。agent 问“到公司要多久”“这家店还开着吗”，得到的是环境算出来的答案，不是模型编的。</p>
+      </div>
+      <div class="layer">
+        <div class="name"><b>消息层</b>Message</div>
+        <p>三种通道：P2P、P2G、群聊。中间有 <code>message_interceptor</code>：可以记录、改写、阻断。做“信息干预”实验时，这一层就是实验台。</p>
+      </div>
+      <div class="layer">
+        <div class="name"><b>研究工具</b>Survey</div>
+        <p>内置问卷管理（<code>survey.manager</code>）、消息控制、指标提取与数据分析接口。论文里的“问卷 / 访谈 / 干预”三种方法，在代码里都有对应入口。</p>
+      </div>
+      <div class="layer">
+        <div class="name"><b>引擎层</b>Engine</div>
+        <p>异步 + Ray：agent 是独立执行单元，按时间步推进；分组降低同步开销。v1.5 起已移除 Redis / MLflow，数据库默认 SQLite（可换 PostgreSQL）。这一层决定了从 100 到 10,000 是“改配置”还是“重写”。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="experiments">
+    <h2><span class="no">03</span>五个实验：它到底能研究什么</h2>
+    <p class="sub">v1 论文用同一套 1 万 agent 的城市，跑了五个方向。这里写的是“问题与方法”，不是结论——结论请回论文核对。</p>
+
+    <div class="exps">
+      <div class="exp">
+        <span class="tag">MESO</span>
+        <h4>群体极化</h4>
+        <p>在社交网络里放入立场相反的群体，观察讨论是否让立场更极端。可调：初始分布、推荐算法、互动频率。</p>
+      </div>
+      <div class="exp">
+        <span class="tag">MESO</span>
+        <h4>煽动性信息扩散</h4>
+        <p>注入一条带情绪的消息，追踪它在网络里的传播路径与衰减。拦截器可模拟平台的限流、标注、删帖。</p>
+      </div>
+      <div class="exp">
+        <span class="tag">MACRO</span>
+        <h4>全民基本收入（UBI）</h4>
+        <p>给一部分 agent 定期发钱，观察就业、消费、储蓄的变化。这是真实世界最难做对照实验的一类政策。</p>
+      </div>
+      <div class="exp">
+        <span class="tag">MACRO</span>
+        <h4>外部冲击（飓风）</h4>
+        <p>让一场灾害打断交通与供给，看城市如何恢复、哪些 agent 先受损。环境层在这里承担主要工作。</p>
+      </div>
+      <div class="exp">
+        <span class="tag">MACRO</span>
+        <h4>城市可持续性</h4>
+        <p>在通勤、消费、资源使用之间做权衡，观察长期指标。适合做“如果所有人都改用某种出行方式”这类反事实。</p>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:18px">
+      <span class="t">怎么读这类结果</span>
+      <p>论文强调的是<strong>与真实实验的定性对齐</strong>，以及“有信息量的偏离”。把它当成“能生成可检验假设的试验台”，而不是“能替代真实实验的预言机”。任何单一 scenario 的绝对数值，都不该直接拿去做政策结论。</p>
+    </div>
+  </section>
+
+  <section id="v2">
+    <h2><span class="no">04</span>v1 → v2：从“城市模拟器”到“可执行社会科学”</h2>
+    <p class="sub">仓库现在把 v2 标为推荐版本（<code>agentsociety2</code>），v1 保留为 legacy。这不是小版本升级，定位变了。</p>
+
+    <div class="tabs" role="tablist" aria-label="版本对比">
+      <button class="tab" role="tab" id="tab-v1" aria-controls="panel-v1" aria-selected="false">v1 · 城市仿真</button>
+      <button class="tab" role="tab" id="tab-v2" aria-controls="panel-v2" aria-selected="true">v2 · 研究环境</button>
+    </div>
+
+    <div class="panel" id="panel-v1" role="tabpanel" aria-labelledby="tab-v1" hidden>
+      <p><strong>核心问题：</strong>能不能用 LLM agent 复现一座城市的社会动态？</p>
+      <ul>
+        <li>重环境：交通、经济、地图、公共资源都有独立服务</li>
+        <li>重个体：心理属性 + 记忆 + 7 类行为 Block</li>
+        <li>重规模：异步 + Ray，论文跑到 1 万 agent / 500 万次交互</li>
+        <li>研究工具：问卷、访谈、消息拦截、指标提取</li>
+        <li>形态：Python 包 + Web API + React 前端 + VSCode 扩展 + 在线 demo</li>
+      </ul>
+    </div>
+
+    <div class="panel" id="panel-v2" role="tabpanel" aria-labelledby="tab-v2">
+      <p><strong>核心问题：</strong>能不能把“从文献到论文”的整条研究流程也交给 agent，同时让社会仿真仍然可审计？</p>
+      <ul>
+        <li><strong>双角色</strong>：AI 社会科学家（文献依据、假设生成、实验设计、仿真执行、结果解读、稿件起草）＋ 硅基被试（在可配置环境里产生行为）</li>
+        <li><strong>PersonAgent</strong>：agent 变成 workspace 绑定的无状态记录，由 Ray Task 驱动；env / LLM / trace / replay 统一走 <code>ServiceProxy</code></li>
+        <li><strong>推理可换</strong>：CodeGen（默认）、ReAct、Plan-Execute、Two-Tier、Search 路由</li>
+        <li><strong>实验可重放</strong>：JSONL catalog + DuckDB 读取 + 分布式 tracing</li>
+        <li><strong>可扩展</strong>：模块化环境组件、热插拔工具、MCP 接入</li>
+        <li><strong>证据</strong>：论文用 7 个研究覆盖微观实验室实验、中观社交媒体、宏观城市场景</li>
+      </ul>
+    </div>
+
+    <h3>一句话选型</h3>
+    <p>要做<strong>城市尺度的社会仿真</strong>、需要交通/经济环境，用 v1；要做<strong>端到端研究流程</strong>、需要重放与可审计，用 v2。两者共用同一个仓库，但 API 不兼容。</p>
+  </section>
+
+  <section id="run">
+    <h2><span class="no">05</span>怎么真的跑起来</h2>
+    <p class="sub">v2 的最小示例出自官方 README。它不是“万级”跑法，但能让你在十分钟内看到 agent 开口。</p>
+
+    <h4>环境</h4>
+    <pre><code><span class="c"># Python &gt;= 3.11；任意 litellm 支持的模型服务</span>
+pip install agentsociety2
+
+<span class="k">export</span> AGENTSOCIETY_LLM_API_KEY=<span class="s">"your-api-key"</span>
+<span class="k">export</span> AGENTSOCIETY_LLM_API_BASE=<span class="s">"https://api.openai.com/v1"</span>
+<span class="k">export</span> AGENTSOCIETY_LLM_MODEL=<span class="s">"gpt-5.5"</span></code></pre>
+
+    <h4>最小 society</h4>
+    <pre><code><span class="k">import</span> asyncio
+<span class="k">from</span> datetime <span class="k">import</span> datetime
+<span class="k">from</span> pathlib <span class="k">import</span> Path
+<span class="k">from</span> agentsociety2.env <span class="k">import</span> CodeGenRouter
+<span class="k">from</span> agentsociety2.contrib.env <span class="k">import</span> SimpleSocialSpace
+<span class="k">from</span> agentsociety2.society <span class="k">import</span> AgentSociety
+
+<span class="k">async def</span> main():
+    agent_specs = [{<span class="s">"id"</span>: 1, <span class="s">"profile"</span>: {<span class="s">"name"</span>: <span class="s">"Alice"</span>}, <span class="s">"config"</span>: {}}]
+    env = CodeGenRouter(env_modules=[SimpleSocialSpace(agent_id_name_pairs=[(1, <span class="s">"Alice"</span>)])])
+    society = AgentSociety(
+        agent_specs=agent_specs,
+        agent_class_name=<span class="s">"PersonAgent"</span>,
+        env_router=env,
+        start_t=datetime.now(),
+        run_dir=Path(<span class="s">"run"</span>),
+    )
+    <span class="k">await</span> society.init()
+    <span class="k">print</span>(<span class="k">await</span> society.ask(<span class="s">"What's your name?"</span>))
+    <span class="k">await</span> society.close()
+
+asyncio.run(main())</code></pre>
+
+    <h4>一次仿真的推进顺序</h4>
+    <ol class="steps">
+      <li><b>建世界</b>：加载地图、环境模块、agent profile。环境是有状态的服务，不是静态数据。</li>
+      <li><b>装配 agent</b>：按 Block 组合出认知、需求、移动、计划、经济、社交能力；特殊角色（政府 / 银行 / 企业）单独实现。</li>
+      <li><b>推进时间步</b>：每个 tick，引擎把活跃 agent 分发给 Ray worker；慢 agent 不阻塞快的，这就是“异步”的含义。</li>
+      <li><b>交换消息</b>：agent 之间发消息，拦截器记录 / 改写 / 阻断；平台级干预在这一步生效。</li>
+      <li><b>回写环境</b>：移动、消费、工作改变环境状态；环境再把新状态提供给下一步。</li>
+      <li><b>采集与重放</b>：问卷、指标、轨迹落盘；v2 用 JSONL + DuckDB 支持事后重放与追踪。</li>
+    </ol>
+
+    <div class="callout good" style="margin-top:16px">
+      <span class="t">先别急着上万级</span>
+      <p>官方给的在线平台（<code>agentsociety.fiblab.net</code>）适合先看效果。自己搭的时候，先跑 10 个 agent × 20 步，确认配置、模型、环境都通，再按数量级往上加——每加一个数量级，账单和失败率都会换一种方式咬你。</p>
+    </div>
+  </section>
+
+  <section id="uses">
+    <h2><span class="no">06</span>什么样的工作适合用它</h2>
+    <table>
+      <thead><tr><th>场景</th><th>适合度</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>政策 / 机制设计的反事实预演</td><td>高</td><td>真实世界无法设对照组，这里可以；但结论要标“模拟”，不能当预测</td></tr>
+        <tr><td>谣言 / 舆情传播机制研究</td><td>高</td><td>消息层与拦截器天然支持注入、限流、标注</td></tr>
+        <tr><td>城市交通 / 土地利用的长期演化</td><td>中高</td><td>环境层已有交通与地图；需要接自己的数据</td></tr>
+        <tr><td>LLM 社会性与偏差研究</td><td>高</td><td>可控制变量、可重复跑，比真人实验便宜</td></tr>
+        <tr><td>业务 agent 协作（写代码、客服）</td><td>低</td><td>目标相反：它要发散，不要收敛；调度与环境都为仿真设计</td></tr>
+        <tr><td>“预测下一次舆情事件”</td><td>低</td><td>不是预测器；输入分布一变，结论就不可迁移</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">07</span>边界、成本与坑</h2>
+
+    <h3>七个必须知道的限制</h3>
+    <ul class="check">
+      <li><b>LLM 偏差会变成社会规律</b>：agent 的“人性”来自模型，模型的偏好会被放大成群体现象。</li>
+      <li><b>对齐是定性对齐</b>：复现的是主要模式，不是逐点数值；论文自己也用“informative deviations”来表述偏离。</li>
+      <li><b>成本按 token 线性涨</b>：1 万 agent × 多轮交互是百万级请求；先算账再开跑，别用“先跑起来再说”。</li>
+      <li><b>v1 与 v2 不兼容</b>：API、包名、执行模型都不同；老项目别直接升。</li>
+      <li><b>需要工程能力</b>：Ray、gRPC、容器编排，出问题时不是改个 prompt 能解决的。</li>
+      <li><b>许可有例外</b>：Apache-2.0，但 <code>packages/agentsociety/commercial</code> 目录另有条款，商用前要读。</li>
+      <li><b>结果不是政策建议</b>：它是研究工具；把模拟结果直接当结论，是最常见的误用。</li>
+    </ul>
+
+    <h3>和另外两个万级项目的区别</h3>
+    <table>
+      <thead><tr><th>维度</th><th>AgentSociety</th><th>OASIS</th><th>AgentScope</th></tr></thead>
+      <tbody>
+        <tr><td>规模</td><td>10⁴（论文实测）</td><td>10⁶（上限）</td><td>10⁴–10⁵</td></tr>
+        <tr><td>重点</td><td>城市 + 社会科学方法</td><td>社交平台 + 推荐算法</td><td>通用 actor 运行时</td></tr>
+        <tr><td>环境</td><td>交通 / 经济 / 地图，gRPC 服务</td><td>X / Reddit 式信息流</td><td>可插拔，偏通用</td></tr>
+        <tr><td>研究工具</td><td>问卷、访谈、拦截、指标</td><td>平台指标为主</td><td>需自己搭</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>来源</h2>
+    <ul class="sources">
+      <li>仓库：<a href="https://github.com/tsinghua-fib-lab/AgentSociety" rel="noreferrer">github.com/tsinghua-fib-lab/AgentSociety</a></li>
+      <li>v1 论文：<a href="https://arxiv.org/abs/2502.08691" rel="noreferrer">arXiv:2502.08691</a>（1 万 agent / 500 万次交互 / 五个场景）</li>
+      <li>v2 论文：<a href="https://arxiv.org/abs/2607.11895" rel="noreferrer">arXiv:2607.11895</a>（双角色 / 7 个研究）</li>
+      <li>v1 文档：<a href="https://agentsociety.readthedocs.io/" rel="noreferrer">agentsociety.readthedocs.io</a>（五层架构、Block、拦截器、配置）</li>
+      <li>v2 文档：<a href="https://agentsociety2.readthedocs.io/" rel="noreferrer">agentsociety2.readthedocs.io</a></li>
+      <li>在线平台：<a href="https://agentsociety.fiblab.net/" rel="noreferrer">agentsociety.fiblab.net</a></li>
+      <li>并行化框架（ACL 2025）：A Parallelized Framework for Simulating Large-Scale LLM Agents with Realistic Environments and Interactions</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">检索与核对于 2026-10-31。规模与场景数字取自论文摘要与官方文档；未独立复跑。架构图为依据文档描述的示意，不是官方原图。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>AgentsTeam · AgentSociety 深度介绍 · 2026-10-31 · <a href="vs-smallville.html">对比斯坦福小镇</a> · <a href="plan.html">复刻方案</a></div>
+  <span>本页为独立解读，与项目方无隶属关系；引用请以仓库与论文为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus();
+        select(next);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

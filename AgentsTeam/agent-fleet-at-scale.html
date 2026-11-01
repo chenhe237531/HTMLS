@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="从 6 个 GitHub 开源项目看 Agent 规模化的真实路径：百万级仿真、万级社会模拟、千级并行评测、几十级并行编码，以及为什么编码场景到不了 1000。">
+<title>1000+ Agents 的第二种真相 · 开源项目规模化实战报告</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:1060px;margin:0 auto;padding:46px clamp(18px,5vw,40px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.4vw,58px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:48em;margin:0 0 22px}
+
+section{scroll-margin-top:64px;margin:0 0 56px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:26px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:26px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:28px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.tcard .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.tcard .name{font-size:16px;font-weight:650}
+.tcard .num{font-family:var(--serif);font-size:26px;color:var(--accent)}
+.tcard p{font-size:13.4px;color:var(--ink-2);margin:6px 0 0;line-height:1.72}
+.tcard .ex{font-size:11.5px;color:var(--muted);font-family:var(--mono);margin-top:8px;display:block}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.result-line{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+
+.cases{display:grid;gap:14px}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.case-head{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:baseline;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+.case-title{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.case-title .repo{font-family:var(--mono);font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.case-title .zh{font-size:13px;color:var(--muted)}
+.badge{font-size:10.5px;font-family:var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.badge.sim{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent)}
+.badge.eval{background:var(--green-soft);border-color:#cfe3d8;color:var(--green)}
+.badge.code{background:var(--amber-soft);border-color:#ecd9bd;color:var(--amber)}
+.case-scale{font-size:12.5px;color:var(--ink-2)}
+.case-scale b{font-family:var(--serif);font-size:18px;color:var(--ink);margin-right:4px}
+.case-body{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;padding:15px 18px 17px}
+.case-body p{font-size:13.8px;line-height:1.75;margin:0 0 8px}
+.case-body p:last-child{margin-bottom:0}
+.facts{margin:0;display:grid;gap:7px;font-size:12.6px;align-content:start}
+.facts div{display:grid;grid-template-columns:46px 1fr;gap:8px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;color:var(--ink-2);line-height:1.7;word-break:break-word}
+.case-foot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:0 18px 16px}
+.case-foot .risk{font-size:12.2px;color:var(--amber);line-height:1.6;max-width:62%}
+.case-foot .risk b{color:var(--ink-2)}
+.go{font-size:12.5px;text-decoration:none;border:1px solid var(--line-strong);border-radius:8px;padding:4px 10px;color:var(--ink-2);white-space:nowrap}
+.go:hover{border-color:var(--accent);color:var(--accent)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.4px;min-width:760px}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.calc .hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.tier{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.tier h3{margin:0 0 2px;font-size:15px}
+.tier .scale{font-family:var(--mono);font-size:22px;color:var(--accent);margin-bottom:8px}
+.tier ul{margin:0;padding-left:1.1em;font-size:13.2px;color:var(--ink-2);line-height:1.72}
+.tier li{margin:3px 0}
+
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,40px) 40px;max-width:1060px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:760px){
+  .case-body{grid-template-columns:1fr}
+  .case-foot .risk{max-width:100%}
+}
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+  .facts div{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.toolbar,.chips,.calc{display:none}body{background:#fff}.case,.kpi,.tcard,.tier{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="agent-fleet-1000.html">← 1000+ Agents 玩法手册</a>
+  <span class="crumb">AgentsTeam / 开源规模化 · 2026-10-31</span>
+  <nav class="pager"><a href="#cases">案例</a><a href="#math">算术</a><a href="#calc">估算器</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>GitHub 实证 · 6 个项目</div>
+  <h1>1000+ Agents 的<br><em>第二种真相</em></h1>
+  <p class="lede">上一份报告讲的是 Claude Code / Cursor 的产品能力和博客经验。这一份去 GitHub 找代码：谁真的跑到了百万级、谁只是并行跑了一千个互不通信的沙箱、谁号称 swarm 却在自家规则里写“别超过 8 个”。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">1,000,000<span>agents</span></div><div class="l">OASIS 声称的上限</div></div>
+    <div class="kpi"><div class="n">10,000<span>agents</span></div><div class="l">AgentSociety 实际跑过</div></div>
+    <div class="kpi"><div class="n">500<span>并发</span></div><div class="l">Harbor 官方示例</div></div>
+    <div class="kpi"><div class="n">6–8<span>个</span></div><div class="l">claude-flow 自己建议的上限</div></div>
+  </div>
+
+  <section id="verdict">
+    <h2><span class="no">01</span>先分清三种“上千”</h2>
+    <p class="sub">这三个数字经常被放在同一句话里，但它们的技术栈、成本结构和失败模式完全不同。混着谈，就会得出“编码也能轻松上千”的错误结论。</p>
+
+    <div class="three">
+      <div class="tcard">
+        <div class="top"><span class="name">仿真型</span><span class="num">10³–10⁶</span></div>
+        <p>成百上千万个轻量 agent 各走各的步，彼此只通过环境或消息层耦合。没有“交付物”，只有统计结果。规模来自“便宜的单步 + 异步调度”，不是来自“聪明的个体”。</p>
+        <span class="ex">OASIS · AgentSociety · AgentScope</span>
+      </div>
+      <div class="tcard">
+        <div class="top"><span class="name">评测型</span><span class="num">10²–10³</span></div>
+        <p>每个 trial 是一个完全隔离的沙箱，跑同一道题的不同实例或不同模型。agent 之间<strong>不通信</strong>，所以规模只受沙箱配额和预算限制。</p>
+        <span class="ex">Harbor · Terminal-Bench</span>
+      </div>
+      <div class="tcard">
+        <div class="top"><span class="name">生产编码型</span><span class="num">10¹–10²</span></div>
+        <p>多个 coding agent 改同一个仓库。真正的瓶颈不是生成，是合并、验证和人工 review；开源工具的现实并发是几十，不是上千。</p>
+        <span class="ex">vibe-kanban · claude-flow</span>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:18px">
+      <span class="t">这份报告要纠正的一点</span>
+      <p>“调用上千个 agent 跑一个应用”在公开仓库里几乎没有可复现案例。能到千级的是<strong>仿真</strong>和<strong>评测</strong>；编码场景到百级就已经撞上人的审查带宽。把三类数字混用，是这类内容最常见的失真方式。</p>
+    </div>
+  </section>
+
+  <section id="cases">
+    <h2><span class="no">02</span>六个能点开源码的案例</h2>
+    <p class="sub">按“能验证的规模证据”排序。每条都写了它到底怎么协调、怎么隔离、以及复刻时最先坏在哪。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按类型筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="sim" aria-pressed="false">仿真</button>
+        <button class="chip" type="button" data-filter="eval" aria-pressed="false">评测</button>
+        <button class="chip" type="button" data-filter="code" aria-pressed="false">编码</button>
+      </div>
+      <span class="result-line" id="count" role="status" aria-live="polite">共 6 个项目</span>
+    </div>
+
+    <div class="cases" id="cases-list">
+
+      <article class="case" data-type="sim">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">camel-ai/oasis</span><span class="zh">OASIS 社交媒体仿真</span><span class="badge sim">仿真</span></div>
+          <div class="case-scale"><b>1,000,000</b>agents（论文上限）</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>README 与论文都写“up to one million agents”，模拟 X / Reddit 的信息扩散、群体极化、从众。核心不是让每个 agent 都聪明，而是<strong>把单步成本压到足够低，再用异步调度堆规模</strong>。</p>
+            <p>论文里专门有一节“百万用户的效率分析”，给出 1 万 / 10 万 / 100 万三档的运行时与 GPU 利用率——这是少数愿意把规模成本摊开写的项目。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>平台推荐算法 + 时间引擎；agent 通过发帖/关注/点赞间接耦合</dd></div>
+            <div><dt>隔离</dt><dd>单进程内对象；用容器部署（<code>.container/</code>、<code>deploy.py</code>）</dd></div>
+            <div><dt>许可</dt><dd>Apache-2.0</dd></div>
+            <div><dt>入口</dt><dd><code>examples/</code> 下按规模分脚本</dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>最大的误读：</b>百万 agent ≠ 百万次 LLM 调用。官方描述是 LLM 与规则型 agent 混合，规模数字要先问“哪一类 agent 占多数”。</span>
+          <a class="go" href="https://github.com/camel-ai/oasis" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+      <article class="case" data-type="sim">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">tsinghua-fib-lab/agentsociety</span><span class="zh">AgentSociety 城市社会模拟</span><span class="badge sim">仿真</span></div>
+          <div class="case-scale"><b>10,000+</b>agents · 500 万次交互</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>论文给出的数字是：1 万多个 LLM agent、500 万次 agent 之间与 agent 与环境之间的交互。它把“社会”拆成城市环境、交通、经济、消息四个层，agent 有心理属性与记忆。</p>
+            <p>为了让这个规模跑得动，架构是<strong>异步仿真引擎 + Ray 分布式 + Redis 高并发消息 + gRPC 环境服务</strong>，并按 agent 分组调度。这是“万级”里工程细节最完整的一份开源实现。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>环境层统一推进时间；agent 分组 + 消息层（P2P / P2G / 群聊）</dd></div>
+            <div><dt>隔离</dt><dd>Ray actor 跨节点；Docker 部署</dd></div>
+            <div><dt>许可</dt><dd>Apache-2.0（商用目录另有条款）</dd></div>
+            <div><dt>成本</dt><dd>万级 LLM agent 是真实调用，账单按 token 线性涨</dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>复刻门槛：</b>需要集群和调参，不是 <code>pip install</code> 就能跑万级。单机只能做小规模验证。</span>
+          <a class="go" href="https://github.com/tsinghua-fib-lab/agentsociety" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+      <article class="case" data-type="sim">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">agentscope-ai/agentscope</span><span class="zh">AgentScope actor 分布式</span><span class="badge sim">仿真 / 通用</span></div>
+          <div class="case-scale"><b>10⁴–10⁵</b>agents（论文与官方博客）</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>论文《Very Large-Scale Multi-Agent Simulation in AgentScope》把底层换成 <strong>actor 模型</strong>：每个 agent 是独立 actor、私有状态、异步消息；本地 workflow 可以自动转成分布式部署，并自动识别并行点。</p>
+            <p>官方博客给了一个更具体的案例：通义实验室与人大用 AgentScope 造了 CiteAgent，让<strong>数万个 AI 学者</strong>在虚拟学术网络里互相引用，论文被 Nature 旗下刊物录用。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>Actor 消息传递 + MsgHub；中心化编程、去中心化执行</dd></div>
+            <div><dt>隔离</dt><dd>进程级 actor，可跨节点；1.0 起带沙箱与 K8s 部署</dd></div>
+            <div><dt>许可</dt><dd>Apache-2.0</dd></div>
+            <div><dt>入口</dt><dd><code>examples/workflows/multiagent_concurrent</code></dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>边界：</b>公开的大规模案例集中在仿真与游戏；拿它做业务系统，调度、幂等、失败重放仍要自己写。</span>
+          <a class="go" href="https://github.com/agentscope-ai/agentscope" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+      <article class="case" data-type="eval">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">harbor-framework/harbor</span><span class="zh">Harbor + Terminal-Bench 并行评测</span><span class="badge eval">评测</span></div>
+          <div class="case-scale"><b>500</b>并发 trial（官方示例）</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>Harbor 是 Terminal-Bench 团队的评测框架：每个 trial 起一个隔离环境（Docker / Daytona / Modal / Vercel 等），跑 agent、打分、回收。README 直接写“在数千个环境中并行实验”。</p>
+            <p>Terminal-Bench 的跑法更直白：<code>--n-concurrent 500</code> 跑 oracle 校验，<code>--n-concurrent 100</code> 跑真实 agent。它能在千级稳定，是因为<strong>trial 之间完全不通信</strong>——这是最容易安全放大的形态。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>无。任务队列 + 并发度，结果按 trial 回收</dd></div>
+            <div><dt>隔离</dt><dd>一 trial 一沙箱；网络策略在 VM 外强制执行</dd></div>
+            <div><dt>规模</dt><dd>300+ 数据集；并发上限由 provider 配额决定</dd></div>
+            <div><dt>命令</dt><dd><code>harbor run -d terminal-bench@2.0 -a claude-code --n-concurrent 100 --env daytona</code></dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>成本形态：</b>并发 × 时长。真正的瓶颈通常是镜像拉取与沙箱启动，不是模型。</span>
+          <a class="go" href="https://github.com/harbor-framework/harbor" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+      <article class="case" data-type="code">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">BloopAI/vibe-kanban</span><span class="zh">并行 coding agent 看板</span><span class="badge code">编码</span></div>
+          <div class="case-scale"><b>10¹</b>并发（几十，不是上千）</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>把“并行编码”落到工程上：每个 workspace 自动创建一个 <strong>git worktree</strong>、一个终端、一个 dev server，再接一个 coding agent；看板负责计划与 review，内置浏览器做 QA，最后开 PR。</p>
+            <p>它支持 Claude Code、Codex、Gemini CLI、OpenCode 等 10 多种 agent。这是目前开源里最接近“多 agent 交付应用”的形态，但规模是<strong>几十个并行任务</strong>，不是几千个。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>看板 + 人类 review；agent 之间不直接对话</dd></div>
+            <div><dt>隔离</dt><dd>一 workspace 一 worktree；端口与 dev server 独立</dd></div>
+            <div><dt>许可</dt><dd>Apache-2.0</dd></div>
+            <div><dt>状态</dt><dd>README 已标注 <strong>sunsetting</strong>（停止维护公告）</dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>现实约束：</b>worktree 清理、端口冲突、review 排队是日常故障源；项目停更也要计入选型风险。</span>
+          <a class="go" href="https://github.com/BloopAI/vibe-kanban" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+      <article class="case" data-type="code">
+        <div class="case-head">
+          <div class="case-title"><span class="repo">ruvnet/ruflo（原 claude-flow）</span><span class="zh">Swarm / Hive-Mind 反例</span><span class="badge code">编码 / 编排</span></div>
+          <div class="case-scale"><b>6–8</b>官方建议的并发上限</div>
+        </div>
+        <div class="case-body">
+          <div>
+            <p>宣传层面是 60+ agent 类型、层级 / 网状 / 自适应拓扑、Raft / Byzantine / Gossip 共识、共享向量记忆。看起来像“上千 agent 的基础设施”。</p>
+            <p>但仓库自己的 <code>CLAUDE.md</code> 写着：<strong>“Keep maxAgents at 6-8 for tight coordination”</strong>，编码 swarm 默认层级拓扑、短任务周期、频繁检查点。这是全篇最值钱的一句话：<strong>拓扑复杂度不等于吞吐</strong>。</p>
+          </div>
+          <dl class="facts">
+            <div><dt>协调</dt><dd>Queen/leader + 共识；共享记忆命名空间</dd></div>
+            <div><dt>隔离</dt><dd>Claude Code Task 工具；非进程级强隔离</dd></div>
+            <div><dt>许可</dt><dd>MIT</dd></div>
+            <div><dt>启发</dt><dd>共识算法在小规模才划算；规模上去后协调开销吞掉收益</dd></div>
+          </dl>
+        </div>
+        <div class="case-foot">
+          <span class="risk"><b>读法：</b>把它当“编排模式目录”，不要当“千级并发方案”。概念密度高，落地建议反而很保守。</span>
+          <a class="go" href="https://github.com/ruvnet/ruflo" rel="noreferrer">源码 →</a>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="callout" style="margin-top:18px">
+      <span class="t">延伸：Google 的 Race Condition</span>
+      <p>同样号称 1000 个 agent，但它走的是另一条路：<b>确定性 runner + 少量 LLM 决策</b>，每场仿真只花 $3–4。单篇拆解（含复现方案）见 <a href="race-condition/index.html">Race Condition 拆解</a>。</p>
+    </div>
+  </section>
+
+  <section id="matrix">
+    <h2><span class="no">03</span>把机制摊开对比</h2>
+    <p class="sub">同样是“很多 agent”，四层的选择决定了能到多大规模。特别注意“协调”和“隔离”两列：它们才是规模的真瓶颈。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>项目</th><th>协调层</th><th>隔离层</th><th>状态层</th><th>能到的规模</th><th>失败时先坏在哪</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>OASIS</b></td><td>平台推荐算法 + 时间引擎</td><td>进程内对象 / 容器</td><td>内存中的社交图</td><td>10⁵–10⁶ 轻量 agent</td><td>单机内存与单步耗时</td></tr>
+          <tr><td><b>AgentSociety</b></td><td>环境层统一推进</td><td>Ray actor + 容器</td><td>Redis + gRPC 环境</td><td>10⁴ LLM agent</td><td>消息风暴、Redis 热点</td></tr>
+          <tr><td><b>AgentScope</b></td><td>Actor 消息 + MsgHub</td><td>进程 / 节点</td><td>agent 私有状态</td><td>10⁴–10⁵</td><td>跨节点消息延迟</td></tr>
+          <tr><td><b>Harbor</b></td><td>任务队列（无通信）</td><td>一 trial 一沙箱</td><td>结果文件 / 评分器</td><td>10²–10³ 并发</td><td>沙箱配额、镜像拉取</td></tr>
+          <tr><td><b>vibe-kanban</b></td><td>看板 + 人</td><td>git worktree</td><td>分支 + PR</td><td>10¹</td><td>合并冲突、review 排队</td></tr>
+          <tr><td><b>claude-flow</b></td><td>Leader + 共识</td><td>Task 工具</td><td>共享向量记忆</td><td>10⁰–10¹（建议 6–8）</td><td>协调开销、上下文漂移</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="math">
+    <h2><span class="no">04</span>为什么编码场景到不了 1000</h2>
+    <p class="sub">不是模型不够快，是下游有三个串行环节。把这三个算清楚，任何“千个 agent 写一个 App”的说法都会露馅。</p>
+
+    <h3>4.1 审查带宽</h3>
+    <p>假设每个 agent 产出一个可评审的 PR，一个熟练工程师一小时能认真看完 8–10 个中小 PR。1000 个 PR 就是 <strong>100–125 小时</strong>的纯 review；10,000 个就是 1000 小时以上，约等于一个人半年的工作量。生成可以并行，审查不能。</p>
+
+    <h3>4.2 合并与验证</h3>
+    <p>worktree 能隔离写入，但<strong>合并是串行的</strong>。N 个分支同时改同一模块，冲突数随耦合度上升；每合并一次，其他分支的测试基线就变了。所以“并行生成 1000 个分支”之后，你还得串行地跑 1000 次集成验证。</p>
+
+    <h3>4.3 规格与验收</h3>
+    <p>真正决定成败的是需求有多清楚。给 1000 个 agent 同一份模糊需求，会得到 1000 种合理解释；把它们合并，比从零写一遍更贵。这也是为什么生产编码工具的现实形态是<strong>几十个并行任务 + 人在环</strong>，而不是无人值守的千级。</p>
+
+    <div class="callout good">
+      <span class="t">反过来，什么场景适合上千</span>
+      <p>只要满足两条——<strong>agent 之间不需要达成一致</strong>、<strong>结果可以被自动打分</strong>——规模就能上去。评测与仿真正好满足，业务交付不满足。</p>
+    </div>
+  </section>
+
+  <section id="calc">
+    <h2><span class="no">05</span>先把账算出来</h2>
+    <p class="sub">改任意一个数字，下面四项会实时更新。默认值是一万 agent、每个五十步、每步三千 token —— 也就是 AgentSociety 那个量级。价格按每百万输入 token 计，仅作数量级参考。</p>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="agents">Agent 数</label><input id="agents" type="number" min="1" step="100" value="10000" inputmode="numeric"></div>
+        <div class="field"><label for="steps">每个 agent 的步数</label><input id="steps" type="number" min="1" step="1" value="50" inputmode="numeric"></div>
+        <div class="field"><label for="tokens">每步 token（输入+输出）</label><input id="tokens" type="number" min="1" step="100" value="3000" inputmode="numeric"></div>
+        <div class="field"><label for="price">单价（USD / 百万 token）</label><input id="price" type="number" min="0" step="0.01" value="0.3" inputmode="decimal"></div>
+        <div class="field"><label for="conc">并发数</label><input id="conc" type="number" min="1" step="1" value="100" inputmode="numeric"></div>
+        <div class="field"><label for="lat">每步耗时（秒）</label><input id="lat" type="number" min="0.1" step="0.1" value="8" inputmode="decimal"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">模型请求数</span><span class="v" id="o-req">—</span></div>
+        <div><span class="k">token 总量</span><span class="v" id="o-tok">—</span></div>
+        <div><span class="k">估算成本</span><span class="v" id="o-cost">—</span></div>
+        <div><span class="k">墙钟时间（理想）</span><span class="v" id="o-time">—</span></div>
+      </div>
+      <p class="hint">没算进去的：失败重试（通常 +20%–100%）、缓存未命中、沙箱启动、以及最贵的一项——人工 review。墙钟时间假设没有限流、没有长尾、每步都打满并发，真实值通常更差。</p>
+    </div>
+  </section>
+
+  <section id="tiers">
+    <h2><span class="no">06</span>三档可复刻方案</h2>
+    <p class="sub">按“你手上有什么”选，不要按“听起来多大”选。</p>
+    <div class="tiers">
+      <div class="tier">
+        <h3>十级：把并行用起来</h3>
+        <div class="scale">10</div>
+        <ul>
+          <li>worktree + 每个任务一个 agent（vibe-kanban 模式，或自己写 tmux 脚本）</li>
+          <li>以 PR 为单位交付，人做 review</li>
+          <li>预算：一顿饭钱；时间：小时级</li>
+        </ul>
+      </div>
+      <div class="tier">
+        <h3>百级：把验证自动化</h3>
+        <div class="scale">100</div>
+        <ul>
+          <li>Harbor + 云沙箱，先跑 oracle 校验环境，再跑 agent</li>
+          <li>每个 trial 独立、可重放，结果落文件</li>
+          <li>预算：几百到几千美元；时间：小时到一天</li>
+        </ul>
+      </div>
+      <div class="tier">
+        <h3>千级：先有调度器，再谈 agent</h3>
+        <div class="scale">1,000+</div>
+        <ul>
+          <li>AgentScope / AgentSociety 的 actor 或 Ray 路径，或自建队列</li>
+          <li>必须有：并发配额、失败重放、去重、指标看板</li>
+          <li>只做“不需要达成一致”的任务；否则回退到百级</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="checklist">
+    <h2><span class="no">07</span>开跑前先过这九条</h2>
+    <ul class="check">
+      <li><b>任务可独立评分</b>：没有自动判定标准，规模越大越像在制造噪声。</li>
+      <li><b>agent 之间不需要达成一致</b>：需要共识就留在小规模，共识成本随 N 上升。</li>
+      <li><b>一 trial 一隔离</b>：容器或 VM，不要共用一个工作目录。</li>
+      <li><b>结果可重放</b>：输入、配置、模型版本、随机种子都要落盘。</li>
+      <li><b>有并发闸</b>：provider 配额、沙箱配额、token 预算三处都要限。</li>
+      <li><b>失败不吞</b>：超时、限流、空输出分别计数，别混成一个“失败”。</li>
+      <li><b>成本可归因</b>：按项目 / 数据集 / 模型分开记账。</li>
+      <li><b>人工出口明确</b>：哪些结果必须人看，看多少条，谁看。</li>
+      <li><b>先跑 10 个再放大</b>：小规模跑不通，放大只会更贵。</li>
+    </ul>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>来源</h2>
+    <ul class="sources">
+      <li>OASIS：<a href="https://github.com/camel-ai/oasis" rel="noreferrer">github.com/camel-ai/oasis</a> · 论文 <a href="https://arxiv.org/abs/2411.11581" rel="noreferrer">arXiv:2411.11581</a></li>
+      <li>AgentSociety：<a href="https://github.com/tsinghua-fib-lab/agentsociety" rel="noreferrer">github.com/tsinghua-fib-lab/agentsociety</a> · 论文 <a href="https://arxiv.org/abs/2502.08691" rel="noreferrer">arXiv:2502.08691</a>（1 万 agent / 500 万次交互）</li>
+      <li>AgentScope：<a href="https://github.com/agentscope-ai/agentscope" rel="noreferrer">github.com/agentscope-ai/agentscope</a> · <a href="https://arxiv.org/abs/2407.17789" rel="noreferrer">Very Large-Scale Multi-Agent Simulation</a> · CiteAgent 案例 <a href="https://agentscope.io/blog/renmin-university-nature-paper" rel="noreferrer">agentscope.io</a></li>
+      <li>Harbor：<a href="https://github.com/harbor-framework/harbor" rel="noreferrer">github.com/harbor-framework/harbor</a>（README：数千环境并行；示例 <code>--n-concurrent 100</code>）</li>
+      <li>Terminal-Bench：<a href="https://github.com/harbor-framework/terminal-bench" rel="noreferrer">github.com/harbor-framework/terminal-bench</a>（<code>--n-concurrent 500</code>）</li>
+      <li>vibe-kanban：<a href="https://github.com/BloopAI/vibe-kanban" rel="noreferrer">github.com/BloopAI/vibe-kanban</a>（worktree 隔离、sunsetting 公告）</li>
+      <li>ruflo / claude-flow：<a href="https://github.com/ruvnet/ruflo" rel="noreferrer">github.com/ruvnet/ruflo</a>（CLAUDE.md：“Keep maxAgents at 6-8”）</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">检索于 2026-10-31。规模数字取自各仓库 README / 论文 / 官方示例；未独立复跑。论文数字是作者报告的上限，不等于你的机器能跑到的数字。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>AgentsTeam · 开源规模化实战报告 · 2026-10-31 · 上一份：<a href="agent-fleet-1000.html">1000+ Agents 玩法手册</a></div>
+  <span>本页为独立分析，不隶属于所列项目；引用的事实以链接为准，估算部分已标注。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#cases-list .case'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var count = document.getElementById('count');
+  var type = 'all';
+
+  function apply(){
+    var shown = 0;
+    cards.forEach(function(c){
+      var show = type === 'all' || c.getAttribute('data-type') === type;
+      c.hidden = !show;
+      if (show) shown++;
+    });
+    count.textContent = type === 'all'
+      ? '共 ' + cards.length + ' 个项目'
+      : '匹配 ' + shown + ' 个 / 共 ' + cards.length + ' 个';
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      type = btn.getAttribute('data-filter');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+
+  function num(id, fallback){
+    var v = parseFloat(document.getElementById(id).value);
+    return isFinite(v) && v >= 0 ? v : fallback;
+  }
+
+  function fmt(n){
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return Math.round(n).toString();
+  }
+
+  function fmtTime(hours){
+    if (hours < 1 / 60) return '<1 分';
+    if (hours < 1) return Math.round(hours * 60) + ' 分';
+    if (hours < 48) return hours.toFixed(1) + ' 小时';
+    return (hours / 24).toFixed(1) + ' 天';
+  }
+
+  function calc(){
+    var a = num('agents', 10000);
+    var s = num('steps', 50);
+    var t = num('tokens', 3000);
+    var p = num('price', 0.3);
+    var c = Math.max(1, num('conc', 100));
+    var l = Math.max(0.1, num('lat', 8));
+
+    var req = a * s;
+    var tok = req * t;
+    var cost = tok / 1e6 * p;
+    var waves = Math.ceil(a / c);
+    var hours = waves * s * l / 3600;
+
+    document.getElementById('o-req').textContent = fmt(req);
+    document.getElementById('o-tok').textContent = fmt(tok);
+    document.getElementById('o-cost').innerHTML = '$' + fmt(cost) + ' <small>USD</small>';
+    document.getElementById('o-time').textContent = fmtTime(hours);
+  }
+
+  ['agents','steps','tokens','price','conc','lat'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

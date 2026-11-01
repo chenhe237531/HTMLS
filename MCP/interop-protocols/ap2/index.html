@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AP2 深度解析 · 让 Agent 代付可验证、可举证</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<style>
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.quote{border-left:3px solid var(--line-strong);padding:2px 0 2px 14px;color:var(--ink-2);font-size:14px;margin:12px 0}
+.mini{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.role{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.4px}
+.role:last-child{border-bottom:0}
+.role b{font-size:13.5px}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">AP2 深度解析</div>
+      <div class="brand-sub">代理支付 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>它是什么</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>三个问题</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>角色</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>两种模式</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>Mandates</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>验证与举证</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>与其它协议</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>现状与局限</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>谁该关注</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    v0.2 · 2026-04-28<br>
+    已捐赠 FIDO Alliance<br>
+    授权层 · 不处理支付
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>AP2 Protocol<span class="dot"></span>2026-10-31</p>
+    <h1>AP2：让 Agent 代付<em>可验证</em></h1>
+    <p class="lede">AP2 不处理支付。它解决的是更难的那件事：当 Agent 替你买东西时，用什么凭证证明「你确实授权了这笔钱」，以及出事时谁能举证。</p>
+    <div class="meta-row">
+      <span class="pill">起源 <b>Google</b>（2025-09）</span>
+      <span class="pill">治理 <b>FIDO Alliance</b>（2026-04 捐赠）</span>
+      <span class="pill">形态 <b>授权凭证层</b></span>
+      <span class="pill">版本 <b>v0.2</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">2<span>类</span></div><div class="l">Mandate：Checkout / Payment</div></div>
+      <div class="kpi"><div class="n">2<span>种</span></div><div class="l">模式：人在 / 人不在</div></div>
+      <div class="kpi"><div class="n">5<span>类</span></div><div class="l">验证角色（另有用户）</div></div>
+      <div class="kpi"><div class="n">0<span>笔</span></div><div class="l">已确认的生产交易（2026-10）</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">它是什么</h2></div>
+    <p class="lead-in">一句话：<strong>AP2 是代理支付的“授权与问责层”</strong>。它定义一套签名的、可选择性披露的凭证（Mandate），把「用户同意买什么、花多少」变成商户和支付网络都能验证的证据。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">它管</h4><p class="small" style="margin:0">用户授权、代理边界、支付凭证、收据、争议证据。</p></div>
+      <div class="card"><h4 style="margin-top:0">它不管</h4><p class="small" style="margin:0">商品目录、购物车、结账流程、清算与卡组织规则。</p></div>
+      <div class="card"><h4 style="margin-top:0">它依赖</h4><p class="small" style="margin:0">商业协议（UCP）提供流程，A2A 提供消息，卡或 x402 提供资金轨道。</p></div>
+    </div>
+
+    <h3>时间线</h3>
+    <ol class="steps">
+      <li><b>2025-09-16 · Google 发布 AP2</b><p>与支付生态共同提出「Agent 代付」的授权模型，最初面向人在场的结账。</p></li>
+      <li><b>2026-04-28 · v0.2 发布</b><p>补齐 Human Not Present（人不在场）流程，加入预算约束、Python SDK 与 Android 示例。</p></li>
+      <li><b>2026-04-28 · 捐赠给 FIDO Alliance</b><p>规范开发转入 FIDO 的 Agentic Authentication 与 Payments 两个工作组；GitHub 仓库转为示例与 SDK。</p></li>
+      <li><b>2026-10 · 仍处早期</b><p>没有已确认的生产部署，规范 v0.2 之后未再发版；采用取决于 FIDO 的标准化进度。</p></li>
+    </ol>
+
+    <div class="callout">
+      <span class="t">一句话区分</span>
+      <b>AP2 问「谁允许花这笔钱」</b>；<b>UCP 问「买什么、怎么结账」</b>；<b>x402 问「这笔钱怎么付掉」</b>。三者是层，不是竞品。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">三个问题</h2></div>
+    <p>人点「购买」时，这些问题由界面、银行风控和卡组织规则共同回答。Agent 代付时，它们必须有新的答案。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>问题</th><th>传统支付</th><th>Agent 代付的难点</th><th>AP2 的答案</th></tr></thead>
+        <tbody>
+          <tr><td><b>谁授权</b></td><td>本人点击 + 3DS / 生物识别</td><td>Agent 不是法律主体，无法“签字”</td><td>用户签名的 Mandate，绑定到具体结账</td></tr>
+          <tr><td><b>买了什么</b></td><td>商户页面 + 订单确认</td><td>Agent 可能在过程中替换商品或金额</td><td>Checkout Mandate 绑定商户签名的结账对象与哈希</td></tr>
+          <tr><td><b>出事谁举证</b></td><td>卡组织拒付流程</td><td>链上或代理交易缺少责任链</td><td>Mandate + Receipt 形成可验证的审计链</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">AP2 的核心主张</h4>
+        <p class="small" style="margin:0">不要相信 Agent，要验证它出示的凭证。每个动作都由上一环签名授权，任意一环被篡改都能被发现。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">代价</h4>
+        <p class="small" style="margin:0">商户、钱包、收单机构都要改流程；凭证格式、密钥管理、争议处理都需要行业共识——这也是它进展慢的原因。</p>
+      </div>
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">角色</h2></div>
+    <p>AP2 把「一笔代理支付」拆成六个角色。每个角色只验证自己该验证的部分，避免任何一方既当运动员又当裁判。</p>
+
+    <div class="card">
+      <div class="role"><b>User</b><div>发起意图、设定边界、在可信界面上签名。可以全程在场，也可以只签一次「开放授权」后离开。</div></div>
+      <div class="role"><b>Shopping Agent</b><div>找商品、建购物车、与商户结账、组装并提交 Mandate。它是被授权方，不是授权方。</div></div>
+      <div class="role"><b>Merchant</b><div>生成商户签名的 Checkout（JWT），验证 Checkout Mandate 是否覆盖这笔结账，然后交付。</div></div>
+      <div class="role"><b>Credential Provider</b><div>钱包 / 发卡行。验证 Payment Mandate 与支付工具，签发支付 token。</div></div>
+      <div class="role"><b>Merchant Payment Processor</b><div>收单机构。验证支付 token 与 Payment Mandate，完成授权与清算。</div></div>
+      <div class="role"><b>Trusted Surface</b><div>用户设备上的可信界面（手机 / 钱包 App），负责展示结账内容并采集用户签名。</div></div>
+    </div>
+    <p class="small" style="margin-top:10px">规范从「验证职责」角度概括为五类处理角色；User 与 Trusted Surface 是授权链的起点。</p>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">两种模式</h2></div>
+
+    <div class="split">
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <h4 style="margin-top:0">Human Present · 人在场</h4>
+        <p class="small" style="margin:0">用户看到最终订单与金额，直接在可信界面上签名。最接近今天的「确认支付」。</p>
+        <ul class="small" style="margin:10px 0 0;padding-left:1.2em">
+          <li>用户签 <b>closed</b> Checkout / Payment Mandate</li>
+          <li>商户验证后交付</li>
+          <li>争议时凭证最直接</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--amber)">
+        <h4 style="margin-top:0">Human Not Present · 人不在场</h4>
+        <p class="small" style="margin:0">用户先签一份带约束的 <b>open</b> Mandate（商户范围、商品、预算、有效期），Agent 在边界内自主完成，并自己签 <b>closed</b> Mandate。</p>
+        <ul class="small" style="margin:10px 0 0;padding-left:1.2em">
+          <li>验证方同时拿到 closed 凭证与适用的 open 约束</li>
+          <li>超出约束会失败，可升级为 Human Present</li>
+          <li>适合抢票、补货、限时购买</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Human Not Present 的流程</h3>
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">User                Shopping Agent              Merchant                 Credential Provider / MPP
+ │  设定任务与边界        │                          │                              │
+ │── open mandates ────▶│                          │                              │
+ │  （预算/商户/有效期）  │── 浏览、加购、结账 ──────▶│                              │
+ │                     │◀─ 商户签名的 Checkout ───│                              │
+ │                     │  在 open 约束内签 closed  │                              │
+ │                     │── Checkout Mandate ─────▶│ 验证约束与金额                │
+ │                     │── Payment Mandate ──────────────────────────────────────▶│ 验证并签发 token
+ │                     │◀─ Checkout Receipt ──────│                              │
+ │                     │◀─ Payment Receipt ───────────────────────────────────────│
+ │◀─ 结果与凭证 ────────│                          │                              │</div>
+
+    <div class="callout warn">
+      <span class="t">最容易误解的一点</span>
+      「人不在场」不是「没有授权」，而是「授权被提前参数化」。Agent 只能在用户签过的约束内行动；超出就失败。约束之外的自由，协议不背锅。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">Mandates：核心抽象</h2></div>
+    <p>Mandate 是签名过的授权凭证，用 SD-JWT 承载，可选择性地披露字段。两类 Mandate × 两种形态，构成四种组合。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>类型</th><th>open（约束）</th><th>closed（具体交易）</th><th>给谁</th></tr></thead>
+        <tbody>
+          <tr><td><b>Checkout Mandate</b></td><td>用户允许的商品范围、商户、预算、时间窗</td><td>绑定某一笔商户签名的结账（含金额与商品哈希）</td><td>商户</td></tr>
+          <tr><td><b>Payment Mandate</b></td><td>允许的支付工具、单笔/总额上限、有效期</td><td>绑定该笔结账的支付授权</td><td>Credential Provider、网络、MPP</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>配套还有两类回执：<b>Checkout Receipt</b>（商户签发，证明交付了什么）与 <b>Payment Receipt</b>（支付方签发，证明付了多少）。它们与 Mandate 串成完整证据链。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">开放 Checkout Mandate（示意，字段以规范为准）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>{
+  "type": "checkout_mandate",
+  "mode": "open",
+  "constraints": {
+    "merchants": ["shop.example.com"],
+    "max_total": { "currency": "USD", "value": "120.00" },
+    "items": ["sku:12345"],
+    "expires_at": "2026-11-01T00:00:00Z"
+  },
+  "nonce": "base64url...",
+  "signature": "SD-JWT..."
+}</code></pre>
+    </div>
+
+    <h3>为什么用 SD-JWT</h3>
+    <p>用户只向验证方披露与本次交易相关的字段：商户不需要看到你的全部预算，支付方也不需要看到商品细节。这是「最小披露」与「可验证」的折中。</p>
+
+    <div class="callout">
+      <span class="t">不可伪造的绑定</span>
+      Checkout Mandate 绑定的是商户签名过的结账对象（含价格、商品、商户身份的哈希）。Agent 改一个字段，哈希就对不上，验证失败。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">验证与举证</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>角色</th><th>验证什么</th><th>失败时</th></tr></thead>
+        <tbody>
+          <tr><td>Merchant</td><td>Checkout Mandate 是否覆盖这笔结账：商户、商品、金额、时间</td><td>拒绝结账，返回未满足的约束</td></tr>
+          <tr><td>Credential Provider</td><td>Payment Mandate 与支付工具、预算、有效期</td><td>拒绝签发支付 token</td></tr>
+          <tr><td>Merchant Payment Processor</td><td>token 与 Payment Mandate 的一致性</td><td>拒绝授权 / 清算</td></tr>
+          <tr><td>Network</td><td>按卡组织规则复核（如适用）</td><td>按现有拒付流程处理</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>争议时能拿出什么</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">用户侧</h4>
+        <p class="small" style="margin:0">自己签过的 open/closed Mandate、Trusted Surface 的签名记录、支付回执。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">商户 / 支付侧</h4>
+        <p class="small" style="margin:0">商户签名的 Checkout、Checkout Receipt、Payment Receipt、验证日志。</p>
+      </div>
+    </div>
+    <p>这套证据链的目标不是「保证不吵架」，而是让吵架时有可验证的事实：谁在什么时候、授权了哪一笔、金额是多少。</p>
+
+    <div class="callout warn">
+      <span class="t">仍未定义的部分</span>
+      Mandate 的选择与匹配（Agent 如何挑出适用的 open Mandate）在 v0.2 中仍由实现方自行决定；Human Present 的审批链也有未决 issue。接入前要读当期规范，不要假设「协议会替你决定」。
+    </div>
+  </section>
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">与其它协议</h2></div>
+    <p>AP2 是授权层，必须挂在别的流程与资金轨道上。它官方提供 A2A 与 UCP 两种扩展。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>协议</th><th>层</th><th>与 AP2 的关系</th></tr></thead>
+        <tbody>
+          <tr><td><b>UCP</b></td><td>商业流程</td><td>UCP 管发现、购物车、结账；AP2 作为支付扩展提供授权与凭证。官方称「无缝集成」。</td></tr>
+          <tr><td><b>A2A</b></td><td>Agent 通信</td><td>AP2 的示例与 SDK 通过 A2A 在 Agent 与商户之间传递消息。</td></tr>
+          <tr><td><b>x402</b></td><td>支付轨道</td><td>AP2 授权，x402 结算。官方有 Human Present / Not Present 的 x402 示例。</td></tr>
+          <tr><td><b>卡片 / PSP</b></td><td>支付轨道</td><td>原有卡组织与收单流程；AP2 把 Mandate 作为授权证据交给它们。</td></tr>
+          <tr><td><b>ACP（Commerce）</b></td><td>商业流程</td><td>同层竞争：OpenAI/Stripe 的结账流程，目前不以 AP2 为授权层。</td></tr>
+          <tr><td><b>MCP</b></td><td>工具</td><td>无直接关系；Agent 可用 MCP 找商品，但授权仍走 AP2。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">流程层      UCP（发现 / 购物车 / 结账）
+授权层      AP2（Checkout / Payment Mandate）
+通信层      A2A（Agent ↔ Merchant / Agent）
+资金层      卡组织 / PSP / x402 / 稳定币
+工具层      MCP（商品检索、比价、工具调用）</div>
+
+    <div class="callout">
+      <span class="t">组合示例</span>
+      用户在 UCP 商户结账 → Agent 出示 AP2 Checkout Mandate → 商户验证 → Credential Provider 验证 Payment Mandate → 通过 x402 或卡完成结算 → 双方各留回执。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">现状与局限</h2></div>
+
+    <div class="split">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <h4 style="margin-top:0">优点</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>把「代理授权」变成可验证凭证，而不是口头承诺</li>
+          <li>支持人不在场的预授权，且有明确边界</li>
+          <li>最小披露（SD-JWT），隐私与验证兼顾</li>
+          <li>支付方式无关，卡与稳定币都能接</li>
+          <li>与 UCP / A2A 的集成路径清晰</li>
+          <li>治理已交给 FIDO，避免单一厂商控制</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">局限</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li><b>没有已确认的生产部署</b>（2026-10）</li>
+          <li>v0.2 之后未再发版，规范开发转入 FIDO，节奏未知</li>
+          <li>GitHub 仓库自 2026-04 后基本停更，仍有未决 issue</li>
+          <li>商户、钱包、收单机构都要改造，落地成本高</li>
+          <li>Mandate 选择与匹配仍留给实现方</li>
+          <li>不解决退款、拒付与客服流程</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">最该记住的一句</span>
+      AP2 目前是一份「设计严谨、生态未起」的规范。它值得理解与预研，但不适合作为近期唯一支付方案。
+    </div>
+
+    <h3>时间线视角</h3>
+    <p>2025 年 9 月发布，2026 年 4 月补齐人不在场并捐给 FIDO，到 2026 年 10 月仍无生产案例。对比 x402 的链上交易量，AP2 的瓶颈不在技术，而在「支付行业的多方协调」。</p>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">谁该关注</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>角色</th><th>该做什么</th><th>优先级</th></tr></thead>
+        <tbody>
+          <tr><td>钱包 / 发卡行 / PSP</td><td>实现 Mandate 验证与支付 token 签发；参与 FIDO 工作组</td><td>高</td></tr>
+          <tr><td>大型商户 / 电商平台</td><td>通过 UCP 接入，验证 Checkout Mandate；准备争议证据链</td><td>高</td></tr>
+          <tr><td>Agent 平台</td><td>集成 SDK，设计 open Mandate 的约束与升级路径</td><td>中</td></tr>
+          <tr><td>企业采购 / 财务</td><td>关注预算约束与审计价值，暂缓生产依赖</td><td>中</td></tr>
+          <tr><td>API / 工具计费</td><td>不需要 AP2，直接用 x402 或按次计费</td><td>低</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">如果只做一件事</span>
+      先用 x402 解决「收钱」，用 AP2 的思路（预算、商户白名单、单笔上限、凭证留痕）设计你自己的 Agent 支付边界。等 FIDO 出稳定版，再替换为标准化 Mandate。
+    </div>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">来源</h2></div>
+    <p class="small">状态截至 2026-10-31；规范字段以 FIDO / AP2 官方当期文档为准。</p>
+    <ul class="small">
+      <li><a href="https://ap2-protocol.org/" target="_blank" rel="noopener noreferrer">AP2 官网</a> · <a href="https://ap2-protocol.org/ap2/specification/" target="_blank" rel="noopener noreferrer">v0.2 规范</a> · <a href="https://ap2-protocol.org/ap2/flows/" target="_blank" rel="noopener noreferrer">流程示例</a></li>
+      <li><a href="https://blog.google/products-and-platforms/platforms/google-pay/agent-payments-protocol-fido-alliance" target="_blank" rel="noopener noreferrer">Google：捐赠 AP2 给 FIDO</a> · <a href="https://fidoalliance.org/fido-alliance-to-develop-standards-for-trusted-ai-agent-interactions/" target="_blank" rel="noopener noreferrer">FIDO：可信 Agent 交互标准</a></li>
+      <li><a href="https://github.com/google-agentic-commerce/AP2" target="_blank" rel="noopener noreferrer">AP2 GitHub（示例与 SDK）</a> · <a href="https://ucp.dev/documentation/ucp-and-ap2/" target="_blank" rel="noopener noreferrer">UCP 与 AP2</a></li>
+      <li><a href="https://protofire.io/guides/agentic-payment-protocols" target="_blank" rel="noopener noreferrer">Protofire：Agent 支付协议对比（2026-10）</a></li>
+    </ul>
+    <div class="callout">
+      <span class="t">口径</span>
+      本页把「生产部署」限定为公开可验证的商户交易；示例、SDK 与试点不计入。AP2 的 v0.2 规范与实现仍在演进，接入前请自行复核。
+    </div>
+  </section>
+
+  <footer>
+    <span>AP2 深度解析 · 2026-10-31 · 单文件离线版</span>
+    <span>授权可验证，支付才敢自动化</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

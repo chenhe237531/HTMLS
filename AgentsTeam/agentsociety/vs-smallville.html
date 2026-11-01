@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="AgentSociety 与斯坦福小镇（Generative Agents / Smallville）的逐项对比：命题、规模、环境、认知架构、干预能力、工程与验证标准，以及该选哪个。">
+<title>AgentSociety vs 斯坦福小镇 · 两份社会仿真的分岔</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:940px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,54px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.prop{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 19px;box-shadow:var(--shadow)}
+.prop .who{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.prop h3{margin:3px 0 8px;font-size:17px}
+.prop p{font-size:13.6px;color:var(--ink-2);margin:0 0 8px}
+.prop .q{font-family:var(--serif);font-size:14.5px;color:var(--ink);border-left:2px solid var(--line-strong);padding-left:12px;margin:10px 0 0;line-height:1.75}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.result-line{font-size:12.5px;color:var(--muted);margin:0}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.4px;min-width:720px}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td:first-child{white-space:nowrap;color:var(--ink);font-weight:600}
+tr.ess td{background:rgba(43,79,158,.035)}
+tr.ess td:first-child::after{content:"本质";font-family:var(--mono);font-size:9.5px;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd9bd;border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:1px}
+
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+
+.why{display:grid;gap:12px}
+.why .item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.why h3{margin:0 0 6px;font-size:15.5px}
+.why p{margin:0;font-size:13.8px;color:var(--ink-2);line-height:1.75}
+
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.pick .c{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+.pick .if{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.pick h3{margin:3px 0 7px;font-size:15px}
+.pick p{margin:0;font-size:13.4px;color:var(--ink-2);line-height:1.7}
+.pick .win{display:inline-block;margin-top:10px;font-size:11.5px;font-family:var(--mono);padding:2px 8px;border-radius:5px;background:var(--accent-soft);border:1px solid #cfd9f3;color:var(--accent)}
+
+.myths{display:grid;gap:10px}
+.myth{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.myth .m,.myth .r{padding:14px 16px;font-size:13.6px;line-height:1.72}
+.myth .m{color:var(--red);background:var(--red-soft);border-right:1px solid var(--line)}
+.myth .r{color:var(--ink-2)}
+.myth .m b,.myth .r b{display:block;font-size:10.5px;font-family:var(--mono);letter-spacing:.08em;margin-bottom:3px;opacity:.75}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:940px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:700px){
+  .duo{grid-template-columns:1fr}
+  .myth{grid-template-columns:1fr}
+  .myth .m{border-right:none;border-bottom:1px solid var(--line)}
+}
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.toolbar,.chips{display:none}body{background:#fff}.prop,.figure,.why .item,.pick .c{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">← AgentSociety 介绍</a>
+  <span class="crumb">agentsociety / vs Smallville · 2026-10-31</span>
+  <nav class="pager"><a href="#table">逐项对比</a><a href="#why">深层原因</a><a href="#pick">怎么选</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>两份社会仿真 · 一次分岔</div>
+  <h1>AgentSociety vs<br><em>斯坦福小镇</em></h1>
+  <p class="lede">它们同源：都用 LLM 驱动 agent，都关心“涌现”。但一个想证明 25 个人能活得像人，另一个想回答 1 万个 agent 组成的社会，政策打下去会怎样。</p>
+
+  <div class="meta-row">
+    <span class="pill">Generative Agents · UIST 2023</span>
+    <span class="pill">AgentSociety · 2025 / 2026</span>
+    <span class="pill">不是升级关系</span>
+  </div>
+
+  <section id="onesentence">
+    <h2><span class="no">01</span>一句话说清</h2>
+    <div class="callout">
+      <p><strong>小镇验证“个体可信”，AgentSociety 验证“群体可算”。</strong>前者是一次行为学演示，后者是一台社会科学实验装置。把后者说成“小镇的升级版”，会同时误解两边的设计取舍。</p>
+    </div>
+  </section>
+
+  <section id="propositions">
+    <h2><span class="no">02</span>两个命题</h2>
+    <div class="duo">
+      <div class="prop">
+        <div class="who">STANFORD · SMALLVILLE</div>
+        <h3>25 个 agent，2 天</h3>
+        <p>Park 等人 2023 年的《Generative Agents》。在一个 2D 小镇里放 25 个居民，每个有记忆流、会反思、会做计划，看他们能不能自发产生可信的社交行为。</p>
+        <p>最著名的结果是情人节派对：一个 agent 发起，消息在镇上扩散，其他人自己决定赴约。</p>
+        <div class="q">问题：LLM agent 的行为，看起来像人吗？</div>
+      </div>
+      <div class="prop">
+        <div class="who">TSINGHUA · AGENTSOCIETY</div>
+        <h3>10,000+ 个 agent，500 万次交互</h3>
+        <p>把 agent 放进有交通、经济、公共资源的城市，用社会学理论给它们情绪、需求、动机与认知，再施加政策或信息干预，观察群体层面的模式。</p>
+        <p>论文用五个议题检验它：极化、煽动信息、UBI、飓风、城市可持续性。</p>
+        <div class="q">问题：一个社会在干预下会怎么演化？</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="table">
+    <h2><span class="no">03</span>逐项对比</h2>
+    <p class="sub">标“本质”的行是设计目标差异导致的，不是实现细节；其余行会随版本变化。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="筛选对比项">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部 13 项</button>
+        <button class="chip" type="button" data-filter="ess" aria-pressed="false">只看本质差异</button>
+      </div>
+      <span class="result-line" id="count" role="status" aria-live="polite">显示 13 项</span>
+    </div>
+
+    <div class="tablewrap">
+      <table id="cmp">
+        <thead>
+          <tr><th>维度</th><th>斯坦福小镇</th><th>AgentSociety</th></tr>
+        </thead>
+        <tbody>
+          <tr class="ess"><td>核心命题</td><td>个体行为是否可信、可交互</td><td>群体在干预下如何演化</td></tr>
+          <tr class="ess"><td>规模</td><td>25 个 agent</td><td>1 万+ agent，500 万次交互</td></tr>
+          <tr><td>时间跨度</td><td>2 个模拟日</td><td>长周期场景（政策、灾害、演化）</td></tr>
+          <tr class="ess"><td>环境</td><td>2D 小镇，若干地点</td><td>城市：交通、经济、银行/企业、GeoJSON 地图，独立 gRPC 服务</td></tr>
+          <tr><td>认知架构</td><td>记忆流 + 检索 + 反思 + 规划</td><td>7 类 Block 组合 + 情绪/需求/动机等心理属性</td></tr>
+          <tr class="ess"><td>制度角色</td><td>无。只有居民</td><td>政府、银行、企业、社会、NBS 等机构型 agent</td></tr>
+          <tr><td>通信</td><td>近距离对话</td><td>P2P / P2G / 群聊，带消息拦截器</td></tr>
+          <tr class="ess"><td>干预能力</td><td>观察为主，人可进入对话</td><td>一等公民：发钱、推谣言、限流、放灾害</td></tr>
+          <tr><td>研究工具</td><td>可信度人工评分、访谈</td><td>问卷、访谈、消息控制、指标提取、重放</td></tr>
+          <tr class="ess"><td>工程</td><td>单机 Python 循环</td><td>异步引擎 + Ray + gRPC（v1.5 起不再依赖 Redis），可水平扩展</td></tr>
+          <tr><td>验证标准</td><td>人觉得“像不像人”</td><td>与真实研究做定性对齐，看主要模式是否复现</td></tr>
+          <tr><td>成本</td><td>一台机器、一顿饭钱</td><td>百万级请求、集群与预算</td></tr>
+          <tr><td>输出</td><td>一个涌现故事</td><td>可统计的分布、反事实、可重放轨迹</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="arch">
+    <h2><span class="no">04</span>架构上的分岔</h2>
+    <p class="sub">左边是“认知循环驱动一个人”，右边是“调度器驱动一座城市”。共同点是都用 LLM，差别在于把复杂度放在哪一层。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 820 360" role="img" aria-label="斯坦福小镇与 AgentSociety 架构并排对比">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/>
+          </marker>
+        </defs>
+
+        <rect x="14" y="12" width="386" height="330" rx="12" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="32" y="38" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9a5712">SMALLVILLE</text>
+        <text x="32" y="57" font-size="13" fill="#3c3f45">25 个 agent · 单机 · 2 天</text>
+
+        <rect x="32" y="72" width="350" height="52" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="44" y="92" font-size="12" fill="#17181b">记忆流 Memory Stream</text>
+        <text x="44" y="110" font-size="11" fill="#6f7279">发生了什么 · 检索 · 反思 → 形成计划</text>
+
+        <line x1="207" y1="124" x2="207" y2="140" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="32" y="140" width="350" height="48" rx="8" fill="#fffefb" stroke="#e3ded3"/>
+        <text x="44" y="160" font-size="12" fill="#17181b">规划 + 行动</text>
+        <text x="44" y="177" font-size="11" fill="#6f7279">起床、去咖啡馆、上班、聊天</text>
+
+        <line x1="207" y1="188" x2="207" y2="204" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="32" y="204" width="350" height="44" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="44" y="223" font-size="12" fill="#17181b">2D 地图 + 地点</text>
+        <text x="44" y="239" font-size="11" fill="#6f7279">咖啡馆、公园、商店、住宅</text>
+
+        <line x1="207" y1="248" x2="207" y2="264" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="32" y="264" width="350" height="58" rx="8" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="44" y="284" font-size="12" fill="#17181b">LLM 生成对话与决策</text>
+        <text x="44" y="301" font-size="11" fill="#6f7279">人也可以走进小镇，和居民说话</text>
+        <text x="44" y="316" font-size="11" fill="#6f7279">验证：人类评委判断行为可信度</text>
+
+        <rect x="420" y="12" width="386" height="330" rx="12" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="438" y="38" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b4f9e">AGENTSOCIETY</text>
+        <text x="438" y="57" font-size="13" fill="#3c3f45">1 万 agent · 分布式 · 长周期</text>
+
+        <rect x="438" y="72" width="350" height="48" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="450" y="92" font-size="12" fill="#17181b">Agent：7 类 Block + 心理属性</text>
+        <text x="450" y="109" font-size="11" fill="#6f7279">认知 / 需求 / 移动 / 计划 / 经济 / 社交</text>
+
+        <line x1="613" y1="120" x2="613" y2="134" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="438" y="134" width="350" height="48" rx="8" fill="#fffefb" stroke="#e3ded3"/>
+        <text x="450" y="154" font-size="12" fill="#17181b">消息层 + 拦截器</text>
+        <text x="450" y="171" font-size="11" fill="#6f7279">P2P / P2G / 群聊；可注入、限流、阻断</text>
+
+        <line x1="613" y1="182" x2="613" y2="196" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="438" y="196" width="350" height="48" rx="8" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="450" y="216" font-size="12" fill="#17181b">城市环境服务（gRPC）</text>
+        <text x="450" y="233" font-size="11" fill="#6f7279">交通 · 经济 · 银行/企业 · 地图</text>
+
+        <line x1="613" y1="244" x2="613" y2="258" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a1)"/>
+
+        <rect x="438" y="258" width="350" height="64" rx="8" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="450" y="278" font-size="12" fill="#17181b">异步引擎 + Ray</text>
+        <text x="450" y="295" font-size="11" fill="#6f7279">按时间步推进，慢 agent 不阻塞快的</text>
+        <text x="450" y="312" font-size="11" fill="#6f7279">验证：与真实研究做定性对齐</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>小镇把复杂度放在“单个 agent 的认知循环”，环境只是布景；AgentSociety 把复杂度放在“环境 + 调度”，个体反而被压成可组合的 Block。这是两条不同的工程路线，不是同一张图的放大版。</p>
+  </section>
+
+  <section id="why">
+    <h2><span class="no">05</span>三个深层原因</h2>
+
+    <div class="why">
+      <div class="item">
+        <h3>1. 验证标准不同，架构就必须不同</h3>
+        <p>小镇要回答“像不像人”，最有效的验证是<strong>让真人来读、来评、来互动</strong>；所以它优化的是单个 agent 的表达质量与记忆连贯性。AgentSociety 要回答“结论对不对”，最有效的验证是<strong>统计量与真实研究对齐</strong>；所以它优化的是采样量、可重复性与干预可控性。前者的最优解是深，后者的最优解是广。</p>
+      </div>
+      <div class="item">
+        <h3>2. 环境从“布景”变成“约束”</h3>
+        <p>小镇的地图只需要让 agent 有地方可去；AgentSociety 的环境会反过来约束行为：上班要通勤、消费要看余额、灾害会断路。只有环境有独立状态，“如果所有人都改乘地铁”“如果这条路封了”这类反事实才成立。这也是为什么它要把环境做成 gRPC 服务，而不是一个二维数组。</p>
+      </div>
+      <div class="item">
+        <h3>3. 干预从“副作用”变成“实验接口”</h3>
+        <p>在小镇里，你能做的最强干预是走进去和居民说话；在 AgentSociety 里，发一笔钱、推一条谣言、屏蔽一类信息，都是消息层与环境层的正式接口。社会科学实验的核心是<strong>控制变量</strong>，没有干预接口，就只剩观察。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="pick">
+    <h2><span class="no">06</span>怎么选</h2>
+    <p class="sub">按问题选，不要按“哪个更新”选。</p>
+
+    <div class="pick">
+      <div class="c">
+        <div class="if">IF 你的问题是</div>
+        <h3>“agent 的行为可信吗？”</h3>
+        <p>研究人机交互、角色扮演、记忆与人格一致性，或做教学演示。25 个 agent 足够，成本低，结果好读。</p>
+        <span class="win">选小镇</span>
+      </div>
+      <div class="c">
+        <div class="if">IF 你的问题是</div>
+        <h3>“一项政策会带来什么？”</h3>
+        <p>需要对照组、需要统计、需要干预接口，还要能重放。规模是方法的一部分，不是炫技。</p>
+        <span class="win">选 AgentSociety</span>
+      </div>
+      <div class="c">
+        <div class="if">IF 你的问题是</div>
+        <h3>“我想改造其中一个”</h3>
+        <p>改认知循环、做新的人格机制 → 小镇代码更小更好读；改城市环境、做分布式调度 → AgentSociety 的 v1 引擎更完整。</p>
+        <span class="win">看你要改哪一层</span>
+      </div>
+      <div class="c">
+        <div class="if">IF 你的问题是</div>
+        <h3>“我两个都想要”</h3>
+        <p>现实做法：用小镇式的深度认知做个体，用 AgentSociety 式的环境与调度做群体。两者在“记忆 + 反思 + 计划”这一层是共通的。</p>
+        <span class="win">组合，而非二选一</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="myths">
+    <h2><span class="no">07</span>三个常见误读</h2>
+    <div class="myths">
+      <div class="myth">
+        <div class="m"><b>MISREAD 01</b>“AgentSociety 就是放大版的小镇。”</div>
+        <div class="r">规模不是唯一变量。放大 400 倍之后，记忆流式的全量上下文跑不动，必须换成 Block 组合 + 环境服务 + 异步调度；认知架构整个换了。</div>
+      </div>
+      <div class="myth">
+        <div class="m"><b>MISREAD 02</b>“小镇已经过时了。”</div>
+        <div class="r">它的命题（个体可信度）至今没有被取代。做角色一致性、记忆机制、人机共处，25 个 agent 的沙盒仍然是更合适的实验床。</div>
+      </div>
+      <div class="myth">
+        <div class="m"><b>MISREAD 03</b>“AgentSociety 能预测真实社会。”</div>
+        <div class="r">论文的措辞是复现主要定性模式、识别有信息量的偏离。它是假设生成器与实验台，不是预言机；输入分布一变，结论就不可迁移。</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>来源</h2>
+    <ul class="sources">
+      <li>Generative Agents：Park et al., <em>Generative Agents: Interactive Simulacra of Human Behavior</em>, UIST 2023 · <a href="https://arxiv.org/abs/2304.03442" rel="noreferrer">arXiv:2304.03442</a></li>
+      <li>官方实现：<a href="https://github.com/joonspk-research/generative_agents" rel="noreferrer">github.com/joonspk-research/generative_agents</a></li>
+      <li>AgentSociety v1：<a href="https://arxiv.org/abs/2502.08691" rel="noreferrer">arXiv:2502.08691</a> · <a href="https://github.com/tsinghua-fib-lab/AgentSociety" rel="noreferrer">仓库</a></li>
+      <li>AgentSociety v2：<a href="https://arxiv.org/abs/2607.11895" rel="noreferrer">arXiv:2607.11895</a></li>
+      <li>架构细节：<a href="https://agentsociety.readthedocs.io/" rel="noreferrer">agentsociety.readthedocs.io</a>（五层、Block、消息拦截器）</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">对比依据两篇论文与各自官方文档；小镇部分描述其公开设计与实验设置，未复跑。检索于 2026-10-31。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>AgentSociety 项目目录 · 对比报告 · 2026-10-31 · <a href="index.html">返回项目介绍</a></div>
+  <span>本页为独立分析，与两个项目方均无隶属关系；引用请以论文与仓库为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#cmp tbody tr'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var count = document.getElementById('count');
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var mode = btn.getAttribute('data-filter');
+      var shown = 0;
+      rows.forEach(function(r){
+        var show = mode === 'all' || r.classList.contains('ess');
+        r.hidden = !show;
+        if (show) shown++;
+      });
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      count.textContent = '显示 ' + shown + ' 项';
+    });
+  });
+})();
+</script>
+</body>
+</html>

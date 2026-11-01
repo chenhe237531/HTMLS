@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="终端优先、provider 无关的开源编码 agent；也可桌面和 IDE，但核心仍是 TUI。">
+<title>OpenCode · Agent 工具调研</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
+  --muted:#6d7078;--line:#e1dbcf;--line-2:#cfc7b8;--accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;--green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;--code:#171a20;--code-ink:#ece8de;--code-line:#2b3039;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --radius:14px;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+    --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+    --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+    --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121316;--paper-2:#191b1f;--surface:#1b1d22;--ink:#efede6;--ink-2:#c8c6bf;
+  --muted:#9a9da6;--line:#2b2e35;--line-2:#3a3e47;--accent:#8fb6e8;--accent-soft:#1d2a3b;
+  --amber:#d8a666;--amber-soft:#332718;--green:#83c8a8;--green-soft:#182c24;
+  --red:#e59690;--red-soft:#331e1d;--code:#0b0d11;--code-ink:#e6e2d8;--code-line:#242832;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 18px 40px -28px rgba(0,0,0,.8);
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:0}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:var(--paper);background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:1180px;margin:0 auto;padding:10px clamp(18px,4vw,40px);display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+.brand{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.brand span{color:var(--amber);margin:0 4px}
+.topnav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topnav a,.topnav button{font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:8px;padding:5px 9px;text-decoration:none;cursor:pointer}
+.topnav a:hover,.topnav button:hover{border-color:var(--line);background:var(--surface);color:var(--ink)}
+.topnav button:focus-visible,.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero{padding:clamp(34px,6vw,70px) 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,64px);line-height:1.06;letter-spacing:-.02em;margin:0 0 16px}
+.lede{max-width:52em;margin:0 0 22px;font-size:clamp(17px,2vw,19px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.v-card.yes h2{color:var(--green)}.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:18px;font-size:14.5px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:clamp(24px,4vw,54px);align-items:start;padding:34px 0 70px}
+.toc{position:sticky;top:74px;font-size:13px;min-width:0}
+.layout>*{min-width:0}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line);min-width:0}
+.toc a{display:block;padding:4px 0 4px 12px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.6}
+article{min-width:0}
+.sec{margin:0 0 56px;scroll-margin-top:96px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:9px;margin-bottom:20px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,29px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 14px}
+.fact-list{margin:0;padding-left:20px}
+.fact-list li{margin:7px 0;color:var(--ink-2)}
+.ref{font-family:var(--mono);font-size:10.5px;color:var(--amber);vertical-align:super;margin-left:2px;text-decoration:none}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 18px;box-shadow:var(--shadow)}
+.callout p:last-child{margin:0}
+.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cap{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 15px}
+.cap h3{font-size:14px}
+.cap p{margin:0;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.steps{margin:0;padding-left:22px}
+.steps li{margin:0 0 12px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.cmd{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:var(--surface)}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.cmd-head button{font:inherit;font-size:11px;border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:7px;padding:3px 9px;cursor:pointer}
+.cmd-head button:hover{color:var(--ink);border-color:var(--accent)}
+.cmd pre{margin:0;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);font-family:var(--mono);font-size:12.5px;line-height:1.65}
+.cmd-note{margin:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:15px 17px}
+.panel h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.list.pos li::marker{color:var(--green)}
+.list.neg li::marker{color:var(--red)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+.note b{color:var(--ink)}
+.sources{margin:0;padding-left:22px;font-size:13.5px;color:var(--ink-2)}
+.sources li{margin:0 0 9px}
+.sources a{word-break:break-word}
+.sources .src-note{display:block;color:var(--muted);font-size:12px}
+
+.calc{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:15px 17px;margin:0 0 14px;box-shadow:var(--shadow)}
+.calc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.calc-out{margin-top:11px;padding:11px 13px;border:1px solid var(--line-2);border-radius:9px;background:var(--paper-2);font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre-line;color:var(--ink-2)}
+.calc-out[data-state="ok"]{border-color:var(--green);background:var(--green-soft)}
+.calc-out[data-state="bad"]{border-color:var(--red);background:var(--red-soft)}
+.checklist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checklist li{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:13px;color:var(--ink-2)}
+.checklist label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:3px;accent-color:var(--accent)}
+.fine{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.use{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.use code{font-family:var(--mono);font-size:12px;color:var(--accent);word-break:break-all}
+p code,li code,td code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.use p{margin:5px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.eco-group{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.eco-group h3{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eco-list{list-style:none;margin:0;padding:0}
+.eco-list li{padding:8px 0;border-top:1px solid var(--line)}
+.eco-list li:first-child{border-top:0;padding-top:0}
+.eco-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.eco-head a,.eco-head b{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.eco-head a:hover{color:var(--accent)}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--muted)}
+.badge.official{color:var(--green);border-color:var(--green)}
+.badge.community{color:var(--accent);border-color:var(--accent)}
+.badge.thirdparty{color:var(--amber);border-color:var(--amber)}
+.eco-list p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.eco-list code{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px;font-size:13.5px}
+.pager a{text-decoration:none}
+/* index */
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 20px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.filters input,.filters select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;min-width:210px}
+.filters input:focus,.filters select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.filters button{font:inherit;font-size:13px;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 12px;cursor:pointer;color:var(--ink-2)}
+.filters button:hover{border-color:var(--accent);color:var(--ink)}
+#count{font-size:12.5px;color:var(--muted);margin-left:auto;padding-bottom:9px}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tool-card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:var(--shadow)}
+.tool-card .card-top{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-card .lic{color:var(--amber)}
+.tool-card h3{font-family:var(--serif);font-size:24px;line-height:1.2;margin:8px 0 2px}
+.tool-card h3 a{color:var(--ink);text-decoration:none}
+.tool-card h3 a:hover{color:var(--accent)}
+.tool-card .en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 8px}
+.tool-card .desc{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:0 0 10px}
+.mini{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0 0 10px;font-size:12px}
+.mini dt{color:var(--muted)}
+.mini dd{margin:0;color:var(--ink-2)}
+.card-verdict{font-size:12.5px;color:var(--ink-2);margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;font-size:12px;color:var(--muted)}
+.card-foot a{text-decoration:none;font-weight:600}
+.empty{border:1px dashed var(--line-2);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.matrix td:first-child{white-space:nowrap}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scenario{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.scenario h3{font-size:14px;color:var(--accent)}
+.scenario p{margin:0;font-size:13.5px;color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:12.5px}
+@media (max-width:560px){
+  .filters{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .filters input,.filters select{width:100%;min-width:0}
+  #count{margin-left:0;padding-bottom:0}
+  .topnav{width:100%;justify-content:flex-start}
+  .hero{padding-top:28px}
+}
+@media (max-width:860px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .toc{position:static;order:-1}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;border-left:0;padding-bottom:4px}
+  .toc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .toc-note{display:none}
+  .verdict,.two,.scenarios,.cmd-grid,.eco-grid,.checklist{grid-template-columns:1fr}
+  #count{margin-left:0;padding-bottom:0}
+}
+@media print{
+  .topbar,.toc,.pager,.filters,.cmd-head button,[data-theme-toggle],[data-print]{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .layout{display:block}
+  .tool-card,.panel,.callout,.cmd{box-shadow:none}
+  a{color:#000;text-decoration:underline}
+  .sec{break-inside:avoid}
+  .calc,.checklist li{break-inside:avoid}
+  table{min-width:0}
+  .table-wrap{overflow:visible;border:0}
+  .tool-grid{display:block}
+  .tool-card{margin-bottom:10px}
+}
+</style>
+
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar"><div class="topbar-in">
+<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<nav class="topnav" aria-label="站内导航">
+<a href="./index.html">工具索引</a>
+<a href="../agents-hub/index.html">Agent 全景</a>
+<button type="button" data-print>打印</button>
+<button type="button" data-theme-toggle aria-pressed="false">深色</button>
+</nav>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>终端编码 Agent</span></p>
+<h1>OpenCode</h1>
+<p class="lede">终端优先、provider 无关的开源编码 agent；也可桌面和 IDE，但核心仍是 TUI。</p>
+<div class="pills"><span class="pill"><b>类型</b>终端编码 Agent</span><span class="pill"><b>界面</b>TUI / 桌面 / IDE 扩展 / Web 配对</span><span class="pill"><b>许可证</b>MIT</span><span class="pill"><b>最新</b>v1.19.5 · 2026-10-28</span><span class="pill"><b>调研</b>2026-10-31</span></div>
+<div class="verdict">
+<div class="v-card yes"><h2>适合</h2><ul><li>想要终端 agent 且不愿被单一模型锁定的人</li><li>需要 LSP/MCP、多会话和逐步回滚的开发者</li><li>想先用免费模型验证 agent 工作流的人</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>只需要 IDE 审批式操作的人</li><li>要求默认容器隔离的高安全场景</li><li>不想区分 V1/V2 版本线的人</li></ul></div>
+</div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#derivatives">10 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">11 社区与玩友生态</a></li><li><a href="#sources">12 来源与口径</a></li></ol>
+<div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
+<article>
+<section id="what" class="sec">
+<div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
+<div class="callout"><p><b>一句话：</b>OpenCode 把“Claude Code 形态的终端 agent”做成 MIT 开源、可换任意模型，并加了 LSP、MCP 与多会话。</p></div><p>OpenCode 是终端里的编码 agent：输入任务，它在当前目录读写文件、跑命令、调用工具，并用 build/plan 两个内置 agent 控制权限。它同时提供桌面应用、IDE 扩展和 Web 配对，但最成熟的入口是 TUI。</p><ul class="fact-list"><li>MIT；v1.19.5（2026-10-28）；GitHub 223,636 stars。<span class="ref">[4]</span></li><li>终端 TUI、桌面应用、IDE 扩展三种入口；TUI 是核心。<span class="ref">[2]</span></li><li>官方称支持 75+ LLM provider，含 ChatGPT Plus/Pro、GitHub Copilot 订阅和本地模型。<span class="ref">[1]</span></li><li>内置 build（默认全权限）与 plan（只读、执行命令前询问）两个 agent；Tab 切换。<span class="ref">[4]</span></li><li>支持 MCP、LSP、多会话、/undo、/redo、会话分享、Web 配对。<span class="ref">[2][3]</span></li><li>官方称不使用其免费模型时不存储代码或上下文；免费模型的数据政策不同。<span class="ref">[1]</span></li><li>OpenCode 1 与 OpenCode 2 并存，安装命令不同；本文以 V1 稳定线为主，V2 以其文档为准。<span class="ref">[2][3]</span></li></ul>
+</section>
+<section id="capabilities" class="sec">
+<div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
+<div class="grid"><div class="cap"><h3>Build / Plan</h3><p>plan 只读并可先给方案；build 默认全权限执行，适合确定后的落地。</p></div><div class="cap"><h3>Provider 自由</h3><p>75+ provider、OpenAI-compatible、本地 Ollama/vLLM；也支持 ChatGPT/Copilot 订阅登录。</p></div><div class="cap"><h3>LSP + MCP</h3><p>语言服务器提供诊断/跳转，MCP 接外部工具；比纯文本 diff 更懂代码。</p></div><div class="cap"><h3>多会话</h3><p>同一项目并行多个 session；适合一个查 bug、一个写测试。</p></div><div class="cap"><h3>可回滚</h3><p>/undo、/redo 逐步回退；会话可导出/分享。</p></div><div class="cap"><h3>多界面</h3><p>TUI、桌面、IDE 扩展、Web 配对共用同一套配置与会话。</p></div></div>
+</section>
+<section id="how" class="sec">
+<div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
+<ol class="steps"><li><b>安装并启动</b><br>装好后在项目目录运行 <code>opencode</code>；首次用 <code>/init</code> 生成 AGENTS.md。</li><li><b>接模型</b><br><code>/connect</code> 选 provider 或免费模型；也可用环境变量/配置文件。</li><li><b>先 plan 后 build</b><br>Tab 切到 plan，让它读代码给方案；确认后切 build 执行。</li><li><b>增量验证</b><br>每步跑测试/类型检查；不对就 <code>/undo</code> 回退再试。</li><li><b>固化约定</b><br>把项目约定写进 AGENTS.md，减少每次重复解释。</li></ol>
+</section>
+<section id="install" class="sec">
+<div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
+<div class="cmd"><div class="cmd-head"><span>V1 · 安装脚本</span><button type="button" data-copy="curl -fsSL https://opencode.ai/install | bash">复制</button></div><pre><code>curl -fsSL https://opencode.ai/install | bash</code></pre><p class="cmd-note">安装到 <code>$HOME/.opencode/bin</code>；V1/V2 默认都占用 <code>opencode</code> 命令，不能并排装。</p></div><div class="cmd"><div class="cmd-head"><span>V2 · 安装脚本</span><button type="button" data-copy="curl -fsSL https://opencode.ai/v2/install | bash">复制</button></div><pre><code>curl -fsSL https://opencode.ai/v2/install | bash</code></pre><p class="cmd-note">V2 是另一条版本线，命令与 V1 不同；先确定你要哪条线。</p></div><div class="cmd"><div class="cmd-head"><span>npm（V1 / V2）</span><button type="button" data-copy="npm install -g opencode-ai   # V1
+npm install -g @opencode/cli # V2">复制</button></div><pre><code>npm install -g opencode-ai   # V1
+npm install -g @opencode/cli # V2</code></pre><p class="cmd-note">Homebrew 的 <code>anomalyco/tap/opencode</code> 是 V1；官方 <code>opencode</code> formula 目前是 V2。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>opencode</code><p>在当前目录启动 TUI；首次用 /init 生成 AGENTS.md。</p></div><div class="use"><code>/connect</code><p>选择 provider、登录订阅或填 API key；也支持本地模型端点。</p></div><div class="use"><code>Tab</code><p>在 build（可写/可执行）与 plan（只读、命令前询问）之间切换。</p></div><div class="use"><code>/undo  /redo</code><p>逐步回退/重做修改；比手动 git 回滚更细。</p></div><div class="use"><code>opencode pair</code><p>V2 的 Web 配对入口，生成一次性连接链接；以当前版本文档为准。</p></div><div class="use"><code>~/.config/opencode/opencode.json</code><p>插件、主题、provider 等配置；项目级可用 opencode.json 覆盖。</p></div></div>
+</section>
+<section id="cost" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
+<div class="two"><div class="panel"><h3>软件</h3><p>MIT，软件 100% 免费；自带一组免费模型，适合试用与轻量任务。</p></div><div class="panel"><h3>使用</h3><p>接其他 provider 时按 provider 计费。官方 V2 文档提到可选的 OpenCode Go（$10/月，价格与可用模型以官网为准）。</p></div></div><p>免费模型和付费 provider 的数据政策不同：官方称使用其免费模型时会存储数据，使用其他 provider 时不存储代码/上下文。敏感仓库先读隐私说明。</p>
+</section>
+<section id="strengths" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>模型自由度高：同一套工作流可以在 Claude、GPT、Gemini、DeepSeek、本地模型之间切换。</li><li>TUI 成熟：键位、会话、文件引用、shell 命令、undo/redo 都是为终端工作流设计的。</li><li>LSP + MCP 让它不只是“会改文件的聊天”，还能读诊断、接外部系统。</li><li>MIT 且社区活跃，安装和二次开发门槛低。</li><li>成本可见：可随时换便宜模型；免费模型可先验证流程。</li></ul></div>
+</section>
+<section id="limits" class="sec">
+<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li>V1/V2 并存，安装命令、包名、Homebrew formula 都不同；照着旧教程装容易装错线。</li><li>免费模型的数据政策与付费 provider 不同，不能一概而论“隐私优先”。</li><li>终端优先；不习惯 TUI 的人上手成本高于 IDE 插件。</li><li>默认在宿主环境执行，没有开箱即用的容器沙箱；高风险命令要靠 plan/权限与外部隔离。<span class="tag infer">推断</span></li><li>模型质量决定体验；同一提示在不同 provider 上差异明显。</li><li>功能迭代快，配置/插件偶有破坏性变更。</li></ul></div>
+</section>
+<section id="compare" class="sec">
+<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>Orca</b></td><td>Orca 编排多个 agent 和 worktree；OpenCode 是其中一个可被编排的 agent。单 agent 用 OpenCode 更轻。</td></tr><tr><td><b>Orca</b></td><td>Orca 编排多个 agent 与 worktree；OpenCode 是其中一个可被编排的 agent。单 agent 用 OpenCode 更轻。</td></tr><tr><td><b>OpenHands</b></td><td>OpenHands 把任务丢进沙箱自治执行；OpenCode 是人在环的终端会话。</td></tr></tbody></table></div>
+</section>
+<section id="fit" class="sec">
+<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你想要一个可换模型、可看成本的终端编码 agent。</li><li>你已经在用 Claude Code/Codex，但想摆脱单一 provider。</li><li>你需要 LSP、MCP、多会话和逐步 undo。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你只想要 IDE 里逐步审批的图形体验。</li><li>你要求开箱即用的强沙箱隔离。</li><li>你不愿处理 V1/V2 的版本选择。</li></ul></div></div>
+</section>
+
+<section id="derivatives" class="sec">
+<div class="sec-head"><span class="sec-no">10</span><h2>衍生项目：GUI / Web / 手机</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>桌面 / Web</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/btriapitsyn/openchamber" target="_blank" rel="noopener noreferrer">OpenChamber</a><span class="badge community">社区</span></div><p>社区 Web/桌面 GUI + VS Code 扩展，多会话与 git worktree 管理。</p></li><li><div class="eco-head"><a href="https://github.com/different-ai/openwork" target="_blank" rel="noopener noreferrer">OpenWork</a><span class="badge community">社区</span></div><p>桌面 GUI，定位 OpenCode 上的 Claude Cowork 替代，管理会话、技能、插件和模板。</p></li><li><div class="eco-head"><b>Opencode Web</b><span class="badge community">社区</span></div><p>浏览器访问 OpenCode 的 Web 界面；官方生态页有收录。</p></li><li><div class="eco-head"><b>Octto</b><span class="badge community">社区</span></div><p>浏览器里的 AI 头脑风暴 UI，多问题表单与并行分支。</p></li><li><div class="eco-head"><a href="https://github.com/NeuralNomadsAI/CodeNomad" target="_blank" rel="noopener noreferrer">CodeNomad</a><span class="badge community">社区</span></div><p>桌面、Web、手机和远程客户端，适合多端接同一个 OpenCode server。</p></li></ul></div><div class="eco-group"><h3>手机 / 移动</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://opencode.ai/docs/ecosystem/" target="_blank" rel="noopener noreferrer">OpenCode Mobile</a><span class="badge community">社区</span></div><p>Android 客户端，连接你自托管的 OpenCode server，实时看会话、diff、批准工具调用。</p></li><li><div class="eco-head"><a href="https://opencode.ai/docs/ecosystem/" target="_blank" rel="noopener noreferrer">P4OC（Pocket for OpenCode）</a><span class="badge community">社区</span></div><p>原生 Android 客户端：聊天、会话、文件浏览、diff、内嵌终端。</p></li><li><div class="eco-head"><a href="https://github.com/hosenur/portal" target="_blank" rel="noopener noreferrer">Portal</a><span class="badge community">社区</span></div><p>mobile-first Web UI，通过 Tailscale/VPN 访问自托管 OpenCode。</p></li><li><div class="eco-head"><b>CodeWalk</b><span class="badge community">社区</span></div><p>Flutter 跨平台客户端，覆盖 Android/Web/桌面，连 OpenCode server mode。</p></li><li><div class="eco-head"><a href="https://github.com/NeuralNomadsAI/CodeNomad" target="_blank" rel="noopener noreferrer">CodeNomad</a><span class="badge community">社区</span></div><p>同一项目的移动端入口，适合手机审批与远程会话。</p></li></ul></div><div class="eco-group"><h3>编辑器 / 终端</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/NickvanDyke/opencode.nvim" target="_blank" rel="noopener noreferrer">opencode.nvim</a><span class="badge community">社区</span></div><p>Neovim 前端：编辑器感知提示、文件引用、会话控制。</p></li><li><div class="eco-head"><a href="https://github.com/sudo-tee/opencode.nvim" target="_blank" rel="noopener noreferrer">opencode.nvim（sudo-tee）</a><span class="badge community">社区</span></div><p>另一套 Neovim 前端，功能取向不同，按工作流选。</p></li><li><div class="eco-head"><a href="https://github.com/mtymek/opencode-obsidian" target="_blank" rel="noopener noreferrer">OpenCode-Obsidian</a><span class="badge community">社区</span></div><p>把 OpenCode 嵌进 Obsidian，适合笔记/知识库场景。</p></li><li><div class="eco-head"><a href="https://github.com/btriapitsyn/openchamber" target="_blank" rel="noopener noreferrer">VS Code</a><span class="badge community">社区</span></div><p>可通过 OpenChamber 的 VS Code 扩展获得 GUI 体验。</p></li></ul></div><div class="eco-group"><h3>插件与周边</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://opencode.ai/docs/ecosystem/" target="_blank" rel="noopener noreferrer">oh-my-opencode</a><span class="badge community">社区</span></div><p>后台 agent、预置 LSP/AST/MCP 工具、Claude Code 兼容层。</p></li><li><div class="eco-head"><a href="https://github.com/kdcokenny/ocx" target="_blank" rel="noopener noreferrer">OCX</a><span class="badge community">社区</span></div><p>OpenCode 扩展管理器，便携、隔离的 profile。</p></li><li><div class="eco-head"><b>opencode-daytona</b><span class="badge community">社区</span></div><p>把会话跑进 Daytona 隔离沙箱，带 git 同步和预览。</p></li><li><div class="eco-head"><b>opencode-mem / Supermemory</b><span class="badge community">社区</span></div><p>跨会话记忆；opencode-mem 还提供本地 Web UI 审计记忆。</p></li><li><div class="eco-head"><a href="https://github.com/remorses/kimaki" target="_blank" rel="noopener noreferrer">kimaki</a><span class="badge community">社区</span></div><p>Discord bot，用 OpenCode SDK 控制会话。</p></li><li><div class="eco-head"><b>opencode-channels</b><span class="badge community">社区</span></div><p>Slack bot：流式回复、slash commands、reactions。</p></li></ul></div></div><div class="note">OpenCode 的生态是这份清单里最“多前端”的：官方有桌面/IDE/Web，社区又做了 OpenChamber、OpenWork、CodeNomad、多个 Android 客户端和 Neovim/Obsidian 插件。第三方客户端可能只兼容某条版本线（V1/V2），接之前先看它支持的 API。</div>
+</section>
+<section id="ecosystem" class="sec">
+<div class="sec-head"><span class="sec-no">11</span><h2>社区与玩友生态</h2></div>
+<div class="eco-grid"><div class="eco-group"><h3>官方入口</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://opencode.ai/docs/ecosystem/" target="_blank" rel="noopener noreferrer">Ecosystem 页</a><span class="badge official">官方</span></div><p>官方收录的社区项目、插件和集成，更新比第三方清单可靠。</p></li><li><div class="eco-head"><a href="https://opencode.ai/docs/ecosystem/" target="_blank" rel="noopener noreferrer">插件模板</a><span class="badge official">官方</span></div><p>从模板开始写插件，避免直接抄旧 API。</p></li><li><div class="eco-head"><a href="https://github.com/awesome-opencode/awesome-opencode" target="_blank" rel="noopener noreferrer">awesome-opencode</a><span class="badge community">社区</span></div><p>社区维护的插件/主题/agent/项目清单，数量大但质量参差。</p></li></ul></div><div class="eco-group"><h3>经典插件类型</h3><ul class="eco-list"><li><div class="eco-head"><b>复用订阅</b><span class="badge community">社区</span></div><p>ChatGPT Plus/Pro、Gemini、Copilot、Antigravity 的 auth 插件，用订阅替代 API 计费。</p></li><li><div class="eco-head"><b>记忆与上下文</b><span class="badge community">社区</span></div><p>opencode-mem、Supermemory、dynamic context pruning，解决长会话遗忘。</p></li><li><div class="eco-head"><b>沙箱与隔离</b><span class="badge community">社区</span></div><p>Daytona、devcontainer 类插件，把执行移出宿主环境。</p></li><li><div class="eco-head"><b>通知与可观测</b><span class="badge community">社区</span></div><p>桌面通知、WakaTime、Sentry、token/context 分析。</p></li><li><div class="eco-head"><b>搜索与抓取</b><span class="badge community">社区</span></div><p>Tavily、Firecrawl、原生 websearch 引用。</p></li></ul></div><div class="eco-group"><h3>社区与玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>opencode.cafe</b><span class="badge community">社区</span></div><p>社区聚合站，汇总生态项目和讨论；入口见官方 Ecosystem 页。</p></li><li><div class="eco-head"><b>多会话并行</b><span class="badge official">官方</span></div><p>一个项目开多个 session，一个查 bug、一个写测试。</p></li><li><div class="eco-head"><b>plan → build</b><span class="badge official">官方</span></div><p>先只读计划，确认后切 build；配合 /undo 做小步验证。</p></li><li><div class="eco-head"><b>SDK 集成</b><span class="badge official">官方</span></div><p>用 @opencode-ai/sdk 把 OpenCode 嵌进自己的工具或 bot。</p></li></ul></div></div><div class="note">插件和第三方客户端都可能执行代码或读取你的仓库；安装前看源码/权限。V1 与 V2 的 API 不完全兼容，生态项目页通常会标注支持的版本线。</div>
+</section>
+<section id="sources" class="sec">
+<div class="sec-head"><span class="sec-no">12</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://opencode.ai/" target="_blank" rel="noopener noreferrer">OpenCode 官网</a><span class="src-note">定位、免费模型、provider、隐私与定价说明。</span></li><li><a href="https://opencode.ai/docs/" target="_blank" rel="noopener noreferrer">OpenCode Docs · Intro</a><span class="src-note">安装、初始化、plan/build、undo。</span></li><li><a href="https://opencode.ai/v2/v2/docs/commands/" target="_blank" rel="noopener noreferrer">OpenCode Docs · V2 commands</a><span class="src-note">V2 安装、桌面/Web、OpenCode Go 说明。</span></li><li><a href="https://github.com/anomalyco/opencode/" target="_blank" rel="noopener noreferrer">anomalyco/opencode</a><span class="src-note">MIT、内置 agent、安装目录、发布。</span></li><li><a href="https://opencode.ai/download" target="_blank" rel="noopener noreferrer">OpenCode Download</a><span class="src-note">终端/桌面/扩展的下载入口与版本差异。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+</section>
+<div class="pager"><a href="./orca.html">← Orca</a><a href="./hermes.html">Hermes Agent →</a></div>
+</article>
+</div>
+</main>
+<script>
+(function(){
+  var root=document.documentElement;
+  try{var saved=localStorage.getItem('tools-theme');if(saved)root.dataset.theme=saved;}catch(e){}
+  function isDark(){return root.dataset.theme?root.dataset.theme==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  var tbtn=document.querySelector('[data-theme-toggle]');
+  function paint(){if(!tbtn)return;tbtn.textContent=isDark()?'浅色':'深色';tbtn.setAttribute('aria-pressed',isDark()?'true':'false');}
+  if(tbtn){paint();tbtn.addEventListener('click',function(){root.dataset.theme=isDark()?'light':'dark';try{localStorage.setItem('tools-theme',root.dataset.theme);}catch(e){}paint();});}
+  document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print();});});
+  document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+    var cmd=b.closest('.cmd');var pre=cmd?cmd.querySelector('pre'):null;var text=pre?pre.textContent:b.getAttribute('data-copy');var old=b.textContent;
+    function done(){b.textContent='已复制';setTimeout(function(){b.textContent=old;},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,fallback);}else{fallback();}
+    function fallback(){var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='复制失败';setTimeout(function(){b.textContent=old;},1200);}document.body.removeChild(ta);}
+  });});
+  var sc=document.getElementById('sc-total');
+  if(sc){
+    var ids=['sc-total','sc-active','sc-agent','sc-wt','sc-batch','sc-ram','sc-disk'];
+    function val(id){var el=document.getElementById(id);var n=el?parseFloat(el.value):0;return isFinite(n)?n:0;}
+    function calcScale(){
+      var total=val('sc-total'),active=val('sc-active'),agent=val('sc-agent'),wt=val('sc-wt'),batch=val('sc-batch'),ram=val('sc-ram'),disk=val('sc-disk');
+      var ramNeed=1.2+active*agent/1024;
+      var diskNeed=total*wt/1024;
+      var waves=batch>0?Math.ceil(total/batch):0;
+      var cap=Math.max(1,Math.floor((ram*0.7-1.2)*1024/Math.max(1,agent)));
+      var bad=[];
+      if(ramNeed>ram*0.7)bad.push('内存超过本机 70% 预算：降活跃数或改用 SSH/远程。');
+      if(diskNeed>disk*0.8)bad.push('磁盘超过可用空间 80%：先清理 worktree 或外置。');
+      if(active>cap)bad.push('活跃数超过本机建议上限（约 '+cap+' 个）。');
+      if(!bad.length)bad.push('在预算内；仍建议先跑 10 个窗口验证。');
+      var out=document.getElementById('scale-out');
+      out.textContent='活跃内存粗算：'+ramNeed.toFixed(1)+' GB（预算 '+(ram*0.7).toFixed(1)+' GB）\n'
+        +'总磁盘粗算：'+diskNeed.toFixed(1)+' GB（可用 '+disk+' GB）\n'
+        +'波数：'+waves+' 波 × '+batch+' 个\n'
+        +'本机建议活跃上限：约 '+cap+' 个\n'
+        +bad.join('\n');
+      out.dataset.state=(ramNeed>ram*0.7||diskNeed>disk*0.8||active>cap)?'bad':'ok';
+    }
+    ids.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calcScale);});
+    calcScale();
+  }
+  var links=Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  if(links.length&&'IntersectionObserver' in window){
+    var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(!en.isIntersecting)return;var a=map[en.target.id];if(!a)return;links.forEach(function(x){x.removeAttribute('aria-current');});a.setAttribute('aria-current','true');});
+    },{rootMargin:'-15% 0px -70% 0px',threshold:0});
+    document.querySelectorAll('article section[id]').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body>
+</html>

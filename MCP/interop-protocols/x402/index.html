@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>x402 深度解析 · 让 Agent 按请求付费的 HTTP 支付协议</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">x402 深度解析</div>
+      <div class="brand-sub">HTTP 支付 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>它是什么</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>为什么需要</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>一次支付</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>技术拆解</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>生态与数据</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>优势与局限</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>与其它协议</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>场景与风险</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>上手与成本</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>趋势判断</span></a></li>
+      <li><a href="#s11"><span class="no">11</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    HTTP 402 · 稳定币结算<br>
+    1.5 亿+ 链上交易（2026-07）<br>
+    40 家基金会成员 · 0 协议费
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>x402 Protocol<span class="dot"></span>2026-10-31</p>
+    <h1>x402：把<em>付款</em>变成一次请求</h1>
+    <p class="lede">它把闲置了三十年的 HTTP <code>402 Payment Required</code> 真正用起来：客户端请求 → 服务器报价 → 客户端签名付款 → 重试 → 拿到资源。没有账号，没有 API Key，没有月度账单。</p>
+    <div class="meta-row">
+      <span class="pill">起源 <b>Coinbase</b>（2025-05）</span>
+      <span class="pill">治理 <b>x402 Foundation / Linux Foundation</b></span>
+      <span class="pill">结算 <b>USDC 为主 · 多链</b></span>
+      <span class="pill">协议费 <b>0</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">402</div><div class="l">复用的 HTTP 状态码</div></div>
+      <div class="kpi"><div class="n">150M<span>+</span></div><div class="l">链上交易（2026-07 报道）</div></div>
+      <div class="kpi"><div class="n">40<span>家</span></div><div class="l">基金会成员（2026-07）</div></div>
+      <div class="kpi"><div class="n">0<span>%</span></div><div class="l">协议费，仅链上成本</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">它是什么</h2></div>
+    <p class="lead-in">一句话：<strong>x402 是“按请求付费”的开放支付标准</strong>。它不发明新传输，而是把支付谈判塞进标准 HTTP 请求里；钱主要用稳定币在链上结算。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">对买家</h4><p class="small" style="margin:0">Agent 或程序遇到 402，读报价、签名付款、重试请求。不需要注册账号，也不需要预存余额（取决于钱包）。</p></div>
+      <div class="card"><h4 style="margin-top:0">对卖家</h4><p class="small" style="margin:0">在路由上声明价格与收款地址；验证签名后交付资源。可以把链上验证与结算交给 facilitator。</p></div>
+      <div class="card"><h4 style="margin-top:0">对生态</h4><p class="small" style="margin:0">协议中立、无协议费；任何链、任何资产、任何实现都能接入，只要双方接受同一组支付要求。</p></div>
+    </div>
+
+    <h3>从 Coinbase 到基金会</h3>
+    <ol class="steps">
+      <li><b>2025-05 · Coinbase 提出 x402</b><p>把 HTTP 402 与稳定币支付结合，面向 API、内容与 AI Agent 的按次付费。</p></li>
+      <li><b>2025-09 · 与 Cloudflare 发起基金会</b><p>宣布共建 x402 Foundation，并把它接入 Agents SDK 与 MCP Server。</p></li>
+      <li><b>2026-04 · 协议捐给 Linux Foundation</b><p>Coinbase 完成贡献，x402 进入厂商中立治理。</p></li>
+      <li><b>2026-07 · 基金会正式运营</b><p>40 家成员，包括 AWS、Google、Visa、Mastercard、Stripe、Shopify、Cloudflare、Solana Foundation 等。</p></li>
+    </ol>
+
+    <div class="callout">
+      <span class="t">它不是「另一个 AP2」</span>
+      AP2 解决的是「用户授权 Agent 花钱」的凭证与举证；x402 解决的是「这笔钱怎么在 HTTP 请求里付掉」。两者可以叠：用 AP2 授权，用 x402 结算。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">为什么需要它</h2></div>
+    <p>现有 API 商业化假设「有人注册、有人管密钥、有人月底付款」。当调用方是 Agent 时，这三件事都不成立。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>传统方式</th><th>对 Agent 的问题</th><th>x402 的做法</th></tr></thead>
+        <tbody>
+          <tr><td>注册账号 + API Key</td><td>Agent 无法完成注册、验证码、邮件确认</td><td>无账号；钱包签名即身份</td></tr>
+          <tr><td>订阅 / 预充值</td><td>低频调用不划算，余额管理复杂</td><td>按次付费，用多少付多少</td></tr>
+          <tr><td>月度发票 / 对公转账</td><td>延迟高，无法完成「这一次调用」</td><td>请求内完成支付，秒级到分钟级结算</td></tr>
+          <tr><td>信用卡扣款</td><td>需要人、需要卡、拒付与风控</td><td>稳定币转账，无拒付</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">典型场景</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>付费 API / 数据接口，按调用计费</li>
+          <li>内容与文档付费墙</li>
+          <li>Agent 调用付费工具（搜索、抓取、推理、存储）</li>
+          <li>MCP Server 按工具调用收费</li>
+          <li>算力 / 模型推理转售</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">它真正改变的事</h4>
+        <p class="small" style="margin:0">把「商务流程」压缩进「协议交互」：过去要销售、合同、开票、对账，现在是一次 HTTP 往返。对机器来说，这是唯一可行的节奏。</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">先泼一盆冷水</span>
+      x402 让「收钱」变简单，但没有让「合规、退款、对账、税务」消失。它适合高频小额、可自动化的场景，不适合所有交易。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">一次支付的全过程</h2></div>
+    <p class="lead-in">核心只有五步。注意一个关键顺序：默认是「先验证、后干活、再结算」，不是先扣钱。</p>
+
+    <div class="flow" aria-label="支付流程概览">
+      <a class="fstep" href="#flow1"><span class="n">STEP 1</span><span class="s">请求资源</span></a>
+      <a class="fstep" href="#flow2"><span class="n">STEP 2</span><span class="s">402 + 报价</span></a>
+      <a class="fstep" href="#flow3"><span class="n">STEP 3</span><span class="s">签名付款</span></a>
+      <a class="fstep" href="#flow4"><span class="n">STEP 4</span><span class="s">验证</span></a>
+      <a class="fstep" href="#flow5"><span class="n">STEP 5</span><span class="s">结算交付</span></a>
+    </div>
+    <p class="flow-note">点击任一步跳到详细说明；五步全部在下方展开。</p>
+
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">Client                         Resource Server                  Facilitator
+  │                                   │                               │
+  │── GET /paid ─────────────────────▶│                               │
+  │◀─ 402 + PAYMENT-REQUIRED ─────────│  (scheme / network / amount)  │
+  │                                   │                               │
+  │── GET /paid + PAYMENT-SIGNATURE ─▶│── POST /verify ──────────────▶│
+  │                                   │◀─ valid ──────────────────────│
+  │                                   │   （执行业务逻辑 / 生成内容）   │
+  │                                   │── POST /settle ──────────────▶│
+  │                                   │◀─ tx hash ────────────────────│
+  │◀─ 200 + resource + PAYMENT-RESPONSE│                              │</div>
+
+    <h3 id="flow1">Step 1 · 请求资源</h3>
+    <p>客户端就是一个普通 HTTP 请求，可能是浏览器、脚本，也可能是一个 Agent 的工具调用。没有任何预注册。</p>
+    <div class="code">
+      <div class="code-head"><span class="file">请求</span><button class="copy" type="button">复制</button></div>
+      <pre><code>GET /api/weather?city=shanghai HTTP/1.1
+Host: api.example.com</code></pre>
+    </div>
+
+    <h3 id="flow2">Step 2 · 402 报价</h3>
+    <p>服务器返回 <code>402 Payment Required</code>，把「怎么付」放在 <code>PAYMENT-REQUIRED</code> 头（Base64 编码的 JSON）。v2 的核心字段如下。</p>
+    <div class="code">
+      <div class="code-head"><span class="file">PAYMENT-REQUIRED（解码后）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>{
+  "x402Version": 2,
+  "accepts": [{
+    "scheme": "exact",
+    "network": "eip155:8453",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "amount": "10000",
+    "payTo": "0xSeller...",
+    "maxTimeoutSeconds": 60,
+    "extra": { "name": "USDC", "version": "2" }
+  }]
+}</code></pre>
+    </div>
+    <p class="small"><code>amount</code> 是代币最小单位，10000 = 0.01 USDC（6 位小数）；<code>network</code> 用 CAIP-2 标识链。</p>
+
+    <h3 id="flow3">Step 3 · 签名付款</h3>
+    <p>客户端按 <code>accepts</code> 选一种，构造支付载荷并用钱包签名。以 EVM 的 <code>exact</code> 为例，签名的是 EIP-3009 的 <code>transferWithAuthorization</code>——<b>此时钱还没有动</b>，只是一个可验证的授权。</p>
+    <div class="callout">
+      <span class="t">关键设计：签名 ≠ 转账</span>
+      授权里包含金额、收款方、有效期与一次性 nonce。facilitator 不能把钱转去别处，也不能重复使用同一笔授权——这是「trust minimizing」的核心。
+    </div>
+
+    <h3 id="flow4">Step 4 · 验证</h3>
+    <p>服务器可以本地验证，也可以把载荷与自己的支付要求 POST 到 facilitator 的 <code>/verify</code>。验证检查：签名有效、金额足够、收款方匹配、未过期、未重复。</p>
+    <p>验证通过后才执行业务逻辑。如果业务失败，默认流程下尚未结算，不会扣钱；但若启用「先结算」的 upfront 流程，失败就没有协议级退款。</p>
+
+    <h3 id="flow5">Step 5 · 结算并交付</h3>
+    <p>服务器调用 <code>/settle</code>（或自行上链），facilitator 提交交易、等待确认、返回交易哈希；服务器返回 <code>200</code> 与资源，并在 <code>PAYMENT-RESPONSE</code> 里附带结算回执。</p>
+    <div class="callout warn">
+      <span class="t">超时 ≠ 失败</span>
+      HTTP 超时或响应丢失，不能证明支付没发生。服务端要做幂等与去重；客户端重试前应检查回执，否则可能重复付款。这是 x402 落地最容易踩的坑之一。
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">技术拆解</h2></div>
+
+    <h3>三个头，v1 与 v2 不同名</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>用途</th><th>x402 v2</th><th>x402 v1（旧）</th><th>方向</th></tr></thead>
+        <tbody>
+          <tr><td>报价 / 支付要求</td><td><code>PAYMENT-REQUIRED</code></td><td><code>X-PAYMENT</code>（402 响应体）</td><td>Server → Client</td></tr>
+          <tr><td>签名后的支付载荷</td><td><code>PAYMENT-SIGNATURE</code></td><td><code>X-PAYMENT</code></td><td>Client → Server</td></tr>
+          <tr><td>结算回执</td><td><code>PAYMENT-RESPONSE</code></td><td><code>X-PAYMENT-RESPONSE</code></td><td>Server → Client</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">两版头名容易混。新项目直接用 v2 SDK，不要手写 Base64 拼接。</p>
+
+    <h3>核心字段</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>含义</th><th>例子</th></tr></thead>
+        <tbody>
+          <tr><td><code>scheme</code></td><td>计价方式</td><td><code>exact</code> / <code>upto</code> / <code>batch-settlement</code></td></tr>
+          <tr><td><code>network</code></td><td>结算网络（CAIP-2）</td><td><code>eip155:8453</code>（Base）、<code>solana:5eykt…</code></td></tr>
+          <tr><td><code>asset</code></td><td>代币合约 / 资产</td><td>Base 上的 USDC</td></tr>
+          <tr><td><code>amount</code></td><td>最小单位金额</td><td><code>"10000"</code> = 0.01 USDC</td></tr>
+          <tr><td><code>payTo</code></td><td>收款地址</td><td>卖家钱包或合约</td></tr>
+          <tr><td><code>maxTimeoutSeconds</code></td><td>报价有效期</td><td>60</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>三种计价方式</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>scheme</th><th>怎么用</th><th>适合</th><th>注意</th></tr></thead>
+        <tbody>
+          <tr><td><code>exact</code></td><td>固定金额，一次授权一次结算</td><td>按请求、按文章、按次工具调用</td><td>最常见；默认「验证→执行→结算」</td></tr>
+          <tr><td><code>upto</code></td><td>授权一个上限，按实际用量结算</td><td>推理 token、带宽、可变工时</td><td>客户端需信任卖家不会顶格扣</td></tr>
+          <tr><td><code>batch-settlement</code></td><td>多笔合并结算，降低链上开销</td><td>高频微支付</td><td>引入批次延迟与对账复杂度</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Facilitator：可选的“验证 + 结算”层</h3>
+    <p>facilitator 不托管资金，只验证签名并代发链上交易，因此卖家不需要自己跑节点、管 gas、处理 nonce。</p>
+    <ul>
+      <li><code>POST /verify</code>：只验证，不上链</li>
+      <li><code>POST /settle</code>：验证通过后提交链上交易</li>
+      <li><code>GET /supported</code>：声明支持的 scheme / network / asset 组合</li>
+    </ul>
+    <p>它可以公共托管、自建，也可以「自facilitate」（在资源服务器里直接做）。协议本身不强制。</p>
+
+    <div class="callout">
+      <span class="t">链与资产</span>
+      Coinbase CDP facilitator 支持 Base、Polygon、Arbitrum、Monad、World、Solana 等；其他 facilitator 覆盖 Avalanche、Stellar、NEAR、XRPL、Algorand 等。资产以 USDC 为主，EVM 侧通过 EIP-3009 / Permit2 授权。
+    </div>
+
+    <h3>扩展点</h3>
+    <p>x402 核心只管付款，周边能力用扩展：<b>发现</b>（把付费端点登记到 Bazaar / x402scan）、<b>收据</b>（在响应头附加签名凭证）、<b>gas 代付</b>（facilitator 赞助）、<b>认证</b>（与现有身份体系组合）。</p>
+  </section>
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">生态与数据</h2></div>
+    <p>数字变化很快，下面都标注了时点。它们只用于判断量级与集中度，不应当作实时指标。</p>
+
+    <h3>治理：基金会成员</h3>
+    <p>2026-07 正式运营时 40 家成员。Premier 成员覆盖云、支付、卡组织与链：</p>
+    <div class="card" style="font-size:13.5px;line-height:2">
+      AWS · Adyen · American Express · Circle · Cloudflare · Coinbase · Fiserv · Google · Mastercard · Monad Foundation · MoonPay · Ripple · Shopify · Solana Foundation · Stellar Development Foundation · Stripe · Visa
+    </div>
+    <p class="small" style="margin-top:10px">来源：Linux Foundation 2026-07-14 新闻稿。成员名单会变。</p>
+
+    <h3>采用：量级与集中度</h3>
+    <div class="kpis" style="margin:16px 0">
+      <div class="kpi"><div class="n">150M<span>+</span></div><div class="l">链上交易（x402scan，2026-07）</div></div>
+      <div class="kpi"><div class="n">$40M<span>+</span></div><div class="l">累计金额（同上）</div></div>
+      <div class="kpi"><div class="n">400K<span>+</span></div><div class="l">买家地址（同上）</div></div>
+      <div class="kpi"><div class="n">80K<span>+</span></div><div class="l">卖家地址（同上）</div></div>
+    </div>
+    <p>另一组来自 2026-08 的链上观察：Solana 占月交易量约 <b>70%</b>，Base 次之；Coinbase CDP facilitator 独自处理了超过 1 亿笔、约 2800 万美元。集中度是这套协议目前最真实的特征之一。</p>
+
+    <h3>Facilitator 格局</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Facilitator</th><th>覆盖</th><th>测量交易量</th><th>特点</th></tr></thead>
+        <tbody>
+          <tr><td>Coinbase CDP</td><td>Base、Polygon、Arbitrum、Monad、World、Solana</td><td>约 7717 万笔 / $2685 万</td><td>最成熟；每月前 1000 笔免费，之后 $0.001/笔</td></tr>
+          <tr><td>PayAI</td><td>多链（Base、Avalanche、Sei、Polygon、Arbitrum、Solana 等）</td><td>约 3299 万笔 / $458 万</td><td>无需 API Key</td></tr>
+          <tr><td>Dexter</td><td>多链</td><td>约 2408 万笔 / $462 万</td><td>交易量接近 Coinbase 的一半</td></tr>
+          <tr><td>Daydreams</td><td>多链</td><td>约 1182 万笔 / $276 万</td><td>—</td></tr>
+          <tr><td>自建 / 自 facilitate</td><td>任意支持的链</td><td>不适用</td><td>掌控验证与结算，但要自己运维节点与 gas</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">前四行数据来自 2026 年一篇链上测量论文（arXiv:2607.19545）的统计窗口，不是 2026-10 实时值。Circle、Polygon、thirdweb、Stellar、XRPL 等也有托管或自托管 facilitator。</p>
+
+    <div class="callout warn">
+      <span class="t">集中度风险</span>
+      交易高度集中在少数 facilitator，尤其 Coinbase。协议是开放的，但默认路径不是去中心化的。选择 facilitator 时要评估：停机、审查、费率、支持的链与资产。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">优势与局限</h2></div>
+
+    <div class="grid g2">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <h4 style="margin-top:0">优势</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li><b>HTTP 原生</b>：不需要新传输、新端口、新协议栈</li>
+          <li><b>无账号</b>：钱包签名即身份，Agent 可自主完成</li>
+          <li><b>按次计价</b>：微支付成本可控，不用预充值</li>
+          <li><b>稳定币结算</b>：跨境、秒级、可编程</li>
+          <li><b>facilitator 可选</b>：卖家不必自己跑链上基础设施</li>
+          <li><b>多链多资产</b>：同一套流程接 EVM / Solana 等</li>
+          <li><b>中立治理、零协议费</b>：降低锁定风险</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">局限</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li><b>加密门槛</b>：钱包、gas、USDC、链选择仍是门槛</li>
+          <li><b>无拒付</b>：链上转账不可撤销，纠纷处理靠链下</li>
+          <li><b>合规与税务</b>：KYC/AML、跨境、开票、审计不解决</li>
+          <li><b>延迟</b>：需等待链上确认，不适合极低延迟</li>
+          <li><b>facilitator 集中</b>：默认路径依赖少数服务商</li>
+          <li><b>波动与兑换</b>：稳定币脱锚、法币出入金成本</li>
+          <li><b>发现割裂</b>：Bazaar / x402scan / 自定义目录并存</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>安全：论文指出的问题</h3>
+    <p>2026 年的一篇测量论文（arXiv:2607.19545）对主流 facilitator 做了黑盒测试，指出验证与结算实现中的若干风险：重复结算、签名与请求绑定不足、facilitator 超时后的状态不一致。作者已负责任披露，部分问题被修复。</p>
+    <div class="callout bad">
+      <span class="t">上线前必须做的四件事</span>
+      ① 每笔支付做幂等键与去重；② 把支付证明绑定到具体请求（资源、金额、收款方）；③ 超时按「未知」处理，不要直接判失败；④ 不要手写头解析，使用官方 SDK。
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">与其它支付协议</h2></div>
+    <p>x402 只占一层。把它和 AP2、UCP、ACP Commerce、MPP 放在一起看，关系就清楚了。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>协议</th><th>解决什么</th><th>支付单位</th><th>授权 / 凭证</th><th>结算</th><th>状态（2026-10）</th></tr></thead>
+        <tbody>
+          <tr><td><b>x402</b></td><td>请求级付款通道</td><td>每次 HTTP 请求</td><td>钱包签名（EIP-3009 等）</td><td>稳定币，多链</td><td>生产可用</td></tr>
+          <tr><td><b>AP2</b></td><td>用户授权 Agent 花钱的凭证</td><td>一次购物 / 支付</td><td>Mandate（VDC），支付方式无关</td><td>可接卡、x402 等</td><td>v0.2，FIDO 标准化</td></tr>
+          <tr><td><b>UCP</b></td><td>购物流程：发现、能力、结账</td><td>一次结账</td><td>依赖 AP2 等</td><td>取决于支付层</td><td>早期访问</td></tr>
+          <tr><td><b>ACP（Commerce）</b></td><td>产品 feed + 对话内结账</td><td>一次订单</td><td>平台账号</td><td>Stripe 等</td><td>规范在，入口收缩</td></tr>
+          <tr><td><b>MPP</b></td><td>HTTP 支付头（Cloudflare 支持）</td><td>按请求</td><td><code>WWW-Authenticate: Payment</code></td><td>可插拔</td><td>新兴</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>它们怎么组合</h3>
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.95;white-space:pre-wrap;overflow-x:auto">用户授权（AP2 Mandate）
+        │
+        ▼
+购物流程（UCP：发现 → 结账）
+        │
+        ▼
+支付通道（x402：402 → 签名 → 结算）
+        │
+        ▼
+链上 USDC（Base / Solana / …）</div>
+
+    <div class="callout">
+      <span class="t">一句话区分</span>
+      <b>AP2 问「谁允许花这笔钱」</b>，<b>x402 问「这笔钱怎么在请求里付掉」</b>，<b>UCP 问「买什么、怎么结账」</b>。三者不是竞品。
+    </div>
+  </section>
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">场景与风险</h2></div>
+
+    <h3>适合</h3>
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">按次付费的 API</h4><p class="small" style="margin:0">数据查询、抓取、翻译、OCR、地理编码。一次几分钱，用多少付多少。</p></div>
+      <div class="card"><h4 style="margin-top:0">Agent 工具与 MCP</h4><p class="small" style="margin:0">让 Agent 自己为工具调用付费，不必由人预先充值或发 Key。</p></div>
+      <div class="card"><h4 style="margin-top:0">内容付费墙</h4><p class="small" style="margin:0">单篇文章、报告、数据集；读者或 Agent 一次付费后取走。</p></div>
+      <div class="card"><h4 style="margin-top:0">算力与推理转售</h4><p class="small" style="margin:0">代理上游模型 / GPU，按 token 或按秒计费（可用 upto）。</p></div>
+      <div class="card"><h4 style="margin-top:0">微服务与代理</h4><p class="small" style="margin:0">聚合多个上游能力，按调用加价转售，结算自动完成。</p></div>
+      <div class="card"><h4 style="margin-top:0">跨境小额</h4><p class="small" style="margin:0">没有本地支付通道、金额小、频率高的地区或场景。</p></div>
+    </div>
+
+    <h3>不适合</h3>
+    <ul>
+      <li><b>高客单、需要争议处理</b>：链上转账不可撤销，退款与拒付要靠链下。</li>
+      <li><b>只能用信用卡 / 对公转账</b>：合规或财务流程不接受稳定币。</li>
+      <li><b>极低延迟</b>：等待链上确认会拖慢请求。</li>
+      <li><b>强监管行业</b>：KYC/AML、跨境、税务需要额外方案。</li>
+      <li><b>免费为主的产品</b>：为了 1% 的付费请求引入钱包与链，得不偿失。</li>
+    </ul>
+
+    <h3>风险清单</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>风险</th><th>表现</th><th>缓解</th></tr></thead>
+        <tbody>
+          <tr><td>合规</td><td>KYC/AML、跨境、税务、发票缺失</td><td>与持牌服务商 / 法币出入金合作；保留链下票据</td></tr>
+          <tr><td>价格波动</td><td>非稳定币贬值；稳定币脱锚</td><td>只用主流稳定币；短报价有效期</td></tr>
+          <tr><td>密钥安全</td><td>Agent 钱包被盗即资金被盗</td><td>限额钱包、会话密钥、人工审批阈值</td></tr>
+          <tr><td>重复结算</td><td>重试导致同一授权被多次提交</td><td>幂等键、请求绑定、facilitator 去重</td></tr>
+          <tr><td>facilitator 停机</td><td>无法验证或结算，服务不可用</td><td>多 facilitator 备份 / 自建</td></tr>
+          <tr><td>退款</td><td>协议不定义退款</td><td>业务层补退款流程与凭证</td></tr>
+          <tr><td>链选择</td><td>买家没有该链资产或 gas</td><td>支持多链；gas 代付；清晰报价</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">别把它当「无摩擦收款」</span>
+      x402 去掉的是账号与 API Key，不是合规与财务。上线前先问：谁承担退款？谁开发票？谁做制裁名单筛查？答不上来就先别接真钱。
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">上手与成本</h2></div>
+    <p class="lead-in">最小路径：一个 Express 路由 + 一个付费客户端，跑在 Base Sepolia 测试网。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">安装（v2 包名）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>pnpm add @x402/core @x402/express @x402/fetch express</code></pre>
+    </div>
+
+    <div class="code">
+      <div class="code-head"><span class="file">server.js（示意，字段以官方 quickstart 为准）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>import express from "express";
+import { paymentMiddleware } from "@x402/express";
+
+const app = express();
+
+app.use(paymentMiddleware({
+  "GET /weather": {
+    accepts: [{
+      scheme: "exact",
+      price: "$0.001",
+      network: "eip155:84532",        // Base Sepolia
+      payTo: process.env.PAY_TO
+    }]
+  }
+}, {
+  facilitatorUrl: "https://x402.org/facilitator"
+}));
+
+app.get("/weather", (req, res) =&gt;
+  res.json({ weather: "sunny", temperature: 21 })
+);
+
+app.listen(4021);</code></pre>
+    </div>
+
+    <div class="code">
+      <div class="code-head"><span class="file">client.js（示意）</span><button class="copy" type="button">复制</button></div>
+      <pre><code>import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+
+const api = wrapFetchWithPayment(fetch, x402Client);
+const res = await api("http://127.0.0.1:4021/weather");
+console.log(await res.json());</code></pre>
+    </div>
+
+    <div class="callout">
+      <span class="t">上线前</span>
+      测试网用 <code>x402.org</code> facilitator 即可；主网不要默认用它，选生产 facilitator 或自建。先用 <code>GET /supported</code> 确认你要的 scheme + network + asset 三元组真的支持——「协议支持」不等于「这家实现支持」。
+    </div>
+
+    <h3>按次计费估算</h3>
+    <p class="small">按 CDP facilitator 的公开费率估算：每月前 1,000 笔免费，之后 $0.001/笔；不含链上 gas 与汇率成本。</p>
+    <div class="calc">
+      <div class="calc-row">
+        <label>每天请求数
+          <input id="calcReq" type="number" min="0" step="100" value="1000" inputmode="numeric">
+        </label>
+        <label>每笔价格（USD）
+          <input id="calcPrice" type="number" min="0" step="0.001" value="0.001" inputmode="decimal">
+        </label>
+        <label>每月天数
+          <input id="calcDays" type="number" min="1" max="31" step="1" value="30" inputmode="numeric">
+        </label>
+      </div>
+      <div class="calc-out" aria-live="polite">
+        <div class="calc-box"><div class="k">月请求量</div><div class="v" id="outReq">30,000</div></div>
+        <div class="calc-box"><div class="k">月收入</div><div class="v" id="outGross">$30.00</div></div>
+        <div class="calc-box"><div class="k">Facilitator 费</div><div class="v" id="outFee">$29.00</div></div>
+        <div class="calc-box"><div class="k">月净收入</div><div class="v" id="outNet">$1.00</div></div>
+      </div>
+    </div>
+    <p class="small" id="calcNote">默认值下，收入几乎全被每笔 $0.001 的 facilitator 费吃掉——这正是「价格必须显著高于结算成本」的原因。调高单价或合并结算（batch）才划算。</p>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">趋势判断</h2></div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">1 · 治理已中立，采用仍集中</h4>
+        <p class="small" style="margin:0">协议进 Linux Foundation，但交易与 facilitator 高度集中。未来两年看「第二梯队 facilitator」能否起来。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">2 · 多链，但会收敛</h4>
+        <p class="small" style="margin:0">Solana 在 2026 年拿下多数月交易量，Base 仍是 EVM 默认。长期可能收敛到 2–3 条结算链。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">3 · 与传统支付融合</h4>
+        <p class="small" style="margin:0">Visa、Mastercard、Stripe、Adyen 都在基金会里。方向不是「取代卡」，而是让卡/银行账户也能作为 x402 的支付工具。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">4 · 与 AP2 / UCP 组成栈</h4>
+        <p class="small" style="margin:0">授权（AP2）+ 购物（UCP）+ 结算（x402）。单用 x402 适合 API 计费，进入零售则必须补授权与争议。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">5 · 竞争来自「协议内建」</h4>
+        <p class="small" style="margin:0">MPP 用 <code>WWW-Authenticate: Payment</code> 做类似的事；云厂商也可能把计费直接内建。x402 的优势是先发与生态。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">6 · 安全会成为分水岭</h4>
+        <p class="small" style="margin:0">重复结算、绑定不足、facilitator 信任问题已被论文点名。谁先补齐审计与凭证，谁拿到企业客户。</p>
+      </div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">我的判断</span>
+      短期（1 年）：x402 是「机器微支付」的事实标准，适合 API / 工具 / 内容的长尾计费。中期（2–3 年）：如果法币通道与合规补齐，它有机会成为 Agent 调用付费服务的默认结算层，但仍会与卡组织、AP2 授权层共存，而不是取代它们。
+    </div>
+  </section>
+
+  <section id="s11" aria-labelledby="h11">
+    <div class="sec-head"><span class="sec-no">11</span><h2 id="h11">来源</h2></div>
+    <p class="small">状态与数字截至 2026-10-31；协议细节以官方文档为准。</p>
+    <ul class="small">
+      <li><a href="https://www.x402.org/" target="_blank" rel="noopener noreferrer">x402.org</a> · <a href="https://docs.x402.org/" target="_blank" rel="noopener noreferrer">x402 文档</a> · <a href="https://github.com/x402-foundation/x402" target="_blank" rel="noopener noreferrer">x402-foundation/x402</a></li>
+      <li><a href="https://www.linuxfoundation.org/press/linux-foundation-announces-operational-launch-of-x402-foundation-to-standardize-internet-native-payments-for-ai-agents-and-applications" target="_blank" rel="noopener noreferrer">Linux Foundation：x402 Foundation 正式运营</a> · <a href="https://docs.cdp.coinbase.com/x402/support/x402-foundation" target="_blank" rel="noopener noreferrer">Coinbase：基金会与治理</a></li>
+      <li><a href="https://docs.x402.org/core-concepts/facilitator" target="_blank" rel="noopener noreferrer">Facilitator</a> · <a href="https://docs.x402.org/core-concepts/client-server" target="_blank" rel="noopener noreferrer">Client / Server</a> · <a href="https://docs.x402.org/dev-tools/facilitators" target="_blank" rel="noopener noreferrer">Facilitator 目录</a></li>
+      <li><a href="https://docs.cdp.coinbase.com/x402/seller/facilitator" target="_blank" rel="noopener noreferrer">CDP Facilitator（网络 / 费率）</a> · <a href="https://blog.cloudflare.com/x402" target="_blank" rel="noopener noreferrer">Cloudflare：x402 Foundation</a> · <a href="https://developers.cloudflare.com/agents/tools/payments" target="_blank" rel="noopener noreferrer">Cloudflare Agentic Payments</a></li>
+      <li><a href="https://solana.com/docs/payments/agentic-payments/x402" target="_blank" rel="noopener noreferrer">Solana x402</a> · <a href="https://arxiv.org/html/2607.19545" target="_blank" rel="noopener noreferrer">arXiv：x402 风险测量</a></li>
+      <li><a href="https://ap2-protocol.org/" target="_blank" rel="noopener noreferrer">AP2</a> · <a href="https://ucp.dev/documentation/ucp-and-ap2/" target="_blank" rel="noopener noreferrer">UCP 与 AP2</a> · <a href="https://mpp.dev" target="_blank" rel="noopener noreferrer">MPP</a></li>
+    </ul>
+    <div class="callout">
+      <span class="t">提示</span>
+      本页示例为最小示意，包名、参数与 facilitator 地址随版本变化。照抄前先跑官方 quickstart，并用 <code>/supported</code> 校验你的（scheme, network, asset）组合。
+    </div>
+  </section>
+
+  <footer>
+    <span>x402 深度解析 · 2026-10-31 · 单文件离线版</span>
+    <span>先验证，后干活，再结算</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  /* ---------- copy ---------- */
+  function copyText(text, btn) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  /* ---------- cost calculator ---------- */
+  var reqEl = document.getElementById("calcReq");
+  var priceEl = document.getElementById("calcPrice");
+  var daysEl = document.getElementById("calcDays");
+  var outReq = document.getElementById("outReq");
+  var outGross = document.getElementById("outGross");
+  var outFee = document.getElementById("outFee");
+  var outNet = document.getElementById("outNet");
+  var note = document.getElementById("calcNote");
+
+  function money(n) {
+    if (n > 0 && n < 0.01) { return "$" + n.toFixed(4); }
+    return "$" + n.toFixed(2);
+  }
+
+  function calc() {
+    var req = Math.max(0, Number(reqEl.value) || 0);
+    var price = Math.max(0, Number(priceEl.value) || 0);
+    var days = Math.min(31, Math.max(1, Number(daysEl.value) || 30));
+    var monthly = req * days;
+    var gross = monthly * price;
+    var fee = Math.max(0, monthly - 1000) * 0.001;
+    var net = gross - fee;
+    outReq.textContent = monthly.toLocaleString("en-US");
+    outGross.textContent = money(gross);
+    outFee.textContent = money(fee);
+    outNet.textContent = money(net);
+    if (gross > 0 && fee / gross > 0.5) {
+      note.textContent = "结算费超过收入的 50%：要么提价，要么用 batch-settlement 合并结算，否则越忙越亏。";
+    } else if (gross === 0) {
+      note.textContent = "把单价设为大于 0 才能看到估算。";
+    } else {
+      note.textContent = "估算不含链上 gas、汇率与退款成本；CDP 费率按每月前 1,000 笔免费、之后 $0.001/笔。";
+    }
+  }
+
+  [reqEl, priceEl, daysEl].forEach(function (el) {
+    el.addEventListener("input", calc);
+  });
+
+  calc();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

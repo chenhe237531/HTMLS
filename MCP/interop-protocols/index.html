@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agent 互操作协议图谱 · MCP 之外的 13 个协议（2026-10）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:640px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.stack{display:grid;gap:8px;margin:18px 0}
+.layer{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;box-shadow:var(--shadow)}
+.layer .ll{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.layer .ln{font-weight:650;font-size:13.5px;line-height:1.4}
+.layer .items{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lpill{font-size:11.5px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);white-space:nowrap}
+.lpill.blue{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.lpill.green{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.lpill.amber{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.lpill.red{color:var(--red);border-color:#f0cfcf;background:var(--red-soft)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 230px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:10px 0 16px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+
+.proto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.proto{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.proto:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 12px 34px -20px rgba(23,24,27,.5)}
+.proto-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.proto .name{font-size:16px;font-weight:650;letter-spacing:-.01em;line-height:1.35}
+.proto .zh{font-size:12px;color:var(--muted);margin-top:1px}
+.status{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono)}
+.status.prod{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.status.early{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.status.legacy{color:var(--muted);background:var(--paper-2)}
+.proto .desc{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.65}
+.pc{display:grid;grid-template-columns:1fr;gap:8px;font-size:12.5px;line-height:1.55}
+.pc h5{margin:0 0 3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pc ul{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+.pc li{position:relative;padding-left:12px;color:var(--ink-2)}
+.pc li::before{content:"";position:absolute;left:0;top:.6em;width:4px;height:4px;border-radius:50%}
+.pc .good li::before{background:var(--green)}
+.pc .bad li::before{background:var(--red)}
+.proto-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap}
+.tag.blue{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.proto-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .layer{grid-template-columns:1fr}
+  .proto-grid{grid-template-columns:1fr}
+}
+@media (max-width:560px){.pc{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.toolbar,.result-line{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .proto,.card,table,.layer{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  .proto-grid{grid-template-columns:1fr 1fr}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">互操作协议图谱</div>
+      <div class="brand-sub">MCP 之外 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>为什么不止 MCP</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>六层协议栈</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>协议卡片</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>横向对比</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>如何组合</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>选型指南</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>趋势判断</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>来源与口径</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    14 个协议 · 6 层<br>
+    2 次关键合并<br>
+    核验 2026-10-31 · 离线可用
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Agent Interop<span class="dot"></span>2026-10-31</p>
+    <h1>MCP 之外的<em>协议栈</em></h1>
+    <p class="lede">MCP 解决的是「Agent 怎么用工具」。但 Agent 还要互相对话、被编辑器驱动、把界面推给用户、收钱、被发现。这些是不同层的问题，也就长出了不同的协议。</p>
+    <div class="meta-row">
+      <span class="pill">范围 <b>14 个协议 / 6 层</b></span>
+      <span class="pill">治理 <b>Linux Foundation / AAIF / FIDO</b></span>
+      <span class="pill">定位 <b>区别 · 优劣 · 趋势</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">14<span>个</span></div><div class="l">已核验的互操作协议</div></div>
+      <div class="kpi"><div class="n">6<span>层</span></div><div class="l">工具 / Agent / 客户端 / UI / 商业 / 发现</div></div>
+      <div class="kpi"><div class="n">2<span>次</span></div><div class="l">关键合并（IBM ACP→A2A、A2A→AAIF）</div></div>
+      <div class="kpi"><div class="n">3<span>个</span></div><div class="l">同名 ACP，最容易混淆</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">为什么不止 MCP</h2></div>
+    <p class="lead-in">把 MCP 当成「AI 的 USB-C」是对的，但 USB-C 只解决插头。Agent 生态还需要「谁和谁说话」「界面怎么变」「钱怎么付」「怎么被找到」。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card">
+        <h4 style="margin-top:0">MCP 管什么</h4>
+        <p class="small" style="margin:0">Agent ↔ 工具 / 数据 / 提示模板。一次请求、一次返回，通常无状态。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">MCP 不管什么</h4>
+        <p class="small" style="margin:0">长任务协商、Agent 间委派、多轮人工确认、流式 UI、支付授权、能力发现。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">于是长出了什么</h4>
+        <p class="small" style="margin:0">A2A 管横向协作，ACP 管编辑器驱动，AG-UI 管前端，A2UI 管界面生成，AP2/UCP 管交易。</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">先记住一件事：同名不同物</span>
+      现在有三个「ACP」：<b>Agent Client Protocol</b>（Zed/JetBrains，编辑器驱动 Agent）、<b>Agent Communication Protocol</b>（IBM，已并入 A2A）、<b>Agentic Commerce Protocol</b>（OpenAI/Stripe，代理结账）。看到缩写先问「哪个 ACP」。
+    </div>
+
+    <div class="callout">
+      <span class="t">本页的取舍</span>
+      只收录 2026-10 仍有公开规范、实现或明确治理归属的协议。已归档的 IBM ACP 仍然收录，因为它是理解 A2A 合并史的关键；纯企业内部私有协议不展开。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">六层协议栈</h2></div>
+    <p>自下而上看：能力从工具进入 Agent，Agent 之间横向协作，客户端驱动 Agent，Agent 把结果推给用户，交易在最上层完成；发现与身份贯穿始终。</p>
+
+    <div class="stack">
+      <div class="layer">
+        <div><div class="ll">Layer 6</div><div class="ln">发现与身份</div></div>
+        <div class="items"><span class="lpill">A2A Agent Card</span><span class="lpill">AGNTCY Directory / OASF</span><span class="lpill">ANP DID</span><span class="lpill">ACP Registry</span></div>
+      </div>
+      <div class="layer">
+        <div><div class="ll">Layer 5</div><div class="ln">商业与支付</div></div>
+        <div class="items"><span class="lpill amber">UCP</span><span class="lpill amber">AP2</span><span class="lpill amber">ACP（Commerce）</span><span class="lpill amber">x402</span></div>
+      </div>
+      <div class="layer">
+        <div><div class="ll">Layer 4</div><div class="ln">用户界面</div></div>
+        <div class="items"><span class="lpill green">AG-UI</span><span class="lpill green">A2UI</span><span class="lpill green">MCP-UI</span><span class="lpill green">Open-JSON-UI</span></div>
+      </div>
+      <div class="layer">
+        <div><div class="ll">Layer 3</div><div class="ln">客户端 / 编辑器</div></div>
+        <div class="items"><span class="lpill blue">ACP（Agent Client）</span><span class="lpill">MCP（编辑器内工具）</span></div>
+      </div>
+      <div class="layer">
+        <div><div class="ll">Layer 2</div><div class="ln">Agent ↔ Agent</div></div>
+        <div class="items"><span class="lpill blue">A2A</span><span class="lpill">AGNTCY / SLIM</span><span class="lpill">ANP</span><span class="lpill">Agent Protocol</span></div>
+      </div>
+      <div class="layer">
+        <div><div class="ll">Layer 1</div><div class="ln">工具与上下文</div></div>
+        <div class="items"><span class="lpill blue">MCP</span><span class="lpill">OpenAPI / 函数调用</span></div>
+      </div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">一句话记忆</span>
+      <b>MCP 竖着连</b>（工具），<b>A2A 横着连</b>（Agent），<b>ACP 被编辑器连</b>（客户端），<b>AG-UI 连用户</b>，<b>AP2/UCP 连钱</b>，<b>AGNTCY 连目录</b>。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">协议卡片</h2></div>
+    <p class="lead-in">每个协议只回答一个问题。先看它属于哪一层，再看优缺点，最后看 2026-10 的成熟度。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按层筛选">
+        <button class="chip" type="button" data-cat="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-cat="tool" aria-pressed="false">工具</button>
+        <button class="chip" type="button" data-cat="agent" aria-pressed="false">Agent 间</button>
+        <button class="chip" type="button" data-cat="client" aria-pressed="false">客户端</button>
+        <button class="chip" type="button" data-cat="ui" aria-pressed="false">UI</button>
+        <button class="chip" type="button" data-cat="commerce" aria-pressed="false">商业</button>
+        <button class="chip" type="button" data-cat="discovery" aria-pressed="false">发现</button>
+        <button class="chip" type="button" data-cat="service" aria-pressed="false">服务化</button>
+        <button class="chip" type="button" data-cat="legacy" aria-pressed="false">历史</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="protoSearch">搜索协议</label>
+        <input id="protoSearch" type="search" placeholder="搜索协议、用途、治理方…" autocomplete="off">
+      </div>
+    </div>
+    <p class="result-line" id="protoCount" role="status" aria-live="polite">显示 14 / 14 个协议</p>
+
+    <div class="proto-grid" id="protoGrid">
+
+      <article class="proto" data-cat="tool" data-name="MCP Model Context Protocol 工具 上下文 Anthropic 提示 资源">
+        <div class="proto-top"><div><div class="name">MCP</div><div class="zh">Model Context Protocol</div></div><span class="status prod">生产可用</span></div>
+        <p class="desc">Agent 连接工具、数据与提示模板的标准。stdio 与 Streamable HTTP 两种传输，工具 / 资源 / 提示三类原语。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>事实标准，客户端与服务端生态最大</li><li>服务端实现简单，权限边界清晰</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>以无状态调用为主，长任务协商弱</li><li>UI、支付、发现需其它协议补位</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">AAIF / LF</span><span class="tag">Anthropic 起源</span><a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="agent" data-name="A2A Agent2Agent 任务 委派 Agent Card Google 协作">
+        <div class="proto-top"><div><div class="name">A2A</div><div class="zh">Agent2Agent Protocol</div></div><span class="status prod">生产可用</span></div>
+        <p class="desc">让独立 Agent 发现彼此并委派任务：Agent Card 声明能力，Task 有生命周期，支持 SSE 与异步回调。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>跨厂商协作，v1.0 已被云厂商原生支持</li><li>「不透明执行」保护 Agent 内部实现</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>复杂多轮协商与双向流仍在路线图</li><li>发现质量取决于目录与 Agent Card</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">AAIF / LF</span><span class="tag">Google 起源</span><a href="https://a2a-protocol.org/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="client" data-name="ACP Agent Client Protocol Zed JetBrains 编辑器 编码 session">
+        <div class="proto-top"><div><div class="name">ACP（Agent Client）</div><div class="zh">Agent Client Protocol</div></div><span class="status prod">生产可用</span></div>
+        <p class="desc">编辑器 / 客户端驱动编码 Agent 的 JSON-RPC 协议：以 Session 为单位，返回结构化事件而非终端文本。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>一次实现接入多个编辑器（Zed / JetBrains / Neovim）</li><li>结构化 diff、工具调用，替代 PTY 抓屏</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>以本地 stdio 为主，远程支持仍在开发</li><li>名字与另外两个 ACP 冲突，沟通成本高</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">Zed + JetBrains</span><span class="tag">编码场景</span><a href="https://agentclientprotocol.com/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="ui" data-name="AG-UI Agent User Interaction 前端 流式 状态 HITL CopilotKit">
+        <div class="proto-top"><div><div class="name">AG-UI</div><div class="zh">Agent–User Interaction Protocol</div></div><span class="status prod">生产可用</span></div>
+        <p class="desc">Agent 与用户前端之间的双向事件协议：流式文本、共享状态、前端工具调用、人工介入。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>前端集成成熟（CopilotKit），支持 HITL</li><li>可与 MCP / A2A 握手，作为统一入口</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>需要改造前端，事件模型有学习成本</li><li>它是交互通道，不是 UI 描述规范</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">CopilotKit</span><span class="tag">事件流</span><a href="https://docs.ag-ui.com/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="ui" data-name="A2UI Agent to UI 生成式 UI JSONL 组件 Google">
+        <div class="proto-top"><div><div class="name">A2UI</div><div class="zh">Agent to UI Protocol</div></div><span class="status early">候选 / 早期</span></div>
+        <p class="desc">Google 的声明式生成式 UI 规范：Agent 用 JSONL 流式描述组件与数据模型，客户端用原生组件渲染。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>平台无关、渐进渲染，不依赖 WebView</li><li>可绑定 AG-UI / A2A / MCP 传输</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>v1.0 仍为候选，规范仍在演进</li><li>需要 renderer 与组件目录，生态未定</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">Google</span><span class="tag">生成式 UI</span><a href="https://a2ui.org/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="ui" data-name="MCP-UI iframe UI Microsoft Shopify 生成式">
+        <div class="proto-top"><div><div class="name">MCP-UI</div><div class="zh">MCP 的 UI 扩展</div></div><span class="status early">早期</span></div>
+        <p class="desc">Microsoft + Shopify 推动的生成式 UI 标准，用 iframe 承载可交互界面，作为 MCP 的扩展。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>复用现有 Web 技术与组件</li><li>交互能力强，适合复杂表单</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>iframe 的信任与安全边界需额外设计</li><li>与 A2UI / Open-JSON-UI 形成竞争</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">Microsoft + Shopify</span><span class="tag">iframe</span><a href="https://mcpui.dev/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="commerce" data-name="AP2 Agent Payments Protocol 支付 mandate 授权 FIDO Google">
+        <div class="proto-top"><div><div class="name">AP2</div><div class="zh">Agent Payments Protocol</div></div><span class="status early">早期 / 标准化中</span></div>
+        <p class="desc">用可验证数字凭证（Checkout / Payment Mandate）表达「用户授权 Agent 买什么、花多少」，覆盖人在与人不在。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>授权可验证、可举证，适合争议处理</li><li>与 UCP / A2A 组合，支付方式无关</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>概念与角色多，接入复杂</li><li>商户与支付机构改造成本高</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">FIDO 标准化</span><span class="tag">Google 起源</span><a href="https://ap2-protocol.org/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+      <article class="proto" data-cat="commerce" data-name="UCP Universal Commerce Protocol 商业 结账 Google Shopify 发现">
+        <div class="proto-top"><div><div class="name">UCP</div><div class="zh">Universal Commerce Protocol</div></div><span class="status early">早期 / 早期访问</span></div>
+        <p class="desc">Google 与 Shopify 推动的商业协议：产品发现、能力协商与结账，站点通过 <code>/.well-known/ucp</code> 声明能力。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>覆盖「发现 → 结账」全链路</li><li>与 AP2 组成信任层，职责清晰</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>结账仍在早期访问，覆盖有限</li><li>商户需要改造商品与结账接口</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">Google + Shopify</span><span class="tag">商业</span><a href="https://ucp.dev/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="commerce" data-name="ACP Commerce Agentic Commerce Protocol OpenAI Stripe 结账">
+        <div class="proto-top"><div><div class="name">ACP（Commerce）</div><div class="zh">Agentic Commerce Protocol</div></div><span class="status early">路线不确定</span></div>
+        <p class="desc">OpenAI 与 Stripe 的代理结账协议：商家提供产品 feed，Agent 在对话内完成下单；规范仍在，产品入口有收缩。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>与 ChatGPT / Stripe 支付链路结合紧</li><li>产品 feed 规范具体，落地路径清楚</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>Instant Checkout 据报 2026-03 结束，前景待观察</li><li>强依赖单一平台流量</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag">OpenAI + Stripe</span><span class="tag">结账</span><a href="https://developers.openai.com/commerce/" target="_blank" rel="noopener noreferrer">文档 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="commerce" data-name="x402 HTTP 402 微支付 Coinbase Cloudflare 链上">
+        <div class="proto-top"><div><div class="name">x402</div><div class="zh">HTTP 402 支付协议</div></div><span class="status early">早期 / 场景明确</span></div>
+        <p class="desc">复用 HTTP 402 状态码，让 Agent 在请求资源时直接完成支付，结算可在链上。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>对机器友好：无需账号、按次付费</li><li>适合 API、内容与微支付</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>链上结算带来合规与波动问题</li><li>企业采购与退款流程不成熟</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">x402 Foundation</span><span class="tag">微支付</span><a href="https://www.x402.org/" target="_blank" rel="noopener noreferrer">规范 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="discovery" data-name="AGNTCY Internet of Agents OASF Directory SLIM Cisco 发现">
+        <div class="proto-top"><div><div class="name">AGNTCY</div><div class="zh">Internet of Agents 基础设施</div></div><span class="status early">早期 / 组件完整</span></div>
+        <p class="desc">Cisco 捐给 Linux Foundation 的 Agent 互联网栈：OASF 能力描述、Agent Directory、SLIM 消息与可观测。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>补齐「发现 + 身份 + 传输 + 观测」</li><li>开放治理，适合跨组织场景</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>组件多、集成与运维成本高</li><li>采用仍在早期，工具链不如 A2A 成熟</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag blue">Linux Foundation</span><span class="tag">Cisco 起源</span><a href="https://agentcy.dev/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="discovery" data-name="ANP Agent Network Protocol DID 去中心化 身份">
+        <div class="proto-top"><div><div class="name">ANP</div><div class="zh">Agent Network Protocol</div></div><span class="status early">实验 / 社区</span></div>
+        <p class="desc">面向开放网络的去中心化 Agent 协议，用 DID 与 W3C 标准做身份、发现与点对点协作。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>身份自主、无需中心目录</li><li>适合开放网络与跨组织协作</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>规范与实现资料有限，生态小</li><li>企业治理与合规路径不清晰</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag">社区</span><span class="tag">DID</span><a href="https://agent-network-protocol.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="service" data-name="Agent Protocol LangChain REST runs threads 服务化">
+        <div class="proto-top"><div><div class="name">Agent Protocol</div><div class="zh">Agent 服务化 REST 规范</div></div><span class="status early">局部采用</span></div>
+        <p class="desc">LangChain 提出的 Agent 服务器接口：用 runs / threads 把 Agent 暴露成标准 REST API，便于部署与托管。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>部署即 API，客户端无需理解内部框架</li><li>与 LangGraph 生态衔接自然</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>跨厂商影响力有限，平台各自扩展</li><li>解决的是部署接口，不是协作语义</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag">LangChain</span><span class="tag">REST</span><a href="https://github.com/langchain-ai/agent-protocol" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="proto" data-cat="legacy" data-name="FIPA ACL KQML 经典 多 Agent 通信 言语行为">
+        <div class="proto-top"><div><div class="name">FIPA ACL / KQML</div><div class="zh">经典 Agent 通信语言</div></div><span class="status legacy">历史</span></div>
+        <p class="desc">上世纪末的多 Agent 通信标准，基于「言语行为」定义 inform、request、propose 等消息类型与语义。</p>
+        <div class="pc">
+          <div class="good"><h5>优点</h5><ul><li>语义理论完整，适合形式化研究</li><li>对后来协议的消息设计有影响</li></ul></div>
+          <div class="bad"><h5>局限</h5><ul><li>非 LLM 时代设计，实现重</li><li>生态基本消失，不适合新产品</li></ul></div>
+        </div>
+        <div class="proto-foot"><span class="tag">历史</span><span class="tag">学术</span><a href="https://www.fipa.org/repository/aclspecs.html" target="_blank" rel="noopener noreferrer">资料 →</a></div>
+      </article>
+
+    </div>
+    <div class="empty" id="protoEmpty" hidden>没有匹配的协议。试试更短的关键词，或重置筛选。</div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="t">别把「协议」当「产品」</span>
+      MCP Server、A2A Agent、ACP Agent 都是实现，不是协议本身。评估时要分开看：协议是否稳定、实现是否成熟、治理是否中立。
+    </div>
+
+    <div class="callout good" style="margin-top:16px">
+      <span class="t">三份深度解析</span>
+      本页只做分层与横向对比。支付与商业层的三个协议各有单独报告：
+      <a href="ap2/index.html">AP2（授权）</a> ·
+      <a href="ucp/index.html">UCP（商业）</a> ·
+      <a href="x402/index.html">x402（结算）</a>。
+    </div>
+  </section>
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">横向对比</h2></div>
+    <p>同一行只比较同一件事；跨层比较没有意义——MCP 和 AP2 不是替代关系。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>协议</th><th>层</th><th>交互对象</th><th>核心抽象</th><th>传输</th><th>发现</th><th>治理 / 成熟度</th></tr></thead>
+        <tbody>
+          <tr><td><b>MCP</b></td><td>工具</td><td>Agent ↔ 工具 / 数据</td><td>Tool / Resource / Prompt</td><td>stdio、Streamable HTTP</td><td>配置文件 / 注册表</td><td>AAIF · 生产可用</td></tr>
+          <tr><td><b>A2A</b></td><td>Agent 间</td><td>Agent ↔ Agent</td><td>Agent Card / Task</td><td>JSON-RPC + SSE / HTTP</td><td>Agent Card + 目录</td><td>AAIF · v1.0</td></tr>
+          <tr><td><b>ACP（Client）</b></td><td>客户端</td><td>编辑器 → Agent</td><td>Session / 事件</td><td>JSON-RPC over stdio（HTTP 开发中）</td><td>ACP Registry</td><td>Zed + JetBrains · 稳定</td></tr>
+          <tr><td><b>AG-UI</b></td><td>UI</td><td>Agent ↔ 用户前端</td><td>Run / State / Event</td><td>SSE / WebSocket / HTTP</td><td>无（应用内）</td><td>CopilotKit · 生产可用</td></tr>
+          <tr><td><b>A2UI</b></td><td>UI</td><td>Agent → Renderer</td><td>Surface / Component</td><td>JSONL（可绑 AG-UI/A2A/MCP）</td><td>能力协商</td><td>Google · v1.0 候选</td></tr>
+          <tr><td><b>MCP-UI</b></td><td>UI</td><td>Agent → iframe</td><td>UI Resource</td><td>MCP</td><td>MCP 资源</td><td>Microsoft + Shopify · 早期</td></tr>
+          <tr><td><b>AP2</b></td><td>商业</td><td>用户 → Agent → 商户</td><td>Mandate / Receipt</td><td>A2A / UCP 扩展</td><td>UCP 发现</td><td>FIDO · v0.2</td></tr>
+          <tr><td><b>UCP</b></td><td>商业</td><td>Agent ↔ 商户</td><td>Checkout / Capability</td><td>HTTP + <code>/.well-known/ucp</code></td><td>Well-known 清单</td><td>Google + Shopify · 早期访问</td></tr>
+          <tr><td><b>ACP（Commerce）</b></td><td>商业</td><td>Agent ↔ 商家</td><td>Product Feed / Checkout</td><td>HTTP</td><td>商家 feed</td><td>OpenAI + Stripe · 路线不确定</td></tr>
+          <tr><td><b>x402</b></td><td>商业</td><td>Agent ↔ 资源</td><td>HTTP 402 / Payment</td><td>HTTP</td><td>URL / 响应头</td><td>x402 Foundation · 早期</td></tr>
+          <tr><td><b>AGNTCY</b></td><td>发现</td><td>Agent ↔ 目录 / 网络</td><td>OASF / Directory / SLIM</td><td>gRPC / HTTP</td><td>Agent Directory</td><td>Linux Foundation · 早期</td></tr>
+          <tr><td><b>ANP</b></td><td>发现</td><td>Agent ↔ Agent（P2P）</td><td>DID / 描述文档</td><td>HTTP / P2P</td><td>DID 解析</td><td>社区 · 实验</td></tr>
+          <tr><td><b>Agent Protocol</b></td><td>服务化</td><td>客户端 ↔ Agent 服务</td><td>Run / Thread</td><td>REST</td><td>服务地址</td><td>LangChain · 局部采用</td></tr>
+          <tr><td><b>FIPA ACL</b></td><td>历史</td><td>Agent ↔ Agent</td><td>Speech Act</td><td>ACL / 消息</td><td>目录服务</td><td>已边缘化</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">读表方法</span>
+      先看「层」：同层才有替代关系。再看「核心抽象」：Task、Session、Run、Mandate 分别对应四种完全不同的控制流。最后看治理：中立基金会托管通常意味着更长的生命周期。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">如何组合</h2></div>
+    <p>真实系统不会只用一个协议。下面是三种最常见的组合，按「谁发起、谁执行、钱在哪」来拆。</p>
+
+    <h3>场景 A · 编辑器里的编码 Agent</h3>
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.9;white-space:pre-wrap;overflow-x:auto">[Zed / JetBrains]
+      │  ACP（Session + 结构化事件）
+      ▼
+[Coding Agent]
+      │  MCP（工具 / 数据）
+      ▼
+[Repo · Shell · Browser]
+
+旁路：Agent 自身可通过 A2A 调用远端 Agent。</div>
+    <p class="small">为什么是这套：编辑器只关心「驱动一个 Agent」；工具接入交给 MCP；跨 Agent 再用 A2A。三者正交。</p>
+
+    <h3>场景 B · 面向用户的产品</h3>
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.9;white-space:pre-wrap;overflow-x:auto">[Web / App]
+      │  AG-UI（流式文本、状态、前端工具）
+      ▼
+[Agent Backend]
+      │  MCP                 │  A2A
+      ▼                     ▼
+[Tools / Data]        [Specialist Agents]
+
+界面内容：A2UI / MCP-UI（可选）</div>
+    <p class="small">为什么是这套：AG-UI 管交互通道，A2UI 管「Agent 生成界面」；后者不是前者的替代。</p>
+
+    <h3>场景 C · 代理购物 / 交易</h3>
+    <div class="card" style="font-family:var(--mono);font-size:12.5px;line-height:1.9;white-space:pre-wrap;overflow-x:auto">[User]
+   │ 授权（AP2 Mandate）
+   ▼
+[Shopping Agent] ── A2A ──▶ [Merchant Agent]
+   │                          │  UCP：目录 / 结账
+   │                          ▼
+   │                     [Merchant Backend]
+   └── x402（按次资源付费，可选）</div>
+    <p class="small">为什么是这套：UCP 管购物流程，AP2 管支付授权，x402 管机器微支付；三者不是互斥。</p>
+
+    <div class="callout good">
+      <span class="t">80% 场景的最小组合</span>
+      <b>MCP + A2A + AG-UI</b> 已经覆盖「工具、协作、界面」三件事。只有当你开始收钱，才需要 AP2 / UCP / x402。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">选型指南</h2></div>
+    <p>按你的角色选，不要按「哪个协议最火」选。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>你的角色</th><th>先实现</th><th>再考虑</th><th>不必碰</th></tr></thead>
+        <tbody>
+          <tr><td>前端 / 应用开发者</td><td>AG-UI + MCP（客户端）</td><td>A2UI（生成式 UI）</td><td>AP2 / UCP</td></tr>
+          <tr><td>编码 Agent 作者</td><td>ACP + MCP</td><td>A2A（远端委派）</td><td>商务协议</td></tr>
+          <tr><td>Agent 平台 / 编排</td><td>A2A + MCP</td><td>AGNTCY（目录与观测）</td><td>FIPA</td></tr>
+          <tr><td>企业架构</td><td>A2A + MCP + 网关治理</td><td>AP2（如涉及交易）</td><td>ANP</td></tr>
+          <tr><td>商家 / 电商</td><td>UCP + AP2</td><td>ACP Commerce feed</td><td>ACP（Client）</td></tr>
+          <tr><td>工具 / 数据提供方</td><td>MCP Server</td><td>MCP-UI（如需界面）</td><td>A2A</td></tr>
+          <tr><td>研究者 / 学习者</td><td>MCP + A2A 规范</td><td>FIPA 作为历史对照</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">三个常见误判</span>
+      用 MCP 做 Agent 间协作（缺任务生命周期）；用 A2A 传工具调用（多一层且语义不符）；用 AG-UI 当 UI 规范（它只传事件，不定义组件）。
+    </div>
+  </section>
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">趋势判断</h2></div>
+    <p class="lead-in">2026 年的主线不是「更多协议」，而是「分层 + 合并 + 治理归位」。下面六条，按确定性从高到低。</p>
+
+    <h3>时间线：两年内发生了什么</h3>
+    <ol class="steps">
+      <li><b>MCP 发布</b><span class="when">2024-11</span><p>Anthropic 把「工具接入」标准化，迅速成为事实标准。</p></li>
+      <li><b>A2A 发布</b><span class="when">2025-04</span><p>Google 提出 Agent 间发现与委派，随后捐赠给 Linux Foundation。</p></li>
+      <li><b>IBM ACP 并入 A2A</b><span class="when">2025-08</span><p>Agent Communication Protocol 停止独立发展，社区向 A2A 收敛。</p></li>
+      <li><b>Zed 发布 ACP（Agent Client）</b><span class="when">2025-08</span><p>编辑器与编码 Agent 之间的标准接口，JetBrains 于 2026-02 加入共同维护。</p></li>
+      <li><b>AP2 发布</b><span class="when">2025-09</span><p>代理支付授权协议，后续捐给 FIDO Alliance 做标准化。</p></li>
+      <li><b>A2UI 发布</b><span class="when">2025-11</span><p>生成式 UI 的声明式规范，2026-06 进入 v1.0 候选。</p></li>
+      <li><b>ACP Registry 上线</b><span class="when">2026-01</span><p>Agent 一次注册，所有 ACP 客户端可见，补上分发层。</p></li>
+      <li><b>A2A v1.0</b><span class="when">2026-03</span><p>首个稳定版，云厂商原生支持，进入生产使用。</p></li>
+      <li><b>A2A 加入 AAIF</b><span class="when">2026-08</span><p>与 MCP、goose、AGENTS.md 同属一个基金会，两层治理统一。</p></li>
+      <li><b>A2A CLI</b><span class="when">2026-10</span><p>让 shell / CI 也能直接发现与调用 A2A Agent。</p></li>
+    </ol>
+
+    <h3>六条判断</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">1 · 分层已经稳定</h4>
+        <p class="small" style="margin:0">工具（MCP）、Agent（A2A）、用户（AG-UI）、交易（AP2/UCP）四层各有赢家，短期不会再出现「一个协议包打天下」。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">2 · 治理向基金会集中</h4>
+        <p class="small" style="margin:0">MCP 与 A2A 同属 AAIF，AP2 进入 FIDO，AGNTCY 在 LF。中立治理成为采购的硬指标。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">3 · 协议与产品解耦</h4>
+        <p class="small" style="margin:0">ACP 注册表、A2A CLI 让「Agent 实现一次、到处可调」变成现实，客户端不再绑定单一 Agent。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">4 · 生成式 UI 仍在混战</h4>
+        <p class="small" style="margin:0">A2UI、MCP-UI、Open-JSON-UI 三种路线并存，AG-UI 做传输层。2026 年内很难收敛。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">5 · 支付协议分层</h4>
+        <p class="small" style="margin:0">UCP 管购物流程，AP2 管授权与举证，x402 管机器微支付。商业入口收缩（ChatGPT Instant Checkout）提醒：协议不等于需求。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">6 · 发现与安全是短板</h4>
+        <p class="small" style="margin:0">Agent Card、Directory、DID 三套发现机制未统一；身份、权限、审计将决定企业能否规模上线。</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">风险与反模式</span>
+      <b>同名混淆</b>（三个 ACP）：文档必须写全称；<b>过度设计</b>：单 Agent 场景不需要 A2A；<b>把协议当需求</b>：先有交易场景，再谈 AP2；<b>忽略安全</b>：跨 Agent 调用会放大 prompt injection 与越权。
+    </div>
+
+    <div class="callout">
+      <span class="t">接下来最值得观察的三件事</span>
+      ① A2A 的多轮协商与双向流能否在 v1.1 落地；② Agent 目录/身份是否会出现事实标准；③ 生成式 UI 是否会像 MCP 一样出现「赢家通吃」。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">来源与口径</h2></div>
+    <p>状态为 2026-10-31 的公开信息。协议规范会变，具体字段以官网当期为谁。</p>
+
+    <ul class="small">
+      <li><a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">MCP 官方</a> · <a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year" target="_blank" rel="noopener noreferrer">Linux Foundation：A2A 一周年</a></li>
+      <li><a href="https://a2a-protocol.org/" target="_blank" rel="noopener noreferrer">A2A 规范</a> · <a href="https://aaif.io/blog/a2a-joins-aaif" target="_blank" rel="noopener noreferrer">A2A 加入 AAIF</a> · <a href="https://a2a-protocol.org/latest/topics/roadmap/" target="_blank" rel="noopener noreferrer">A2A Roadmap</a></li>
+      <li><a href="https://agentclientprotocol.com/" target="_blank" rel="noopener noreferrer">Agent Client Protocol</a> · <a href="https://zed.dev/blog/acp-registry" target="_blank" rel="noopener noreferrer">ACP Registry</a></li>
+      <li><a href="https://docs.ag-ui.com/" target="_blank" rel="noopener noreferrer">AG-UI</a> · <a href="https://a2ui.org/" target="_blank" rel="noopener noreferrer">A2UI</a> · <a href="https://docs.ag-ui.com/concepts/generative-ui-specs" target="_blank" rel="noopener noreferrer">生成式 UI 对照</a></li>
+      <li><a href="https://ap2-protocol.org/" target="_blank" rel="noopener noreferrer">AP2</a> · <a href="https://ucp.dev/documentation/ucp-and-ap2/" target="_blank" rel="noopener noreferrer">UCP 与 AP2</a> · <a href="https://www.x402.org/" target="_blank" rel="noopener noreferrer">x402</a></li>
+      <li><a href="https://www.ibm.com/think/topics/agent-communication-protocol" target="_blank" rel="noopener noreferrer">IBM ACP（已并入 A2A）</a> · <a href="https://agentcy.dev/" target="_blank" rel="noopener noreferrer">AGNTCY</a> · <a href="https://github.com/langchain-ai/agent-protocol" target="_blank" rel="noopener noreferrer">Agent Protocol</a></li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">口径说明</span>
+      本页把「协议」限定为跨实现的公开规范；产品内置的私有通信格式不计入。成熟度按「是否有稳定规范 + 是否有独立实现 + 是否有生产案例」综合判断，是相对判断，不是官方评级。
+    </div>
+  </section>
+
+  <footer>
+    <span>Agent 互操作协议图谱 · 2026-10-31 · 14 个协议</span>
+    <span>分层看协议，不要跨层比较</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var protos = Array.prototype.slice.call(document.querySelectorAll(".proto"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-cat]"));
+  var search = document.getElementById("protoSearch");
+  var count = document.getElementById("protoCount");
+  var empty = document.getElementById("protoEmpty");
+  var active = "all";
+
+  function apply() {
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    protos.forEach(function (el) {
+      var ok = active === "all" || el.getAttribute("data-cat") === active;
+      if (ok && q) { ok = el.textContent.toLowerCase().indexOf(q) !== -1; }
+      el.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    count.textContent = "显示 " + shown + " / " + protos.length + " 个协议";
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      active = chip.getAttribute("data-cat");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+  search.addEventListener("input", apply);
+
+  apply();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
