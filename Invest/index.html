@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>经济周期理论图谱 · 康波、涛动周期论与它们的画法</title>
+<style>
+  :root{
+    --paper:#f7f5f0;
+    --card:#fffdf9;
+    --ink:#1c2430;
+    --muted:#626b78;
+    --rule:#ddd7cb;
+    --accent:#8a2f2f;
+    --teal:#1f4e63;
+    --gold:#a5792c;
+    --moss:#6b7f5a;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:17px;
+    line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:44px 26px 90px}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{
+    outline:2px solid var(--accent);outline-offset:3px;border-radius:2px;
+  }
+  .skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;z-index:99}
+  .skip:focus{left:12px;top:12px}
+
+  header.top{border-bottom:1px solid var(--rule);padding-bottom:30px}
+  .kicker{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 18px
+  }
+  h1{
+    font-family:"Songti SC","Noto Serif SC","Source Han Serif SC",Georgia,serif;
+    font-weight:700;font-size:clamp(30px,5.2vw,54px);line-height:1.14;
+    letter-spacing:-.01em;margin:0 0 18px;max-width:20ch
+  }
+  .deck{font-size:clamp(17px,2vw,20px);color:#3d4654;max-width:60ch;margin:0 0 22px}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:8px 18px;
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:12px;color:var(--muted);letter-spacing:.02em
+  }
+  .meta span::before{content:"·";margin-right:8px;color:var(--rule)}
+  .meta span:first-child::before{content:"";margin:0}
+
+  .layout{display:grid;grid-template-columns:236px minmax(0,1fr);gap:56px;margin-top:44px}
+  nav.toc{position:sticky;top:26px;align-self:start;font-size:14px}
+  nav.toc .toc-title{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 12px;padding-left:13px
+  }
+  nav.toc ol{list-style:none;margin:0;padding:0}
+  nav.toc a{
+    display:block;padding:5px 0 5px 13px;color:var(--muted);
+    border-left:2px solid transparent;text-decoration:none;line-height:1.5
+  }
+  nav.toc a:hover{color:var(--ink);border-left-color:var(--rule)}
+  nav.toc a .n{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:10px;color:#a49c8d;margin-right:8px
+  }
+
+  main{min-width:0}
+  section{margin:0 0 76px;scroll-margin-top:28px}
+  section:last-of-type{margin-bottom:40px}
+  h2{
+    font-family:"Songti SC","Noto Serif SC",Georgia,serif;
+    font-size:clamp(24px,3vw,32px);line-height:1.3;margin:0 0 6px;letter-spacing:-.005em
+  }
+  .sec-kicker{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 10px
+  }
+  h3{font-size:15px;letter-spacing:.02em;margin:30px 0 8px;color:var(--ink)}
+  .lede{font-size:18px;color:#39424f;max-width:64ch;margin:12px 0 22px}
+  p{margin:0 0 16px;max-width:70ch}
+  .small{font-size:14px;color:var(--muted)}
+  .mono{font-family:"SFMono-Regular",Menlo,Consolas,monospace}
+
+  .callout{
+    border-left:3px solid var(--accent);background:#fbf7f1;
+    padding:18px 22px;margin:24px 0;border-radius:0 4px 4px 0
+  }
+  .callout p:last-child{margin-bottom:0}
+  .callout strong{color:var(--accent)}
+
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:22px 0}
+  .pair h3{margin-top:0;display:flex;align-items:center;gap:8px}
+  .pair h3::before{
+    content:"";width:8px;height:8px;background:var(--accent);
+    display:inline-block;flex:none;transform:rotate(45deg)
+  }
+  .pair .half p{font-size:15.5px;color:#39424f}
+
+  .bars{margin:24px 0 34px;border-top:1px solid var(--rule)}
+  .bar-row{
+    display:grid;grid-template-columns:158px minmax(0,1fr) 96px;
+    gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rule)
+  }
+  .bar-row .name{font-size:14px}
+  .bar-row .name small{display:block;color:var(--muted);font-size:11px;line-height:1.4}
+  .bar-track{height:9px;background:#e9e3d7;border-radius:2px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:2px}
+  .bar-row .len{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:12px;color:var(--muted);text-align:right
+  }
+
+  .sort-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
+  .sort-controls .label{font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .btn{
+    font:inherit;font-size:13px;line-height:1.4;padding:7px 13px;
+    background:var(--card);color:var(--ink);border:1px solid var(--rule);
+    border-radius:999px;cursor:pointer
+  }
+  .btn:hover{border-color:#b9b1a2}
+  .btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .table-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:4px;background:var(--card)}
+  table{width:100%;border-collapse:collapse;min-width:720px;font-size:14.5px}
+  caption{
+    text-align:left;padding:14px 16px 10px;color:var(--muted);font-size:12.5px;
+    border-bottom:1px solid var(--rule)
+  }
+  th{
+    text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);padding:11px 16px;
+    border-bottom:1px solid var(--rule);white-space:nowrap
+  }
+  td{padding:12px 16px;border-bottom:1px solid #ece6da;vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#faf6ee}
+  td.theory{font-weight:600}
+  td.theory small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+  .badge{
+    display:inline-block;font-size:12px;line-height:1.5;padding:1px 9px;
+    border:1px solid;border-radius:999px;white-space:nowrap
+  }
+  .ev-5{background:#e9f0e4;border-color:#8ba077;color:#40502f}
+  .ev-4{background:#eef1f4;border-color:#9aa9b8;color:#33465a}
+  .ev-3{background:#f7f0dd;border-color:#c6a861;color:#6b5119}
+  .ev-2{background:#f8e9e6;border-color:#c88a7c;color:#7a3125}
+  .ev-1{background:#f1eeee;border-color:#b5acac;color:#5c5252}
+
+  .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:24px 0}
+  .card{
+    background:var(--card);border:1px solid var(--rule);border-radius:5px;
+    padding:20px 20px 16px;display:flex;flex-direction:column
+  }
+  .card .tag{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px
+  }
+  .card h3{margin:0 0 4px;font-size:17px}
+  .card .len{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:12px;color:var(--accent);margin-bottom:12px
+  }
+  .card p{font-size:14px;line-height:1.7;color:#454e5c;margin:0 0 10px}
+  .card p:last-child{margin-bottom:0}
+  .card .mech{
+    margin-top:auto;padding-top:12px;border-top:1px solid #ece6da;
+    font-size:12.5px;color:var(--muted)
+  }
+
+  .osc{
+    background:var(--card);border:1px solid var(--rule);border-radius:5px;
+    padding:20px 22px 16px;margin:26px 0
+  }
+  .osc fieldset{border:0;margin:0 0 6px;padding:0}
+  .osc legend{
+    font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);padding:0;margin-bottom:10px
+  }
+  .osc-controls{display:flex;flex-wrap:wrap;gap:8px 18px}
+  .osc-controls label{
+    display:inline-flex;align-items:center;gap:7px;font-size:13.5px;
+    cursor:pointer;padding:4px 0
+  }
+  .osc-controls input{width:16px;height:16px;accent-color:var(--ink);flex:none}
+  .swatch{width:11px;height:11px;border-radius:2px;flex:none;display:inline-block}
+  #oscSvg{display:block;width:100%;height:auto;margin:6px 0 0;overflow:visible}
+  .osc-hint{
+    font-size:12.5px;color:var(--muted);margin:2px 0 0;min-height:1.6em
+  }
+  .axis-label{
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:10.5px;fill:#8b8579
+  }
+  .grid-line{stroke:#e7e1d5;stroke-width:1}
+  .zero-line{stroke:#b9b1a2;stroke-width:1;stroke-dasharray:3 4}
+  .wave{fill:none;stroke-width:1.6;opacity:.85}
+  .composite{fill:none;stroke:var(--ink);stroke-width:2.6}
+
+  .clock-figure{margin:22px 0 6px;max-width:560px}
+  .clock-figure svg{display:block;width:100%;height:auto}
+  .clock-sector{transition:fill .18s ease}
+  .clock-sector.is-active{stroke:#8a2f2f;stroke-width:2.5}
+  #q-recovery.is-active{fill:#dde9d3}
+  #q-overheat.is-active{fill:#f3dad2}
+  #q-stagflation.is-active{fill:#f2e4c0}
+  #q-recession.is-active{fill:#dbe7f0}
+  .clock-name{font-family:"Songti SC","Noto Serif SC",Georgia,serif;font-weight:700;font-size:23px}
+  .clock-asset{font-size:13.5px;font-weight:600}
+  .clock-hub{font-family:"Songti SC","Noto Serif SC",Georgia,serif;font-weight:700;font-size:16px;fill:#1c2430}
+  .clock-hub-sub{font-size:10.5px;fill:#626b78}
+  .clock-axis{font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:12.5px;fill:#8b8579}
+  .clock-note{font-size:12.5px;color:var(--muted);max-width:560px;margin:8px 0 0}
+  .clock{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0 8px;max-width:560px}
+  .clock button{
+    font:inherit;text-align:left;padding:14px 16px;background:var(--card);
+    border:1px solid var(--rule);border-radius:5px;cursor:pointer;line-height:1.5
+  }
+  .clock button:hover{border-color:#b9b1a2}
+  .clock button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .clock button strong{display:block;font-size:16px}
+  .clock button span{font-size:12px;color:var(--muted)}
+  .quad-panel{
+    background:#fbf7f1;border-left:3px solid var(--accent);
+    padding:16px 20px;margin:16px 0 0;border-radius:0 4px 4px 0;max-width:640px
+  }
+  .quad-panel h3{margin:0 0 6px;font-size:16px}
+  .quad-panel p{font-size:14.5px;margin:0 0 8px}
+  .quad-panel p:last-child{margin-bottom:0}
+  .quad-panel .caveat{color:var(--muted);font-size:13px}
+
+  .checklist{counter-reset:q;list-style:none;padding:0;margin:22px 0}
+  .checklist li{
+    counter-increment:q;position:relative;padding:14px 0 14px 46px;
+    border-bottom:1px solid var(--rule);font-size:15.5px
+  }
+  .checklist li::before{
+    content:counter(q,decimal-leading-zero);position:absolute;left:0;top:14px;
+    font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:12px;
+    color:var(--accent);letter-spacing:.06em
+  }
+  .checklist li:last-child{border-bottom:none}
+  .checklist strong{display:block;font-size:16px;margin-bottom:2px}
+  .checklist span{color:#454e5c;font-size:14.5px}
+
+  details{
+    border-top:1px solid var(--rule);padding:12px 0
+  }
+  details:last-of-type{border-bottom:1px solid var(--rule)}
+  summary{
+    cursor:pointer;font-size:15px;font-weight:600;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:16px
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-family:"SFMono-Regular",monospace;color:var(--accent);font-size:16px}
+  details[open] summary::after{content:"–"}
+  details p{font-size:14.5px;color:#454e5c;margin:10px 0 0}
+
+  footer{
+    border-top:1px solid var(--rule);margin-top:70px;padding-top:24px;
+    font-size:12.5px;color:var(--muted);line-height:1.75
+  }
+  footer p{max-width:78ch;margin:0 0 10px}
+  .refs{list-style:none;padding:0;margin:8px 0 18px;font-size:13px}
+  .refs li{padding:3px 0;color:#454e5c}
+
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0
+  }
+
+  @media (max-width:1000px){
+    .layout{grid-template-columns:minmax(0,1fr);gap:0}
+    nav.toc{position:sticky;top:0;z-index:10;background:rgba(247,245,240,.97);
+      min-width:0;
+      border-bottom:1px solid var(--rule);padding:10px 0 8px;margin:0 0 8px}
+    nav.toc .toc-title{display:none}
+    nav.toc ol{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;min-width:0}
+    nav.toc a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:4px 10px}
+    nav.toc a:hover{border-left-color:transparent;border-bottom-color:var(--rule)}
+    .cards{grid-template-columns:1fr}
+    section{scroll-margin-top:72px}
+  }
+  @media (max-width:1000px){
+    .axis-label{font-size:18px}
+    .wave{stroke-width:2.4}
+    .composite{stroke-width:4}
+  }
+  @media (max-width:560px){
+    .axis-label{font-size:30px}
+    .wave{stroke-width:3.4}
+    .composite{stroke-width:6}
+    .grid-line,.zero-line{stroke-width:1.5}
+    .clock-name{font-size:30px}
+    .clock-asset{font-size:18px}
+    .clock-hub{font-size:21px}
+    .clock-hub-sub{font-size:13px}
+    .clock-axis{font-size:17px}
+  }
+  @media (max-width:760px){
+    body{font-size:16px}
+    .wrap{padding:28px 18px 60px}
+    .pair{grid-template-columns:1fr;gap:18px}
+    .bar-row{grid-template-columns:120px minmax(0,1fr) 72px;gap:10px}
+    .bar-row .name{font-size:12.5px}
+    .bar-row .name small{font-size:10px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition:none!important;animation:none!important}
+  }
+  @media print{
+    body{background:#fff;font-size:10.5pt;line-height:1.55}
+    .wrap{max-width:none;padding:0}
+    nav.toc,.sort-controls,.osc-controls,.skip{display:none}
+    .layout{display:block;margin-top:18px}
+    section{page-break-inside:avoid;margin-bottom:26px}
+    .card,.table-scroll,.osc,.quad-panel{break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+    .bar-fill,.badge,.swatch{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<div class="wrap">
+
+  <header class="top">
+    <p class="kicker">Macro Notes / 编辑性梳理</p>
+    <h1>经济周期理论图谱</h1>
+    <p class="deck">康波、熊彼特的三周期、周金涛的“涛动周期论”、达里奥的债务周期、美林时钟、BIS 金融周期——它们各自怎么切分时间，靠什么被画出来，又在哪里站不住脚。</p>
+    <div class="meta">
+      <span>2026-10-31</span>
+      <span>单文件 · 离线可用</span>
+      <span>非投资建议</span>
+      <span>年份划分存在版本差异</span>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <nav class="toc" aria-label="目录">
+      <p class="toc-title">Contents</p>
+      <ol>
+        <li><a href="#read"><span class="n">00</span>读之前</a></li>
+        <li><a href="#scale"><span class="n">01</span>尺度总表</a></li>
+        <li><a href="#kondratieff"><span class="n">02</span>康德拉季耶夫长波</a></li>
+        <li><a href="#schumpeter"><span class="n">03</span>熊彼特三周期</a></li>
+        <li><a href="#mid"><span class="n">04</span>基钦 / 朱格拉 / 库兹涅茨</a></li>
+        <li><a href="#zhou"><span class="n">05</span>涛动周期论</a></li>
+        <li><a href="#dalio"><span class="n">06</span>达里奥债务周期</a></li>
+        <li><a href="#clock"><span class="n">07</span>美林时钟</a></li>
+        <li><a href="#financial"><span class="n">08</span>金融周期</a></li>
+        <li><a href="#fringe"><span class="n">09</span>边缘与类比</a></li>
+        <li><a href="#method"><span class="n">10</span>它们是怎么画出来的</a></li>
+        <li><a href="#checklist"><span class="n">11</span>阅读检查表</a></li>
+      </ol>
+    </nav>
+
+    <main id="main">
+
+      <section id="read">
+        <p class="sec-kicker">00 / 读之前</p>
+        <h2>先把三个问题分开</h2>
+        <p class="lede">这些理论的真正差别，不在“有没有周期”，而在三件事：<strong>周期有多长、拐点怎么定、用什么变量画出来。</strong></p>
+        <p>同样一张“我们正处在萧条期”的图，可能来自批发价格指数的事后目测，也可能来自信贷/GDP 缺口的阈值判断。前者是叙事，后者是统计，读法完全不同。</p>
+        <div class="callout">
+          <p><strong>一句话结论：</strong>没有一种周期理论能同时通过“长度稳定、拐点可先验判定、预测可证伪”这三项检验。它们的价值，更多是提供一套描述节奏的语言，而不是一只计时器。</p>
+        </div>
+        <p class="small">本页是对公开流传的框架做的编辑性整理，不引用具体研报页码；所有年份界线都应视为区间估计，而非定论。</p>
+      </section>
+
+      <section id="scale">
+        <p class="sec-kicker">01 / 尺度</p>
+        <h2>从 40 个月到 100 年</h2>
+        <p class="lede">周期理论首先是一组时间尺度。尺度越小，数据越密、越可检验；尺度越大，叙事越完整、样本越少。</p>
+
+        <div class="bars" role="img" aria-label="各周期理论的典型长度对比，横条长度按年数线性缩放">
+          <div class="bar-row">
+            <div class="name">基钦<small>库存</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:3.5%;background:#6b7f5a"></div></div>
+            <div class="len">3–4 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">美林时钟<small>增长 × 通胀</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:4%;background:#8a5a2f"></div></div>
+            <div class="len">3–4 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">朱格拉<small>设备投资</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:9%;background:#8a2f2f"></div></div>
+            <div class="len">7–11 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">金融周期<small>信贷 / 房价</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:18%;background:#5d6f7f"></div></div>
+            <div class="len">15–20 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">库兹涅茨<small>建筑 / 地产</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:20%;background:#a5792c"></div></div>
+            <div class="len">15–25 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">康德拉季耶夫<small>技术革命</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:55%;background:#1f4e63"></div></div>
+            <div class="len">50–60 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">达里奥长债务<small>债务 / 货币秩序</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:85%;background:#3c4654"></div></div>
+            <div class="len">75–100 年</div>
+          </div>
+          <div class="bar-row">
+            <div class="name">世代周期<small>Strauss–Howe</small></div>
+            <div class="bar-track"><div class="bar-fill" style="width:80%;background:#9c8f86"></div></div>
+            <div class="len">约 80 年</div>
+          </div>
+        </div>
+
+        <div class="sort-controls" role="group" aria-label="表格排序">
+          <span class="label">排序：</span>
+          <button class="btn" type="button" data-sort="scale" aria-pressed="true">按周期长度</button>
+          <button class="btn" type="button" data-sort="evidence" aria-pressed="false">按证据强度</button>
+          <span id="sortStatus" class="small" role="status" aria-live="polite"></span>
+        </div>
+
+        <div class="table-scroll" role="region" aria-label="各周期理论对比表，可横向滚动" tabindex="0">
+          <table id="scaleTable">
+            <caption>表 1　各周期理论的尺度、驱动变量与呈现手法（长度取常见估计）</caption>
+            <thead>
+              <tr>
+                <th scope="col">理论</th>
+                <th scope="col">典型长度</th>
+                <th scope="col">驱动变量</th>
+                <th scope="col">常见呈现</th>
+                <th scope="col">证据强度</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-scale="3.5" data-evidence="4" data-name="基钦">
+                <td class="theory">基钦周期<small>Kitchin, 1923</small></td>
+                <td>3–4 年（约 40 个月）</td>
+                <td>产成品库存、订单</td>
+                <td>库存同比折线 + 四象限</td>
+                <td><span class="badge ev-4">较强</span></td>
+              </tr>
+              <tr data-scale="4" data-evidence="3" data-name="美林时钟">
+                <td class="theory">美林时钟<small>Merrill Lynch, 2004</small></td>
+                <td>3–4 年一轮</td>
+                <td>增长 × 通胀</td>
+                <td>四象限轮动图</td>
+                <td><span class="badge ev-3">中</span></td>
+              </tr>
+              <tr data-scale="9" data-evidence="3" data-name="朱格拉">
+                <td class="theory">朱格拉周期<small>Juglar, 1862</small></td>
+                <td>7–11 年</td>
+                <td>设备投资、产能</td>
+                <td>设备投资占 GDP、资本开支同比</td>
+                <td><span class="badge ev-3">中</span></td>
+              </tr>
+              <tr data-scale="18" data-evidence="4" data-name="金融周期">
+                <td class="theory">金融周期<small>BIS / Borio</small></td>
+                <td>15–20 年</td>
+                <td>信贷/GDP 缺口、房价</td>
+                <td>缺口曲线 + 10% 阈值线</td>
+                <td><span class="badge ev-4">较强</span></td>
+              </tr>
+              <tr data-scale="20" data-evidence="3" data-name="库兹涅茨">
+                <td class="theory">库兹涅茨周期<small>Kuznets, 1930</small></td>
+                <td>15–25 年</td>
+                <td>建筑、房地产、人口迁移</td>
+                <td>房价与开工的长序列</td>
+                <td><span class="badge ev-3">中</span></td>
+              </tr>
+              <tr data-scale="55" data-evidence="2" data-name="康波">
+                <td class="theory">康德拉季耶夫长波<small>Kondratieff, 1925</small></td>
+                <td>50–60 年</td>
+                <td>技术革命、资本存量、价格水平</td>
+                <td>长价格序列 + 四阶段阴影</td>
+                <td><span class="badge ev-2">弱</span></td>
+              </tr>
+              <tr data-scale="60" data-evidence="2" data-name="涛动周期论">
+                <td class="theory">涛动周期论<small>周金涛, 四重嵌套</small></td>
+                <td>3 / 9 / 20 / 60 年叠加</td>
+                <td>上述周期的相位共振</td>
+                <td>多层正弦叠加 + 相位表</td>
+                <td><span class="badge ev-2">弱—中</span></td>
+              </tr>
+              <tr data-scale="85" data-evidence="3" data-name="达里奥">
+                <td class="theory">达里奥债务周期<small>短 5–8 年 / 长 75–100 年</small></td>
+                <td>短 5–8 年；长 75–100 年</td>
+                <td>债务/GDP、央行政策</td>
+                <td>阶段剧本 + 决策树</td>
+                <td><span class="badge ev-3">中</span></td>
+              </tr>
+              <tr data-scale="80" data-evidence="2" data-name="世代周期">
+                <td class="theory">世代周期<small>Strauss–Howe</small></td>
+                <td>约 80 年（saeculum）</td>
+                <td>世代更替、价值观</td>
+                <td>四阶段“转折”叙事</td>
+                <td><span class="badge ev-2">弱</span></td>
+              </tr>
+              <tr data-scale="999" data-evidence="1" data-name="艾略特波浪">
+                <td class="theory">艾略特波浪<small>Elliott Wave</small></td>
+                <td>无固定尺度</td>
+                <td>价格形态（5 浪 + 3 浪）</td>
+                <td>浪型计数图</td>
+                <td><span class="badge ev-1">非科学</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:10px">“证据强度”是本页的编辑判断，依据是：是否有明确的数据定义、样本轮数、以及是否存在可先验检验的预测。不是学界共识评级。</p>
+      </section>
+
+      <section id="kondratieff">
+        <p class="sec-kicker">02 / 长波</p>
+        <h2>康德拉季耶夫长波：一条 50 年的价格曲线</h2>
+        <p class="lede">1925 年，苏联经济学家康德拉季耶夫用英、法、美的批发价格、利率、工资与产量序列，提出约 50–60 年的长波。他后来在大清洗中被处决，理论却在西方活了下来。</p>
+
+        <h3>它怎么切时间</h3>
+        <p>标准切法是四段：<strong>繁荣（upswing）→ 衰退（recession，实为由盛转衰的过渡）→ 萧条（depression）→ 回升（recovery）</strong>。注意中文语境的“衰退”常被误当成 NBER 定义的衰退，两者不是一回事。</p>
+
+        <div class="table-scroll" role="region" aria-label="五轮长波表，可横向滚动" tabindex="0" style="margin:20px 0 26px">
+          <table>
+            <caption>表 2　常被引用的五轮长波（起止年份各家相差 ±10 年）</caption>
+            <thead>
+              <tr><th scope="col">轮次</th><th scope="col">大致区间</th><th scope="col">技术标志</th><th scope="col">主导产业</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>第一轮</td><td>1780s–1840s</td><td>蒸汽机、纺织机械</td><td>棉纺织、铁</td></tr>
+              <tr><td>第二轮</td><td>1840s–1890s</td><td>铁路、转炉炼钢</td><td>铁路、钢铁</td></tr>
+              <tr><td>第三轮</td><td>1890s–1940s</td><td>电气化、化工、内燃机</td><td>电力、汽车雏形、化工</td></tr>
+              <tr><td>第四轮</td><td>1940s–1980s</td><td>石化、流水线、家电</td><td>汽车、石化、耐用消费品</td></tr>
+              <tr><td>第五轮</td><td>1980s–2020s？</td><td>信息技术、互联网</td><td>半导体、软件、平台</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pair">
+          <div class="half">
+            <h3>它怎么被画出来</h3>
+            <p>一张跨越两百年的价格指数长图，配上四段底色阴影，再把技术革命的名字标在波峰附近。读图的人看到的是“规律”，看不到的是：阴影边界是作者定的，价格序列跨越了金本位、布雷顿森林和浮动汇率三种货币制度。</p>
+          </div>
+          <div class="half">
+            <h3>它站不住的地方</h3>
+            <p>完整样本只有四到五轮，统计上无法区分“周期”与“一次性结构变迁”。拐点全部事后划定；一旦把起点挪十年，当前所处的相位就会从“萧条后段”变成“回升初段”。</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p><strong>关于“现在是不是末尾”：</strong>按“第五轮约 1980 年代启动”这一常见划分，把 2008 年后视为衰退、2015 年后视为萧条的作者，会得出“萧条期后段、接近尾部”；把新一轮起点定在 AI 与能源转型的人，则认为回升已经开始。两种说法都能自洽——这正是问题所在。</p>
+        </div>
+      </section>
+
+      <section id="schumpeter">
+        <p class="sec-kicker">03 / 合成</p>
+        <h2>熊彼特：把三层波浪叠在一起</h2>
+        <p class="lede">1939 年，熊彼特在《经济周期》里做了两件事：把基钦、朱格拉、康波三层周期叠起来，并把“创新集群”当作驱动源。</p>
+        <p>他的呈现方式影响深远：画三条不同频率的波，让它们的谷底在大萧条处对齐，然后说“三重周期同时触底”。这套“共振解释”后来被几乎所有周期叙事继承，包括周金涛。</p>
+        <p>问题也在这里：三层波的相位可以自由调，只要愿意，几乎任何一个历史事件都能被解释成“某几重周期共振”。熊彼特本人对 1929 年大萧条的解释，事后看更接近一种富有洞察力的叙事，而不是可检验的模型。</p>
+      </section>
+
+      <section id="mid">
+        <p class="sec-kicker">04 / 中短周期</p>
+        <h2>三个更靠近数据的周期</h2>
+        <p class="lede">尺度越短，越不像“宿命”，越像可以观察的库存与投资行为。</p>
+
+        <div class="cards">
+          <article class="card">
+            <p class="tag">Kitchin · 1923</p>
+            <h3>基钦周期</h3>
+            <p class="len">3–4 年 / 约 40 个月</p>
+            <p>由产成品库存的被动与主动调整驱动。中国语境里常说“库存周期”，用营业收入与库存同比切成主动补库、被动补库、主动去库、被动去库四个象限。</p>
+            <p class="mech">呈现：库存同比折线 + 四象限；证据相对最硬，但“周期长度”本身也在 30–48 个月间浮动。</p>
+          </article>
+          <article class="card">
+            <p class="tag">Juglar · 1862</p>
+            <h3>朱格拉周期</h3>
+            <p class="len">7–11 年</p>
+            <p>设备投资与产能扩张的节律：企业集体上产能、产能过剩、再出清。它比库存周期慢，比地产周期快，是“制造业投资周期”的常用代称。</p>
+            <p class="mech">呈现：设备投资占 GDP、资本开支同比；难点是产能利用率数据往往滞后且口径不一。</p>
+          </article>
+          <article class="card">
+            <p class="tag">Kuznets · 1930</p>
+            <h3>库兹涅茨周期</h3>
+            <p class="len">15–25 年</p>
+            <p>建筑与房地产周期，常和人口迁移、城镇化绑定。美国地产长周期常被估在 18–20 年；中文讨论里的“房地产 20 年大周期”多是对它的转述。</p>
+            <p class="mech">呈现：房价、新开工、人口净流入的长序列；争议最大，因为制度与土地供给会彻底改变周期形态。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="zhou">
+        <p class="sec-kicker">05 / 嵌套</p>
+        <h2>涛动周期论：把四个周期装进一个框架</h2>
+        <p class="lede">周金涛（1972–2016，原中信建投首席）把康波、库兹涅茨、朱格拉、基钦四层周期嵌套起来，并给出一个极具传播力的说法：“人生发财靠康波”。</p>
+
+        <h3>它的结构</h3>
+        <p>外层是约 60 年的康波，决定“大时代”；里面套 20 年左右的地产周期、9 年左右的设备周期、3–4 年的库存周期。四层相位一旦“共振向下”，就被解释为资产价格的系统性低点；共振向上，则是人生级别的机会窗口。</p>
+
+        <div class="osc">
+          <fieldset>
+            <legend>叠加哪些周期（示意图，非真实数据）</legend>
+            <div class="osc-controls">
+              <label><input type="checkbox" data-layer="kondo" checked><span class="swatch" style="background:#1f4e63"></span>康波 55 年</label>
+              <label><input type="checkbox" data-layer="kuznets" checked><span class="swatch" style="background:#a5792c"></span>库兹涅茨 20 年</label>
+              <label><input type="checkbox" data-layer="juglar" checked><span class="swatch" style="background:#8a2f2f"></span>朱格拉 9 年</label>
+              <label><input type="checkbox" data-layer="kitchin" checked><span class="swatch" style="background:#6b7f5a"></span>基钦 4 年</label>
+            </div>
+          </fieldset>
+          <svg id="oscSvg" viewBox="0 0 1000 420" role="img" aria-labelledby="oscTitle oscDesc">
+            <title id="oscTitle">四层周期叠加示意图</title>
+            <desc id="oscDesc">四条不同周期的正弦波与它们的合成波。勾选或取消勾选可改变叠加结果，用于说明“多周期共振”这一呈现手法。各波相位为人为设定。</desc>
+          </svg>
+          <p class="osc-hint" id="oscHint" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="pair">
+          <div class="half">
+            <h3>它为什么有说服力</h3>
+            <p>它把“宏观不好”这种模糊感受，翻译成了可指认的年份和层级：不是“经济下行”，而是“康波萧条叠加地产周期下行”。这种具体感，是纯统计模型给不了的。</p>
+          </div>
+          <div class="half">
+            <h3>它的薄弱处</h3>
+            <p>四层周期的相位不是估计出来的，而是指定的；每一层的长度本身就有 ±20% 的争议，叠四层后误差被放大。具体年份在不同转述中并不一致（常见版本把 2019 年前后标为低点、2025 年前后标为关键窗口），而作者已于 2016 年去世，框架未再校准。</p>
+          </div>
+        </div>
+
+        <div class="callout">
+          <p><strong>怎么用才不吃亏：</strong>把“涛动周期论”当成一张<em>问题清单</em>——现在库存处在哪、产能利用率如何、地产在什么位置、长端利率什么水平——而不是一张<em>时刻表</em>。前者可以验证，后者不能。</p>
+        </div>
+      </section>
+
+      <section id="dalio">
+        <p class="sec-kicker">06 / 模板</p>
+        <h2>达里奥：把历史写成一台机器</h2>
+        <p class="lede">达里奥不谈“大约多少年”，而是给一套阶段剧本：短债务周期约 5–8 年，长债务周期约 75–100 年，后者决定货币秩序的重置。</p>
+        <p class="small">口径提示：他在不同著作与演讲里也用过“50–75 年”的说法——这本身说明长周期的长度是估计，不是测量。</p>
+        <p>他的呈现方式非常“工程化”：把长周期拆成早期、泡沫、顶部、去杠杆、正常化几个阶段，再列出每个阶段央行会做什么、资产会怎么走。去杠杆又被拆成四种手段：财政紧缩、债务违约与重组、央行印钞、财富转移。</p>
+
+        <div class="pair">
+          <div class="half">
+            <h3>最有价值的部分</h3>
+            <p>“漂亮去杠杆”的判据很实用：名义增长率要高于名义利率，否则债务/GDP 不会下降。这条是可以拿数据直接检验的，不需要相信任何周期长度。</p>
+          </div>
+          <div class="half">
+            <h3>最容易被误用的部分</h3>
+            <p>长债务周期只有两三个完整样本（1929、2008，以及他常引的 18 世纪案例），而且制度差异极大。“机器”的比喻很好懂，但也让读者误以为各阶段会自动按时到来。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="clock">
+        <p class="sec-kicker">07 / 状态</p>
+        <h2>美林时钟：不预测时间，只标注状态</h2>
+        <p class="lede">2004 年美林提出：用“增长”和“通胀”两个维度，把宏观切成四个象限，每个象限对应一类占优资产。它不告诉你下一站什么时候到，只告诉你现在在哪。</p>
+
+        <figure class="clock-figure">
+          <svg viewBox="0 0 640 660" role="img" aria-labelledby="clockTitle clockDesc">
+            <title id="clockTitle">美林时钟：四象限与占优大类资产</title>
+            <desc id="clockDesc">圆盘按时钟方向分为四个象限：左上复苏对应股票，右上过热对应大宗商品，右下滞胀对应现金，左下衰退对应债券。横轴为通胀，纵轴为增长。</desc>
+            <defs>
+              <marker id="clockArrow" markerWidth="8" markerHeight="8" refX="5" refY="3.5" orient="auto">
+                <path d="M0 0 L7 3.5 L0 7 Z" fill="#b3aa99"></path>
+              </marker>
+            </defs>
+
+            <path d="M277.3 87.7 A246 246 0 1 1 161.9 141.5" fill="none" stroke="#cfc7b8"
+                  stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 9"
+                  marker-end="url(#clockArrow)"></path>
+
+            <g id="clockSectors">
+              <path id="q-recovery" class="clock-sector is-active" fill="#eef2ea" stroke="#fffdf9" stroke-width="3"
+                    d="M320 330 L100 330 A220 220 0 0 1 320 110 Z"></path>
+              <path id="q-overheat" class="clock-sector" fill="#f8ece8" stroke="#fffdf9" stroke-width="3"
+                    d="M320 330 L320 110 A220 220 0 0 1 540 330 Z"></path>
+              <path id="q-stagflation" class="clock-sector" fill="#f8f1de" stroke="#fffdf9" stroke-width="3"
+                    d="M320 330 L540 330 A220 220 0 0 1 320 550 Z"></path>
+              <path id="q-recession" class="clock-sector" fill="#ecf1f5" stroke="#fffdf9" stroke-width="3"
+                    d="M320 330 L320 550 A220 220 0 0 1 100 330 Z"></path>
+            </g>
+
+            <circle cx="320" cy="330" r="58" fill="#fbf7f1" stroke="#ddd7cb" stroke-width="1.5"></circle>
+            <text class="clock-hub" x="320" y="324" text-anchor="middle" dominant-baseline="middle">美林时钟</text>
+            <text class="clock-hub-sub" x="320" y="344" text-anchor="middle" dominant-baseline="middle">顺时针轮动</text>
+
+            <text class="clock-name" x="252" y="262" text-anchor="middle" dominant-baseline="middle" fill="#3d5230">复苏</text>
+            <rect x="186" y="211" width="56" height="26" rx="13" fill="#fffdf9" stroke="#8ba077"></rect>
+            <text class="clock-asset" x="214" y="224" text-anchor="middle" dominant-baseline="middle" fill="#3d5230">股票</text>
+
+            <text class="clock-name" x="388" y="262" text-anchor="middle" dominant-baseline="middle" fill="#8a2f2f">过热</text>
+            <rect x="398" y="211" width="56" height="26" rx="13" fill="#fffdf9" stroke="#c88a7c"></rect>
+            <text class="clock-asset" x="426" y="224" text-anchor="middle" dominant-baseline="middle" fill="#8a2f2f">商品</text>
+
+            <text class="clock-name" x="388" y="398" text-anchor="middle" dominant-baseline="middle" fill="#6b5119">滞胀</text>
+            <rect x="398" y="423" width="56" height="26" rx="13" fill="#fffdf9" stroke="#c6a861"></rect>
+            <text class="clock-asset" x="426" y="436" text-anchor="middle" dominant-baseline="middle" fill="#6b5119">现金</text>
+
+            <text class="clock-name" x="252" y="398" text-anchor="middle" dominant-baseline="middle" fill="#2f4a5c">衰退</text>
+            <rect x="186" y="423" width="56" height="26" rx="13" fill="#fffdf9" stroke="#9aa9b8"></rect>
+            <text class="clock-asset" x="214" y="436" text-anchor="middle" dominant-baseline="middle" fill="#2f4a5c">债券</text>
+
+            <text class="clock-axis" x="320" y="62" text-anchor="middle">增长 ↑</text>
+            <text class="clock-axis" x="320" y="596" text-anchor="middle">通胀 →</text>
+          </svg>
+          <figcaption class="clock-note">资产标签表示该象限里相对占优的大类资产，不是收益曲线；象限交界处是轮动切换点。原版只列股票、商品、现金、债券四类。</figcaption>
+        </figure>
+
+        <p class="small" style="margin-top:22px">点击下方象限查看细节，圆盘会同步高亮。</p>
+        <div class="clock" role="group" aria-label="选择当前宏观象限">
+          <button type="button" data-quad="recovery" aria-pressed="true"><strong>复苏</strong><span>增长↑ 通胀↓</span></button>
+          <button type="button" data-quad="overheat" aria-pressed="false"><strong>过热</strong><span>增长↑ 通胀↑</span></button>
+          <button type="button" data-quad="recession" aria-pressed="false"><strong>衰退</strong><span>增长↓ 通胀↓</span></button>
+          <button type="button" data-quad="stagflation" aria-pressed="false"><strong>滞胀</strong><span>增长↓ 通胀↑</span></button>
+        </div>
+
+        <div class="quad-panel" id="quadPanel">
+          <div data-panel="recovery">
+            <h3>复苏 · 股票</h3>
+            <p>宽松政策开始见效，盈利改善而通胀仍低。股票通常占优，久期较长的成长股弹性更大。</p>
+            <p class="caveat">失效条件：流动性推升估值而非盈利，或政策提前转向。</p>
+          </div>
+          <div data-panel="overheat" hidden>
+            <h3>过热 · 商品</h3>
+            <p>增长与通胀同步上行，央行开始收紧。大宗商品与周期股占优，债券承压。</p>
+            <p class="caveat">失效条件：供给冲击让通胀脱离需求，商品与增长脱钩。</p>
+          </div>
+          <div data-panel="stagflation" hidden>
+            <h3>滞胀 · 现金</h3>
+            <p>增长下行而通胀仍高，股债双杀，现金类资产相对占优。这是四象限里最难做的一段。</p>
+            <p class="caveat">失效条件：通胀快速回落，直接跳回复苏或衰退。</p>
+          </div>
+          <div data-panel="recession" hidden>
+            <h3>衰退 · 债券</h3>
+            <p>增长与通胀同步回落，央行降息。债券占优，股票等待盈利底。</p>
+            <p class="caveat">失效条件：降息空间已被耗尽，或财政主导取代货币主导。</p>
+          </div>
+        </div>
+
+        <div class="table-scroll" role="region" aria-label="大类资产在美林时钟中的位置，可横向滚动" tabindex="0" style="margin-top:22px">
+          <table>
+            <caption>表 3　四个象限的占优资产：原版四类与常见延伸</caption>
+            <thead>
+              <tr>
+                <th scope="col">象限（增长 / 通胀）</th>
+                <th scope="col">原版占优</th>
+                <th scope="col">常见延伸</th>
+                <th scope="col">备注</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>复苏（↑ / ↓）</td><td>股票</td><td>信用债、可选消费、成长股</td><td>利率仍低，盈利先于通胀改善</td></tr>
+              <tr><td>过热（↑ / ↑）</td><td>大宗商品</td><td>周期股、能源与工业金属、通胀挂钩债</td><td>商品通常在过热末期见顶</td></tr>
+              <tr><td>滞胀（↓ / ↑）</td><td>现金</td><td>短久期、防御股</td><td>股债双杀，政策两难；黄金归属有争议</td></tr>
+              <tr><td>衰退（↓ / ↓）</td><td>债券</td><td>利率债、REITs（利率敏感）、黄金</td><td>降息驱动，信用利差先扩后收</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:10px">延伸列是后人的经验补充，不是美林原图。黄金的位置尤其不唯一：滞胀买它是因为通胀，衰退买它是因为实际利率下行，两套逻辑并不一致——所以它经常被同时画在两个象限里，这本身就说明“一格一资产”的简化有代价。</p>
+
+        <p style="margin-top:20px">这套框架在 2004–2013 年很好用，因为增长与通胀的轮动相对清晰。2010 年代以后量化宽松压平了利率、供应链冲击又打乱了通胀，时钟开始“转得又快又乱”，更多被当成事后归类工具。</p>
+      </section>
+
+      <section id="financial">
+        <p class="sec-kicker">08 / 统计</p>
+        <h2>金融周期：少数可以画阈值线的周期</h2>
+        <p class="lede">国际清算银行（BIS）的金融周期，用“信贷/GDP 对其长期趋势的偏离”（即缺口）和房价来衡量，长度约 15–20 年。</p>
+        <p>它的呈现方式最接近可操作：一条缺口曲线，一条 10% 的警戒线，再在历史上危机发生的位置打点。缺口越过阈值，通常意味着金融失衡在累积；但“何时破裂”仍然无法预测。</p>
+        <p>它的价值在于把“金融”从商业周期里单独拎出来：金融周期的顶部往往对应危机，而它和基钦、朱格拉的节奏并不同步。这也是为什么“经济还行、市场却崩了”并不矛盾。</p>
+      </section>
+
+      <section id="fringe">
+        <p class="sec-kicker">09 / 边界</p>
+        <h2>被归进“周期”的其他东西</h2>
+        <p class="lede">有些是类比，有些是伪科学。放在一起看，能更清楚“周期理论”这个筐有多松。</p>
+        <div class="table-scroll" role="region" aria-label="其他周期类比表，可横向滚动" tabindex="0">
+          <table>
+            <thead>
+              <tr><th scope="col">名称</th><th scope="col">尺度</th><th scope="col">呈现方式</th><th scope="col">性质</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="theory">世代周期<small>Strauss–Howe</small></td><td>约 80 年</td><td>四阶段“转折”叙事，代际人格分类</td><td>文化解释，非统计模型</td></tr>
+              <tr><td class="theory">太阳黑子 / 杰文斯</td><td>约 11 年</td><td>黑子数与农业产量、价格的对照</td><td>已被证伪，仅存历史意义</td></tr>
+              <tr><td class="theory">艾略特波浪</td><td>无固定尺度</td><td>5 浪推进 + 3 浪调整的计数</td><td>不可证伪，属技术分析</td></tr>
+              <tr><td class="theory">江恩 / 占星周期</td><td>任意</td><td>角度线、时间窗口</td><td>非科学</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:10px">判断标准很简单：它是否给出了“如果错了会怎样”的具体条件。给不出，就只是叙事。</p>
+      </section>
+
+      <section id="method">
+        <p class="sec-kicker">10 / 手法</p>
+        <h2>它们是怎么被“画”出来的</h2>
+        <p class="lede">五种手法反复出现。看懂这五种，基本就能拆掉大部分周期图的说服力。</p>
+
+        <details open>
+          <summary>① 事后定拐点</summary>
+          <p>先有历史，再画阴影。拐点位置取决于作者选择的变量与平滑程度，同一段数据用 HP 滤波和带通滤波，得到的拐点可以差好几年。图上不会标注这一点。</p>
+        </details>
+        <details>
+          <summary>② 把周期长度当已知量</summary>
+          <p>“康波 55 年”是一个估计，不是测量结果。一旦把 55 年当成常数代回去，结论就是循环论证：因为假设了 55 年，所以每 55 年出现一次。</p>
+        </details>
+        <details>
+          <summary>③ 相位自由指定</summary>
+          <p>多层周期叠加时，每一层的起点都可以调。调到一个“看起来解释得通”的位置，再宣布共振。上面的叠加器就是这个过程的可视化——你可以自己拖动勾选，看看结论有多容易被改变。</p>
+        </details>
+        <details>
+          <summary>④ 阴影与命名的暗示</summary>
+          <p>把 2015 年之后涂成灰色、写上“萧条”，读者会自动把灰色理解为“坏”。颜色和标签在做情绪工作，而不是数据工作。</p>
+        </details>
+        <details>
+          <summary>⑤ 只说中的那次</summary>
+          <p>同一个人可能给过十个时间窗口，被记住的通常只有一个。周期理论的传播依赖这种选择性记忆，而回测很少公开失败案例。</p>
+        </details>
+      </section>
+
+      <section id="checklist">
+        <p class="sec-kicker">11 / 检查表</p>
+        <h2>看到一张周期图，先问七个问题</h2>
+        <ol class="checklist">
+          <li><strong>变量是什么，口径一致吗？</strong><span>价格指数跨越了金本位和浮动汇率，还能直接比较吗？库存同比用的是营收还是产量？</span></li>
+          <li><strong>拐点规则事先声明了吗？</strong><span>是滤波、阈值，还是肉眼？如果没说，基本就是事后划的。</span></li>
+          <li><strong>完整样本有几轮？</strong><span>四轮以下，任何“规律”都无法和偶然区分。</span></li>
+          <li><strong>周期长度是估计还是假设？</strong><span>如果是假设，它就不能再用来证明周期存在。</span></li>
+          <li><strong>有没有可证伪的预测和时间窗？</strong><span>“未来几年会有一轮出清”不算；给出年份区间、方向、以及错了怎么认，才算。</span></li>
+          <li><strong>“这次不一样”怎么处理？</strong><span>如果每次都能用“特殊因素”解释偏差，这个框架就没有约束力。</span></li>
+          <li><strong>把起点挪五年，结论变吗？</strong><span>变，说明结论对假设极度敏感；不变，才值得继续看。</span></li>
+        </ol>
+
+        <div class="callout">
+          <p>把周期理论当<strong>语言</strong>，而不是<strong>日历</strong>：它能帮你组织“库存、产能、地产、信贷、利率”这些变量，但不会告诉你明天几点钟。真正可用的部分，几乎都是那些能被单独拿出来检验的机制——漂亮去杠杆的条件、信贷缺口的阈值、库存四象限的位置。</p>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>说明：</strong>本页为编辑性梳理，年份与阶段划分存在多种版本，文中区间仅代表常见说法。页面不构成投资建议，也不对任何周期理论的预测能力作背书。</p>
+        <p><strong>延伸阅读（书目，非链接）：</strong></p>
+        <ul class="refs">
+          <li>N. D. Kondratieff, <em>The Long Waves in Economic Life</em>（1925）</li>
+          <li>J. A. Schumpeter, <em>Business Cycles</em>（1939）</li>
+          <li>周金涛，《涛动周期论》</li>
+          <li>R. Dalio, <em>Big Debt Crises</em>；<em>Principles for Dealing with the Changing World Order</em></li>
+          <li>Merrill Lynch, <em>The Investment Clock</em>（2004）</li>
+          <li>BIS 工作论文中关于金融周期与信贷/GDP 缺口的系列研究（Borio 等）</li>
+        </ul>
+        <p class="mono">Invest / index.html · 单文件离线报告 · 2026-10-31</p>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<noscript>
+  <p style="max-width:900px;margin:0 auto 40px;padding:0 26px;font-size:14px;color:#626b78">页面内容无需 JavaScript 即可阅读；排序、周期叠加与象限切换需要启用脚本。</p>
+</noscript>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 表格排序 ---------- */
+  var table = document.getElementById("scaleTable");
+  var status = document.getElementById("sortStatus");
+  var buttons = Array.prototype.slice.call(document.querySelectorAll("[data-sort]"));
+  if (table) {
+    var tbody = table.tBodies[0];
+    var rows = Array.prototype.slice.call(tbody.rows);
+    var state = { key: "scale", dir: 1 };
+
+    function applySort(key, dir) {
+      state.key = key;
+      state.dir = dir;
+      rows.sort(function(a, b){
+        var av = Number(a.dataset[key]) || 0;
+        var bv = Number(b.dataset[key]) || 0;
+        if (av === bv) {
+          return (a.dataset.name || "").localeCompare(b.dataset.name || "", "zh-Hans-CN");
+        }
+        return (av - bv) * dir;
+      });
+      rows.forEach(function(r){ tbody.appendChild(r); });
+      buttons.forEach(function(btn){
+        btn.setAttribute("aria-pressed", btn.dataset.sort === key ? "true" : "false");
+      });
+      if (status) {
+        var label = key === "scale" ? "周期长度" : "证据强度";
+        status.textContent = "已按" + label + (dir > 0 ? "升序" : "降序") + "排列";
+      }
+    }
+
+    buttons.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var key = btn.dataset.sort;
+        var dir = (state.key === key) ? -state.dir : (key === "scale" ? 1 : -1);
+        applySort(key, dir);
+      });
+    });
+    applySort("scale", 1);
+  }
+
+  /* ---------- 周期叠加示意 ---------- */
+  var svg = document.getElementById("oscSvg");
+  if (svg) {
+    var NS = "http://www.w3.org/2000/svg";
+    var cfg = {
+      kondo:   { period: 55, amp: 112, color: "#1f4e63", label: "康波 55 年" },
+      kuznets: { period: 20, amp: 66,  color: "#a5792c", label: "库兹涅茨 20 年" },
+      juglar:  { period: 9,  amp: 30,  color: "#8a2f2f", label: "朱格拉 9 年" },
+      kitchin: { period: 4,  amp: 14,  color: "#6b7f5a", label: "基钦 4 年" }
+    };
+    var phase = { kondo: 0, kuznets: 0.9, juglar: 1.7, kitchin: 2.4 };
+    var W = 1000, H = 420, padL = 62, padR = 26, padT = 22, padB = 42;
+    var span = 60;
+    var mid = padT + (H - padT - padB) / 2;
+    var scaleY = (H - padT - padB) / 2 / 200;
+
+    function xOf(t){ return padL + (t / span) * (W - padL - padR); }
+    function yOf(v){ return mid - v * scaleY; }
+
+    function el(name, attrs, parent){
+      var node = document.createElementNS(NS, name);
+      Object.keys(attrs).forEach(function(k){ node.setAttribute(k, attrs[k]); });
+      if (parent) parent.appendChild(node);
+      return node;
+    }
+
+    var grid = el("g", {}, svg);
+    var waves = el("g", {}, svg);
+    var comp = el("g", {}, svg);
+
+    [0, 10, 20, 30, 40, 50, 60].forEach(function(t){
+      el("line", {
+        x1: xOf(t), y1: padT, x2: xOf(t), y2: H - padB,
+        "class": t === 0 ? "zero-line" : "grid-line"
+      }, grid);
+      var label = el("text", {
+        x: xOf(t), y: H - padB + 20, "text-anchor": "middle", "class": "axis-label"
+      }, grid);
+      label.textContent = t + "年";
+    });
+    el("line", { x1: padL, y1: mid, x2: W - padR, y2: mid, "class": "zero-line" }, grid);
+
+    function samplePath(valueAt){
+      var N = 720, d = "";
+      for (var i = 0; i <= N; i++) {
+        var t = span * i / N;
+        var v = valueAt(t);
+        d += (i === 0 ? "M" : "L") + xOf(t).toFixed(2) + " " + yOf(v).toFixed(2);
+      }
+      return d;
+    }
+
+    function draw(){
+      while (waves.firstChild) waves.removeChild(waves.firstChild);
+      while (comp.firstChild) comp.removeChild(comp.firstChild);
+
+      var active = [];
+      Object.keys(cfg).forEach(function(k){
+        var box = document.querySelector('[data-layer="' + k + '"]');
+        if (box && box.checked) active.push(k);
+      });
+
+      active.forEach(function(k){
+        var c = cfg[k];
+        var path = samplePath(function(t){
+          return c.amp * Math.sin(2 * Math.PI * t / c.period + phase[k]);
+        });
+        el("path", { d: path, "class": "wave", stroke: c.color }, waves);
+      });
+
+      var totalAmp = active.reduce(function(s, k){ return s + cfg[k].amp; }, 0);
+      var hint = document.getElementById("oscHint");
+      if (!totalAmp) {
+        el("path", {
+          d: "M" + padL + " " + mid + "L" + (W - padR) + " " + mid,
+          "class": "composite"
+        }, comp);
+        if (hint) hint.textContent = "已全部取消勾选：合成波为一条平线。";
+        return;
+      }
+
+      var composite = samplePath(function(t){
+        var sum = 0;
+        active.forEach(function(k){
+          var c = cfg[k];
+          sum += c.amp * Math.sin(2 * Math.PI * t / c.period + phase[k]);
+        });
+        return (sum / totalAmp) * 190;
+      });
+      el("path", { d: composite, "class": "composite" }, comp);
+
+      if (hint) {
+        hint.textContent = "当前叠加 " + active.length + " 层；黑线为合成波。勾选变化会立刻改变“拐点”的位置。";
+      }
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-layer]"), function(box){
+      box.addEventListener("change", draw);
+    });
+    draw();
+  }
+
+  /* ---------- 美林时钟象限 ---------- */
+  var quadButtons = Array.prototype.slice.call(document.querySelectorAll("[data-quad]"));
+  var panel = document.getElementById("quadPanel");
+  if (quadButtons.length && panel) {
+    var panels = Array.prototype.slice.call(panel.querySelectorAll("[data-panel]"));
+    var sectorGroup = document.getElementById("clockSectors");
+    var sectors = {
+      recovery: document.getElementById("q-recovery"),
+      overheat: document.getElementById("q-overheat"),
+      recession: document.getElementById("q-recession"),
+      stagflation: document.getElementById("q-stagflation")
+    };
+
+    function activateClock(key) {
+      quadButtons.forEach(function(b){
+        b.setAttribute("aria-pressed", b.dataset.quad === key ? "true" : "false");
+      });
+      panels.forEach(function(p){
+        p.hidden = p.dataset.panel !== key;
+      });
+      Object.keys(sectors).forEach(function(k){
+        if (sectors[k]) sectors[k].classList.toggle("is-active", k === key);
+      });
+      if (sectorGroup && sectors[key]) sectorGroup.appendChild(sectors[key]);
+    }
+
+    quadButtons.forEach(function(btn){
+      btn.addEventListener("click", function(){ activateClock(btn.dataset.quad); });
+    });
+    activateClock("recovery");
+  }
+})();
+</script>
+</body>
+</html>
