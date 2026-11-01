@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地图类「纯流量变现」玩法手册 · 6 个可以本周就开工的方向</title>
+<style>
+  :root{
+    --paper:#fbfaf7;
+    --card:#ffffff;
+    --ink:#1b1b1f;
+    --ink-2:#4a4a52;
+    --ink-3:#77777f;
+    --line:#e4e1d9;
+    --accent:#0f766e;
+    --accent-soft:#e6f4f1;
+    --warm:#b45309;
+    --warm-soft:#fdf2e3;
+    --danger:#a1273a;
+    --danger-soft:#fbeaed;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(27,27,31,.04), 0 8px 24px -16px rgba(27,27,31,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#141416;
+      --card:#1c1c20;
+      --ink:#ecebe6;
+      --ink-2:#b9b8b2;
+      --ink-3:#8b8a85;
+      --line:#2e2e33;
+      --accent:#5ec7b8;
+      --accent-soft:#16302c;
+      --warm:#e5a55c;
+      --warm-soft:#33240f;
+      --danger:#ef8093;
+      --danger-soft:#3a171e;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font:16px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    letter-spacing:.01em;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,32px) 80px}
+  a{color:var(--accent)}
+  h1,h2,h3,h4{line-height:1.3;margin:0;letter-spacing:0}
+  h1{font-size:clamp(24px,4.2vw,36px);font-weight:700}
+  h2{font-size:clamp(19px,2.6vw,23px);font-weight:700;margin-top:0}
+  h3{font-size:clamp(17px,2.2vw,19px);font-weight:700}
+  h4{font-size:15px;font-weight:700;color:var(--ink-2);letter-spacing:.04em}
+  p{margin:.55em 0}
+  ul,ol{margin:.5em 0;padding-left:1.35em}
+  li{margin:.28em 0}
+  small{color:var(--ink-3)}
+
+  /* ---------- header ---------- */
+  header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:30px}
+  .kicker{
+    display:inline-block;font-size:12px;font-weight:700;letter-spacing:.16em;
+    color:var(--accent);background:var(--accent-soft);
+    padding:4px 9px;border-radius:6px;margin-bottom:14px;
+  }
+  .lede{color:var(--ink-2);font-size:clamp(15px,1.8vw,17px);max-width:64ch;margin-top:10px}
+  .meta-line{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-size:13px;color:var(--ink-3)}
+  .meta-line span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+
+  /* ---------- formula ---------- */
+  .formula{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:clamp(16px,3vw,24px);box-shadow:var(--shadow);margin:0 0 34px;
+  }
+  .formula .eq{
+    font-size:clamp(15px,2.2vw,19px);font-weight:700;letter-spacing:.01em;
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 16px;
+  }
+  .eq b{background:var(--accent-soft);color:var(--accent);padding:3px 9px;border-radius:7px;font-weight:700}
+  .eq i{font-style:normal;color:var(--ink-3)}
+  .bench{width:100%;border-collapse:collapse;font-size:14px}
+  .bench caption{text-align:left;color:var(--ink-3);font-size:13px;padding-bottom:6px}
+  .bench th,.bench td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .bench th{font-size:12px;letter-spacing:.08em;color:var(--ink-3);font-weight:700;white-space:nowrap}
+  .bench td:first-child{font-weight:600;white-space:nowrap}
+  .bench tr:last-child td{border-bottom:0}
+  .bench .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;
+    padding:16px;border:1px solid var(--line);border-radius:var(--radius);
+    background:var(--card);box-shadow:var(--shadow);margin:0 0 22px;
+    position:sticky;top:0;z-index:20;
+  }
+  .field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .field > label{font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--ink-3)}
+  select,input[type=search],input[type=number]{
+    font:inherit;font-size:14px;color:var(--ink);background:var(--paper);
+    border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:40px;
+  }
+  input[type=search]{min-width:min(240px,52vw)}
+  select{padding-right:26px}
+  select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible,.play:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  .btn{
+    font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+    background:var(--paper);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:9px 14px;min-height:40px;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08);color:#fff}
+  .count{margin-left:auto;font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums;align-self:center}
+
+  /* ---------- cards ---------- */
+  .plays{display:grid;gap:18px}
+  .play{
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(16px,3vw,24px);
+  }
+  .play[hidden]{display:none}
+  .play header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:2px}
+  .badge{
+    font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);
+    background:var(--accent-soft);border-radius:6px;padding:2px 7px;flex:0 0 auto;
+  }
+  .tagline{color:var(--ink-2);margin:4px 0 14px;font-size:15px}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+  .facts > div{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .facts dt{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ink-3)}
+  .facts dd{margin:2px 0 0;font-size:14px;font-weight:600}
+  .play table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 4px}
+  .play th,.play td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .play th{font-size:11px;letter-spacing:.08em;color:var(--ink-3);font-weight:700}
+  .play tr:last-child td{border-bottom:0}
+  details{border-top:1px dashed var(--line);margin-top:14px;padding-top:10px}
+  details > summary{
+    cursor:pointer;font-size:14px;font-weight:700;color:var(--accent);
+    list-style:none;display:flex;align-items:center;gap:8px;padding:4px 0;
+  }
+  details > summary::-webkit-details-marker{display:none}
+  details > summary::before{content:"▸";font-size:12px;transition:transform .15s ease}
+  details[open] > summary::before{transform:rotate(90deg)}
+  .empty{
+    text-align:center;padding:40px 16px;color:var(--ink-3);
+    border:1px dashed var(--line);border-radius:var(--radius);background:var(--card);
+  }
+
+  /* ---------- sections ---------- */
+  section.block{margin-top:46px}
+  section.block > h2{margin-bottom:10px}
+  .note{
+    background:var(--warm-soft);border:1px solid var(--line);border-left:4px solid var(--warm);
+    border-radius:10px;padding:12px 16px;font-size:14px;color:var(--ink-2);margin:14px 0;
+  }
+  .note strong{color:var(--warm)}
+
+  /* ---------- checklist ---------- */
+  .plan{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(16px,3vw,24px);box-shadow:var(--shadow)}
+  .plan ol{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:2px}
+  .plan li{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--line)}
+  .plan li:last-child{border-bottom:0}
+  .plan input[type=checkbox]{width:19px;height:19px;margin:3px 0 0;accent-color:var(--accent);flex:0 0 auto}
+  .plan .txt{flex:1;min-width:0}
+  .plan .txt b{display:block;font-size:15px}
+  .plan .txt span{font-size:13.5px;color:var(--ink-2)}
+  .plan .day{font-size:12px;font-weight:700;color:var(--ink-3);white-space:nowrap;padding-top:3px;min-width:64px}
+  .plan li.done .txt b{text-decoration:line-through;color:var(--ink-3)}
+  .progress-row{display:flex;align-items:center;gap:12px;margin-top:16px;font-size:13px;color:var(--ink-2)}
+  .bar{display:block;flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s ease}
+
+  /* ---------- calculator ---------- */
+  .calc{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(16px,3vw,24px);box-shadow:var(--shadow)}
+  .calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:14px 0 18px}
+  .calc-grid .field > label{font-size:12px;letter-spacing:.02em;color:var(--ink-2);font-weight:600}
+  .slider-row{display:flex;align-items:center;gap:12px}
+  .slider-row input[type=range]{flex:1;accent-color:var(--accent);min-height:32px}
+  .slider-row output{font-variant-numeric:tabular-nums;font-weight:700;min-width:74px;text-align:right;font-size:14px}
+  .results{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:6px}
+  .res{background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+  .res .lbl{font-size:12px;color:var(--ink-3);font-weight:700;letter-spacing:.06em}
+  .res .val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  .res .sub{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+  .res .bar{margin-top:9px;height:6px}
+  .res .bar > i{background:var(--accent)}
+  .res.total{border-color:var(--accent);background:var(--accent-soft)}
+  .res.total .val{font-size:22px}
+  .disclaimer{font-size:12.5px;color:var(--ink-3);margin-top:14px}
+
+  /* ---------- red lines ---------- */
+  .red{background:var(--danger-soft);border:1px solid var(--line);border-left:4px solid var(--danger);border-radius:10px;padding:clamp(14px,3vw,20px)}
+  .red h2{color:var(--danger)}
+  .red li{margin:.45em 0}
+
+  footer{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  [hidden]{display:none !important}
+
+  @media (max-width:640px){
+    .toolbar{position:static}
+    .count{width:100%;margin-left:0}
+    .plan .day{min-width:auto}
+    .bench,.play table{display:block;overflow-x:auto;max-width:100%}
+    .bench th,.bench td,.play th,.play td{white-space:normal}
+    .facts{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  }
+  @media print{
+    body{background:#fff;color:#000;font-size:11.5pt}
+    .toolbar,.btn,.bar{display:none !important}
+    .play,.formula,.plan,.calc,.red{box-shadow:none;break-inside:avoid}
+    details{border:0}
+    details > summary{color:#000}
+    details:not([open]) > *:not(summary){display:block !important}
+    a{color:#000;text-decoration:underline}
+    section.block{break-before:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="kicker">MAP × TRAFFIC</span>
+  <h1>地图类「纯流量变现」玩法手册</h1>
+  <p class="lede">不卖 SaaS、不接项目、不碰底图数据，只靠内容与流量换钱。<strong>6 个方向</strong>，每个都写明起步成本、第一笔钱什么时候到、7 步冷启动和必须避开的红线。</p>
+  <div class="meta-line">
+    <span><i class="dot"></i>6 个玩法 · 3 类变现结构</span>
+    <span><i class="dot"></i>附 30 天启动清单（可勾选）</span>
+    <span><i class="dot"></i>附收入估算器</span>
+    <span><i class="dot"></i>全离线可用</span>
+  </div>
+</header>
+
+<!-- ============ 底层公式 ============ -->
+<div class="formula">
+  <h2>先看清唯一需要记的公式</h2>
+  <div class="eq">
+    <b>月收入</b> <i>=</i> <b>流量</b> <i>×</i> <b>变现率</b> <i>×</i> <b>客单价</b> <i>−</i> <b>内容成本</b>
+  </div>
+  <p style="margin-top:0;color:var(--ink-2);font-size:15px">
+    流量型项目失败几乎只有一个原因：<strong>流量有了，变现率是 0</strong>。
+    所以做之前先倒推——你的 10 万播放，按下面的常见区间能换成多少钱？换不出来就别做。
+  </p>
+  <table class="bench">
+    <caption>变现效率参考区间（行业经验值，随账号质量与品类浮动很大，仅用于量级判断）</caption>
+    <thead>
+      <tr><th scope="col">变现方式</th><th scope="col">计价单位</th><th scope="col">常见区间</th><th scope="col">现实门槛</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>平台广告分成</td><td>千次播放（CPM）</td><td class="num">15–60 元</td><td>需开通创作激励；单价随品类波动极大</td></tr>
+      <tr><td>商单 / 品牌合作</td><td>每篇 / 每条</td><td class="num">粉丝数 × 0.03–0.15 元</td><td>1 万粉起才稳定接单，需要案例</td></tr>
+      <tr><td>公众号流量主</td><td>每阅读</td><td class="num">0.3–1.5 元</td><td>500 粉可开，单价取决于广告展示</td></tr>
+      <tr><td>电商带货佣金</td><td>成交额 × 佣金率</td><td class="num">5%–30%</td><td>转化率通常 0.1%–1%</td></tr>
+      <tr><td>知识付费 / 模板</td><td>每单</td><td class="num">9–299 元</td><td>转化率 0.3%–2%，靠信任积累</td></tr>
+      <tr><td>商家上榜 / 入驻费</td><td>每家 / 月</td><td class="num">200–3000 元</td><td>必须有真实本地流量与到店数据</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>判断标准：</strong>如果某个玩法不能在三句话内说清「谁付钱、按什么计价、我第一次收钱要多少粉」，它就不是流量生意，是兴趣爱好。
+  </div>
+</div>
+
+<!-- ============ 筛选工具条 ============ -->
+<div class="toolbar" role="search" aria-label="筛选玩法">
+  <div class="field">
+    <label for="q">关键词</label>
+    <input type="search" id="q" placeholder="如：壁纸、教程、地铁、露营" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="f-tech">技术门槛</label>
+    <select id="f-tech">
+      <option value="">全部</option>
+      <option value="低">低（不会写代码也行）</option>
+      <option value="中">中（会点工具 / SQL / 剪映）</option>
+      <option value="高">高（需要开发能力）</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-cost">启动成本</label>
+    <select id="f-cost">
+      <option value="">全部</option>
+      <option value="低">低（≤500 元）</option>
+      <option value="中">中（500–5000 元）</option>
+      <option value="高">高（≥5000 元）</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-speed">见到第一笔钱</label>
+    <select id="f-speed">
+      <option value="">全部</option>
+      <option value="快">快（≤1 个月）</option>
+      <option value="中">中（1–3 个月）</option>
+      <option value="慢">慢（3 个月以上）</option>
+    </select>
+  </div>
+  <button type="button" class="btn" id="reset">重置</button>
+  <span class="count" id="count" aria-live="polite">显示 6 / 6 个玩法</span>
+</div>
+
+<!-- ============ 玩法卡片 ============ -->
+<div class="plays" id="plays">
+
+  <!-- P1 -->
+  <article class="play" tabindex="-1" data-tech="低" data-cost="低" data-speed="中"
+           data-keywords="城市地理 科普 解释型 小红书 抖音 视频号 公众号 冷知识 地图侦探 城市规划 广告分成 商单 图书带货">
+    <header>
+      <span class="badge">P1</span>
+      <h3>城市地理科普号：用「地图上为什么是这样」做解释型内容</h3>
+    </header>
+    <p class="tagline">选题永不枯竭：一条路的弯、一个地铁站的选址、一个区的边界，都能解释成一分钟的故事。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>抖音 / 小红书 / 视频号 / 公众号</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 0–300 元</dd></div>
+      <div><dt>首次收入</dt><dd>1–3 个月</dd></div>
+      <div><dt>技术门槛</dt><dd>低（剪映 + 截图）</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P1 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>平台激励</td><td>抖音中视频/创作激励、公众号流量主、小红书薯条反哺</td><td>1 万播放 ≈ 15–50 元</td></tr>
+        <tr><td>商单</td><td>本地楼盘、文旅局、图书出版社、地图类 App 推广</td><td>1 万粉 ≈ 300–800 元/条</td></tr>
+        <tr><td>图书/文创带货</td><td>《这里是中国》、地图拼图、城市剖面海报</td><td>佣金 10%–25%</td></tr>
+        <tr><td>付费专栏</td><td>「48 个城市地理冷知识」音频/图文合集</td><td>19–49 元 × 转化 0.5%</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>锁定城市。</strong>先只做一个城市（你住的那个），做全国号你打不过团队。</li>
+        <li><strong>建选题库。</strong>打开地图 App 的「卫星图 + 路网图」对照，每天截 5 张「看起来奇怪」的图，问一句「为什么」。30 天就有 150 个选题。</li>
+        <li><strong>定模板。</strong>固定结构：奇怪现象（3 秒）→ 卫星图/示意图（5 秒）→ 一句原因 → 一个延伸冷知识。长度 45–75 秒。</li>
+        <li><strong>做 10 条存稿再发。</strong>前 10 条用来找手感，不要日更也不要焦虑数据。</li>
+        <li><strong>一稿多平台。</strong>竖版发抖音/小红书/视频号，横版配长文发公众号与 B 站，同一份素材 4 份收益。</li>
+        <li><strong>埋互动钩子。</strong>结尾问「你猜这条路的弯是为了避让什么？」，评论区答案就是下一条选题。</li>
+        <li><strong>第 30 天复盘。</strong>只看两个数：完播率、粉丝净增。完播低于 25% 就改结构，别改画质。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li>不要用未授权的地图截图做「商品售卖」用途；内容引用注明来源，别给截图加自己的水印后当素材卖。</li>
+        <li>别做「城市互黑 / 地域攻击」，短期流量高，长期接不到正规商单。</li>
+        <li>无人机航拍涉及空域报备，禁飞区、机场净空区一律别飞。</li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- P2 -->
+  <article class="play" tabindex="-1" data-tech="中" data-cost="低" data-speed="中"
+           data-keywords="模板 教程 可视化 mapbox maplibre kepler leaflet 数据大屏 知识星球 小报童 付费专栏 GitHub SEO 卖模板">
+    <header>
+      <span class="badge">P2</span>
+      <h3>地图可视化模板与教程：把手艺变成可复制的商品</h3>
+    </header>
+    <p class="tagline">一份城市数据大屏模板卖 39–199 元，卖 200 份就是普通人一个月工资，而边际成本是 0。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>B 站 / 小红书 / 公众号 / GitHub</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 0–500 元</dd></div>
+      <div><dt>首次收入</dt><dd>1–3 个月</dd></div>
+      <div><dt>技术门槛</dt><dd>中（会前端或 Python 即可）</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P2 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>模板包</td><td>「5 套城市热力图大屏源码」打包卖</td><td>39–299 元，转化 0.3%–1%</td></tr>
+        <tr><td>付费专栏</td><td>小报童 / 知识星球：30 讲从 0 到能接单</td><td>49–199 元/年</td></tr>
+        <tr><td>一对一答疑</td><td>切割咨询，299–599 元/小时</td><td>每月 2–5 单</td></tr>
+        <tr><td>外包转介</td><td>粉丝里有甲方便顺手接单转包抽 20%</td><td>不封顶，但依赖人脉</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>先免费送一份。</strong>GitHub 放一个「中国城市热力图模板」，README 写清怎么跑，仓库就是你的广告位。</li>
+        <li><strong>拍「结果先行」视频。</strong>前 3 秒直接给成品动效，再讲怎么做。教程类完播靠前 3 秒。</li>
+        <li><strong>只教一个栈。</strong>选 MapLibre / Leaflet + 公开数据，别同时讲 Mapbox、Kepler、ECharts，新人会跑。</li>
+        <li><strong>数据来源要合法。</strong>用国家统计局、开放数据平台、自己采的数据；别教粉丝爬高德 POI——那是给别人挖坑。</li>
+        <li><strong>模板分层定价。</strong>基础版免费引流，进阶版 39 元，含「样式文件 + 讲解 + 答疑」的 129 元。</li>
+        <li><strong>把买家变案例。</strong>征集买家作业发到公众号，形成「我的学员做了什么」的信任闭环。</li>
+        <li><strong>做搜索长尾。</strong>「XX 地图上画热力图 报错」这类问题写进文章，持续吃搜索流量。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li>国内公开展示地图需要资质。教学演示用 OSM/公开底图可以做，但别把「无资质发布地图」当成卖点教人上线商用。</li>
+        <li>不要打包卖他人开源项目的代码当自己的——license 违反会直接毁掉账号信誉。</li>
+        <li>别承诺「学完月入过万」，平台对这类话术限流，且退款纠纷多。</li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- P3 -->
+  <article class="play" tabindex="-1" data-tech="低" data-cost="中" data-speed="快"
+           data-keywords="壁纸 海报 周边 电商 淘宝 小红书店铺 城市轮廓 地铁线路图 打印 定制 实物 预售">
+    <header>
+      <span class="badge">P3</span>
+      <h3>城市地图壁纸与实体周边：把地理审美做成实物</h3>
+    </header>
+    <p class="tagline">城市轮廓海报、地铁线路图挂画、家乡坐标相框——情绪价值高，客单价高，退货率低。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>小红书 / 抖音 / 闲鱼 / 独立站</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 800–3000 元（打样 + 首批库存）</dd></div>
+      <div><dt>首次收入</dt><dd>2–6 周</dd></div>
+      <div><dt>技术门槛</dt><dd>低</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P3 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>数字壁纸</td><td>9.9 元一套手机壁纸，纯线上交付</td><td>零物流，毛利 100%</td></tr>
+        <tr><td>打印海报</td><td>按需打印（POD）发全国，不压库存</td><td>59–199 元，毛利 50%+</td></tr>
+        <tr><td>定制服务</td><td>「你家所在的街道」定制相框</td><td>199–499 元/单</td></tr>
+        <tr><td>身份感商品</td><td>「XX 市地铁线路图」帆布袋、拼图</td><td>39–99 元</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>先做零库存测试。</strong>第一版只卖数字壁纸 + 按需打印，不要一上来囤 200 张。</li>
+        <li><strong>用「家乡」做内容钩子。</strong>「给 300 个城市做了轮廓海报，你的城市长什么样」——评论区自然变成订单。</li>
+        <li><strong>把数据做对。</strong>行政区划边界走官方公开数据，别用老版本边界，网友对这个极其敏感，一错就被挂。</li>
+        <li><strong>打样 3 种纸。</strong>哑光、艺术纸、棉浆各一张，实拍对比图是最好的转化素材。</li>
+        <li><strong>定价卡在 39/69/129 三档，</strong>中间档做主力，靠「同款加框」拉客单。</li>
+        <li><strong>预售制。</strong>先收款再下单印刷，现金流永远为正。</li>
+        <li><strong>收集买家秀。</strong>要求「挂在墙上」的实拍，这是这个品类最强的信任背书。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li><strong>别直接用商业地图截图放大印刷</strong>——这属于违规使用且分辨率不够，一定要自己重绘矢量图。</li>
+        <li>涉及国界、省界的图必须用标准地图服务（自然资源部标准地图）核对，画错边界是政治性问题，不是小事。</li>
+        <li>「地铁线路图」是各城市地铁公司的商标性作品，用官方线路图的配色和 logo 直接售卖有侵权风险，要重绘并且不标 logo。</li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- P4 -->
+  <article class="play" tabindex="-1" data-tech="低" data-cost="低" data-speed="中"
+           data-keywords="清单 榜单 小众 露营 宠物友好 自习室 咖啡 探店 商家入驻 上榜费 本地生活 团购 返佣 CPS">
+    <header>
+      <span class="badge">P4</span>
+      <h3>小众地图清单号：人工筛选的「值得去」比算法更值钱</h3>
+    </header>
+    <p class="tagline">「本市 12 个能带狗进的咖啡馆」「5 个不用排队就能看日落的机位」——用地图承载人工筛选，收两种钱。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>小红书 / 抖音 / 公众号</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 0–500 元（交通 + 咖啡钱）</dd></div>
+      <div><dt>首次收入</dt><dd>1–3 个月</dd></div>
+      <div><dt>技术门槛</dt><dd>低（会用高德「我的地图」标点即可）</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P4 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>团购 CPS</td><td>清单里每家店挂团购链接，成交抽 3%–10%</td><td>1 万播放 ≈ 几元到几十元</td></tr>
+        <tr><td>商家上榜费</td><td>「每月更新榜单」收 200–1000 元/家，需标注「合作」</td><td>10 家 = 2000–1 万/月</td></tr>
+        <tr><td>付费地图包</td><td>「XX 市 50 个遛娃点」高德收藏夹/Notion 地图，9.9–29 元</td><td>转化 0.5%–1%</td></tr>
+        <tr><td>广告</td><td>本地商场、地产、宠物品牌的软性植入</td><td>500–3000 元/条</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>只做一个「人群 + 城市」。</strong>「广州 · 带娃」「成都 · 带狗」，交叉越窄越容易起号。</li>
+        <li><strong>真去。</strong>这个玩法的护城河是「我真的去了」，AI 号抄不走现场照片与停车/厕所/推车友好度这些细节。</li>
+        <li><strong>统一字段。</strong>每个点固定写：地址、停车、人均、是否需要预约、最佳时段、一个缺点。有缺点的清单才可信。</li>
+        <li><strong>在地图上可视化。</strong>用高德/腾讯地图「我的地图」或 Notion Map 建公开收藏夹，链接放主页，涨粉最快的一步。</li>
+        <li><strong>按区域连载。</strong>「天河区 8 个」→「越秀区 6 个」，形成系列感，用户会等下一篇。</li>
+        <li><strong>接商家主动来。</strong>把更新频率写进简介（每周四更新），商家会私信你问合作价。</li>
+        <li><strong>第一次接商单就写明「广告」。</strong>合规且不掉粉，藏着掖着才会翻车。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li>「付费上榜」必须显著标注合作/广告，否则违反《广告法》，也会被平台判定虚假种草。</li>
+        <li>不要把没去过的地方写进清单——被本地人拆穿一次，账号就废了。</li>
+        <li>不要批量搬运大众点评评论当自己的体验，这是最常见的封号原因。</li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- P5 -->
+  <article class="play" tabindex="-1" data-tech="中" data-cost="低" data-speed="慢"
+           data-keywords="数据新闻 可视化 外包 接单 媒体 政企 报告 图表 新华社 财新 商业地产 咨询 稿费 项目制">
+    <header>
+      <span class="badge">P5</span>
+      <h3>数据新闻与可视化接单：流量带来的最高单价</h3>
+    </header>
+    <p class="tagline">媒体、地产研究、政务新媒体常年缺「会做地图图表的人」。作品集 = 账号，账号 = 客户来源。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>公众号 / 知乎 / 小红书 / B 站</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 0–800 元</dd></div>
+      <div><dt>首次收入</dt><dd>3–6 个月</dd></div>
+      <div><dt>技术门槛</dt><dd>中（QGIS / Python / ECharts 任一）</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P5 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>媒体稿费</td><td>给财经/城市类媒体做数据图，按图计费</td><td>300–3000 元/张</td></tr>
+        <tr><td>报告外包</td><td>地产、连锁品牌的城市进入报告</td><td>5000–5 万元/份</td></tr>
+        <tr><td>长期顾问</td><td>每月固定出 2–4 张图</td><td>3000–1.5 万元/月</td></tr>
+        <tr><td>知识付费</td><td>把交付流程做成课程</td><td>同上 P2</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>先做 5 篇「免费但惊艳」的自选题。</strong>比如「全国 300 个城市的人口密度长什么样」，用公开数据，一定标注来源。</li>
+        <li><strong>每篇都留联系方式与作品集链接。</strong>接单率取决于「别人能不能 30 秒找到你」。</li>
+        <li><strong>把流程产品化。</strong>固定「数据清洗 → 制图 → 三点结论」的交付模板，报价才敢往上走。</li>
+        <li><strong>主动投 10 家媒体。</strong>附上跟对方栏目风格一致的一张样图，比发简历有效 10 倍。</li>
+        <li><strong>先低价做 2 单换署名。</strong>署名作品是后面涨价的唯一凭据。</li>
+        <li><strong>建立案例页。</strong>每个项目写「问题 → 方法 → 结果」，用一张图讲清。</li>
+        <li><strong>只做能公开的活。</strong>涉密、涉个人信息的项目一律不接。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li>政企项目常要求供应商资质，个人接不了就走有资质公司分包，别伪造资质。</li>
+        <li>数据必须可溯源。用「网上看到的」数字做图，一次错误就丢客户。</li>
+        <li>不要接受「地图审图号」相关要求的项目自行交付——那是持证单位的事。</li>
+      </ul>
+    </details>
+  </article>
+
+  <!-- P6 -->
+  <article class="play" tabindex="-1" data-tech="高" data-cost="低" data-speed="慢"
+           data-keywords="工具站 独立站 SEO 坐标转换 等时圈 地铁时间 计算器 广告联盟 谷歌 adsense 长尾 流量 搜索">
+    <header>
+      <span class="badge">P6</span>
+      <h3>地图小工具站：用搜索长尾吃稳定流量</h3>
+    </header>
+    <p class="tagline">「坐标转换」「地铁用时计算」「两个地址距离」——搜索量稳定、竞争小、做完就自动跑。</p>
+    <dl class="facts">
+      <div><dt>主战场</dt><dd>独立站（Google/Bing 搜索）/ 小程序</dd></div>
+      <div><dt>起步成本</dt><dd>≈ 100–600 元/年（域名 + 静态托管）</dd></div>
+      <div><dt>首次收入</dt><dd>4–9 个月</dd></div>
+      <div><dt>技术门槛</dt><dd>高（要会前端 + 一点 SEO）</dd></div>
+    </dl>
+    <table>
+      <caption class="sr-only">P6 变现路径</caption>
+      <thead><tr><th scope="col">变现线</th><th scope="col">怎么落</th><th scope="col">量级感</th></tr></thead>
+      <tbody>
+        <tr><td>广告联盟</td><td>海外流量走 AdSense，国内走联盟/微信广告</td><td>CPM 3–30 元</td></tr>
+        <tr><td>会员/去广告</td><td>免费基础功能 + 9.9 元/月去广告与批量</td><td>转化 0.3%–1%</td></tr>
+        <tr><td>API 分销</td><td>卖批量坐标转换、地址解析额度</td><td>按量计价</td></tr>
+        <tr><td>导流佣金</td><td>工具页挂地图/打车/酒店联盟链接</td><td>按成交抽佣</td></tr>
+      </tbody>
+    </table>
+    <details>
+      <summary>冷启动 7 步</summary>
+      <ol>
+        <li><strong>找长尾。</strong>搜「坐标转换 在线」「经纬度 距离 计算」，看搜索结果里有多少是 2015 年的老站——那里就是机会。</li>
+        <li><strong>单页打穿一个词。</strong>一个工具页只服务一个查询，标题、H1、说明、示例全部对齐它。</li>
+        <li><strong>纯静态实现。</strong>算法用本地计算（GCJ-02/BD-09 转换、Haversine 距离），不依赖 API，成本接近零也永不超配额。</li>
+        <li><strong>补「解释性内容」。</strong>工具页下方写清「为什么中国坐标要偏移 500 米」，这是搜索排名与停留时长的关键。</li>
+        <li><strong>多语言。</strong>同一套工具做中/英/日版本，海外流量单价更高。</li>
+        <li><strong>先做 10 个工具页</strong>再谈变现，单页流量起不来是常态。</li>
+        <li><strong>3 个月后看数据</strong>：只优化有点击的那 1–2 页，其余不管。</li>
+      </ol>
+    </details>
+    <details>
+      <summary>坑与红线</summary>
+      <ul>
+        <li>不能把商业地图的瓦片直接嵌进自己的站当底图（违反服务条款），用 OSM/MapLibre 的方案并标注署名。</li>
+        <li>不要批量生成「XX 到 XX 要多久」这种程序化垃圾页面，搜索引擎会整站降权。</li>
+        <li>不要存用户输入的精确地址做「数据分析」，那是个人信息，合规成本远高于收益。</li>
+      </ul>
+    </details>
+  </article>
+
+</div>
+
+<p class="empty" id="empty" hidden>没有匹配的玩法，换个关键词或点「重置」。</p>
+
+<!-- ============ 30 天清单 ============ -->
+<section class="block" id="plan">
+  <h2>30 天启动清单（勾选记录进度）</h2>
+  <p style="color:var(--ink-2);margin-top:4px">不管选哪个玩法，第一笔钱都要走完这 12 步。建议先选 1 个玩法，只做这一个。</p>
+  <div class="plan">
+    <ol id="checklist">
+      <li><input type="checkbox" id="c1"><span class="day">第 1–2 天</span><span class="txt"><label for="c1"><b>选 1 个玩法，写死它</b><span>用「谁付钱 / 按什么计价 / 多少粉能收钱」三句话自检，答不出就换一个。</span></label></span></li>
+      <li><input type="checkbox" id="c2"><span class="day">第 3 天</span><span class="txt"><label for="c2"><b>拆 10 个对标账号</b><span>记录他们的选题、封面结构、变现方式、发帖频率，做成一张表。别只看粉丝最多的，看 1–10 万粉的。</span></label></span></li>
+      <li><input type="checkbox" id="c3"><span class="day">第 4 天</span><span class="txt"><label for="c3"><b>建选题库，存 50 个题目</b><span>用表格：题目 / 钩子 / 素材来源 / 难度。存量不足会导致第 10 天断更。</span></label></span></li>
+      <li><input type="checkbox" id="c4"><span class="day">第 5 天</span><span class="txt"><label for="c4"><b>定死内容模板</b><span>开头 3 秒说什么、中间放什么、结尾问什么，全固定。模板化才可能日更。</span></label></span></li>
+      <li><input type="checkbox" id="c5"><span class="day">第 6–8 天</span><span class="txt"><label for="c5"><b>做 10 条存稿</b><span>不要边做边发。有存稿才有稳定节奏，也不会因为一条数据差就放弃。</span></label></span></li>
+      <li><input type="checkbox" id="c6"><span class="day">第 9 天</span><span class="txt"><label for="c6"><b>把所有账号资料对齐</b><span>昵称、头像、简介写清「你是谁 + 给谁看 + 更新频率」，主页放联系方式和地图收藏夹链接。</span></label></span></li>
+      <li><input type="checkbox" id="c7"><span class="day">第 10 天起</span><span class="txt"><label for="c7"><b>连续 14 天不断更</b><span>一天一条，同一时间发。这个阶段唯一的任务是让平台认出你是谁；断更一天，前功尽弃。</span></label></span></li>
+      <li><input type="checkbox" id="c8"><span class="day">第 17 天</span><span class="txt"><label for="c8"><b>第一次复盘：只改结构，不改画质</b><span>看完播率与粉丝净增。完播 &lt; 25% 改开头 3 秒，涨粉率为 0 改结尾钩子。</span></label></span></li>
+      <li><input type="checkbox" id="c9"><span class="day">第 20 天</span><span class="txt"><label for="c9"><b>铺第二平台</b><span>同一素材改尺寸再发一个平台。多一个平台 ≈ 多一条收入线，成本只有重新剪辑。</span></label></span></li>
+      <li><input type="checkbox" id="c10"><span class="day">第 22 天</span><span class="txt"><label for="c10"><b>搭一个「收钱的地方」</b><span>哪怕只有一个 9.9 元的产品或一个团购链接。没有收款入口，所有流量都白费。</span></label></span></li>
+      <li><input type="checkbox" id="c11"><span class="day">第 25 天</span><span class="txt"><label for="c11"><b>主动联系 10 个潜在客户</b><span>商家、媒体、出版社、同行。带作品上门，不要问「在吗」，直接给方案和报价。</span></label></span></li>
+      <li><input type="checkbox" id="c12"><span class="day">第 30 天</span><span class="txt"><label for="c12"><b>算清楚一笔账再决定加不加注</b><span>月收入 ÷ 投入小时数 = 时薪。低于 30 元/小时就先改方向，不要靠意志力硬扛。</span></label></span></li>
+    </ol>
+    <div class="progress-row">
+      <span id="progressLabel">已完成 0 / 12</span>
+      <span class="bar" role="progressbar" aria-labelledby="progressLabel" aria-valuemin="0" aria-valuemax="12" aria-valuenow="0" id="bar"><i></i></span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 收入估算器 ============ -->
+<section class="block" id="calculator">
+  <h2>收入估算器：先算，再决定要不要动手</h2>
+  <p style="color:var(--ink-2);margin-top:4px">拖动三个滑块，看看量级。结果按上文参考区间计算，<strong>不含</strong>团队、投流和税费，属于乐观—保守之间的区间。</p>
+  <div class="calc">
+    <div class="calc-grid">
+      <div class="field">
+        <label for="views">月内容曝光（播放/阅读）</label>
+        <div class="slider-row">
+          <input type="range" id="views" min="0" max="300" step="1" value="50" aria-describedby="viewsOut">
+          <output id="viewsOut" for="views">5 万</output>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fans">粉丝总数</label>
+        <div class="slider-row">
+          <input type="range" id="fans" min="0" max="100000" step="500" value="5000" aria-describedby="fansOut">
+          <output id="fansOut" for="fans">5000</output>
+        </div>
+      </div>
+      <div class="field">
+        <label for="orders">月商单条数</label>
+        <div class="slider-row">
+          <input type="range" id="orders" min="0" max="8" step="1" value="1" aria-describedby="ordersOut">
+          <output id="ordersOut" for="orders">1 条</output>
+        </div>
+      </div>
+    </div>
+    <div class="results" id="results" aria-live="polite">
+      <div class="res"><span class="lbl">平台广告分成</span><div class="val" id="rAd">—</div><div class="sub">按 CPM 15–60 元</div><span class="bar"><i id="bAd"></i></span></div>
+      <div class="res"><span class="lbl">商单收入</span><div class="val" id="rBrand">—</div><div class="sub">按粉丝数 × 0.03–0.15 元 × 条数</div><span class="bar"><i id="bBrand"></i></span></div>
+      <div class="res"><span class="lbl">带货 / 知识付费</span><div class="val" id="rSales">—</div><div class="sub">按曝光 × 转化 0.3% × 客单价 39 元 × 佣金 20%–50%</div><span class="bar"><i id="bSales"></i></span></div>
+      <div class="res total"><span class="lbl">合计月收入区间</span><div class="val" id="rTotal">—</div><div class="sub" id="rHourly">—</div></div>
+    </div>
+    <p class="disclaimer">说明：以上为量级估算，不是承诺。真实收入取决于品类（财经/本地生活 > 泛知识）、粉丝质量、以及你是否有收款入口。0 粉丝也可能有收入（比如直接接本地商家的活），10 万粉也可能只有广告分成。</p>
+  </div>
+</section>
+
+<!-- ============ 红线 ============ -->
+<section class="block">
+  <div class="red">
+    <h2>这五件事别看别人干过就跟着干</h2>
+    <ul>
+      <li><strong>批量爬取商业地图 POI 再卖。</strong>违反服务条款，且涉及数据权益；同时地图数据本身受测绘法管理，转卖风险极高。</li>
+      <li><strong>把商业地图瓦片/截图做成商品印刷售卖。</strong>分辨率不够是小事，授权问题才是致命的。</li>
+      <li><strong>做「破解版 / 去广告版」工具引流。</strong>既侵权又容易被用作挂马载体，账号与终端一起完蛋。</li>
+      <li><strong>用 AI 批量生成城市内容却不核实。</strong>行政区划、地铁线路、店是否存在，错一次就被本地人挂出来。</li>
+      <li><strong>把用户位置数据当资产。</strong>「谁在哪出现过」属于敏感个人信息，合规成本远大于任何流量收益。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>本文档为经验型备忘，数值为行业区间估算，非财务预测；平台规则与带货佣金随时调整，动手前以官方最新规则为准。</p>
+  <p>单文件离线版 · 无外部依赖 · 可直接打印为 A4。用 <kbd>⌘/Ctrl + F</kbd> 在本页内搜索，或使用顶部筛选器。</p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 筛选 ---------- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".play"));
+  var q = document.getElementById("q");
+  var fTech = document.getElementById("f-tech");
+  var fCost = document.getElementById("f-cost");
+  var fSpeed = document.getElementById("f-speed");
+  var resetBtn = document.getElementById("reset");
+  var countEl = document.getElementById("count");
+  var emptyEl = document.getElementById("empty");
+
+  function norm(s) { return (s || "").toLowerCase().replace(/\s+/g, ""); }
+
+  function apply() {
+    var term = norm(q.value);
+    var tech = fTech.value, cost = fCost.value, speed = fSpeed.value;
+    var shown = 0;
+
+    cards.forEach(function (card) {
+      var ok = true;
+      if (term) {
+        var hay = norm(card.getAttribute("data-keywords") + " " + card.textContent);
+        ok = hay.indexOf(term) !== -1;
+      }
+      if (ok && tech && card.getAttribute("data-tech") !== tech) ok = false;
+      if (ok && cost && card.getAttribute("data-cost") !== cost) ok = false;
+      if (ok && speed && card.getAttribute("data-speed") !== speed) ok = false;
+      card.hidden = !ok;
+      if (ok) shown++;
+    });
+
+    countEl.textContent = "显示 " + shown + " / " + cards.length + " 个玩法";
+    emptyEl.hidden = shown !== 0;
+  }
+
+  [q, fTech, fCost, fSpeed].forEach(function (el) {
+    el.addEventListener("input", apply);
+    el.addEventListener("change", apply);
+  });
+
+  resetBtn.addEventListener("click", function () {
+    q.value = "";
+    fTech.value = "";
+    fCost.value = "";
+    fSpeed.value = "";
+    apply();
+    q.focus();
+  });
+
+  apply();
+
+  /* ---------- 清单进度 ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input[type=checkbox]"));
+  var bar = document.getElementById("bar");
+  var barFill = bar.querySelector("i");
+  var pctEl = document.getElementById("progressPct");
+  var labelEl = document.getElementById("progressLabel");
+  var STORE_KEY = "map-playbook-checks";
+
+  function save() {
+    try {
+      var state = boxes.map(function (b) { return b.checked ? 1 : 0; });
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    } catch (e) { /* file:// 或隐私模式下忽略 */ }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var state = JSON.parse(raw);
+      if (!Array.isArray(state)) return;
+      boxes.forEach(function (b, i) { if (state[i]) b.checked = true; });
+    } catch (e) { /* ignore */ }
+  }
+
+  function refresh() {
+    var done = boxes.filter(function (b) { return b.checked; }).length;
+    var pct = Math.round((done / boxes.length) * 100);
+    labelEl.textContent = "已完成 " + done + " / " + boxes.length;
+    pctEl.textContent = pct + "%";
+    barFill.style.width = pct + "%";
+    bar.setAttribute("aria-valuenow", String(done));
+    boxes.forEach(function (b) {
+      var li = b.closest("li");
+      if (li) li.classList.toggle("done", b.checked);
+    });
+  }
+
+  boxes.forEach(function (b) {
+    b.addEventListener("change", function () { refresh(); save(); });
+  });
+
+  load();
+  refresh();
+
+  /* ---------- 收入估算 ---------- */
+  var views = document.getElementById("views");
+  var fans = document.getElementById("fans");
+  var orders = document.getElementById("orders");
+  var viewsOut = document.getElementById("viewsOut");
+  var fansOut = document.getElementById("fansOut");
+  var ordersOut = document.getElementById("ordersOut");
+  var rAd = document.getElementById("rAd"), bAd = document.getElementById("bAd");
+  var rBrand = document.getElementById("rBrand"), bBrand = document.getElementById("bBrand");
+  var rSales = document.getElementById("rSales"), bSales = document.getElementById("bSales");
+  var rTotal = document.getElementById("rTotal"), rHourly = document.getElementById("rHourly");
+
+  function money(n) {
+    if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, "") + " 万";
+    return Math.round(n).toLocaleString("zh-CN");
+  }
+  function yuan(n) { return "¥" + Math.round(n).toLocaleString("zh-CN"); }
+  function range(low, high) { return yuan(low) + " – " + yuan(high); }
+
+  function pctInto(el, v, max) {
+    var w = max > 0 ? Math.min(100, (v / max) * 100) : 0;
+    el.style.width = w.toFixed(1) + "%";
+  }
+
+  function calc() {
+    var v = Number(views.value) * 1000;      // 滑块单位：千次曝光
+    var f = Number(fans.value);
+    var o = Number(orders.value);
+
+    viewsOut.textContent = money(v);
+    fansOut.textContent = f.toLocaleString("zh-CN");
+    ordersOut.textContent = o + " 条";
+
+    var adLow = (v / 1000) * 15, adHigh = (v / 1000) * 60;
+    var brLow = f * 0.03 * o, brHigh = f * 0.15 * o;
+    var conv = 0.003, price = 39;
+    var salesLow = v * conv * price * 0.20, salesHigh = v * conv * price * 0.50;
+
+    var totalLow = adLow + brLow + salesLow;
+    var totalHigh = adHigh + brHigh + salesHigh;
+
+    rAd.textContent = range(adLow, adHigh);
+    rBrand.textContent = range(brLow, brHigh);
+    rSales.textContent = range(salesLow, salesHigh);
+    rTotal.textContent = range(totalLow, totalHigh);
+
+    var max = Math.max(adHigh, brHigh, salesHigh, 1);
+    pctInto(bAd, adHigh, max);
+    pctInto(bBrand, brHigh, max);
+    pctInto(bSales, salesHigh, max);
+
+    // 时薪：假设每周投入 10 小时
+    var hours = 40;
+    rHourly.textContent = "若每周投入 10 小时（约 " + hours + " 小时/月），时薪约 " +
+      Math.round(totalLow / hours) + "–" + Math.round(totalHigh / hours) + " 元";
+  }
+
+  [views, fans, orders].forEach(function (el) {
+    el.addEventListener("input", calc);
+    el.addEventListener("change", calc);
+  });
+
+  calc();
+})();
+</script>
+</body>
+</html>
