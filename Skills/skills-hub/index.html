@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Agent Skills 的 Hub / 市场 / 目录 / CLI 汇总：skills.sh、ClawHub、扣子技能商店、美团 AI Hub、Agent Skills Hub 等，含类型、规模、安装方式与风险提示。">
+<title>Skills Hub 地图 · 官方市场、独立目录与团队 Stack</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05), 0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:1120px;margin:0 auto;padding:46px clamp(18px,5vw,40px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.4vw,58px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.78;color:var(--ink-2);max-width:48em;margin:0 0 22px}
+
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 18px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+section{scroll-margin-top:64px;margin:0 0 52px}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.75;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.25em}
+.callout li{margin:3px 0}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 240px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.hub{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.hub-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.hub-name{font-size:16px;font-weight:650;line-height:1.4}
+.hub-op{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{font-size:10.5px;font-family:var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.badge.official{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent)}
+.badge.directory{background:var(--green-soft);border-color:#cfe3d8;color:var(--green)}
+.badge.repo{background:var(--amber-soft);border-color:#ecd9bd;color:var(--amber)}
+.hub p{margin:0;font-size:13.6px;color:var(--ink-2);line-height:1.72}
+.meta{display:grid;gap:6px;font-size:12.5px;margin:0}
+.meta div{display:grid;grid-template-columns:56px 1fr;gap:8px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0;color:var(--ink-2);word-break:break-word}
+.hub .note{font-size:12px;line-height:1.7;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.hub .note b{color:var(--amber)}
+.hub a.go{align-self:flex-start;font-size:12.5px;text-decoration:none;border:1px solid var(--line-strong);border-radius:8px;padding:4px 10px;color:var(--ink-2);margin-top:2px}
+.hub a.go:hover{border-color:var(--accent);color:var(--accent)}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+
+table{width:100%;border-collapse:collapse;font-size:13.6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--paper-2)}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto}
+
+.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.check li{position:relative;padding-left:26px;font-size:14px;color:var(--ink-2);line-height:1.7}
+.check li::before{content:"";position:absolute;left:3px;top:.55em;width:11px;height:6px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.check li b{color:var(--ink)}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,40px) 40px;max-width:1120px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+  .meta div{grid-template-columns:1fr}
+  .meta dt{font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+@media print{.progress,.topbar,.toolbar,.search{display:none}body{background:#fff}.hub,.kpi{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../skill-atlas/index.html">← Skill Atlas</a>
+  <span class="crumb">Skills / skills-hub · 2026-10-31</span>
+  <nav class="pager"><a href="#answer">先回答问题</a><a href="#map">全部条目</a><a href="#choose">怎么选</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>Agent Skills · 生态地图</div>
+  <h1>Skills Hub <em>地图</em></h1>
+  <p class="lede">把散落的 Skills 市场、独立目录、官方仓库和安装协议收在一页：谁在运营、有多大规模、用什么命令安装、哪些数字只是站点自报。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">12<span>个</span></div><div class="l">站点 / 仓库 / 协议</div></div>
+    <div class="kpi"><div class="n">4<span>类</span></div><div class="l">官方市场 / 独立目录 / 代码仓库 / CLI</div></div>
+    <div class="kpi"><div class="n">3<span>家</span></div><div class="l">国内厂商相关：字节、美团、富途</div></div>
+    <div class="kpi"><div class="n">1<span>个</span></div><div class="l">统一安装协议：skills CLI</div></div>
+  </div>
+
+  <section id="answer">
+    <h2><span class="no">01</span>先回答你的问题</h2>
+
+    <div class="callout warn">
+      <span class="t">字节：没有叫 “Skills Hub” 的公开产品</span>
+      <p>和 Skills 最接近的是<b>扣子（Coze）的技能商店</b>：2026 年 1 月起，扣子 2.0 把 Skill 做成可发布、可调用、可分成交易的商品，入口在扣子空间内，主打“一句话生成技能”。另外「剪映 Hub」是同名但不同物——那是视频创作工作台，不是技能仓库。</p>
+    </div>
+
+    <div class="callout good">
+      <span class="t">美团：有，但分两层</span>
+      <ul>
+        <li><b>对外</b>：<code>developer.meituan.com</code> 的 <b>AI Hub</b>，已上架酒旅 Skill、AI Coding Skill 等，支持 MCP / Skill / CLI 一体化接入，个人开发者实名后即可拿 Token 使用。</li>
+        <li><b>对内</b>：2026 年 3 月的美团招聘 JD 明确写到“开发和运营 <b>Skill Hub 平台</b>，支持 Skill 的发布、发现、搜索、评分、版本管理与权限控制”，以及 Skill 社区生态。这是内部基础设施，没有公开站点。</li>
+      </ul>
+    </div>
+
+    <p class="small" style="font-size:12.5px;color:var(--muted);margin:0">判断标准：一个“Hub”至少要同时具备 <b>发布 / 发现 / 版本</b> 三件事。只有仓库没有检索，是 library；只有列表没有托管，是 awesome list；两者都不是市场。</p>
+  </section>
+
+  <section id="map">
+    <h2><span class="no">02</span>全部条目</h2>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按类型筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="official" aria-pressed="false">官方市场</button>
+        <button class="chip" type="button" data-filter="directory" aria-pressed="false">独立目录</button>
+        <button class="chip" type="button" data-filter="repo" aria-pressed="false">代码仓库</button>
+        <button class="chip" type="button" data-filter="tool" aria-pressed="false">CLI / 协议</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5 21 21"></path></svg>
+        <input id="q" type="search" placeholder="搜索名称、厂商或命令（按 / 聚焦）" aria-label="搜索 Hub">
+      </div>
+    </div>
+    <p class="result-line" id="count" role="status" aria-live="polite">共 12 个条目</p>
+
+    <div class="grid" id="grid">
+
+      <article class="hub" data-type="directory" data-text="skills.sh vercel 官方 目录 排行 安装量 telemetry npx skills add 审计">
+        <div class="hub-top">
+          <div><div class="hub-name">skills.sh</div><div class="hub-op">Vercel</div></div>
+          <span class="badge directory">独立目录</span>
+        </div>
+        <p>开放目录，索引所有通过 <code>skills</code> CLI 发布的公开技能，按匿名安装量排行。每个技能页给出源仓库、安装量、最常用的 agent、以及合作方的安全审计结果。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>排行榜式展示，未公布总数；头部单个技能安装量达百万级</dd></div>
+          <div><dt>安装</dt><dd><code>npx skills add &lt;owner/repo&gt;</code></dd></div>
+          <div><dt>数据</dt><dd>安装量来自 CLI 匿名遥测，可 <code>DISABLE_TELEMETRY=1</code> 关闭</dd></div>
+        </dl>
+        <div class="note">适合找“被真实装过很多次”的技能；排行反映流行度，不等于质量。</div>
+        <a class="go" href="https://www.skills.sh/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="official" data-text="ClawHub OpenClaw 官方 registry 市场 skill plugin clawhub.ai 83.4K">
+        <div class="hub-top">
+          <div><div class="hub-name">ClawHub</div><div class="hub-op">OpenClaw</div></div>
+          <span class="badge official">官方市场</span>
+        </div>
+        <p>OpenClaw 的公开注册中心，同时托管 Skill（<code>SKILL.md</code> + 附属文件）和插件。有 semver、changelog、下载量、星标和扫描摘要，发布需要足够老的 GitHub 账号。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>站点页面自报 83.4K Skills（2026-10 检索）</dd></div>
+          <div><dt>安装</dt><dd><code>openclaw skills install &lt;包名&gt;</code>；发布用 <code>clawhub</code> CLI</dd></div>
+          <div><dt>信任</dt><dd>自动扫描 + 举报/审核；公开页展示最新扫描状态</dd></div>
+        </dl>
+        <div class="note">开放上传，任何人都能发。<b>安装前仍要读 SKILL.md 和权限</b>，扫描不是担保。</div>
+        <a class="go" href="https://clawhub.ai/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="official" data-text="扣子 Coze 技能商店 字节跳动 ByteDance 技能 变现 一句话生成">
+        <div class="hub-top">
+          <div><div class="hub-name">扣子技能商店</div><div class="hub-op">字节跳动 · Coze</div></div>
+          <span class="badge official">官方市场</span>
+        </div>
+        <p>把个人 SOP、写作风格、行业经验封装成可复用 Skill，并允许挂到商店按调用分成。特点是门槛低：不需要写 Hook 或脚本，对话里一句话生成技能。</p>
+        <dl class="meta">
+          <div><dt>形态</dt><dd>平台内市场 + 创作者变现，不是开放协议仓库</dd></div>
+          <div><dt>入口</dt><dd>扣子空间内；单个技能有独立分享页</dd></div>
+          <div><dt>注意</dt><dd>字节并没有把它叫 “Skills Hub”；也没有公开的跨工具安装协议</dd></div>
+        </dl>
+        <div class="note">生态最接近“App Store”模式：重交易与分发，轻 <code>SKILL.md</code> 的跨工具可移植性。</div>
+        <a class="go" href="https://www.coze.cn/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="official" data-text="美团 AI Hub 酒旅 Skill AI coding skill MCP CLI developer.meituan.com Skill Hub 内部">
+        <div class="hub-top">
+          <div><div class="hub-name">美团 AI Hub</div><div class="hub-op">美团</div></div>
+          <span class="badge official">官方市场</span>
+        </div>
+        <p>面向开发者的能力中心，已上架 <code>meituan-travel</code> 酒旅 Skill、AI Coding Skill 等，主打 MCP / Skill / CLI 一体化接入，实名后取 Token 即可配置到自己的 agent。</p>
+        <dl class="meta">
+          <div><dt>形态</dt><dd>对外开放平台；另有内部 Skill Hub（发布/发现/搜索/评分/版本/权限）</dd></div>
+          <div><dt>安装</dt><dd>按平台文档配置 Token，把 Skill 接到本地 AI 工具</dd></div>
+          <div><dt>证据</dt><dd>招聘 JD 明写“开发和运营 Skill Hub 平台”</dd></div>
+        </dl>
+        <div class="note">国内厂商里最接近“企业级 Skill Hub”定义的样本：既有对外供给，也有对内治理。</div>
+        <a class="go" href="https://developer.meituan.com/ai-hub" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="repo" data-text="富途 Futu Agent Hub 官方 仓库 4 skills 行情 交易">
+        <div class="hub-top">
+          <div><div class="hub-name">Futu Agent Hub</div><div class="hub-op">富途</div></div>
+          <span class="badge repo">代码仓库</span>
+        </div>
+        <p>券商官方把 API 与内容服务封装成 4 个 Skill：Futu API（行情/交易，需本地 OpenD 网关）、资讯搜索、个股解读、情绪温度计。内容类 Skills 走公开接口，无需装 SDK。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>4 个开箱即用 Skill</dd></div>
+          <div><dt>安装</dt><dd><code>npx skills add https://github.com/FutunnOpen/futu-agent-hub</code></dd></div>
+          <div><dt>安全</dt><dd>交易类写操作要求二次确认；只读模式可不配交易密码</dd></div>
+        </dl>
+        <div class="note">“厂商把自家 API 做成 Skill”的典型形态，也出现在 skills.sh 的 official 分类里。</div>
+        <a class="go" href="https://github.com/FutunnOpen/futu-agent-hub" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="repo" data-text="anthropics skills 官方 仓库 skill-creator 示例">
+        <div class="hub-top">
+          <div><div class="hub-name">anthropics/skills</div><div class="hub-op">Anthropic</div></div>
+          <span class="badge repo">代码仓库</span>
+        </div>
+        <p>Agent Skills 格式的源头仓库：官方示例技能、<code>skill-creator</code>（让 agent 自己写技能）、以及文档与规范。多数第三方目录都以这里的 <code>SKILL.md</code> 结构为基准。</p>
+        <dl class="meta">
+          <div><dt>形态</dt><dd>GitHub 仓库，不是托管市场</dd></div>
+          <div><dt>安装</dt><dd>复制目录到 <code>~/.claude/skills/</code>，或用 skills CLI</dd></div>
+          <div><dt>价值</dt><dd>写自己的 Skill 时，先对照这里的结构与边界写法</dd></div>
+        </dl>
+        <div class="note">没有排行、没有审计、没有版本矩阵——它定义格式，不做分发。</div>
+        <a class="go" href="https://github.com/anthropics/skills" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="directory" data-text="Agent Skills Hub agentskillshub.dev 安全 审计 A-F 评分 MCP 1213">
+        <div class="hub-top">
+          <div><div class="hub-name">Agent Skills Hub</div><div class="hub-op">独立团队</div></div>
+          <span class="badge directory">独立目录</span>
+        </div>
+        <p>安全优先的目录，收录 Skill 与 MCP Server，按任务、来源、权限风险筛选，给出 A–F 评级与扫描记录。站点自己声明：目录是决策支持，不是安全保证。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>1,213 条（页面标注最近扫描 2026-05-20，可能已过期）</dd></div>
+          <div><dt>评分</dt><dd>检查 45+ 类漏洞模式，含任意代码执行、凭据泄漏、无界文件访问</dd></div>
+          <div><dt>适合</dt><dd>装之前做准入筛查，而不是当排行榜逛</dd></div>
+        </dl>
+        <div class="note">评级会滞后于仓库更新；<b>以源仓库当前状态为准</b>。</div>
+        <a class="go" href="https://agentskillshub.dev/skills" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="directory" data-text="SkillHub skillhub.club 155.3K 25 分类 5 平台 评测">
+        <div class="hub-top">
+          <div><div class="hub-name">SkillHub</div><div class="hub-op">skillhub.club</div></div>
+          <span class="badge directory">独立目录</span>
+        </div>
+        <p>做 AI 评测与“Skill Sets”组合推荐的目录，支持 Claude Code、Codex、Gemini CLI、OpenCode、OpenClaw 五个平台，提供一键安装命令与 SKILL.md 预览。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>站点自报 155.3K，页脚又写 “15,000+ curated”，两处不一致</dd></div>
+          <div><dt>更新</dt><dd>页面标注目录更新于 2026-10-28</dd></div>
+          <div><dt>适合</dt><dd>横向比较同一能力的不同实现</dd></div>
+        </dl>
+        <div class="note"><b>数字口径不一致</b>本身就是信号：看它的评测方法，别只看总量。</div>
+        <a class="go" href="https://www.skillhub.club/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="directory" data-text="SkillRepo skillrepo.dev 治理 governance 分发 版本 评分 CLI">
+        <div class="hub-top">
+          <div><div class="hub-name">SkillRepo</div><div class="hub-op">skillrepo.dev</div></div>
+          <span class="badge directory">独立目录</span>
+        </div>
+        <p>把自己定位成“开放分发与治理层”：技能页带版本号、评级、发现项（findings），并提供 CLI 做开发账号下的技能库同步。</p>
+        <dl class="meta">
+          <div><dt>形态</dt><dd>目录 + 账号 + CLI，偏团队治理</dd></div>
+          <div><dt>信息</dt><dd>名称、版本、评级、安全发现、安装说明</dd></div>
+          <div><dt>适合</dt><dd>需要“谁在用哪个版本”这类组织级视图时</dd></div>
+        </dl>
+        <div class="note">治理能力依赖收录质量，覆盖面比聚合站窄，适合做内部准入的参照。</div>
+        <a class="go" href="https://skillrepo.dev/skills" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="directory" data-text="awesome-claude-code-skills-collections 781 repos 精选 meta list 安全分级">
+        <div class="hub-top">
+          <div><div class="hub-name">awesome-claude-code-skills-collections</div><div class="hub-op">社区维护</div></div>
+          <span class="badge directory">独立目录</span>
+        </div>
+        <p>元清单：收录 781 个“里面装了很多 Skill / 插件 / 子代理”的仓库，按综合合集、单领域包、厂商目录分组，并对 README 与安装步骤做安全分级。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>781 个仓库，其中 39 个已审计</dd></div>
+          <div><dt>适合</dt><dd>找整套团队工作流，而不是单个小工具</dd></div>
+          <div><dt>注意</dt><dd>pending 表示尚未评级，不等于安全</dd></div>
+        </dl>
+        <div class="note">清单类项目的通病：链接会失效；只用它做线索，最终回到源仓库。</div>
+        <a class="go" href="https://github.com/zhuyansen/awesome-claude-code-skills-collections" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="tool" data-text="vercel-labs skills CLI npx skills add 安装协议 包管理 lockfile">
+        <div class="hub-top">
+          <div><div class="hub-name">skills CLI</div><div class="hub-op">vercel-labs</div></div>
+          <span class="badge">CLI / 协议</span>
+        </div>
+        <p>事实上的跨工具安装协议：<code>npx skills add</code> 从 GitHub 或目录安装 Skill，写入各 agent 的 skills 目录。skills.sh 的数据就来自这个 CLI 的匿名遥测。</p>
+        <dl class="meta">
+          <div><dt>覆盖</dt><dd>Claude Code、Cursor、Codex、Gemini、OpenCode、Cline、Goose 等</dd></div>
+          <div><dt>命令</dt><dd><code>npx skills find &lt;query&gt;</code> / <code>npx skills add &lt;owner/repo&gt;</code></dd></div>
+          <div><dt>源码</dt><dd>开源，可与自建 registry 组合</dd></div>
+        </dl>
+        <div class="note">它解决“怎么装”，不解决“该不该装”。</div>
+        <a class="go" href="https://github.com/vercel-labs/skills" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="repo" data-text="mcode-stack MiniMax 团队 stack 工作流 17 skills 开源">
+        <div class="hub-top">
+          <div><div class="hub-name">mcode-stack</div><div class="hub-op">MiniMax Code 团队</div></div>
+          <span class="badge repo">代码仓库</span>
+        </div>
+        <p>另一种“Hub”形态：不是市场，而是<b>团队把自己的整套工作流开源</b>——每人一个 stack，含 Skill、清单、WORKFLOW.md 与许可说明，可整包安装。</p>
+        <dl class="meta">
+          <div><dt>规模</dt><dd>2 个 stack，17 个 Skill</dd></div>
+          <div><dt>安装</dt><dd><code>claude plugin install ronny --marketplace MiniMax-AI/mcode-stack</code></dd></div>
+          <div><dt>价值</dt><dd>比单个技能更值得抄的是组织方式与评审链路</dd></div>
+        </dl>
+        <div class="note">本仓库的 <a href="../skill-atlas/index.html">Skill Atlas</a> 就是这 17 个技能的中文拆解。</div>
+        <a class="go" href="https://github.com/MiniMax-AI/mcode-stack" rel="noreferrer">打开 →</a>
+      </article>
+
+    </div>
+    <div class="empty" id="empty" hidden>没有匹配的条目。清空搜索或换个筛选。</div>
+  </section>
+
+  <section id="choose">
+    <h2><span class="no">03</span>四类形态，别混着用</h2>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>形态</th><th>它解决什么</th><th>典型</th><th>你要额外做的判断</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>官方市场</td>
+            <td>托管、版本、分发、有时带交易</td>
+            <td>ClawHub、扣子技能商店、美团 AI Hub</td>
+            <td>是否绑定单一 agent？能否导出成标准 <code>SKILL.md</code>？</td>
+          </tr>
+          <tr>
+            <td>独立目录</td>
+            <td>跨平台检索、比较、打分、审计</td>
+            <td>skills.sh、Agent Skills Hub、SkillHub、SkillRepo</td>
+            <td>评分口径是什么？数据多久没更新？谁付的钱？</td>
+          </tr>
+          <tr>
+            <td>代码仓库</td>
+            <td>可审计的源文件、可 fork、可自托管</td>
+            <td>anthropics/skills、Futu Agent Hub、mcode-stack</td>
+            <td>有没有维护者、许可证、更新节奏？</td>
+          </tr>
+          <tr>
+            <td>CLI / 协议</td>
+            <td>把“安装”统一成一条命令</td>
+            <td>skills CLI、clawhub CLI</td>
+            <td>装到哪个目录？能不能锁定版本、能不能卸载干净？</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="checklist">
+    <h2><span class="no">04</span>装之前查六件事</h2>
+    <ul class="check">
+      <li><b>来源可追溯</b>：能点回源仓库，能看到 commit 或 digest，而不是只有一张介绍页。</li>
+      <li><b>权限写清楚</b>：会读哪些目录、发哪些网络请求、要不要 token；没有说明的一律当高权限。</li>
+      <li><b>版本与锁</b>：有 semver 或 lockfile，能回滚；只有 <code>latest</code> 的不要进团队流程。</li>
+      <li><b>评分口径</b>：区分“安装量”“人工评级”“自动扫描”，三者不能互相替代。</li>
+      <li><b>数据新鲜度</b>：目录页上的扫描日期超过三个月，就要按未审计处理。</li>
+      <li><b>可卸载</b>：装进去的东西能干净删掉，且不会静默改你的 <code>AGENTS.md</code>。</li>
+    </ul>
+    <div class="callout" style="margin-top:16px">
+      <span class="t">一句话原则</span>
+      <p>Hub 负责“找到”，不负责“担保”。任何目录的 A 级评级，都只是让你少看几个仓库，不是允许跳过读 <code>SKILL.md</code>。</p>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">05</span>来源</h2>
+    <ul class="sources">
+      <li>skills.sh 官方说明：<a href="https://www.skills.sh/about" rel="noreferrer">https://www.skills.sh/about</a></li>
+      <li>OpenClaw 文档（ClawHub）：<a href="https://docs.openclaw.ai/clawhub/" rel="noreferrer">https://docs.openclaw.ai/clawhub/</a></li>
+      <li>ClawHub 站点：<a href="https://clawhub.ai/skills" rel="noreferrer">https://clawhub.ai/skills</a></li>
+      <li>美团 AI Hub / 酒旅 Skill：<a href="https://developer.meituan.com/ai-hub" rel="noreferrer">https://developer.meituan.com/ai-hub</a></li>
+      <li>美团招聘 JD（Skill Hub 平台职责）：<a href="https://zhaopin.meituan.com/web/position/detail?jobUnionId=4302562168" rel="noreferrer">zhaopin.meituan.com</a></li>
+      <li>扣子技能商店报道：<a href="https://news.qq.com/rain/a/20260119A03ERX00" rel="noreferrer">news.qq.com</a></li>
+      <li>Agent Skills Hub 方法说明：<a href="https://agentskillshub.dev/about" rel="noreferrer">https://agentskillshub.dev/about</a></li>
+      <li>SkillHub：<a href="https://www.skillhub.club/" rel="noreferrer">https://www.skillhub.club/</a></li>
+      <li>SkillRepo：<a href="https://skillrepo.dev/skills" rel="noreferrer">https://skillrepo.dev/skills</a></li>
+      <li>Futu Agent Hub：<a href="https://github.com/FutunnOpen/futu-agent-hub" rel="noreferrer">github.com/FutunnOpen/futu-agent-hub</a></li>
+      <li>awesome 元清单：<a href="https://github.com/zhuyansen/awesome-claude-code-skills-collections" rel="noreferrer">github.com/zhuyansen/awesome-claude-code-skills-collections</a></li>
+    </ul>
+    <p class="small" style="font-size:12.5px;color:var(--muted);margin-top:12px">检索于 2026-10-31。规模数字均为站点自报，未做独立核验；厂商内部平台（如美团内部 Skill Hub）只依据公开招聘信息描述，未访问其内网。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Skill Atlas 系列 · Skills Hub 地图 · 2026-10-31</div>
+  <span>本页为独立整理，与所列站点无隶属关系；链接与数字会变化，请以源站为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#grid .hub'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var type = 'all';
+
+  function apply(){
+    var needle = q.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var okType = type === 'all' || c.getAttribute('data-type') === type;
+      var okText = !needle || c.getAttribute('data-text').toLowerCase().indexOf(needle) !== -1;
+      var show = okType && okText;
+      c.hidden = !show;
+      if (show) shown++;
+    });
+    count.textContent = (needle || type !== 'all')
+      ? '匹配 ' + shown + ' 个 / 共 ' + cards.length + ' 个'
+      : '共 ' + cards.length + ' 个条目';
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      type = btn.getAttribute('data-filter');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', apply);
+
+  addEventListener('keydown', function(e){
+    var tag = (e.target && e.target.tagName) || '';
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      e.preventDefault();
+      q.focus();
+      q.select();
+    } else if (e.key === 'Escape' && document.activeElement === q) {
+      q.value = '';
+      apply();
+      q.blur();
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>怎么选 MCP · 从需求到验证的选型教程</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:600px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 20px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:15px;margin-bottom:2px}
+.steps p{margin:0;font-size:13.3px;color:var(--ink-2)}
+.steps .out{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+.checklist{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checklist li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checklist input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+
+.rate{display:grid;gap:10px;margin:16px 0}
+.rate-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(140px,1.4fr) 44px;gap:12px;align-items:center;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rate-row .lab b{display:block;font-size:13.5px;line-height:1.4}
+.rate-row .lab span{font-size:11.5px;color:var(--muted);line-height:1.5}
+.rate-row input[type="range"]{width:100%;accent-color:var(--accent)}
+.rate-row .val{font-family:var(--mono);font-size:13px;text-align:center;border:1px solid var(--line-strong);border-radius:6px;padding:2px 0;background:var(--paper);min-width:36px;line-height:1.4}
+.score-panel{display:flex;flex-wrap:wrap;gap:20px;align-items:center;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:16px;box-shadow:var(--shadow)}
+.score-num{font-family:var(--serif);font-size:54px;line-height:1;letter-spacing:-.03em}
+.score-body{flex:1 1 260px;min-width:220px}
+.verdict{font-weight:650;font-size:15px}
+.verdict span{font-weight:400;color:var(--muted);font-size:12.5px}
+.bar{height:6px;background:var(--paper-2);border-radius:99px;overflow:hidden;margin-top:9px}
+.bar>span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.rate-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{appearance:none;font:inherit;font-size:12.5px;padding:6px 13px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.btn:hover{background:var(--paper-2)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .rate-row{grid-template-columns:1fr auto;gap:8px 10px}
+  .rate-row .lab{grid-column:1/-1}
+  .rate-row .mid{grid-column:1;order:2}
+  .rate-row .val{grid-column:2;order:2}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:11pt}
+  .sidebar,.progress,.top-btn,.copy,.rate-actions{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:26px}
+  .card,.code,table{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:30pt}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">怎么选 MCP</div>
+      <div class="brand-sub">选型教程 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>先问三个问题</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>去哪找候选</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>五个红灯</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>打分卡</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>48 小时试用</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>好用的信号</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>场景速查</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>记录模板</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    6 维打分 · 5 个红灯<br>
+    1 个真实任务 · 48 小时<br>
+    离线单文件 · 可打印
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>MCP 选型教程<span class="dot"></span>2026-10-31</p>
+    <h1>怎么选 <em>MCP</em></h1>
+    <p class="lede">MCP 的数量不是问题，问题是你用「排行榜」代替了「试用」。这套方法只做一件事：把「感觉不错」变成可复现的判断——一个真实任务、一张打分卡、48 小时。</p>
+    <div class="meta-row">
+      <span class="pill">适用 <b>Trae / OpenCode / Pi</b></span>
+      <span class="pill">耗时 <b>每次 1–2 小时</b></span>
+      <span class="pill">产出 <b>保留 / 观察 / 淘汰</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">3<span>问</span></div><div class="l">先判断值不值得装</div></div>
+      <div class="kpi"><div class="n">5<span>红灯</span></div><div class="l">快速淘汰大部分候选</div></div>
+      <div class="kpi"><div class="n">6<span>维</span></div><div class="l">可调权重的打分卡</div></div>
+      <div class="kpi"><div class="n">48<span>h</span></div><div class="l">试用窗口，到点做决定</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">先问三个问题</h2></div>
+    <p class="lead-in">不要从目录开始，从你的任务开始。装之前先回答这三问，能挡掉一半「装了但不用」的 MCP。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>问题</th><th>怎么判断</th><th>结论</th></tr></thead>
+        <tbody>
+          <tr><td><b>1 · 频率</b><br><span class="small">一周会用几次？</span></td><td>低于每周 1 次 → 临时用一次就够，别常驻</td><td>低频：写进笔记，需要时再装<br>高频：值得进入候选</td></tr>
+          <tr><td><b>2 · 读写</b><br><span class="small">只读够不够？</span></td><td>查询、检索、看图、读日志 → 只读足够</td><td>只读：直接试<br>需要写：先过权限与回滚</td></tr>
+          <tr><td><b>3 · 敏感度</b><br><span class="small">数据能不能出本机？</span></td><td>代码、客户数据、密钥、生产库</td><td>敏感：本地或容器<br>公开：可接受托管</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">最常见的错误</span>
+      因为「这个 MCP 很火」而安装，而不是因为「我明天要做的事需要它」。判断标准永远是：<b>没有它，我的哪个具体任务会变慢？</b>
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">去哪找候选</h2></div>
+    <p>按<b>能力</b>搜，不要按名字搜。你不知道它叫什么，很正常；用「你想做的事」去搜。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>你想做的事</th><th>搜索关键词</th><th>大概率会命中的方向</th></tr></thead>
+        <tbody>
+          <tr><td>让 AI 看真实网页、抓网络请求</td><td><code>browser</code> <code>chrome devtools</code> <code>playwright</code></td><td>浏览器控制 / 自动化</td></tr>
+          <tr><td>查某个库最新文档</td><td><code>docs</code> <code>context7</code></td><td>文档检索</td></tr>
+          <tr><td>读网页正文</td><td><code>fetch</code> <code>crawl</code></td><td>网页抓取</td></tr>
+          <tr><td>查数据库结构 / 跑查询</td><td><code>postgres</code> <code>mysql</code> <code>sqlite</code></td><td>数据库</td></tr>
+          <tr><td>看 issue / PR / 代码</td><td><code>github</code> <code>gitlab</code></td><td>代码托管</td></tr>
+          <tr><td>把设计稿变代码</td><td><code>figma</code></td><td>设计</td></tr>
+          <tr><td>定位线上报错</td><td><code>sentry</code> <code>observability</code></td><td>可观测</td></tr>
+          <tr><td>发消息 / 建任务</td><td><code>slack</code> <code>feishu</code> <code>linear</code> <code>jira</code></td><td>协作</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>三个入口，三种用途</h3>
+    <div class="grid g3">
+      <div class="card"><h4 style="margin-top:0">发现</h4><p class="small" style="margin:0">Glama / PulseMCP / mcp.so：先收集 3–5 个候选，不要只看第一名。</p></div>
+      <div class="card"><h4 style="margin-top:0">核对</h4><p class="small" style="margin:0">官方 Registry / GitHub：确认发布者、仓库、最近更新。</p></div>
+      <div class="card"><h4 style="margin-top:0">安装</h4><p class="small" style="margin:0">Trae 市场 / Docker Catalog：走客户端或容器，配置可回滚。</p></div>
+    </div>
+
+    <div class="callout">
+      <span class="t">候选池规则</span>
+      一次最多保留 <b>3 个</b>候选。超过 3 个说明需求还没想清楚，先回到第 01 节。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">五个红灯</h2></div>
+    <p class="lead-in">下面任意一条命中，直接淘汰或降级为「临时用」。它们比评分更省时间，因为是否定项，不是加减分。</p>
+
+    <div class="grid g2">
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">1 · 没有源码或发布者不明</h4>
+        <p class="small" style="margin:0">你无法判断它会把数据发到哪。只给一个安装命令、没有仓库的，先跳过。</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">2 · 半年没更新，issue 堆着</h4>
+        <p class="small" style="margin:0">MCP 协议与客户端都在变，旧实现很容易在权限或传输上出问题。</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">3 · 默认要全局密钥、权限过大</h4>
+        <p class="small" style="margin:0">「一个 token 访问你所有仓库」这种设计，出事时无法收敛。</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">4 · 一次暴露几十个工具</h4>
+        <p class="small" style="margin:0">工具列表会长期占上下文，还会让模型选错工具；没有裁剪能力的慎用。</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <h4 style="margin-top:0">5 · 文档只有截图，没有配置与限制</h4>
+        <p class="small" style="margin:0">说明它自己也没想清楚边界；出问题时你只能猜。</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--amber);background:var(--amber-soft)">
+        <h4 style="margin-top:0">灰色地带：需要关闭安全设置</h4>
+        <p class="small" style="margin:0">要求忽略 TLS、关闭沙箱、给 root 的，一律不进入常驻清单。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">打分卡</h2></div>
+    <p class="lead-in">给候选打分，权重可以按你的偏好理解；0 = 很差，5 = 很好。低于 60 分就别花时间试用了。</p>
+
+    <div class="rate" id="rate">
+      <div class="rate-row">
+        <div class="lab"><b>需求匹配</b><span>权重 30% · 它是否直接解决你的任务</span></div>
+        <div class="mid"><input type="range" id="r1" min="0" max="5" step="1" value="3" aria-label="需求匹配评分"></div>
+        <output class="val" for="r1" id="v1">3</output>
+      </div>
+      <div class="rate-row">
+        <div class="lab"><b>维护活跃</b><span>权重 20% · 最近提交、issue 响应、版本发布</span></div>
+        <div class="mid"><input type="range" id="r2" min="0" max="5" step="1" value="3" aria-label="维护活跃评分"></div>
+        <output class="val" for="r2" id="v2">3</output>
+      </div>
+      <div class="rate-row">
+        <div class="lab"><b>权限可控</b><span>权重 20% · 能只读吗？能限 scope 吗？</span></div>
+        <div class="mid"><input type="range" id="r3" min="0" max="5" step="1" value="3" aria-label="权限可控评分"></div>
+        <output class="val" for="r3" id="v3">3</output>
+      </div>
+      <div class="rate-row">
+        <div class="lab"><b>来源可信</b><span>权重 15% · 发布者、源码、签名、社区口碑</span></div>
+        <div class="mid"><input type="range" id="r4" min="0" max="5" step="1" value="3" aria-label="来源可信评分"></div>
+        <output class="val" for="r4" id="v4">3</output>
+      </div>
+      <div class="rate-row">
+        <div class="lab"><b>上下文成本</b><span>权重 10% · 工具数量与返回体积，越轻越高</span></div>
+        <div class="mid"><input type="range" id="r5" min="0" max="5" step="1" value="3" aria-label="上下文成本评分"></div>
+        <output class="val" for="r5" id="v5">3</output>
+      </div>
+      <div class="rate-row">
+        <div class="lab"><b>可替代性</b><span>权重 5% · 换掉它的成本，越低越好</span></div>
+        <div class="mid"><input type="range" id="r6" min="0" max="5" step="1" value="3" aria-label="可替代性评分"></div>
+        <output class="val" for="r6" id="v6">3</output>
+      </div>
+    </div>
+
+    <div class="score-panel">
+      <div class="score-num" id="scoreNum" aria-live="polite">60</div>
+      <div class="score-body">
+        <div class="verdict" id="verdict">限场景试用 <span>只在明确任务里开，别常驻</span></div>
+        <div class="bar" aria-hidden="true"><span id="scoreBar" style="width:60%"></span></div>
+        <p class="small" id="scoreNote" style="margin:8px 0 0">默认值都是 3 分，所以是 60。把每个维度按真实情况调一遍再看结论。</p>
+        <div class="rate-actions">
+          <button class="btn" type="button" id="rateReset">重置为 3 分</button>
+          <button class="btn" type="button" id="rateCopy">复制评分结果</button>
+        </div>
+      </div>
+    </div>
+
+    <h3>每个维度怎么打分</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>0–1 分</th><th>3 分</th><th>5 分</th></tr></thead>
+        <tbody>
+          <tr><td>需求匹配</td><td>只是「可能有用」</td><td>能覆盖任务的一半</td><td>正好解决，且比手做快</td></tr>
+          <tr><td>维护活跃</td><td>半年无提交</td><td>几个月内有更新</td><td>近期有版本与 changelog</td></tr>
+          <tr><td>权限可控</td><td>只能全权限</td><td>能选 scope</td><td>只读可用，能按工具裁剪</td></tr>
+          <tr><td>来源可信</td><td>无仓库</td><td>个人仓库、有 issue</td><td>官方/组织维护，有签名或审计</td></tr>
+          <tr><td>上下文成本</td><td>几十个工具全开</td><td>十来个工具</td><td>少量精准工具，返回结构化</td></tr>
+          <tr><td>可替代性</td><td>深度绑定</td><td>有同类可换</td><td>换掉只是改一行配置</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">分数只是过滤器</span>
+      80 分也可能在你的任务上失败，60 分也可能刚好够用。打分只决定「值不值得花 30 分钟试用」，不替代试用。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">48 小时试用</h2></div>
+    <p class="lead-in">用真实任务，不用 demo。给自己一个硬性窗口，到点必须做决定，避免「装了再说」变成长期负担。</p>
+
+    <ol class="steps">
+      <li><b>选一个真实任务</b><p>最好是你这周本来就要做的事，例如「查这个库的最新 API」「定位这个报错」「读这张表的结构」。</p><div class="out">不要用「你好世界」式验证</div></li>
+      <li><b>限时 30 分钟装好并跑通</b><p>从安装到第一次成功调用，超过 30 分钟就先记为失败，不要熬夜调配置。</p><div class="out">记录：耗时、卡在哪一步</div></li>
+      <li><b>第一轮只用只读</b><p>能只读就只读；需要写时单独开一次，并确认可回滚。</p><div class="out">记录：是否有不可逆操作</div></li>
+      <li><b>记录五个指标</b><p>见下表。指标比「感觉」可靠。</p><div class="out">产出：一行试用记录</div></li>
+      <li><b>48 小时后决定</b><p>保留（常驻）/ 观察（按需开）/ 淘汰（卸载并记下原因）。</p><div class="out">避免无限期「再看看」</div></li>
+    </ol>
+
+    <h3>五个指标</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>指标</th><th>怎么量</th><th>通过线</th></tr></thead>
+        <tbody>
+          <tr><td>首次成功耗时</td><td>从点安装到第一次有效结果</td><td>≤ 30 分钟</td></tr>
+          <tr><td>失败次数</td><td>安装/调用失败并重试的次数</td><td>≤ 1 次</td></tr>
+          <tr><td>上下文增量</td><td>工具列表长度 + 单次返回体积</td><td>不挤掉原有任务上下文</td></tr>
+          <tr><td>输出可验证性</td><td>能否用文件、行号、URL 或查询结果核对</td><td>可核对，不是「看起来对」</td></tr>
+          <tr><td>卸载成本</td><td>删配置、撤权限、清凭证要多久</td><td>≤ 5 分钟</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">A/B 测试更可靠</span>
+      同类候选（例如 Chrome DevTools 与 Playwright）用同一个任务各跑一次，比较「首次成功耗时」和「输出可验证性」。差异往往比宣传页更明显。
+    </div>
+
+    <div class="callout bad">
+      <span class="t">出现这些就停</span>
+      要求把生产库写权限、要求上传整份代码、要求关闭校验、或者失败后无法回滚——立刻卸载，不要「先用着看」。
+    </div>
+  </section>
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">好不好用，看什么</h2></div>
+    <p class="lead-in">不要看 star 数，也不要看宣传页。看它在你的任务上，是否降低了「从想到做」的摩擦。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">客观信号（可观察）</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>一次安装成功，不需要改系统设置</li>
+          <li>工具名与描述能让你猜出该传什么参数</li>
+          <li>报错会指向具体原因，而不是只有堆栈</li>
+          <li>返回结构化内容（JSON / 列表 / 带行号），而不是整页 HTML</li>
+          <li>权限可缩小，只读模式真的能用</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">主观信号（诚实记录）</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>第二次遇到同类任务，你愿意再打开它</li>
+          <li>不用回头翻文档就知道怎么用</li>
+          <li>出错时你敢让它重试，而不是自己接管</li>
+        </ul>
+        <p class="small" style="margin:10px 0 0">如果三条都做不到，它对你就是「不好用」，与它在别人那里多受欢迎无关。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="t">一个实用判断</span>
+      如果它需要你在 prompt 里额外解释「怎么用这个工具」，说明工具本身没设计好；好的 MCP 应该让模型自己就能选对。
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">场景速查</h2></div>
+    <p>下面是常见场景的起点，不是结论。每个都配了一个「验证任务」，装完直接照着跑。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>场景</th><th>首选</th><th>备选</th><th>验证任务</th></tr></thead>
+        <tbody>
+          <tr><td>前端调试</td><td>Chrome DevTools</td><td>Playwright</td><td>打开本地页面，取一条 console 错误与对应请求</td></tr>
+          <tr><td>端到端测试</td><td>Playwright</td><td>Puppeteer</td><td>点按钮 → 断言某段文本出现</td></tr>
+          <tr><td>库的最新用法</td><td>Context7</td><td>Fetch + 官方文档</td><td>查一个函数签名，并与官网核对</td></tr>
+          <tr><td>读网页正文</td><td>Fetch</td><td>通用抓取类</td><td>取一篇文章的标题、日期、前三段</td></tr>
+          <tr><td>GitHub 工作流</td><td>GitHub MCP</td><td>gh CLI</td><td>列出某仓库最近 5 个 PR 的标题与状态</td></tr>
+          <tr><td>数据库排查</td><td>Postgres / MySQL（只读）</td><td>SQLite</td><td>列出某张表的字段与索引</td></tr>
+          <tr><td>设计转代码</td><td>Figma MCP</td><td>手动导出</td><td>读出某个 frame 的文本层级与间距</td></tr>
+          <tr><td>线上报错</td><td>Sentry</td><td>日志平台</td><td>找最近 24 小时最高频的一个错误</td></tr>
+          <tr><td>国内云资源</td><td>火山 / 腾讯云 MCP</td><td>云厂商 CLI</td><td>列出一个资源清单并核对控制台</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">别一次装一排</span>
+      同一个场景先只留一个。两个浏览器 MCP 同时开，工具列表会重复、模型会犹豫，最后你想关掉一个却发现配置找不到了。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">记录模板</h2></div>
+    <p>复制到笔记里，每个候选一行记录。三个月后你会感谢现在的自己。</p>
+
+    <div class="code">
+      <div class="code-head"><span class="file">mcp-trial.md</span><button class="copy" type="button">复制</button></div>
+      <pre><code>候选：
+任务：
+频率：每周 __ 次
+只读够用：是 / 否
+数据敏感度：低 / 中 / 高
+
+来源：
+安装方式：
+评分：__ / 100
+（需求 __ 维护 __ 权限 __ 来源 __ 上下文 __ 替代）
+
+试用任务：
+首次成功耗时：__ 分钟
+失败次数：__
+上下文增量：小 / 中 / 大
+输出可验证：是 / 否
+卸载成本：__ 分钟
+
+结论：保留 / 观察 / 淘汰
+原因：</code></pre>
+    </div>
+
+    <h3>一页清单</h3>
+    <ul class="checklist">
+      <li><input type="checkbox" id="c1"><label for="c1">已经回答三个问题：频率、读写、敏感度。</label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">候选不超过 3 个，且都是按能力搜到的。</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">没有命中五个红灯中的任何一条。</label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">打分不低于 60，并知道低分项是什么。</label></li>
+      <li><input type="checkbox" id="c5"><label for="c5">用真实任务在 30 分钟内跑通（或明确失败）。</label></li>
+      <li><input type="checkbox" id="c6"><label for="c6">48 小时内给出保留 / 观察 / 淘汰的结论。</label></li>
+    </ul>
+
+    <div class="callout good">
+      <span class="t">最后的判断标准</span>
+      留下来的 MCP，应该让你少做一步操作，而不是多学一个概念。否则它只是收藏夹里又多了一条链接。
+    </div>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">来源</h2></div>
+    <p>方法与阈值为个人实践总结；平台机制与文档以下列官方来源为准（2026-10-31 核对）。</p>
+    <ul class="small">
+      <li><a href="https://registry.modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">官方 MCP Registry</a> · <a href="https://github.com/mcp" target="_blank" rel="noopener noreferrer">GitHub MCP Registry</a></li>
+      <li><a href="https://glama.ai/mcp/servers" target="_blank" rel="noopener noreferrer">Glama</a> · <a href="https://www.pulsemcp.com/" target="_blank" rel="noopener noreferrer">PulseMCP</a> · <a href="https://mcp.so/" target="_blank" rel="noopener noreferrer">mcp.so</a></li>
+      <li><a href="https://hub.docker.com/mcp" target="_blank" rel="noopener noreferrer">Docker MCP Catalog</a> · <a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/catalog/" target="_blank" rel="noopener noreferrer">Docker 文档</a></li>
+      <li><a href="https://docs.trae.cn/ide/model-context-protocol" target="_blank" rel="noopener noreferrer">Trae MCP 文档</a>（传输类型、市场、项目级配置）</li>
+      <li><a href="https://github.com/metatool-ai/metamcp" target="_blank" rel="noopener noreferrer">MetaMCP</a>（多 Server 聚合与工具裁剪）</li>
+    </ul>
+    <p class="small">配套页面：<a href="../mcp-hub/index.html">MCP Hub 导航</a> —— 16 个入口的形态、规模与对比。</p>
+  </section>
+
+  <footer>
+    <span>怎么选 MCP · 2026-10-31 · 单文件离线版</span>
+    <span>先试用，再常驻</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  /* ---------- scorecard ---------- */
+  var weights = [0.30, 0.20, 0.20, 0.15, 0.10, 0.05];
+  var names = ["需求匹配", "维护活跃", "权限可控", "来源可信", "上下文成本", "可替代性"];
+  var ids = ["r1", "r2", "r3", "r4", "r5", "r6"];
+  var outputs = ["v1", "v2", "v3", "v4", "v5", "v6"];
+  var scoreNum = document.getElementById("scoreNum");
+  var verdict = document.getElementById("verdict");
+  var scoreBar = document.getElementById("scoreBar");
+  var scoreNote = document.getElementById("scoreNote");
+
+  function score() {
+    var total = 0;
+    var parts = [];
+    ids.forEach(function (id, i) {
+      var v = Number(document.getElementById(id).value);
+      document.getElementById(outputs[i]).textContent = v;
+      total += weights[i] * (v / 5);
+      parts.push(names[i] + " " + v + "/5");
+    });
+    var s = Math.round(total * 100);
+    var text, note, color;
+    if (s >= 80) { text = "值得接入|通过 48 小时试用后再决定常驻"; color = "var(--green)"; }
+    else if (s >= 60) { text = "限场景试用|只在明确任务里开，别常驻"; color = "var(--accent)"; }
+    else if (s >= 40) { text = "先找替代|除非没有同类，否则不装"; color = "var(--amber)"; }
+    else { text = "直接淘汰|不要浪费试用时间"; color = "var(--red)"; }
+    var bits = text.split("|");
+    scoreNum.textContent = s;
+    verdict.innerHTML = "";
+    verdict.appendChild(document.createTextNode(bits[0] + " "));
+    var span = document.createElement("span");
+    span.textContent = bits[1];
+    verdict.appendChild(span);
+    scoreBar.style.width = s + "%";
+    scoreBar.style.background = color;
+    scoreNum.style.color = color;
+    scoreNote.textContent = "按当前权重：需求 30% · 维护 20% · 权限 20% · 来源 15% · 上下文 10% · 替代 5%。";
+    return { score: s, label: bits[0], parts: parts.join(" · ") };
+  }
+
+  ids.forEach(function (id) {
+    document.getElementById(id).addEventListener("input", score);
+  });
+
+  document.getElementById("rateReset").addEventListener("click", function () {
+    ids.forEach(function (id) { document.getElementById(id).value = 3; });
+    score();
+  });
+
+  function copyText(text, btn, label) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = label || "已复制";
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    var fallback = function () {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  document.getElementById("rateCopy").addEventListener("click", function () {
+    var r = score();
+    copyText("MCP 评分：" + r.score + " / 100 — " + r.label + "\n" + r.parts, this);
+  });
+
+  Array.prototype.slice.call(document.querySelectorAll(".copy")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var pre = block ? block.querySelector("pre") : null;
+      if (pre) { copyText(pre.innerText, btn); }
+    });
+  });
+
+  score();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

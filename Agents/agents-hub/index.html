@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AI Agent 全景 · 50 个产品与它们的优点（2026-10）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 230px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.filter-block{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.filter-block .lbl{font-size:11.5px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em;min-width:52px}
+.result-line{font-size:12.5px;color:var(--muted);margin:10px 0 16px}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.agent{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:17px 18px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.agent:hover{transform:translateY(-2px);border-color:var(--line-strong);box-shadow:0 12px 34px -20px rgba(23,24,27,.5)}
+.agent-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.agent .name{font-size:16px;font-weight:650;letter-spacing:-.01em;line-height:1.35}
+.agent .pos{font-size:12px;color:var(--muted);margin-top:1px}
+.lic{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono);letter-spacing:.02em}
+.lic.open{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.lic.closed{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.agent .desc{margin:0;font-size:13.4px;color:var(--ink-2);line-height:1.65}
+.pros{list-style:none;padding:0;margin:2px 0 0;display:grid;gap:4px}
+.pros li{position:relative;padding-left:15px;font-size:12.8px;color:var(--ink-2);line-height:1.55}
+.pros li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--green)}
+.agent .note{font-size:12.2px;color:var(--muted);margin:0;line-height:1.6}
+.agent .note b{color:var(--ink-2);font-weight:600}
+.agent-foot{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);white-space:nowrap}
+.tag.cn{color:var(--red);border-color:#f0cfcf;background:var(--red-soft)}
+.tag.free{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.agent-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
+
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}
+.cat{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.cat:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.cat:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cat .cnum{font-family:var(--serif);font-size:24px;line-height:1.1}
+.cat .cname{font-weight:650;font-size:14px;margin-top:2px}
+.cat .cdesc{font-size:12px;color:var(--muted);line-height:1.6;margin-top:3px}
+.cat .go{font-size:11.5px;color:var(--accent);margin-top:8px;display:block}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .agent-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.toolbar,.result-line{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .agent,.card,table{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  .agent-grid{grid-template-columns:1fr 1fr}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">AI Agent 全景</div>
+      <div class="brand-sub">50 个产品 · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>怎么读这张表</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>全景地图</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>Agent 清单</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>按目标选</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>开源与闭源</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>补充与来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    50 个代表产品<br>
+    23 开源 · 27 闭源<br>
+    核验 2026-10-31 · 离线可用
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Agent 全景<span class="dot"></span>2026-10-31</p>
+    <h1>AI Agent <em>全景</em></h1>
+    <p class="lede">50 个正在被真实使用的 Agent 产品，按「编码 / 通用 / 框架 / 企业 / 垂直」分成五类，每个都只写一件事：它最强的地方在哪。开源与闭源并列，不按立场排序。</p>
+    <div class="meta-row">
+      <span class="pill">口径 <b>2026-10 仍可用</b></span>
+      <span class="pill">覆盖 <b>开源 + 闭源</b></span>
+      <span class="pill">标注 <b>中国团队 / 免费档</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">50<span>个</span></div><div class="l">代表性 Agent 产品</div></div>
+      <div class="kpi"><div class="n">23<span>个</span></div><div class="l">可自托管或开源</div></div>
+      <div class="kpi"><div class="n">5<span>类</span></div><div class="l">编码 / 通用 / 框架 / 企业 / 垂直</div></div>
+      <div class="kpi"><div class="n">1<span>张</span></div><div class="l">按目标选型表</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">怎么读这张表</h2></div>
+    <p class="lead-in">「Agent」被用得太宽。这里把三类东西放在同一张图里，但明确标注它们的层级不同——买产品和写框架是两件事。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card">
+        <h4 style="margin-top:0">产品 Agent</h4>
+        <p class="small" style="margin:0">装好就能用：编码 IDE、终端 Agent、浏览器助理、客服机器人。你买的是「任务闭环」。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">框架 / 运行时</h4>
+        <p class="small" style="margin:0">给你积木：状态机、工具调用、多 Agent、评测。你买的是「自己造 Agent 的能力」。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">企业平台</h4>
+        <p class="small" style="margin:0">解决治理：身份、权限、审计、运行时、模型网关。你买的是「让 Agent 合规上线」。</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">三条阅读约定</span>
+      <b>开源 ≠ 好，闭源 ≠ 差</b>；<b>「优点」是相对优势，不是绝对能力</b>；<b>2026 年变化很快</b>（例如 Windsurf 已更名为 Devin Desktop），购买前以官网为准。
+    </div>
+
+    <div class="callout">
+      <span class="t">为什么是 50 个</span>
+      这个领域每月都有新项目，穷举没有意义。本页保留「有公开产品、社区有真实使用、2026-10 仍可获取」的代表，另外在最后列了 12 个补充名字。被略去的不代表不好。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">全景地图</h2></div>
+    <p>点击任一分类，直接跳到清单并筛选。</p>
+    <div class="cat-grid">
+      <button class="cat" type="button" data-jump="coding">
+        <div class="cnum">22</div><div class="cname">编码 Agent</div>
+        <div class="cdesc">终端、IDE、云端委派。竞争最激烈，也是最快产生生产力的一类。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+      <button class="cat" type="button" data-jump="general">
+        <div class="cnum">8</div><div class="cname">通用 / 个人 Agent</div>
+        <div class="cdesc">浏览器操作、桌面助理、研究型 Agent。能力边界最模糊。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+      <button class="cat" type="button" data-jump="framework">
+        <div class="cnum">8</div><div class="cname">框架 / 运行时</div>
+        <div class="cdesc">LangGraph、CrewAI 等。决定你怎么编排工具、状态与多 Agent。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+      <button class="cat" type="button" data-jump="enterprise">
+        <div class="cnum">7</div><div class="cname">企业平台</div>
+        <div class="cdesc">身份、权限、审计、托管运行时。买的是治理，不是模型。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+      <button class="cat" type="button" data-jump="vertical">
+        <div class="cnum">5</div><div class="cname">垂直与工作流</div>
+        <div class="cdesc">客服、RPA、自动化工作流。效果最容易量化的一类。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+    </div>
+
+    <div class="callout good">
+      <span class="t">一句话选型</span>
+      要写代码 → 编码类；要替代重复操作 → 垂直/工作流；要自己造 → 框架；要在公司里合规落地 → 企业平台；要一个什么都能干的助理 → 通用类（但期望值放低）。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">Agent 清单</h2></div>
+    <p class="lead-in">按分类与许可筛选。每个条目的「优点」只写相对优势：它比同类更值得用的地方。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按分类筛选" id="catChips">
+        <button class="chip" type="button" data-cat="all" aria-pressed="true">全部分类</button>
+        <button class="chip" type="button" data-cat="coding" aria-pressed="false">编码 22</button>
+        <button class="chip" type="button" data-cat="general" aria-pressed="false">通用 8</button>
+        <button class="chip" type="button" data-cat="framework" aria-pressed="false">框架 8</button>
+        <button class="chip" type="button" data-cat="enterprise" aria-pressed="false">企业 7</button>
+        <button class="chip" type="button" data-cat="vertical" aria-pressed="false">垂直 5</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <label class="sr-only" for="agentSearch">搜索 Agent</label>
+        <input id="agentSearch" type="search" placeholder="搜索名称、能力、地区…" autocomplete="off">
+      </div>
+    </div>
+    <div class="filter-block" role="group" aria-label="按许可筛选">
+      <span class="lbl">许可</span>
+      <button class="chip" type="button" data-lic="all" aria-pressed="true">全部</button>
+      <button class="chip" type="button" data-lic="open" aria-pressed="false">开源 / 可自托管</button>
+      <button class="chip" type="button" data-lic="closed" aria-pressed="false">闭源</button>
+    </div>
+    <p class="result-line" id="agentCount" role="status" aria-live="polite">显示 50 / 50 个产品</p>
+
+    <div class="agent-grid" id="agentGrid">
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Claude Code Anthropic 终端 编码">
+        <div class="agent-top"><div><div class="name">Claude Code</div><div class="pos">终端原生编码 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Anthropic 的 CLI Agent，把整个仓库当工作区，长任务与端到端功能开发是主场。</p>
+        <ul class="pros"><li>跨文件重构与多步任务上下文连贯</li><li>终端 / CI 可脚本化，shell 权限控制细</li></ul>
+        <p class="note"><b>注意：</b>终端交互为主，重度使用依赖订阅或 API 额度。</p>
+        <div class="agent-foot"><span class="tag">CLI</span><span class="tag">订阅/API</span><a href="https://claude.com/claude-code" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="OpenAI Codex 云端 并行 编码">
+        <div class="agent-top"><div><div class="name">OpenAI Codex</div><div class="pos">云端并行编码 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">在云端隔离环境里并行跑任务，产出可审阅的 PR；CLI（Apache-2.0）是另一条本地路线。</p>
+        <ul class="pros"><li>并行 worktree，适合批量修复与重构</li><li>修复 / 重构类任务的 PR 接受率稳定</li></ul>
+        <p class="note"><b>注意：</b>云端环境与本地不一致时需额外验证。</p>
+        <div class="agent-foot"><span class="tag">云端</span><span class="tag">PR 交付</span><a href="https://openai.com/codex/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Cursor Anysphere IDE 编码">
+        <div class="agent-top"><div><div class="name">Cursor</div><div class="pos">AI 原生 IDE</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">基于 VS Code 的 AI IDE，强在编辑器内的补全、多文件编辑与多任务 Agent 面板。</p>
+        <ul class="pros"><li>编辑器体验与自动补全最成熟</li><li>多模型可选，Agents 面板适合并行任务</li></ul>
+        <p class="note"><b>注意：</b>订阅含用量额度，重度 Agent 会话消耗快。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag">订阅</span><a href="https://cursor.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Devin Cognition 自主 云端">
+        <div class="agent-top"><div><div class="name">Devin</div><div class="pos">自主软件工程师</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Cognition 的云端自主 Agent，接任务后在虚拟机里规划、写码、跑测试并交付。</p>
+        <ul class="pros"><li>端到端委派，适合定义清楚的中大型任务</li><li>云端 VM 不占本地资源，可并行</li></ul>
+        <p class="note"><b>注意：</b>按算力计费，任务边界不清时成本上升。</p>
+        <div class="agent-foot"><span class="tag">云端</span><span class="tag">按用量</span><a href="https://devin.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Devin Desktop Windsurf Cognition IDE">
+        <div class="agent-top"><div><div class="name">Devin Desktop</div><div class="pos">原 Windsurf · Agent IDE</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Cognition 于 2026-06 将 Windsurf 更名为 Devin Desktop，本地 Agent 与云端 Devin 打通。</p>
+        <ul class="pros"><li>本地 Agent + 一键委派云端，重活不占本机</li><li>支持 ACP，可把其他 Agent 接进同一界面</li></ul>
+        <p class="note"><b>注意：</b>品牌与路线已归属 Cognition，长期策略存在不确定性。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag">已更名</span><a href="https://devin.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="GitHub Copilot 微软 IDE 企业">
+        <div class="agent-top"><div><div class="name">GitHub Copilot</div><div class="pos">全 IDE 覆盖的编码 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">覆盖 VS Code、JetBrains、Visual Studio 与 GitHub 网页，Agent 模式可直接改仓库并发 PR。</p>
+        <ul class="pros"><li>IDE 覆盖最广，团队迁移成本低</li><li>与 GitHub 权限、审计、企业策略天然集成</li></ul>
+        <p class="note"><b>注意：</b>单点 Agent 深度通常不如专用工具。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag">企业</span><a href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Antigravity Google IDE agent">
+        <div class="agent-top"><div><div class="name">Google Antigravity</div><div class="pos">Agent-first IDE</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Google 推出的 Agent 优先 IDE，把多 Agent 的规划、执行与审阅放在同一工作台。</p>
+        <ul class="pros"><li>多 Agent 任务管理界面清晰</li><li>个人档免费，上手门槛低</li></ul>
+        <p class="note"><b>注意：</b>产品较新，插件与生态仍在补齐。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag free">免费档</span><a href="https://antigravity.google/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Kiro AWS 规格驱动 spec">
+        <div class="agent-top"><div><div class="name">Kiro</div><div class="pos">规格驱动编码 IDE</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">AWS 的 Agentic IDE，先写规格与任务，再让 Agent 按验收标准执行。</p>
+        <ul class="pros"><li>把需求、设计、任务、验收固化成流程</li><li>适合工程纪律强的团队与受控变更</li></ul>
+        <p class="note"><b>注意：</b>流程较重，小改动会觉得繁琐。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag">AWS</span><a href="https://kiro.dev/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Trae 字节 免费 国内 SOLO">
+        <div class="agent-top"><div><div class="name">Trae</div><div class="pos">字节的 AI IDE / SOLO</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">字节跳动的 AI IDE，提供 Agent 模式与 SOLO 自主模式，内置 MCP 市场。</p>
+        <ul class="pros"><li>国内网络可用，免费额度友好</li><li>内置 MCP 市场，装 Server 路径短</li></ul>
+        <p class="note"><b>注意：</b>涉及数据出境与合规时需评估。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag free">免费档</span><a href="https://www.trae.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Replit Agent 全栈 云端 部署">
+        <div class="agent-top"><div><div class="name">Replit Agent</div><div class="pos">从想法到上线的云端 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">在浏览器里描述产品，Agent 负责建库、写码、调试并部署，适合非专业开发者。</p>
+        <ul class="pros"><li>从零到可访问 URL 的闭环最短</li><li>环境、托管、数据库一体化</li></ul>
+        <p class="note"><b>注意：</b>平台锁定明显，复杂工程迁移成本高。</p>
+        <div class="agent-foot"><span class="tag">云端</span><span class="tag">全栈</span><a href="https://replit.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="JetBrains Junie IDE 重构 Java">
+        <div class="agent-top"><div><div class="name">JetBrains Junie</div><div class="pos">JetBrains 原生编码 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">嵌在 JetBrains IDE 里的 Agent，依赖 IDE 的索引与重构能力完成任务。</p>
+        <ul class="pros"><li>IDE 原生体验，导航与重构准</li><li>Java / Kotlin 生态契合度高</li></ul>
+        <p class="note"><b>注意：</b>绑定 JetBrains 订阅与生态。</p>
+        <div class="agent-foot"><span class="tag">IDE</span><span class="tag">JetBrains</span><a href="https://www.jetbrains.com/junie/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="closed" data-name="Amazon Q Developer AWS 迁移 Java">
+        <div class="agent-top"><div><div class="name">Amazon Q Developer</div><div class="pos">AWS 系编码 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向 AWS 的编码与运维助手，强在 Java 升级、迁移与云资源相关的代码任务。</p>
+        <ul class="pros"><li>AWS 权限与资源集成深</li><li>Java 版本升级与迁移有成熟路径</li></ul>
+        <p class="note"><b>注意：</b>通用编码能力不是它的主战场。</p>
+        <div class="agent-foot"><span class="tag">AWS</span><span class="tag">企业</span><a href="https://aws.amazon.com/q/developer/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="OpenCode 开源 终端 MIT subagent">
+        <div class="agent-top"><div><div class="name">OpenCode</div><div class="pos">开源终端编码 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">MIT 协议的终端 TUI Agent，模型自由，支持 Agent / 子代理、MCP 与技能。</p>
+        <ul class="pros"><li>模型与供应商完全自由，可接本地模型</li><li>子代理、权限、MCP 配置灵活，社区活跃</li></ul>
+        <p class="note"><b>注意：</b>模型、密钥、成本都要自己管。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">自托管</span><a href="https://opencode.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Pi 极简 终端 扩展 RPC">
+        <div class="agent-top"><div><div class="name">Pi</div><div class="pos">极简可扩展的终端 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">刻意保持精简的终端 Agent，通过扩展、技能与包补齐能力，提供 RPC 与 TypeScript SDK。</p>
+        <ul class="pros"><li>核心轻，扩展 / 技能 / 包可自由组合</li><li>RPC 与 SDK 适合嵌入自有系统</li></ul>
+        <p class="note"><b>注意：</b>子代理、MCP 等需装扩展，开箱能力少于重型工具。</p>
+        <div class="agent-foot"><span class="tag">开源</span><span class="tag">SDK</span><a href="https://pi.dev/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="OpenHands MIT 自主 SWE-bench 沙箱">
+        <div class="agent-top"><div><div class="name">OpenHands</div><div class="pos">开源自主开发环境</div></div><span class="lic open">开源</span></div>
+        <p class="desc">原 OpenDevin，MIT 协议，带沙箱、浏览器与终端的自主开发 Agent，也有云端与企业版。</p>
+        <ul class="pros"><li>SWE-bench 类任务表现强，可复现</li><li>沙箱隔离与自托管，适合团队与敏感代码</li></ul>
+        <p class="note"><b>注意：</b>部署较重，单人轻量场景不如 CLI。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">自托管</span><a href="https://openhands.dev/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Cline VS Code 审批 BYOK 开源">
+        <div class="agent-top"><div><div class="name">Cline</div><div class="pos">VS Code 内的自主 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">Apache-2.0 的 VS Code 扩展，读代码、改文件、跑终端、用浏览器，每步可审批。</p>
+        <ul class="pros"><li>人类审批粒度细，适合边看边放权</li><li>BYOK，多供应商与本地模型都能接</li></ul>
+        <p class="note"><b>注意：</b>按 token 计费，长任务成本需盯。</p>
+        <div class="agent-foot"><span class="tag">Apache-2.0</span><span class="tag">VS Code</span><a href="https://cline.bot/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Aider git 终端 本地模型 开源">
+        <div class="agent-top"><div><div class="name">Aider</div><div class="pos">Git 原生的终端配对编程</div></div><span class="lic open">开源</span></div>
+        <p class="desc">以 diff 和提交为中心的终端工具，每次 AI 修改都能成为可审查的 commit。</p>
+        <ul class="pros"><li>Git 工作流干净，改动可追溯、可回滚</li><li>本地模型友好，隐私与成本可控</li></ul>
+        <p class="note"><b>注意：</b>偏配对而非全自主，需要你在场。</p>
+        <div class="agent-foot"><span class="tag">Apache-2.0</span><span class="tag">本地模型</span><a href="https://aider.chat/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Goose Block 本地 runtime MCP Rust">
+        <div class="agent-top"><div><div class="name">Goose</div><div class="pos">本地 Agent 运行时</div></div><span class="lic open">开源</span></div>
+        <p class="desc">Block 发起、现归 Agentic AI Foundation（Linux 基金会）的 Rust Agent，桌面 / CLI / 可嵌入。</p>
+        <ul class="pros"><li>25+ 模型供应商，MCP 与工具生态广</li><li>完全本机运行，可接 Ollama 等本地推理</li></ul>
+        <p class="note"><b>注意：</b>配置项多，首次上手需要一点耐心。</p>
+        <div class="agent-foot"><span class="tag">Apache-2.0</span><span class="tag">本地</span><a href="https://goose-docs.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Gemini CLI Google 免费 终端 1M">
+        <div class="agent-top"><div><div class="name">Gemini CLI</div><div class="pos">Google 的终端 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">Apache-2.0 的终端 Agent，背靠 Gemini 的长上下文与搜索接地，个人免费额度大。</p>
+        <ul class="pros"><li>免费额度友好，适合日常与学习</li><li>长上下文 + 搜索，适合大仓库与研究型任务</li></ul>
+        <p class="note"><b>注意：</b>深度自主性与生态成熟度略逊于头部商业产品。</p>
+        <div class="agent-foot"><span class="tag free">免费档</span><span class="tag">Apache-2.0</span><a href="https://geminicli.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Codex CLI OpenAI 开源 Rust 沙箱">
+        <div class="agent-top"><div><div class="name">Codex CLI</div><div class="pos">轻量终端编码 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">OpenAI 的 Apache-2.0 参考实现，Rust 编写，可在终端或 IDE 里跑，强调沙箱与可控。</p>
+        <ul class="pros"><li>安装轻、启动快，沙箱边界清楚</li><li>与 Codex 生态共用配置与工作流</li></ul>
+        <p class="note"><b>注意：</b>与云端 Codex 不是同一个产品，能力与计费不同。</p>
+        <div class="agent-foot"><span class="tag">Apache-2.0</span><span class="tag">CLI</span><a href="https://github.com/openai/codex" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="SWE-agent 研究 issue 修复 benchmark">
+        <div class="agent-top"><div><div class="name">SWE-agent</div><div class="pos">Issue 修复研究 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">面向真实仓库 issue 的 Agent 与评测框架，常被用于 SWE-bench 类研究与复现。</p>
+        <ul class="pros"><li>可复现、可定制的实验基线</li><li>对「读 issue → 定位 → 改 → 测」流程打磨深</li></ul>
+        <p class="note"><b>注意：</b>研究与评测导向，产品化体验弱。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">研究</span><a href="https://github.com/SWE-agent/SWE-agent" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="coding" data-lic="open" data-name="Open Interpreter 本地 执行 自然语言">
+        <div class="agent-top"><div><div class="name">Open Interpreter</div><div class="pos">让模型直接操作本机</div></div><span class="lic open">开源</span></div>
+        <p class="desc">用自然语言驱动本地代码执行，处理文件、表格、脚本与系统任务。</p>
+        <ul class="pros"><li>本地执行，数据不必上传</li><li>跨平台，适合一次性自动化任务</li></ul>
+        <p class="note"><b>注意：</b>权限很大，务必在沙箱或隔离环境里跑。</p>
+        <div class="agent-foot"><span class="tag">AGPL</span><span class="tag">本地</span><a href="https://openinterpreter.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="closed" data-name="ChatGPT Agent OpenAI 浏览器 通用">
+        <div class="agent-top"><div><div class="name">ChatGPT Agent</div><div class="pos">浏览器 / 通用任务</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">在 ChatGPT 里直接执行浏览、填表、整理资料等任务，覆盖最广的通用型 Agent。</p>
+        <ul class="pros"><li>生态与工具最全，几乎什么都能试</li><li>浏览器操作与文件产出打通</li></ul>
+        <p class="note"><b>注意：</b>需要监督与确认，长任务配额有限。</p>
+        <div class="agent-foot"><span class="tag">通用</span><span class="tag">浏览器</span><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="closed" data-name="Claude Computer Use Anthropic 桌面 API">
+        <div class="agent-top"><div><div class="name">Claude Computer Use</div><div class="pos">桌面 / 浏览器操作能力</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Anthropic 提供的计算机操作能力，让模型看屏幕、点鼠标、敲键盘完成任务。</p>
+        <ul class="pros"><li>视觉理解与工具调用结合自然</li><li>适合把「人工点界面」流程自动化</li></ul>
+        <p class="note"><b>注意：</b>仍属实验性能力，必须放进沙箱与隔离账号。</p>
+        <div class="agent-foot"><span class="tag">API</span><span class="tag">桌面</span><a href="https://docs.anthropic.com/" target="_blank" rel="noopener noreferrer">文档 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="closed" data-name="Manus 通用 自主 中国">
+        <div class="agent-top"><div><div class="name">Manus</div><div class="pos">通用自主 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向「给目标、拿成品」的通用 Agent，擅长调研、整理与多步骤交付。</p>
+        <ul class="pros"><li>端到端产出完成度高，适合研究型任务</li><li>多工具编排与文件交付顺畅</li></ul>
+        <p class="note"><b>注意：</b>配额有限，过程透明度与可复现性一般。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">通用</span><a href="https://manus.im/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="closed" data-name="Genspark 超级 Agent 搜索 多模态">
+        <div class="agent-top"><div><div class="name">Genspark</div><div class="pos">超级 Agent / 搜索</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">把搜索、网页生成、文档与多模态产出整合到一个 Agent 界面里。</p>
+        <ul class="pros"><li>从检索到成品（页面、报告）链路短</li><li>多模态输出，适合内容与市场场景</li></ul>
+        <p class="note"><b>注意：</b>偏内容生产，工程类任务不是强项。</p>
+        <div class="agent-foot"><span class="tag">通用</span><span class="tag">内容</span><a href="https://www.genspark.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="closed" data-name="Perplexity Comet 浏览器 AI">
+        <div class="agent-top"><div><div class="name">Perplexity Comet</div><div class="pos">AI 浏览器</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">以研究为核心重构的浏览器，能在页面上下文中执行多步查询与整理。</p>
+        <ul class="pros"><li>搜索与浏览结合，引用来源清晰</li><li>研究型任务比通用助手更聚焦</li></ul>
+        <p class="note"><b>注意：</b>绑定浏览器使用习惯，自动化能力有限。</p>
+        <div class="agent-foot"><span class="tag">浏览器</span><span class="tag">研究</span><a href="https://www.perplexity.ai/comet" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="open" data-name="Browser Use 开源 浏览器 自动化">
+        <div class="agent-top"><div><div class="name">Browser Use</div><div class="pos">可编程浏览器 Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">把浏览器操作封装成 Agent 工具，既能嵌进应用，也能单独跑自动化流程。</p>
+        <ul class="pros"><li>开源可改，适合做自有产品的地基</li><li>与主流模型和框架都能接</li></ul>
+        <p class="note"><b>注意：</b>页面变化与反自动化策略会影响稳定性。</p>
+        <div class="agent-foot"><span class="tag">开源</span><span class="tag">浏览器</span><a href="https://github.com/browser-use/browser-use" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="open" data-name="UI-TARS 字节 GUI 视觉 开源">
+        <div class="agent-top"><div><div class="name">UI-TARS</div><div class="pos">GUI 操作模型 / Agent</div></div><span class="lic open">开源</span></div>
+        <p class="desc">字节开源的 GUI Agent 方向，让模型直接理解屏幕并操作跨平台界面。</p>
+        <ul class="pros"><li>跨桌面与移动端界面的通用操作</li><li>开源模型可本地部署与微调</li></ul>
+        <p class="note"><b>注意：</b>需要部署与调优，不是开箱产品。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">开源</span><a href="https://github.com/bytedance/UI-TARS" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="general" data-lic="open" data-name="OpenClaw 自托管 个人助理 多渠道">
+        <div class="agent-top"><div><div class="name">OpenClaw</div><div class="pos">自托管个人助理</div></div><span class="lic open">开源</span></div>
+        <p class="desc">跑在自己机器上的个人 Agent，接消息渠道、工具与长期记忆，像随身的自动化助理。</p>
+        <ul class="pros"><li>数据与凭证留在本地，隐私可控</li><li>多渠道接入，适合个人工作流</li></ul>
+        <p class="note"><b>注意：</b>安全边界靠你自己配，别给过宽权限。</p>
+        <div class="agent-foot"><span class="tag">开源</span><span class="tag">自托管</span><a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="LangGraph 状态机 编排 HITL">
+        <div class="agent-top"><div><div class="name">LangGraph</div><div class="pos">图状态机编排</div></div><span class="lic open">开源</span></div>
+        <p class="desc">用图描述 Agent 的状态与转移，适合需要持久化、人工介入与可恢复的长流程。</p>
+        <ul class="pros"><li>状态、检查点、人工审批都可控</li><li>生产案例多，可接 LangSmith 观测</li></ul>
+        <p class="note"><b>注意：</b>抽象较多，简单任务会显得重。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">Python/TS</span><a href="https://www.langchain.com/langgraph" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="CrewAI 多 Agent 角色 协作">
+        <div class="agent-top"><div><div class="name">CrewAI</div><div class="pos">角色化多 Agent 协作</div></div><span class="lic open">开源</span></div>
+        <p class="desc">用「角色 + 任务 + 流程」组织多个 Agent，快速搭出研究、写作、分析团队。</p>
+        <ul class="pros"><li>概念直观，多 Agent 原型上手快</li><li>内置流程与工具生态，社区活跃</li></ul>
+        <p class="note"><b>注意：</b>复杂分支与精细状态控制不如图编排。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">Python</span><a href="https://www.crewai.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="AutoGen AG2 微软 多 Agent 对话">
+        <div class="agent-top"><div><div class="name">AutoGen / AG2</div><div class="pos">对话式多 Agent 框架</div></div><span class="lic open">开源</span></div>
+        <p class="desc">微软研究院起源的多 Agent 框架，以对话驱动协作，适合研究与复杂实验。</p>
+        <ul class="pros"><li>多 Agent 交互模式丰富，可定制性强</li><li>研究资料与示例多</li></ul>
+        <p class="note"><b>注意：</b>版本与 API 变动较多，锁定版本再上生产。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">研究</span><a href="https://github.com/microsoft/autogen" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="OpenAI Agents SDK 轻量 handoff guardrails">
+        <div class="agent-top"><div><div class="name">OpenAI Agents SDK</div><div class="pos">轻量 Agent 开发套件</div></div><span class="lic open">开源</span></div>
+        <p class="desc">从实验性 Swarm 演化而来，核心抽象少：Agent、handoff、guardrail、tracing。</p>
+        <ul class="pros"><li>API 精简，几百行就能跑起多 Agent</li><li>内置追踪与护栏，调试成本低</li></ul>
+        <p class="note"><b>注意：</b>与 OpenAI 生态绑定较深，复杂编排需自己补。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">Python/TS</span><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener noreferrer">文档 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="Google ADK Gemini 多 Agent 部署">
+        <div class="agent-top"><div><div class="name">Google ADK</div><div class="pos">Gemini 生态 Agent 开发套件</div></div><span class="lic open">开源</span></div>
+        <p class="desc">Google 的 Agent Development Kit，支持多 Agent、工具与评测，并可直接部署到 GCP。</p>
+        <ul class="pros"><li>与 Gemini / Vertex 部署链路打通</li><li>多 Agent 与评测能力齐</li></ul>
+        <p class="note"><b>注意：</b>跨云场景需额外适配。</p>
+        <div class="agent-foot"><span class="tag">Apache-2.0</span><span class="tag">GCP</span><a href="https://google.github.io/adk-docs/" target="_blank" rel="noopener noreferrer">文档 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="LlamaIndex 数据 RAG 检索">
+        <div class="agent-top"><div><div class="name">LlamaIndex</div><div class="pos">数据与检索层</div></div><span class="lic open">开源</span></div>
+        <p class="desc">以数据接入、索引与检索见长，常作为 Agent 的知识底座，而非完整运行时。</p>
+        <ul class="pros"><li>连接器与检索策略丰富</li><li>与主流 Agent 框架可组合</li></ul>
+        <p class="note"><b>注意：</b>单独用它做 Agent，编排能力有限。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">RAG</span><a href="https://www.llamaindex.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="Semantic Kernel 微软 .NET 企业">
+        <div class="agent-top"><div><div class="name">Semantic Kernel</div><div class="pos">企业级 Agent 集成框架</div></div><span class="lic open">开源</span></div>
+        <p class="desc">微软的多语言 SDK，把模型、插件与业务流程接进现有 .NET / Java / Python 系统。</p>
+        <ul class="pros"><li>.NET 生态与企业集成成熟</li><li>与 Azure、Copilot 体系衔接顺畅</li></ul>
+        <p class="note"><b>注意：</b>非微软技术栈会觉得抽象偏重。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">.NET</span><a href="https://learn.microsoft.com/semantic-kernel/" target="_blank" rel="noopener noreferrer">文档 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="framework" data-lic="open" data-name="Pydantic AI 类型安全 结构化输出">
+        <div class="agent-top"><div><div class="name">Pydantic AI</div><div class="pos">类型安全的 Agent 框架</div></div><span class="lic open">开源</span></div>
+        <p class="desc">把 Pydantic 的校验与类型系统带进 Agent 开发，输出结构化、错误更早暴露。</p>
+        <ul class="pros"><li>结构化输出与校验是一等公民</li><li>代码风格接近普通 Python，易维护</li></ul>
+        <p class="note"><b>注意：</b>生态较新，复杂多 Agent 能力仍在成长。</p>
+        <div class="agent-foot"><span class="tag">MIT</span><span class="tag">Python</span><a href="https://ai.pydantic.dev/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="Microsoft Copilot Studio Agent 365 低代码 治理">
+        <div class="agent-top"><div><div class="name">Copilot Studio + Agent 365</div><div class="pos">微软低代码 Agent 平台</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">在 Microsoft 365 / Azure 体系里搭 Agent，Agent 365 负责统一注册、身份与治理。</p>
+        <ul class="pros"><li>Entra ID 身份与 Purview 治理原生</li><li>低代码构建，直接发布到 Teams / Outlook</li></ul>
+        <p class="note"><b>注意：</b>深度绑定微软云，跨云能力弱。</p>
+        <div class="agent-foot"><span class="tag">企业</span><span class="tag">低代码</span><a href="https://www.microsoft.com/microsoft-copilot/microsoft-copilot-studio" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="Salesforce Agentforce 360 CRM 客服">
+        <div class="agent-top"><div><div class="name">Salesforce Agentforce 360</div><div class="pos">CRM 场景 Agent 平台</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">围绕 Salesforce 数据与业务流程构建销售、服务 Agent，强调「接地」而非自由发挥。</p>
+        <ul class="pros"><li>客户数据与流程天然打通</li><li>业务规则与 Agent 行为可分离，可控性高</li></ul>
+        <p class="note"><b>注意：</b>离开 Salesforce 生态价值快速下降。</p>
+        <div class="agent-foot"><span class="tag">企业</span><span class="tag">CRM</span><a href="https://www.salesforce.com/agentforce/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="AWS Bedrock AgentCore 托管 运行时 MCP">
+        <div class="agent-top"><div><div class="name">AWS Bedrock AgentCore</div><div class="pos">托管 Agent 运行时</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">任意框架、任意模型的托管运行时，提供 Gateway、Memory、Identity、浏览器与代码解释器。</p>
+        <ul class="pros"><li>模型与框架自由度高，不锁定单一 SDK</li><li>身份、网关、可观测等生产件齐全</li></ul>
+        <p class="note"><b>注意：</b>绑定 AWS 计费与网络体系。</p>
+        <div class="agent-foot"><span class="tag">AWS</span><span class="tag">托管</span><a href="https://aws.amazon.com/bedrock/agentcore/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="Gemini Enterprise Agent Platform Google Vertex">
+        <div class="agent-top"><div><div class="name">Gemini Enterprise Agent Platform</div><div class="pos">Google 企业 Agent 平台</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">原 Vertex AI Agent Builder 体系的企业化演进，覆盖构建、部署、治理与 Gemini 集成。</p>
+        <ul class="pros"><li>与 Gemini、BigQuery、Workspace 衔接顺</li><li>ADK 与评测工具链完整</li></ul>
+        <p class="note"><b>注意：</b>产品更名频繁，采购前确认当前服务名。</p>
+        <div class="agent-foot"><span class="tag">GCP</span><span class="tag">企业</span><a href="https://cloud.google.com/products/gemini-enterprise-agent-platform" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="ServiceNow AI Agents ITSM 流程">
+        <div class="agent-top"><div><div class="name">ServiceNow AI Agents</div><div class="pos">ITSM / 企业流程 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">把 Agent 嵌进 ServiceNow 的工单、ITSM 与跨部门流程，用 AI Control Tower 统一管控。</p>
+        <ul class="pros"><li>流程数据与权限现成，落地快</li><li>适合 IT 运维、客服与共享服务</li></ul>
+        <p class="note"><b>注意：</b>价值集中在 ServiceNow 覆盖的流程。</p>
+        <div class="agent-foot"><span class="tag">企业</span><span class="tag">ITSM</span><a href="https://www.servicenow.com/products/ai-agents.html" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="IBM watsonx Orchestrate 多云 本地 治理">
+        <div class="agent-top"><div><div class="name">IBM watsonx Orchestrate</div><div class="pos">多云 / 本地 Agent 编排</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向受监管企业的 Agent 编排与治理平台，支持多云与本地部署。</p>
+        <ul class="pros"><li>可 on-prem，合规与数据驻留友好</li><li>既有 IBM 集成与流程资产可复用</li></ul>
+        <p class="note"><b>注意：</b>体系较重，实施与许可成本高。</p>
+        <div class="agent-foot"><span class="tag">企业</span><span class="tag">本地</span><a href="https://www.ibm.com/products/watsonx-orchestrate" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="enterprise" data-lic="closed" data-name="OpenAI Frontier 企业 Agent 平台">
+        <div class="agent-top"><div><div class="name">OpenAI Frontier</div><div class="pos">企业 Agent 平台</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向组织的 Agent 平台，强调统一接入、权限与「每个 Agent 有人负责」的问责机制。</p>
+        <ul class="pros"><li>与 OpenAI 模型、工具链深度整合</li><li>治理与责任归属设计明确</li></ul>
+        <p class="note"><b>注意：</b>产品较新，生态与本地化仍在完善。</p>
+        <div class="agent-foot"><span class="tag">企业</span><span class="tag">OpenAI</span><a href="https://openai.com/frontier/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="vertical" data-lic="closed" data-name="Sierra 客服 结果计费">
+        <div class="agent-top"><div><div class="name">Sierra</div><div class="pos">客服 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向客户服务的 Agent 平台，以「解决问题」而非「对话次数」计价。</p>
+        <ul class="pros"><li>按结果计费，ROI 容易对齐</li><li>对话质量与品牌语气调校成熟</li></ul>
+        <p class="note"><b>注意：</b>场景聚焦客服，不适合通用办公。</p>
+        <div class="agent-foot"><span class="tag">垂直</span><span class="tag">客服</span><a href="https://sierra.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="vertical" data-lic="closed" data-name="Decagon 客服 AI">
+        <div class="agent-top"><div><div class="name">Decagon</div><div class="pos">客服 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">面向支持团队的 AI Agent，接知识库与工单系统，处理售前售后会话。</p>
+        <ul class="pros"><li>上线快，内置客服场景工作流</li><li>与现有帮助中心、工单系统集成度高</li></ul>
+        <p class="note"><b>注意：</b>需要高质量知识库，否则回答质量下降。</p>
+        <div class="agent-foot"><span class="tag">垂直</span><span class="tag">客服</span><a href="https://decagon.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="vertical" data-lic="closed" data-name="Intercom Fin 客服 工单">
+        <div class="agent-top"><div><div class="name">Intercom Fin</div><div class="pos">客服 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Intercom 内置的 AI 客服，直接接工单、帮助中心与对话历史。</p>
+        <ul class="pros"><li>与 Intercom 数据一体，配置成本低</li><li>按解决数计费，边界清楚</li></ul>
+        <p class="note"><b>注意：</b>只在 Intercom 生态内成立。</p>
+        <div class="agent-foot"><span class="tag">垂直</span><span class="tag">客服</span><a href="https://www.intercom.com/fin" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="vertical" data-lic="open" data-name="n8n 工作流 自托管 自动化">
+        <div class="agent-top"><div><div class="name">n8n</div><div class="pos">工作流自动化 + Agent 节点</div></div><span class="lic open">开源</span></div>
+        <p class="desc">fair-code 的工作流平台，节点生态庞大，可在流程里嵌入 LLM 与 Agent 步骤。</p>
+        <ul class="pros"><li>自托管、节点多，接内部系统方便</li><li>确定性流程与 Agent 混合编排</li></ul>
+        <p class="note"><b>注意：</b>不是 Agent-first，复杂推理要自己设计。</p>
+        <div class="agent-foot"><span class="tag">自托管</span><span class="tag">工作流</span><a href="https://n8n.io/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="vertical" data-lic="open" data-name="Dify LLMOps 可视化 RAG 自托管">
+        <div class="agent-top"><div><div class="name">Dify</div><div class="pos">可视化 Agent / RAG 平台</div></div><span class="lic open">开源</span></div>
+        <p class="desc">开源 LLMOps 平台，用可视化画布搭 Agent、知识库与工作流，可自托管。</p>
+        <ul class="pros"><li>可视化编排 + RAG，非工程团队也能上手</li><li>自托管与多模型接入，数据可控</li></ul>
+        <p class="note"><b>注意：</b>复杂状态与深度定制不如代码框架。</p>
+        <div class="agent-foot"><span class="tag">自托管</span><span class="tag">可视化</span><a href="https://dify.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+    </div>
+    <div class="empty" id="agentEmpty" hidden>没有匹配的产品。试试更短的关键词，或重置筛选。</div>
+
+    <div class="callout warn" style="margin-top:20px">
+      <span class="t">同类别内部差异很大</span>
+      「编码 Agent」里既有终端工具，也有云端自主工程师；「企业平台」里既卖运行时，也卖治理。筛选后请读具体「注意」，再做候选。
+    </div>
+  </section>
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">按目标选</h2></div>
+    <p>不知道从哪开始，就按「你明天要完成的事」对号入座。每行只给一个首选与一个备选。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>你的目标</th><th>首选</th><th>备选</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td>终端里写完一个功能</td><td>Claude Code</td><td>OpenCode</td><td>长任务连贯；后者模型与成本更自由</td></tr>
+          <tr><td>在 IDE 里边写边改</td><td>Cursor</td><td>GitHub Copilot</td><td>补全与编辑体验；后者覆盖与治理更好</td></tr>
+          <tr><td>把任务丢到后台跑</td><td>OpenAI Codex</td><td>Devin</td><td>并行隔离环境与 PR 交付</td></tr>
+          <tr><td>必须开源 / 自托管</td><td>OpenHands</td><td>Aider</td><td>沙箱自主能力；后者 Git 工作流更轻</td></tr>
+          <tr><td>自己造一个 Agent</td><td>LangGraph</td><td>OpenAI Agents SDK</td><td>状态与人工介入可控；后者更轻</td></tr>
+          <tr><td>公司里合规上线</td><td>Copilot Studio</td><td>Bedrock AgentCore</td><td>M365 身份治理；后者模型/框架自由</td></tr>
+          <tr><td>客服与售后自动化</td><td>Sierra</td><td>Decagon</td><td>结果计费；后者上线更快</td></tr>
+          <tr><td>内部流程自动化</td><td>n8n</td><td>Dify</td><td>自托管节点生态；后者可视化 RAG</td></tr>
+          <tr><td>国内网络与中文生态</td><td>Trae</td><td>Manus</td><td>IDE 免费额度；后者通用任务交付</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">不要把「首选」当结论</span>
+      它只是节省时间的起点。真正的判断来自你的任务：同一个「写代码」，有人需要补全速度，有人需要无人值守，有人只需要合规审计。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">开源与闭源</h2></div>
+    <p>这不是立场问题，是成本结构问题。开源把成本从订阅费转移到模型、算力与运维；闭源把复杂度收进产品，但把控制权交出去。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>开源 / 可自托管</th><th>闭源商业产品</th></tr></thead>
+        <tbody>
+          <tr><td>直接费用</td><td>软件免费，模型 API / GPU / 运维自付</td><td>订阅或按量计费，费用可预测性较好</td></tr>
+          <tr><td>数据边界</td><td>可完全留在内网</td><td>依赖厂商的数据条款与区域</td></tr>
+          <tr><td>能力上限</td><td>取决于你选的模型与调优</td><td>端到端优化，开箱即用</td></tr>
+          <tr><td>维护负担</td><td>升级、兼容、安全都归你</td><td>厂商负责，但可能强制变更</td></tr>
+          <tr><td>治理与审计</td><td>需要自己搭日志、权限、评测</td><td>通常内置，但深度不一</td></tr>
+          <tr><td>迭代速度</td><td>跟随社区，节奏不一</td><td>快，但路线由厂商决定</td></tr>
+          <tr><td>锁定风险</td><td>低，可替换</td><td>高，迁移成本随集成深度上升</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">选开源的三个信号</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>代码或数据不能出内网</li>
+          <li>需要改 Agent 的循环、工具或权限模型</li>
+          <li>规模化后 API 成本高于自建</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">选闭源的三个信号</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>你要的是结果，不是可改的框架</li>
+          <li>没有团队维护运行时与升级</li>
+          <li>需要厂商级的 SLA、审计与支持</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">两个常见误解</span>
+      <b>开源不等于免费</b>：模型调用、GPU、人力往往比订阅更贵；<b>闭源不等于黑箱</b>：权限、日志、数据条款仍然可以谈。多数团队最后是混合栈。
+    </div>
+  </section>
+
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">补充与来源</h2></div>
+
+    <h3>还有这些（未单独展开）</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>名称</th><th>一句话</th><th>许可</th></tr></thead>
+        <tbody>
+          <tr><td>Qwen Code</td><td>阿里开源的终端编码 Agent，中文生态友好</td><td>开源</td></tr>
+          <tr><td>Roo Code</td><td>Cline 分支，强调自定义模式与多角色</td><td>开源</td></tr>
+          <tr><td>Kilo Code</td><td>VS Code 多模式 Agent，BYOK</td><td>开源</td></tr>
+          <tr><td>Continue</td><td>IDE 扩展，强调可定制与本地模型</td><td>开源</td></tr>
+          <tr><td>Crush</td><td>Charm 出品的终端 Agent，界面精致</td><td>开源（FSL）</td></tr>
+          <tr><td>Augment Code</td><td>大仓库上下文引擎，企业向</td><td>闭源</td></tr>
+          <tr><td>Factory</td><td>企业「软件工厂」，多 Droid 编排</td><td>闭源</td></tr>
+          <tr><td>Warp</td><td>终端 + Agent，团队协作体验好</td><td>闭源</td></tr>
+          <tr><td>Amp</td><td>Sourcegraph 的 Agent，代码搜索强</td><td>闭源</td></tr>
+          <tr><td>Lindy</td><td>无代码个人 / 团队自动化 Agent</td><td>闭源</td></tr>
+          <tr><td>Botpress</td><td>对话式 Agent 构建，渠道集成多</td><td>闭源</td></tr>
+          <tr><td>Rasa</td><td>可控对话 Agent，支持本地部署</td><td>开源核心</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>来源与口径</h3>
+    <ul class="small">
+      <li>产品能力与许可：各产品官网、文档与公开仓库（2026-10-31 核对）。</li>
+      <li>编码 Agent 横向信息参考：TechLogHub（2026-10）、CodePick（2026-10）、Agentic.ai（2026-10）、OpenHands 博客（2026-06）。</li>
+      <li>企业平台参考：Dataiku（2026-08）、Airtable、Alice Labs（2026-06）、AWS / Microsoft / Salesforce / Google 官方文档。</li>
+      <li>开源项目状态参考：GitHub 仓库与趋势整理（2026-10）。</li>
+    </ul>
+    <p class="small">价格、许可、星标与功能会变；本页只做结构与相对优势的判断，采购或选型前请以官网当期信息为准。部分产品在中国大陆的可用性与合规性需单独评估。</p>
+  </section>
+
+  <footer>
+    <span>AI Agent 全景 · 2026-10-31 · 50 个产品</span>
+    <span>开源与闭源并列，不按立场排序</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  /* ---------- agents filter ---------- */
+  var agents = Array.prototype.slice.call(document.querySelectorAll(".agent"));
+  var catChips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-cat]"));
+  var licChips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-lic]"));
+  var search = document.getElementById("agentSearch");
+  var count = document.getElementById("agentCount");
+  var empty = document.getElementById("agentEmpty");
+  var activeCat = "all";
+  var activeLic = "all";
+
+  function apply() {
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    agents.forEach(function (el) {
+      var ok = activeCat === "all" || el.getAttribute("data-cat") === activeCat;
+      if (ok && activeLic !== "all") { ok = el.getAttribute("data-lic") === activeLic; }
+      if (ok && q) { ok = el.textContent.toLowerCase().indexOf(q) !== -1; }
+      el.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    count.textContent = "显示 " + shown + " / " + agents.length + " 个产品";
+    empty.hidden = shown !== 0;
+  }
+
+  function pressCat(cat) {
+    activeCat = cat;
+    catChips.forEach(function (c) {
+      c.setAttribute("aria-pressed", c.getAttribute("data-cat") === cat ? "true" : "false");
+    });
+  }
+
+  catChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      pressCat(chip.getAttribute("data-cat"));
+      apply();
+    });
+  });
+
+  licChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      activeLic = chip.getAttribute("data-lic");
+      licChips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+
+  search.addEventListener("input", apply);
+
+  Array.prototype.slice.call(document.querySelectorAll(".cat[data-jump]")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      pressCat(btn.getAttribute("data-jump"));
+      apply();
+      document.getElementById("s03").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  apply();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
