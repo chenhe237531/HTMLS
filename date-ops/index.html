@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>约会运营手册 v0.1 · 从匹配到线下，以及为什么"全自动广撒网"不成立</title>
+<style>
+:root{
+  --paper:#f7f5ef;
+  --paper-2:#efece3;
+  --surface:#fffefa;
+  --ink:#191a1d;
+  --ink-2:#3d4046;
+  --muted:#71747b;
+  --line:#e4dfd3;
+  --line-strong:#cfc8b7;
+  --accent:#8d2f3f;
+  --accent-soft:#f7e9ea;
+  --amber:#8a5a12;
+  --amber-soft:#fbf0dd;
+  --green:#1f6b52;
+  --green-soft:#e7f1ec;
+  --red:#9c2b28;
+  --red-soft:#fae8e6;
+  --code-bg:#191c22;
+  --code-ink:#e8e5dd;
+  --code-line:#2b3038;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(25,26,29,.05), 0 10px 30px -18px rgba(25,26,29,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:
+    radial-gradient(1100px 560px at 84% -8%,rgba(141,47,63,.07),transparent 60%),
+    radial-gradient(900px 500px at 2% 1%,rgba(138,90,18,.055),transparent 55%),
+    var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.8;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#f0cdd2;color:#16171a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80;transition:width .08s linear}
+.app{display:grid;grid-template-columns:268px minmax(0,1fr);align-items:start}
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  position:sticky;top:0;height:100vh;overflow:auto;
+  padding:30px 18px 26px 26px;border-right:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,254,250,.75),rgba(255,254,250,.32));
+  backdrop-filter:blur(6px);
+}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:24px}
+.brand-mark{
+  width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;
+  background:linear-gradient(140deg,var(--accent),#31101a);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+}
+.brand-mark::after{
+  content:"";position:absolute;inset:8px 9px;border:2px solid #f6efe2;border-radius:6px 6px 6px 12px;
+  transform:rotate(-10deg);
+}
+.brand-title{font-family:var(--serif);font-size:16.5px;line-height:1.28;letter-spacing:.01em}
+.brand-sub{font-size:10.5px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-top:4px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{
+  display:grid;grid-template-columns:26px 1fr;gap:6px;align-items:baseline;
+  padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;
+  font-size:13px;line-height:1.5;border:1px solid transparent;
+}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#ecd2d6;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+/* ---------- main ---------- */
+main{min-width:0;padding:44px clamp(20px,5vw,64px) 96px;max-width:1040px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,58px);line-height:1.1;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:44em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin:0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.55}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(23px,3vw,30px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px;letter-spacing:-.005em}
+h4{font-size:14px;margin:20px 0 6px;letter-spacing:.02em;color:var(--ink-2)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:5px 0}
+li::marker{color:var(--muted)}
+strong{font-weight:650}
+em{font-style:normal;background:linear-gradient(transparent 62%,#f6dfe2 62%);padding:0 1px}
+code{font-family:var(--mono);font-size:.875em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+
+/* ---------- components ---------- */
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0cfcd;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.callout p:last-child{margin-bottom:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.num-list{list-style:none;padding:0;margin:16px 0;counter-reset:n}
+.num-list li{position:relative;padding:10px 0 10px 40px;border-top:1px solid var(--line);counter-increment:n}
+.num-list li:first-child{border-top:0}
+.num-list li::before{
+  content:counter(n);position:absolute;left:0;top:9px;width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;font-family:var(--mono);font-size:11.5px;
+  background:var(--accent-soft);color:var(--accent);border:1px solid #ecd2d6;
+}
+.num-list .h{font-weight:650;color:var(--ink)}
+.num-list .d{font-size:13.4px;color:var(--ink-2)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:560px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12.6px}
+tr.hi td{background:var(--accent-soft)}
+tr.hi:hover td{background:#f4e2e5}
+
+/* ---------- code block ---------- */
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #d79aa4;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.72;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre;font-size:inherit}
+
+/* ---------- controls ---------- */
+.btn{appearance:none;font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#f8f6f0;transition:background .15s}
+.btn:hover{background:#2c2e34}
+.btn.ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line-strong);font-weight:500}
+.btn.ghost:hover{background:var(--paper-2)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.field input,.field select{font:inherit;font-size:13.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.range-row{display:grid;grid-template-columns:1fr 72px;gap:10px;align-items:center}
+.range-row output{font-family:var(--mono);font-size:13px;text-align:right;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+
+/* ---------- calculator ---------- */
+.calc{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){.calc{grid-template-columns:1fr}}
+.calc-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;box-shadow:var(--shadow)}
+.calc-panel h4{margin:0 0 12px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.funnel{display:grid;gap:7px;margin-top:4px}
+.funnel-row{display:grid;grid-template-columns:88px 1fr 62px;gap:10px;align-items:center;font-size:12.5px}
+.funnel-row .lab{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.funnel-row .val{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--ink)}
+.bar{height:9px;border-radius:99px;background:var(--paper-2);overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#c6737e);transition:width .25s ease}
+.final{display:flex;align-items:baseline;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.final .n{font-family:var(--serif);font-size:36px;line-height:1;letter-spacing:-.03em;color:var(--accent)}
+.final .u{font-size:13px;color:var(--muted)}
+.verdict{font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.65}
+.preset-row{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6;transition:background .15s,border-color .15s,color .15s}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+
+/* ---------- scorer ---------- */
+.scorer{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.scorer{grid-template-columns:1fr}}
+.sig{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:6px 14px;box-shadow:var(--shadow)}
+.sig legend{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+.sig label{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:13.4px;color:var(--ink-2);cursor:pointer;border-top:1px dashed var(--line)}
+.sig label:first-of-type{border-top:0}
+.sig input[type=checkbox]{margin:4px 0 0;accent-color:var(--accent);flex:0 0 auto;width:15px;height:15px}
+.sig .w{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--muted);flex:0 0 auto;padding-left:8px}
+.sig .w.neg{color:var(--red)}
+.readout{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);position:sticky;top:18px}
+.gauge{position:relative;height:12px;border-radius:99px;background:linear-gradient(90deg,#c98b90,#e8cdd0 38%,#cfd8d2 62%,#6ea48b);margin:6px 0 4px}
+.gauge .dot{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--surface);border:3px solid var(--ink);transform:translate(-50%,-50%);transition:left .25s ease}
+.gauge-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.score-big{font-family:var(--serif);font-size:46px;line-height:1;letter-spacing:-.03em;margin:10px 0 2px}
+.tier{display:inline-block;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;padding:3px 9px;border-radius:6px;border:1px solid}
+.tier.A{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.tier.B{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.tier.C{color:var(--red);border-color:#f0cfcd;background:var(--red-soft)}
+.tier.X{color:#fff;background:var(--red);border-color:var(--red)}
+.next{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13.4px;color:var(--ink-2);line-height:1.68}
+.next b{color:var(--ink)}
+
+/* ---------- details / accordion ---------- */
+.acc{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;box-shadow:var(--shadow);margin:0 0 14px}
+.acc > summary{cursor:pointer;list-style:none;padding:13px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.3px;background:linear-gradient(180deg,#fffefb,#fbf8f2)}
+.acc > summary::-webkit-details-marker{display:none}
+.acc > summary .chev{margin-left:auto;transition:transform .18s;color:var(--muted);font-size:12px}
+.acc[open] > summary .chev{transform:rotate(90deg)}
+.acc > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.acc .body{padding:4px 18px 16px;border-top:1px solid var(--line)}
+.acc .body p:first-child{margin-top:12px}
+
+/* ---------- chat sample ---------- */
+.chat{display:flex;flex-direction:column;gap:8px;margin:14px 0 18px;max-width:560px}
+.bubble{max-width:82%;padding:9px 13px;border-radius:14px;font-size:13.6px;line-height:1.6;border:1px solid var(--line)}
+.bubble.her{background:#f1efe8;border-color:#e2ddce;border-top-left-radius:5px;align-self:flex-start}
+.bubble.me{background:var(--accent);border-color:var(--accent);color:#fdf4f4;border-top-right-radius:5px;align-self:flex-end}
+.bubble.bad{background:var(--red-soft);border-color:#f0cfcd;align-self:flex-end;color:#7d2220}
+.bubble .stamp{display:block;font-size:10.5px;opacity:.65;margin-top:3px;font-family:var(--mono)}
+.anno{font-size:12.3px;color:var(--muted);margin:-8px 0 16px;padding-left:4px;border-left:2px solid var(--line-strong)}
+
+/* ---------- timeline ---------- */
+.timeline{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.timeline::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.timeline li{position:relative;padding:0 0 22px 44px}
+.timeline li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.timeline .ph{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:3px}
+.timeline .ph b{font-size:15px}
+.timeline .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.04em}
+.timeline p{margin:0;font-size:13.4px;color:var(--ink-2)}
+.timeline .out{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+/* ---------- mermaid-ish arch ---------- */
+.arch{display:grid;gap:10px;margin:18px 0 8px}
+.layer{display:grid;grid-template-columns:104px minmax(0,1fr);gap:14px;align-items:stretch}
+.layer .tag-col{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:10px 12px;border-radius:10px;background:var(--paper-2);border:1px solid var(--line)}
+.layer .tag-col .id{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--muted)}
+.layer .tag-col .nm{font-size:13px;font-weight:650;line-height:1.35}
+.layer .box{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:11px 14px;font-size:13.3px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.layer .box .step{font-size:12px;padding:3px 9px;border-radius:6px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink-2);white-space:normal}
+.layer .box .arw{color:var(--muted);font-size:11px}
+@media(max-width:620px){
+  .layer{grid-template-columns:1fr;gap:6px}
+  .layer .tag-col{flex-direction:row;align-items:baseline;gap:8px;padding:7px 12px}
+}
+.layer.gate .tag-col{background:var(--amber-soft);border-color:#ecd4b4}
+.layer.gate .tag-col .nm{color:var(--amber)}
+.layer.gate .box{background:linear-gradient(180deg,#fffaf0,#fffdf8);border-color:#ecd4b4;color:var(--amber);font-weight:600}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;margin-top:20px;font-size:12.5px;color:var(--muted)}
+footer b{color:var(--ink-2);font-weight:600}
+.src{font-size:12.6px;color:var(--ink-2);line-height:1.7}
+.src li{margin:6px 0}
+.tag{font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:var(--paper);font-family:var(--sans);white-space:nowrap}
+.tag.fact{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.tag.assume{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.tag.opinion{color:var(--accent);border-color:#ecd2d6;background:var(--accent-soft)}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px 18px}
+  .toc{flex-direction:row;flex-wrap:wrap}
+  .toc a{grid-template-columns:auto 1fr;font-size:12.2px}
+  main{padding:28px 18px 70px}
+  .side-foot{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">约会运营手册</div>
+      <div class="brand-sub">Design Doc v0.1</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>结论先行</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>漏斗数学</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>平台约束</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>合规与红线</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>杠杆排序</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>系统架构</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>筛选模型</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>文案引擎</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>转微信</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>线下首约</span></a></li>
+      <li><a href="#s11"><span class="no">11</span><span>14 天排期</span></a></li>
+      <li><a href="#s12"><span class="no">12</span><span>指标与止损</span></a></li>
+      <li><a href="#s13"><span class="no">13</span><span>风险表</span></a></li>
+      <li><a href="#s14"><span class="no">14</span><span>附录与来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    <b>阅读提示</b><br>
+    本文区分三类内容：<span class="tag fact">事实</span> 有出处；<span class="tag assume">假设</span> 是待你替换的模型参数；<span class="tag opinion">判断</span> 是一家之言。
+  </div>
+</aside>
+
+<main id="main">
+<header class="hero">
+  <p class="eyebrow"><span class="dot"></span><span>Design Doc · v0.1</span><span>·</span><span>2026-10-31</span></p>
+  <h1>把"广撒网"重新设计成<br><em>一条窄而深的漏斗</em></h1>
+  <p class="lede">
+    你提的方案是：脚本接管 Tinder / 探探，自动筛选、自动聊、自动要联系方式、自动约出来。
+    这份文档先把这条路走一遍算给你看——包括它在第几天被平台掐死——然后给出一版能真正跑起来的架构：
+    <strong>AI 做筛选和起草，你做最后那一下点击。</strong>
+  </p>
+  <div class="meta-row">
+    <span class="pill">目标 <b>线下见面数 / 周</b></span>
+    <span class="pill">平台 <b>Tinder · 探探</b></span>
+    <span class="pill">形态 <b>单人 · 半自动</b></span>
+    <span class="pill">周期 <b>14 天 MVP</b></span>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">2.7<span>×</span></div><div class="l">半自动相对纯手动的到场产出倍数（模型估算）</div></div>
+    <div class="kpi"><div class="n">~6<span>天</span></div><div class="l">全自动账号的典型存活期（经验值，非官方）</div></div>
+    <div class="kpi"><div class="n">1<span>道</span></div><div class="l">架构里唯一不可移除的人工闸门</div></div>
+    <div class="kpi"><div class="n">45<span>min</span></div><div class="l">建议的每日硬性时间上限</div></div>
+  </div>
+</header>
+
+<section id="s01">
+  <div class="sec-head"><span class="sec-no">01</span><h2>结论先行</h2></div>
+  <p class="lead-in">三句话，读完可以不用往下看——但下面的算式会告诉你为什么。</p>
+
+  <ol class="num-list">
+    <li><span class="h">全自动"广撒网"在数学上不成立，不是道德问题，是转化率问题。</span>
+      <span class="d">自动化把分母（滑动数）放大了 10 倍，同时把每一环的转化率打到 1/3 —— 因为平台限流、对面一眼看出模板、AI 代聊被识别后直接 ghost。净产出反而下降，还附赠一个封号。</span></li>
+    <li><span class="h">真正的瓶颈不在"量"，在你自己的素材和首条消息。</span>
+      <span class="d">右滑匹配率 80% 由前三张照片决定，首条回复率 3–5 倍差距由"是否引用她的具体细节"决定。这两项不花钱、不封号、当天可改。</span></li>
+    <li><span class="h">能落地的版本是：AI 排优先级 + 起草，你过闸发送。</span>
+      <span class="d">系统替你省掉的是"判断谁值得投入"和"想第一句说什么"，不是"发送"这个动作。发送由人做，是这套方案里唯一能同时规避封号、规避法律风险、保住对话真实性的设计。</span></li>
+  </ol>
+
+  <div class="callout warn">
+    <span class="t">先说清楚我不会设计的三件事</span>
+    ① 绕过平台风控（设备指纹伪装、验证码打码、行为拟真）；② 多账号矩阵；③ 批量抓取并存储他人资料、同一句话群发。
+    前两个是和无上限的对手做军备竞赛且必输，第三个在国内有明确的法律暴露。第 4 节展开。
+  </div>
+</section>
+
+<section id="s02">
+  <div class="sec-head"><span class="sec-no">02</span><h2>漏斗数学：为什么"广撒网"反而是负优化</h2></div>
+  <p class="lead-in">
+    约会软件是一门转化率生意，不是曝光生意。任何"广撒网"动作都在放大第一环的同时，<em>把后面每一环的转化率压低</em>。
+    下面这个计算器可以自己改参数——上面三档是预设，拖一下滑块就能看到净产出怎么塌。
+  </p>
+
+  <div class="preset-row" role="group" aria-label="预设方案">
+    <button class="chip" data-preset="manual" aria-pressed="false">手动：你自己滑自己聊</button>
+    <button class="chip" data-preset="semi" aria-pressed="true">半自动：AI 排优先级 + 起草，你点发送</button>
+    <button class="chip" data-preset="auto" aria-pressed="false">全自动：脚本接管全部</button>
+  </div>
+
+  <div class="calc">
+    <div class="calc-panel">
+      <h4>假设参数 <span class="tag assume" style="float:right">可改</span></h4>
+      <div class="grid" style="gap:12px">
+        <div class="field">
+          <div class="range-row"><label for="p-likes">每日右滑数</label><output id="o-likes" for="p-likes">160</output></div>
+          <input type="range" id="p-likes" min="10" max="1000" step="10" value="160">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-match">右滑 → 匹配率</label><output id="o-match" for="p-match">7%</output></div>
+          <input type="range" id="p-match" min="0.5" max="15" step="0.5" value="7">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-reply">匹配 → 首条有回复</label><output id="o-reply" for="p-reply">38%</output></div>
+          <input type="range" id="p-reply" min="2" max="60" step="1" value="38">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-sustain">有回复 → 聊满 3 轮</label><output id="o-sustain" for="p-sustain">62%</output></div>
+          <input type="range" id="p-sustain" min="10" max="90" step="1" value="62">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-wechat">3 轮 → 加上微信</label><output id="o-wechat" for="p-wechat">30%</output></div>
+          <input type="range" id="p-wechat" min="5" max="70" step="1" value="30">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-ask">微信 → 答应见面</label><output id="o-ask" for="p-ask">50%</output></div>
+          <input type="range" id="p-ask" min="10" max="80" step="1" value="50">
+        </div>
+        <div class="field">
+          <div class="range-row"><label for="p-arrive">答应 → 真的到场</label><output id="o-arrive" for="p-arrive">72%</output></div>
+          <input type="range" id="p-arrive" min="20" max="95" step="1" value="72">
+        </div>
+      </div>
+    </div>
+
+    <div class="calc-panel">
+      <h4>每日产出漏斗</h4>
+      <div class="funnel" id="funnel"></div>
+      <div class="final">
+        <span class="n" id="final-n">8.5</span>
+        <span class="u">次线下见面 / 30 天<br><span class="small">（按当前参数线性外推，未计账号损耗）</span></span>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </div>
+  </div>
+
+  <h3>三档方案的对照</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>方案</th>
+          <th class="num">右滑/日</th>
+          <th class="num">匹配</th>
+          <th class="num">首回</th>
+          <th class="num">聊满 3 轮</th>
+          <th class="num">加微信</th>
+          <th class="num">答应</th>
+          <th class="num">到场</th>
+          <th class="num">30 天累计</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>手动（本人滑本人聊）</td>
+          <td class="num">60</td><td class="num">3.6</td><td class="num">1.3</td><td class="num">0.76</td>
+          <td class="num">0.30</td><td class="num">0.15</td><td class="num">0.11</td><td class="num">3.2</td>
+        </tr>
+        <tr class="hi">
+          <td><strong>半自动（AI 排 + 起草，人点发送）</strong></td>
+          <td class="num">160</td><td class="num">11.2</td><td class="num">4.3</td><td class="num">2.6</td>
+          <td class="num">0.79</td><td class="num">0.40</td><td class="num">0.28</td><td class="num">8.5</td>
+        </tr>
+        <tr>
+          <td>全自动（脚本接管）</td>
+          <td class="num">800</td><td class="num">12.0</td><td class="num">1.0</td><td class="num">0.2</td>
+          <td class="num">0.03</td><td class="num">0.01</td><td class="num">0.01</td><td class="num">0.17</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">数值全部是 <span class="tag assume">假设</span>：右滑量、匹配率、各环转化率都是按公开经验量级设的，不是平台官方数据。你把自己的真实数据填进去，结论只会更极端——因为自动化压低的恰恰是最贵的那几环。</p>
+
+  <h3>三个关键读数</h3>
+  <div class="grid g3">
+    <div class="card">
+      <h4 style="margin-top:0">读数一：分母涨了 13 倍，分子涨了 0.05 倍</h4>
+      <p style="font-size:13.5px;color:var(--ink-2);margin:0">右滑从 60 拉到 800（13.3×），匹配从 3.6 涨到 12.0（3.3×，因为新号限流 + 无差别右滑降低匹配质量）。但"匹配 → 首回"从 35% 掉到 8%，因为模板句、秒回、格式一致的破绽太明显。<strong>漏斗越往后，衰减越狠。</strong></p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">读数二：全自动并不省人力，只是把人力挪去了救火</h4>
+      <p style="font-size:13.5px;color:var(--ink-2);margin:0">全自动每天仍有约 <strong>1 条</strong>新对话需要处理。AI 代聊一旦被识破，对方不是"降低兴趣"，是直接 ghost + 可能举报。你每天要花的时间从"挑选和起头"变成"检查和道歉"，单位时间产出更低。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">读数三：封号把 30 天账算成 6 天账</h4>
+      <p style="font-size:13.5px;color:var(--ink-2);margin:0">全自动的 0.17 是按"活满 30 天"算的上限。实际第 5–10 天触发风控的概率很高（见第 3 节）。假设第 6 天封：<strong>30 天实际产出 ≈ 0.03 次见面 + 一个进黑名单的手机号。</strong></p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="t">所以"广撒网"到底错在哪</span>
+    它不是错在"想多认识人"，是错在<strong>把稀缺资源投在了最不值钱的环节</strong>。右滑是这套系统里最便宜的输入（几乎零成本），而筛选、首条个性化、邀约设计才是贵的。广撒网等于在最便宜的地方加杠杆。
+  </div>
+</section>
+
+<section id="s03">
+  <div class="sec-head"><span class="sec-no">03</span><h2>平台约束：这条路第几天会被掐死</h2></div>
+  <p class="lead-in">两个平台的态度不一样，但结论一样：<strong>对外的写操作（滑动、发消息）越自动，死得越快</strong>。读操作（看自己账号里的会话）风险低一个量级。</p>
+
+  <h3>Tinder：条款原文直接封死"自动化"</h3>
+  <div class="code">
+    <div class="code-head"><span class="file">Tinder Terms of Use · 禁止行为第 16 条（原文）</span><button class="copy" data-copy>复制</button></div>
+    <pre><code>16. Use any robot, crawler, site search/retrieval application, proxy or
+    other manual or automatic device, method or process to access, retrieve,
+    index, "data mine," or in any way reproduce or circumvent the navigational
+    structure or presentation of our Services or its contents;</code></pre>
+  </div>
+  <p style="margin-top:-6px" class="small"><span class="tag fact">事实</span> 同一条款第 9 项还禁止"使用他人账号或与他人共享账号"——所以连"朋友替你聊"在条款上都是违规的。第 5 项禁止骚扰行为，大规模群发消息在对方的举报入口里就是这一条。</p>
+
+  <div class="callout bad">
+    <span class="t">封了之后的代价，比你想的大</span>
+    Tinder 帮助中心写得很直白：账号被封后，你<strong>不能继续使用，也不能创建新账号</strong>。实际执行靠设备指纹 + 手机号 + 支付信息关联——换一个手机号往往还是同一台设备。
+  </div>
+
+  <h3>探探：手机号和账号深度绑定，封的是号不是人</h3>
+  <p>探探用户协议里有一条不起眼但很致命的约定：注册必须使用<strong>手机号码绑定</strong>，且必须是"尚未与探探账号绑定的手机号码，以及<em>未被探探文化根据本协议封禁的手机号码</em>"。翻译成人话：</p>
+  <ul>
+    <li>封号 = 这个手机号进黑名单，<strong>不能再用它注册</strong>；</li>
+    <li>探探没有桌面端，只有 App，自动化要么走模拟器（指纹一眼假），要么走真机群控（成本骤升）；</li>
+    <li>平台在部分场景要求人脸/实名核验，账号资产基本不可迁移、不可转让。</li>
+  </ul>
+  <p class="small"><span class="tag fact">事实</span> 探究自 tantanapp.com 用户协议「账号注册」章节。<span class="tag opinion">判断</span> 因此探探上做全自动，性价比比 Tinder 更低：封一个号的成本是一个真实手机号 + 一次实名。</p>
+
+  <h3>平台在检测什么（行业通识，非官方披露）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>信号</th><th>脚本的典型破绽</th><th>难度</th></tr></thead>
+      <tbody>
+        <tr><td>滑动节奏的熵值</td><td>人类的右滑间隔是长尾分布（看照片 1–30 秒），脚本是正态或定值</td><td>易检测</td></tr>
+        <tr><td>触摸 / 指针轨迹</td><td>没有加速度曲线、没有微小抖动、点击落点过于精确</td><td>易检测</td></tr>
+        <tr><td>设备与环境一致性</td><td>IP 与 GPS 矛盾、时区/语言/字体组合不像真机、无传感器数据</td><td>中</td></tr>
+        <tr><td>会话时长分布</td><td>每天凌晨 3 点活跃 4 小时，白天 0 分钟</td><td>易检测</td></tr>
+        <tr><td>消息时间分布</td><td>多条消息的发送间隔呈现机器节律（文案生成 → 固定延时 → 发送）</td><td>易检测</td></tr>
+        <tr><td>被举报率</td><td>收到"这是机器人/骚扰"举报是最强的封号触发信号</td><td>—</td></tr>
+        <tr><td>新号冷启动曝光</td><td>新账号前若干天被刻意限流，机器人号通常没活过这一关</td><td>结构性</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>平台横向对比</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>平台</th><th>自动化难度</th><th>封号代价</th><th>实名</th><th>桌面端</th><th>对本方案的可用性</th></tr></thead>
+      <tbody>
+        <tr class="hi"><td>Tinder</td><td>中（有 web 端，可被浏览器驱动）</td><td>高（设备 + 号 + 支付三重关联）</td><td>手机号</td><td>有</td><td><strong>可做只读采集 + 起草</strong>，发送必须手动</td></tr>
+        <tr><td>探探</td><td>高（仅 App）</td><td>极高（手机号进黑名单）</td><td>手机号 + 人脸</td><td>无</td><td>建议纯手动，工具只做"该回谁"的排序</td></tr>
+        <tr><td>陌陌</td><td>高</td><td>极高</td><td>是</td><td>无</td><td>不建议投入</td></tr>
+        <tr><td>Soul</td><td>中高</td><td>中</td><td>手机号</td><td>无</td><td>匿名性强，转微信率低，非首选</td></tr>
+        <tr><td>积目 / 一周 CP</td><td>中</td><td>中</td><td>手机号</td><td>无</td><td>量小但人群更垂直，适合做补充</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small"><span class="tag opinion">判断</span> 难度评级基于产品形态（有无 web 端）、账号体系（是否强实名）和公开的风控讨论，不是实测结论。</p>
+</section>
+
+<section id="s04">
+  <div class="sec-head"><span class="sec-no">04</span><h2>合规与红线</h2></div>
+  <p class="lead-in">平台条款是"可能封号"，法律是"可能被追责"。这两件事的量级差很远，而"广撒网 + 建库"恰好同时踩到。</p>
+
+  <h3>为什么"批量抓取 + 存储"是真风险</h3>
+  <ul>
+    <li><strong>《个人信息保护法》</strong>（2021-11-01 施行）第 13 条：处理个人信息应当取得个人同意，或具备其他合法性基础。你把她人的照片、简介、聊天记录批量落库、用于打分排序，这在法律定义上就是"处理"——而她没同意。</li>
+    <li>第 6 条"最小必要"原则：实现目的所必需的最小范围。建一个"千人资料库"显然超出必要范围。</li>
+    <li><strong>《刑法》第 253 条之一</strong>：非法获取、出售或提供公民个人信息，情节严重的可入罪。"情节严重"的门槛在实践中并不高，尤其是涉及联系方式、住址、行踪这类敏感信息。</li>
+  </ul>
+  <div class="callout warn">
+    <span class="t">实务上的分界线</span>
+    <strong>自己用的少量草稿</strong>（截图、备注、打分结果）通常不进入执法视野；一旦变成<strong>规模化采集、对外提供、收费代运营</strong>，性质就变了。所以这套系统的数据设计原则只有一条：<em>会话留在平台里，本地只存匿名化的评分和一句话备注，不存照片、手机号、微信号原文。</em>
+  </div>
+
+  <h3>本方案明确不做的三件事</h3>
+  <div class="grid g3">
+    <div class="card">
+      <h4 style="margin-top:0">① 绕过风控</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">设备指纹伪装、验证码打码、行为轨迹拟真。这是和一家有专职反作弊团队的公司做军备竞赛，投入无上限、注定输，且一旦被认定，封的是设备不是账号。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">② 多账号矩阵</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">封一个少一个，探探还封手机号。更现实的问题是：矩阵会把你的精力切成 N 份，而对话质量的衰减是指数的——第 5 个并发会话时你已经在复制粘贴了。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">③ 建库与群发</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">前者是法律风险，后者是转化率自杀——同一句话发给 50 个人，只要有 2 个人对照（她们互相认识的概率比你想的高），你就从"有趣的人"变成"批量脚本"。</p>
+    </div>
+  </div>
+
+  <h3>那"AI 帮我聊"本身算不算骗人</h3>
+  <p>算，如果满足这三个条件之一：<strong>① 你不在场</strong>（完全由模型决定说什么、什么时候说）；<strong>② 内容不是你的真实想法</strong>（编造经历、身份、收入）；<strong>③ 对方明确问"你是不是 AI / 是不是真人"而你否认</strong>。</p>
+  <p>反过来，<strong>AI 帮你把想说的话说得更好</strong>——这是每个人都在做的事（有人请朋友改微信，有人心里打三遍腹稿）。这条线的位置很清楚：<em>你按下发送键之前，那句话必须是你会说、也认账的话。</em></p>
+</section>
+
+<section id="s05">
+  <div class="sec-head"><span class="sec-no">05</span><h2>杠杆排序：先修哪个环节</h2></div>
+  <p class="lead-in">按"每投入 1 小时能增加多少次线下见面"排序。注意最后一项——<strong>自动化排在倒数第一</strong>，因为它优化的是最便宜的那一环。</p>
+
+  <ol class="num-list">
+    <li><span class="h">前三张照片 <span class="tag opinion">判断</span></span>
+      <span class="d">决定 70–80% 的右滑匹配率。一个能看清脸、有场景、有全身、光线好的照片组合，能把匹配率从 1–2% 提到 6–10%。<strong>投入：1 个下午 + 找个人帮你拍 200 张。</strong></span></li>
+    <li><span class="h">简介的第一行</span>
+      <span class="d">她的决策顺序是：照片 → 第一行 → 划走。"喜欢旅行美食电影"是零信息。有效写法：一个具体的、能被追问的事实 + 一个立场。</span></li>
+    <li><span class="h">右滑的筛选（把时间从低概率对象挪走）</span>
+      <span class="d">不是"多滑"，是"少滑但准"。识别高概率对象：同城、年龄段接近、资料里有可引用细节、照片不是纯网红风、简介有具体兴趣。</span></li>
+    <li><span class="h">首条消息的个性化锚点</span>
+      <span class="d">"你好"回复率约 5–10%，引用她资料里一个具体细节 + 一个判断题，回复率能到 30–40%。<strong>这是全流程里 ROI 最高的一句话。</strong></span></li>
+    <li><span class="h">邀约的具体性</span>
+      <span class="d">"有空出来玩吗"几乎必死。"周四 7 点或周六 3 点，XX 路那家店"把决策成本降到一次二选一。</span></li>
+    <li><span class="h">自动化程度</span>
+      <span class="d">前五项做好之后，每天 60 次右滑就够产生 3 次见面/月。此时再上自动化，收益是 +N 次滑动，成本是封号和真实性。<strong>性价比最差。</strong></span></li>
+  </ol>
+
+  <div class="callout good">
+    <span class="t">如果只能改一件事</span>
+    改照片。这是唯一一个"改完当天生效、不依赖对方配合、没有平台风险"的变量。绝大多数人在写话术上花的时间，是修照片的 20 倍，而收益正好相反。
+  </div>
+</section>
+
+<section id="s06">
+  <div class="sec-head"><span class="sec-no">06</span><h2>系统架构：五层 + 一道不可移除的闸门</h2></div>
+  <p class="lead-in">整体设计原则：<strong>读自动化，写人工化</strong>。所有"看一眼、算一下、写一句"都可以交给机器；所有对外的、留痕的、可能被判违规的动作（滑动、发送、加好友）由人在 1 秒内确认。</p>
+
+  <div class="arch">
+    <div class="layer">
+      <div class="tag-col"><span class="id">L1</span><span class="nm">资产层</span></div>
+      <div class="box">
+        <span class="step">照片组（3 主 + 2 场景）</span><span class="arw">·</span>
+        <span class="step">简介第一行</span><span class="arw">·</span>
+        <span class="step">5 个可复用的开场钩子</span><span class="arw">·</span>
+        <span class="step">我能聊的真实话题清单</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);margin-top:2px">这一层决定匹配率，是所有下游环节的上限。先做，且只做这一层。</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="tag-col"><span class="id">L2</span><span class="nm">采集层</span></div>
+      <div class="box">
+        <span class="step">读取<strong>自己账号</strong>的会话列表</span><span class="arw">→</span>
+        <span class="step">提取每条对话的元数据</span><span class="arw">→</span>
+        <span class="step">时间戳 / 字数 / 是否提问</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);margin-top:2px">只读、只读自己的会话、不落盘原始内容。不抓陌生人资料，不遍历他人主页。</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="tag-col"><span class="id">L3</span><span class="nm">评分层</span></div>
+      <div class="box">
+        <span class="step">意图信号打分（第 7 节）</span><span class="arw">→</span>
+        <span class="step">分 A / B / C 三档</span><span class="arw">→</span>
+        <span class="step">今日待办排序</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);margin-top:2px">输出不是"跟谁聊"，是"<strong>今天先回哪 3 个人</strong>"。人的注意力是唯一的稀缺资源。</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="tag-col"><span class="id">L4</span><span class="nm">文案层</span></div>
+      <div class="box">
+        <span class="step">锚点提取（她的具体细节）</span><span class="arw">→</span>
+        <span class="step">按阶段选模板</span><span class="arw">→</span>
+        <span class="step">注入个人事实</span><span class="arw">→</span>
+        <span class="step">过禁用词表</span><span class="arw">→</span>
+        <span class="step">出 2 个候选</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);margin-top:2px">永远给两个候选，不给你一句"最佳答案"——因为最终说话的人是你，选哪句本身就是你的判断。</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="tag-col"><span class="id">L5</span><span class="nm">调度层</span></div>
+      <div class="box">
+        <span class="step">并发上限 ≤ 5 条对话</span><span class="arw">·</span>
+        <span class="step">冷却：同一个人 20 分钟内不连发</span><span class="arw">·</span>
+        <span class="step">每日 45 分钟硬上限</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);margin-top:2px">限制不是技术约束，是质量约束。超过 5 条并发，你回复的质量必然塌陷。</span>
+      </div>
+    </div>
+    <div class="layer gate">
+      <div class="tag-col"><span class="id">GATE</span><span class="nm">人工确认</span></div>
+      <div class="box">
+        <span class="step" style="background:#fff;border-color:#e0c69c;color:var(--amber)">你看一眼 → 改两个字 → 自己按发送</span>
+        <span style="width:100%;font-size:12.3px;color:var(--muted);font-weight:400;margin-top:2px">这一层不在代码里，在流程里。它同时解决三件事：规避自动化条款、规避 AI 代聊的人设崩塌、保证你说的每句话你都认账。</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>数据契约（本地只存这些）</h3>
+  <div class="code">
+    <div class="code-head"><span class="file">thread.json · 单条会话的本地记录（匿名化）</span><button class="copy" data-copy>复制</button></div>
+    <pre><code>{
+  "thread_id": "t_07f3a1",        // 平台内 ID 的不可逆哈希，不是原始 ID
+  "alias": "咖啡/浅烘",            // 一句话备注，你自己看得懂就行
+  "stage": "warm",                // new | warm | invite | wechat
+  "score": 68,                    // 打分结果
+  "tier": "A",
+  "msgs_total": 11,
+  "median_gap_min": 9,
+  "her_questions": 3,
+  "last_at": "2026-10-30T22:14:00+08:00",
+  "next_action": "invite",        // reply | invite | wechat | hold | stop
+  "note": ""
+}</code></pre>
+  </div>
+  <p class="small"><strong>刻意不存的字段</strong>：照片、姓名、手机号、微信号原文、位置精确坐标、聊天正文。这些一旦落盘，就是第 4 节说的法律暴露面。<span class="tag opinion">判断</span> 想要"记住她说过什么"，就在 <code>note</code> 里写一句你自己的话。</p>
+
+  <h3>技术选型（两档）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>档位</th><th>怎么做</th><th>成本</th><th>风险</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>零代码档</strong></td>
+          <td>不写任何脚本。用手机截图 → 丢给 AI（Hermes / 任意支持图片的模型）→ 让它按第 7 节打分、按第 8 节起草 → 你复制粘贴发送。每天 15 分钟。</td>
+          <td>0</td>
+          <td>无平台风险（对平台而言你就是普通用户）</td>
+        </tr>
+        <tr>
+          <td><strong>半自动档</strong></td>
+          <td>浏览器登录 Tinder web 端，用只读脚本抓会话列表（CDP 读取 DOM，不触发写操作），本地打分，输出"今日 Top 3 + 每个 2 条候选回复"。复制发送。</td>
+          <td>1 个周末</td>
+          <td>低（只读 + 低频 + 不模拟操作）。仍属条款灰色地带，但远低于自动滑动</td>
+        </tr>
+        <tr>
+          <td><strong>不建议档</strong></td>
+          <td>Appium / 模拟器驱动探探，自动滑动 + 自动发送。</td>
+          <td>2 周 + 持续维护</td>
+          <td>高。封号 + 手机号拉黑，且需要不断对抗风控更新</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s07">
+  <div class="sec-head"><span class="sec-no">07</span><h2>筛选模型：什么信号说明"能约出来"</h2></div>
+  <p class="lead-in">
+    你要找的不是"愿意聊的人"，是<strong>愿意为见你而调整安排的人</strong>。这两者的区分信号不在长相、不在资料，在<em>她回复的<strong>结构</strong></em>：字数、提问、间隔、是否复述你的话。
+  </p>
+
+  <h3>信号权重表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>方向</th><th>信号</th><th class="num">权重</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="9" style="color:var(--green);font-weight:600">正向</td><td>回复 ≥ 12 字且<strong>包含一个提问</strong></td><td class="num">+18</td><td>提问是投入意愿最强的单点信号——她想知道关于你的事</td></tr>
+        <tr><td>主动追问你的信息（工作 / 城市 / 周末安排）</td><td class="num">+15</td><td>在构建对你的模型，意味着她在评估"能不能见"</td></tr>
+        <tr><td>回复间隔中位数 &lt; 15 分钟</td><td class="num">+14</td><td>优先级信号。人对在意的事会插队处理</td></tr>
+        <tr><td>复述你上一条的具体细节</td><td class="num">+12</td><td>证明不是在批量回复</td></tr>
+        <tr><td>主动给出自己的信息（作息 / 住哪一片 / 职业）</td><td class="num">+12</td><td>互相暴露 = 信任积累。这在陌生人社交里是硬指标</td></tr>
+        <tr><td>发语音或整段长文</td><td class="num">+10</td><td>跨过"打字成本"这道坎的人，通常愿意跨过"出门成本"</td></tr>
+        <tr><td>主动开新话题</td><td class="num">+10</td><td>她在维持对话，而不是在等你维持</td></tr>
+        <tr><td>22 点后仍回复</td><td class="num">+8</td><td>深夜回复 = 时间上的优先级</td></tr>
+        <tr><td>接住你的调侃并回敬</td><td class="num">+8</td><td>情绪同步，不是礼貌性应答</td></tr>
+        <tr><td rowspan="8" style="color:var(--red);font-weight:600">负向</td><td>回复只有"嗯 / 哈 / 是的"，且<strong>从不提问</strong></td><td class="num">−20</td><td>典型的"给面子"式回复，不会转化为见面</td></tr>
+        <tr><td>一提见面就转移话题（累计 2 次）</td><td class="num">−18</td><td>最直接的拒绝信号，只是没说出口</td></tr>
+        <tr><td>间隔 &gt; 24h 且不解释</td><td class="num">−15</td><td>不是忙，是排序靠后</td></tr>
+        <tr><td>推进全靠你（她只在被追问时回）</td><td class="num">−12</td><td>单向投入，见面概率极低</td></tr>
+        <tr><td>异地 &gt; 60 km</td><td class="num">−12</td><td>见面成本压过收益，除非她有明确的来你这边理由</td></tr>
+        <tr><td>资料照明显不一致 / 不露脸 / 全精修</td><td class="num">−10</td><td>见面落差风险，也是照骗的常见特征</td></tr>
+        <tr><td>让你"加我另一个号 / 看我主页"</td><td class="num" style="color:var(--red)">−30</td><td>引流。直接放弃，不要试图转化</td></tr>
+        <tr><td>提礼物 / 红包 / 投资 / "带你赚钱"</td><td class="num" style="color:var(--red)">−50</td><td>杀猪盘标准流程。立刻停止并举报</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>打分器</h3>
+  <p class="small" style="margin-top:-4px">勾选符合的信号，看分档和下一步动作。勾选项不保存，刷新即清空。</p>
+  <div class="scorer">
+    <div>
+      <fieldset class="sig">
+        <legend>正向信号</legend>
+        <label><input type="checkbox" data-w="18"><span>回复 ≥ 12 字且包含一个提问</span><span class="w">+18</span></label>
+        <label><input type="checkbox" data-w="15"><span>主动追问你的信息</span><span class="w">+15</span></label>
+        <label><input type="checkbox" data-w="14"><span>间隔中位数 &lt; 15 分钟</span><span class="w">+14</span></label>
+        <label><input type="checkbox" data-w="12"><span>复述你上一条的具体细节</span><span class="w">+12</span></label>
+        <label><input type="checkbox" data-w="12"><span>主动给出自己的信息</span><span class="w">+12</span></label>
+        <label><input type="checkbox" data-w="10"><span>发语音 / 整段长文</span><span class="w">+10</span></label>
+        <label><input type="checkbox" data-w="10"><span>主动开新话题</span><span class="w">+10</span></label>
+        <label><input type="checkbox" data-w="8"><span>22 点后仍回复</span><span class="w">+8</span></label>
+        <label><input type="checkbox" data-w="8"><span>接住调侃并回敬</span><span class="w">+8</span></label>
+      </fieldset>
+      <fieldset class="sig" style="margin-top:12px">
+        <legend>负向信号</legend>
+        <label><input type="checkbox" data-w="-20"><span>只有"嗯 / 哈 / 是的"，从不提问</span><span class="w neg">−20</span></label>
+        <label><input type="checkbox" data-w="-18"><span>一提见面就转移话题（2 次）</span><span class="w neg">−18</span></label>
+        <label><input type="checkbox" data-w="-15"><span>间隔 &gt; 24h 且不解释</span><span class="w neg">−15</span></label>
+        <label><input type="checkbox" data-w="-12"><span>推进全靠你</span><span class="w neg">−12</span></label>
+        <label><input type="checkbox" data-w="-12"><span>异地 &gt; 60 km</span><span class="w neg">−12</span></label>
+        <label><input type="checkbox" data-w="-10"><span>资料照不一致 / 不露脸</span><span class="w neg">−10</span></label>
+        <label><input type="checkbox" data-w="-30" data-fatal="引流"><span>让你加另一个号 / 看她主页</span><span class="w neg">−30</span></label>
+        <label><input type="checkbox" data-w="-50" data-fatal="高风险"><span>提礼物 / 红包 / 投资 / 带你赚钱</span><span class="w neg">−50</span></label>
+      </fieldset>
+    </div>
+    <div class="readout" aria-live="polite">
+      <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:10.5px">当前得分</div>
+      <div class="score-big" id="score-n">0</div>
+      <span class="tier C" id="tier-tag">C 档</span>
+      <div class="gauge"><span class="dot" id="gauge-dot" style="left:50%"></span></div>
+      <div class="gauge-scale"><span>−60</span><span>0</span><span>+60</span><span>+100</span></div>
+      <p class="next" id="next-step">勾几条左边的信号，这里会给出该做什么。</p>
+      <button class="btn ghost" id="reset-score" style="width:100%;margin-top:12px">重置</button>
+    </div>
+  </div>
+
+  <h3>分档与动作</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>档位</th><th>分数</th><th>含义</th><th>48 小时内该做什么</th></tr></thead>
+      <tbody>
+        <tr class="hi"><td><strong>A</strong></td><td class="num">≥ 60</td><td>她已经在投入，只差一个具体提议</td><td>直接进入邀约：给一个具体事件 + 两个时间点。不要再多聊两轮</td></tr>
+        <tr><td><strong>B</strong></td><td class="num">30–59</td><td>有来有回，但还没到"愿意为你出门"</td><td>再推进 1–2 轮，注入一个可被追问的细节（你的具体经历），然后试探性提一个轻量场景</td></tr>
+        <tr><td><strong>C</strong></td><td class="num">&lt; 30</td><td>礼貌性应答</td><td>停止投入。不要问"在忙吗"，不要连发。把时间挪到 A 档</td></tr>
+        <tr><td><strong>X</strong></td><td class="num">触发致命项</td><td>引流 / 杀猪盘</td><td>立即停止，不解释，平台内举报</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="t">最容易被忽略的一条：A 档不要"再养一养"</span>
+    热度是有半衰期的。A 档出现后的窗口通常是 <strong>24–72 小时</strong>，过了这个窗口她没有等到具体提议，会自然降温到 B——而她不会告诉你原因。这是"聊得很好但一直约不出来"的最常见成因。
+  </div>
+</section>
+
+<section id="s08">
+  <div class="sec-head"><span class="sec-no">08</span><h2>文案引擎：三段式，每段只干一件事</h2></div>
+  <p class="lead-in">不要写"高情商开场白"。有效的消息有结构，不靠词藻：<strong>开场给锚点，中段给信息，结尾给选择</strong>。</p>
+
+  <h3>第一段：开场 = 锚点 + 判断题</h3>
+  <p>锚点 = 她资料里一个<strong>具体的、可被验证的、不是赞美</strong>的细节。判断题 = 一个二选一，答案不暴露立场，谁都能答。</p>
+
+  <div class="chat">
+    <div class="bubble me">你照片里那家看着像浅烘的单品——你是酸党还是苦党？<span class="stamp">锚点：照片里的咖啡 · 判断题：酸/苦</span></div>
+    <div class="bubble her">哈哈哈苦党，酸的喝不下去😅 你也是咖啡因成瘾？<span class="stamp">9 分钟后 · 21 字 · 含提问</span></div>
+  </div>
+  <p class="anno">这一条同时做到三件事：证明你看过她的资料（不是群发）、给了她一个零成本的回答方式、留了一个她能反问的口子。回复率显著高于"你好"。</p>
+
+  <h4>锚点的四种取法</h4>
+  <ul>
+    <li><strong>照片里的物件</strong>：书脊、唱片、咖啡、登山装备、宠物 → "你那只猫是布偶还是英短？"</li>
+    <li><strong>简介里的具体名词</strong>：不要接"喜欢旅行"，接"你说你骑车通勤——是公路还是通勤车？"</li>
+    <li><strong>一个地点</strong>：她提到的地方 → "你说的那个市集是这个月还有吗？"</li>
+    <li><strong>一个矛盾点</strong>：资料里的反差 → "写'社恐'但照片在音乐节前排，哪一个是真的"</li>
+  </ul>
+
+  <h3>第二段：推进 = 她的信息 → 你的同类经历 → 一个追问</h3>
+  <p>每一轮固定三步，一步都不能省：</p>
+  <ol class="num-list" style="margin-top:10px">
+    <li><span class="h">接住她说的话</span><span class="d">复述或回应她的<strong>具体内容</strong>，不是"哈哈是吗"。</span></li>
+    <li><span class="h">给一句你的同类经历</span><span class="d">一句，≤ 25 字。作用是"我也是这类人"，不是讲故事。</span></li>
+    <li><span class="h">抛一个追问</span><span class="d">让球回到她那边。没有追问的回复 = 对话结束。</span></li>
+  </ol>
+
+  <div class="chat">
+    <div class="bubble her">苦党。上周还在公司楼下那家排了半小时<span class="stamp">她给了新信息：通勤 + 排队</span></div>
+    <div class="bubble me">半小时有点狠。我上次为了一杯手冲在雨天站了 40 分钟，喝完觉得值。<br>你公司那片还有什么值得排的？<span class="stamp">接住 → 同类经历（一句）→ 追问</span></div>
+  </div>
+
+  <h3>第三段：邀约 = 事件 + 二选一 + 低承诺</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>模板</th><th>样子</th><th>适用</th></tr></thead>
+      <tbody>
+        <tr><td>事件锚定</td><td>"你说你周三最闲——那个展周四就结束了，周三 7 点或者周六 3 点，你挑一个我订位。"</td><td>她提过时间偏好或某个活动</td></tr>
+        <tr><td>低承诺试探</td><td>"这周末我要去 XX 市集待一小时，你要是没事可以一起，逛完各回各家。"</td><td>B 档、还没到明确热度</td></tr>
+        <tr><td>共同兴趣落地</td><td>"你说的那家店我查了，周四有手冲体验，两小时。要不要一起去把它喝了。"</td><td>已经聊到具体兴趣</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>三个要素缺一不可</strong>：具体的<em>事件</em>（不是"出来玩"）、两个<em>时间选项</em>（把开放式问题变成二选一）、<em>低承诺</em>（一小时、逛完就走、不顺路也没关系）。</p>
+
+  <h4>被推掉时的三种回应</h4>
+  <div class="grid g3">
+    <div class="card">
+      <h4 style="margin-top:0">她给了替代时间</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">"行，那就周六。我订 3 点，你要改提前说。"<br><span class="small">立刻锁定，不再多问。多问会显得不确定。</span></p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">她说"最近有点忙"</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">"懂，忙完再说。"然后<strong>停止推进</strong>，回到聊天，两周内不再提。<br><span class="small">不要追问"那什么时候有空"——那是把拒绝变成对抗。</span></p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">完全不回复邀约</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">视为 C 档。不追问、不道歉、不发第二条。<br><span class="small">补一条"是不是太突然了"只会确认你的需求感。</span></p>
+    </div>
+  </div>
+
+  <h3>禁用词表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>类别</th><th>禁</th><th>替换</th></tr></thead>
+      <tbody>
+        <tr><td>称呼</td><td>小姐姐 / 美女 / 宝贝 / 亲爱的</td><td>不用称呼，直接说话</td></tr>
+        <tr><td>开场</td><td>在吗 / 你好 / 可以认识一下吗 / 交个朋友</td><td>锚点 + 判断题</td></tr>
+        <tr><td>赞美</td><td>你好漂亮 / 你长得好像我前女友 / 我觉得我们很有缘分</td><td>夸具体的<strong>选择</strong>而不是长相（"这个构图你挑的？"）</td></tr>
+        <tr><td>AI 味</td><td>"作为一个…" / "首先…其次…最后" / 一段超过 2 行 / 每条 ≥ 1 个 emoji</td><td>一句一意，逗号不用超过 2 个</td></tr>
+        <tr><td>语气词堆积</td><td>"呢/哦/呀/啦" 连续出现、"哈哈哈" 连发</td><td>一个"哈"就够，或不回</td></tr>
+        <tr><td>邀约</td><td>有空出来玩吗 / 什么时候方便 / 我请你吃饭</td><td>事件 + 二选一 + 低承诺</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout bad">
+    <span class="t">"AI 味"的五个可观测破绽</span>
+    ① 每条长度几乎一样；② 没有错别字、没有口语停顿；③ 从不主动提具体的时间地点数字；④ 情绪永远是中间值（不生气、不无聊、不兴奋）；⑤ 回复间隔过于规整。<strong>只要把①③⑤破坏掉，人味就回来了</strong>——而这恰好是"你过一遍再发"能自然做到的。
+  </div>
+</section>
+
+<section id="s09">
+  <div class="sec-head"><span class="sec-no">09</span><h2>转微信：等信号，不找时机</h2></div>
+  <p class="lead-in">转微信是整条链路上最容易做错的一步——早一步显得急，晚一步她已经被别人约走了。判断依据不是"聊了几天"，是<strong>四个信号里满足两个</strong>。</p>
+
+  <h3>判据</h3>
+  <div class="grid g2">
+    <div class="card"><h4 style="margin-top:0">① 连续 3 轮间隔 &lt; 15 分钟</h4><p style="font-size:13.3px;color:var(--ink-2);margin:0">她已经把对话排到优先位置。这时候她要微信不会被理解成"图谋"。</p></div>
+    <div class="card"><h4 style="margin-top:0">② 她主动提过 ≥ 2 个问题</h4><p style="font-size:13.3px;color:var(--ink-2);margin:0">提问 = 评估。她在判断要不要见你，只是缺一个台阶。</p></div>
+    <div class="card"><h4 style="margin-top:0">③ 单条 ≥ 20 字，或发过语音</h4><p style="font-size:13.3px;color:var(--ink-2);margin:0">跨过打字成本的人，通常也愿意跨过平台切换成本。</p></div>
+    <div class="card"><h4 style="margin-top:0">④ 已经聊到线下场景</h4><p style="font-size:13.3px;color:var(--ink-2);margin:0">周末安排、哪家店好吃、哪个展快结束了——已经有"见面"的语义在场。</p></div>
+  </div>
+
+  <h3>三套话术</h3>
+  <div class="chat">
+    <div class="bubble me">这个 app 老掉消息，我微信回得快 —— 同一个号，你搜 xxx<span class="stamp">A · 顺理成章：给一个技术理由，不表达需求</span></div>
+  </div>
+  <div class="chat">
+    <div class="bubble me">那家店的位置我发你，微信方便点，我号是 xxx<span class="stamp">B · 场景绑定：微信是完成某件事的工具</span></div>
+  </div>
+  <div class="chat">
+    <div class="bubble me">再聊下去我怕你把我在这儿的配额用完了，加个微信吧，xxx<span class="stamp">C · 自嘲式推进：适合已经聊得很松的对话</span></div>
+  </div>
+
+  <h4>反例</h4>
+  <ul>
+    <li><strong>第二条消息就要微信</strong> —— 直接触发"这人只想加人"的判断。</li>
+    <li><strong>"求个微信" / "可以加你微信吗"</strong> —— 用"求"字把平等的对话变成申请，你在给自己降权。</li>
+    <li><strong>发二维码截图</strong> —— 显得像在发传单。号码用文字打出来。</li>
+    <li><strong>她没回就再发一次微信号</strong> —— 沉默就是答案，重发等于确认你不在意她的答案。</li>
+  </ul>
+
+  <div class="callout">
+    <span class="t">加了微信之后的第一条</span>
+    不要发"你好，我是探探上的 XX"。发一句<strong>对话的延续</strong>：你答应要发的那家店的位置、她提过的那首歌、你们刚才在聊的那个梗。目的是让她在通讯录里立刻想起"这是那个聊得来的人"，而不是"这是第 7 个加我的人"。
+  </div>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="sec-no">10</span><h2>线下首约：把"见面"设计成一件容易答应的事</h2></div>
+  <p class="lead-in">首约的目标不是"约会成功"，是<strong>让她觉得这次出门没有任何风险和时间负担</strong>。所有设计都服务于这一件事。</p>
+
+  <div class="grid g2">
+    <div class="card">
+      <h4 style="margin-top:0">时长：60–90 分钟，不要正餐</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">正餐意味着 2 小时不间断对话 + 面对面无法退出，决策成本高。咖啡、展、市集、一条街的散步——有自然结束点，随时可以延长，也可以体面结束。<strong>"随时能走"是可答应性的核心。</strong></p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">地点：离她近，公共、明亮、有第二场所</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">她通勤 40 分钟来见一个陌生人，成功率会被腰斩。选她生活半径内的公共场所；附近有可以顺路去的第二个地方（书店、河边、另一家店），如果聊得好，延长是自然发生的，不用重新约。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">时间：白天优于晚上</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">下午 3 点是首约的最优解：没有"是不是要喝酒"的额外含义，结束后还留有晚饭的可选空间，安全感最高。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">确认：提前一天一次，当天不再确认</h4>
+      <p style="font-size:13.4px;color:var(--ink-2);margin:0">前一天发"明天 3 点 XX 门口，我穿灰色外套"，够了。当天早上再问一遍"你还来吗"传递的是焦虑，不是细心。<strong>她放鸽子就换人，不要追问原因。</strong></p>
+    </div>
+  </div>
+
+  <h3>到场后的前 15 分钟</h3>
+  <ul>
+    <li><strong>不要问"你今天怎么样"</strong>——这是一个需要她编造答案的问题。给一个具体的开场："我刚在那边看到一家卖旧唱片的，你等会可以去看看。"</li>
+    <li><strong>先处理环境，再处理对话</strong>：点单、找位子、脱外套。这三分钟的自然停顿能消解大部分尴尬。</li>
+    <li><strong>把线上聊过的一个细节带到线下</strong>："你说的那个排半小时的咖啡，我今天特意没喝，留着。"——证明你不是在复制粘贴同一套流程。</li>
+  </ul>
+
+  <div class="callout warn">
+    <span class="t">一个冷静的提醒</span>
+    这套流程能提高"见面发生的概率"，不能提高"见面之后彼此喜欢"的概率。后者只能靠你本人。<span class="tag opinion">判断</span> 把前者做到 90 分、后者做到 60 分，长期结果比反过来好得多——因为低质量见面会消耗你的动机，而动机是这套系统唯一的燃料。
+  </div>
+</section>
+
+<section id="s11">
+  <div class="sec-head"><span class="sec-no">11</span><h2>14 天排期</h2></div>
+  <p class="lead-in">按"先修上限，再修转化"的顺序。每天投入 30–45 分钟，不要更多——超过这个时长，你会开始敷衍。</p>
+
+  <ul class="timeline">
+    <li>
+      <div class="ph"><b>Day 1–2 · 资产</b><span class="when">先做，不然后面全是白干</span></div>
+      <p>重拍照片：3 张主图（清晰正脸、半身、全身）+ 2 张场景图（有你在做某件事）。同一个人、同一天、自然光。重写简介第一行。</p>
+      <p class="out">产出：一套素材 + 一句能被追问的自我描述。判定标准：给 3 个朋友看，问"这个人周末在干什么"，能答出来的算过关。</p>
+    </li>
+    <li>
+      <div class="ph"><b>Day 3–4 · 话术库</b><span class="when">用你自己的话写，不要让 AI 代写</span></div>
+      <p>写 5 个开场钩子、3 个"我的同类经历"（各一句）、3 个邀约模板。全部用你真实发生过的事。这一步是让 L4 不产出 AI 味的唯一办法。</p>
+      <p class="out">产出：一张 A4 纸。之后所有起草都以它为素材，模型只负责挑和拼。</p>
+    </li>
+    <li>
+      <div class="ph"><b>Day 5–7 · 跑流量，只做筛选</b><span class="when">先不改任何东西，收集基线</span></div>
+      <p>每天 30–60 次右滑，只对资料里有可引用细节的人右滑。收到回复后立刻按第 7 节打分，A 档当天回，C 档不回。</p>
+      <p class="out">产出：你自己的真实漏斗数据（匹配率 / 首回率 / 3 轮率）。<strong>这组数字比任何模板都值钱。</strong></p>
+    </li>
+    <li>
+      <div class="ph"><b>Day 8–11 · 首次邀约</b><span class="when">只对 A 档下手</span></div>
+      <p>用第 8 节第三段的三要素发邀约。记录每一次的结果：答应 / 给替代时间 / 说忙 / 不回。四种结果的占比就是你的邀约话术的体检报告。</p>
+      <p class="out">产出：至少 2–3 次真实见面（如果 A 档够多）。第一次见面后当天不要连发消息，第二天发一句具体的回忆。</p>
+    </li>
+    <li>
+      <div class="ph"><b>Day 12–14 · 复盘，只改最漏的那一环</b><span class="when">一次只改一个变量</span></div>
+      <p>把 7 天的数据填进第 2 节的计算器，看哪一环和"正常值"差最远。差最远的那一环就是你唯一该改的东西。同时改两个变量，你永远不知道是哪个起作用。</p>
+      <p class="out">产出：下一轮的唯一改动项 + 一份你自己的基准数据表。</p>
+    </li>
+  </ul>
+</section>
+
+<section id="s12">
+  <div class="sec-head"><span class="sec-no">12</span><h2>指标与止损</h2></div>
+  <p class="lead-in">北极星只有一个是<strong>每周线下见面数</strong>。其余全是过程指标，作用是在结果不理想时告诉你"哪一环坏了"。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>环节</th><th>指标</th><th class="num">低</th><th class="num">正常</th><th class="num">好</th><th>低于"低"时改什么</th></tr></thead>
+      <tbody>
+        <tr><td>资产</td><td>右滑 → 匹配率</td><td class="num">&lt;1%</td><td class="num">3–6%</td><td class="num">&gt;8%</td><td><strong>停滑动，改照片</strong>。问题不在话术层</td></tr>
+        <tr><td>开场</td><td>匹配 → 首条有回复</td><td class="num">&lt;15%</td><td class="num">25–35%</td><td class="num">&gt;40%</td><td>改开场锚点，不要动简介</td></tr>
+        <tr><td>推进</td><td>有回复 → 聊满 3 轮</td><td class="num">&lt;40%</td><td class="num">55–70%</td><td class="num">&gt;75%</td><td>检查是否有"追问"——多数人死在自说自话</td></tr>
+        <tr><td>转场</td><td>3 轮 → 加上微信</td><td class="num">&lt;15%</td><td class="num">25–40%</td><td class="num">&gt;45%</td><td>要么提太早，要么一直没提</td></tr>
+        <tr><td>邀约</td><td>微信 → 答应见面</td><td class="num">&lt;20%</td><td class="num">40–55%</td><td class="num">&gt;60%</td><td>邀约不够具体，或时间跨度太长</td></tr>
+        <tr><td>履约</td><td>答应 → 到场</td><td class="num">&lt;50%</td><td class="num">65–80%</td><td class="num">&gt;85%</td><td>地点太远、时间太晚、确认方式有问题</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">区间是 <span class="tag assume">假设</span> 量级，用你自己的数据替换。真正有用的不是绝对值，是<strong>哪一环显著低于其它环</strong>。</p>
+
+  <h3>止损规则</h3>
+  <div class="grid g3">
+    <div class="card">
+      <h4 style="margin-top:0">匹配率连续 7 天 &lt; 1%</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">停止一切话术优化。你的问题 100% 在照片。继续优化文案是在给一个漏斗堵住的管子换水龙头。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">连续 3 次被放鸽子</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">不是运气，是邀约设计有问题：地点太远、时间跨度太长（&gt;5 天）、或承诺感太弱（"有空的话"）。改这三项中的一项。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">连续 2 周 0 见面，但对话很多</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">典型的"陪聊陷阱"：你在 A 档窗口期没提邀约，热度自然衰减。回去看第 7 节最后那条 callout。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">发现自己开始复制粘贴</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">立刻把并发降到 2。这是系统在告诉你：你的产能上限已经到了，加量只会降低质量。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">每天投入 &gt; 60 分钟</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">这套流程的边际收益在第 45 分钟归零。超出部分是在用忙碌感替代真实进展。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">开始觉得这件事很累</h4>
+      <p style="font-size:13.3px;color:var(--ink-2);margin:0">停一周。这套系统的所有环节都依赖"你本人是个有趣的人"，而一个疲惫的人不可能装出有趣。</p>
+    </div>
+  </div>
+</section>
+
+<section id="s13">
+  <div class="sec-head"><span class="sec-no">13</span><h2>风险表</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>风险</th><th class="num">概率</th><th class="num">影响</th><th>缓解措施</th></tr></thead>
+      <tbody>
+        <tr><td>账号被限流 / 封禁</td><td class="num">中</td><td class="num">高</td><td>不做自动化写操作；只读脚本保持低频；不使用任何第三方"加速"工具</td></tr>
+        <tr><td>被识破是 AI 代聊</td><td class="num">中</td><td class="num">中</td><td>人工过闸 + 每条必须有她的具体细节 + 用你自己的真实经历素材</td></tr>
+        <tr><td>个人信息处理的法律风险</td><td class="num">低</td><td class="num">极高</td><td>不建库、不落盘原始资料、不做对外提供或收费代运营</td></tr>
+        <tr><td>时间黑洞（投入产出失衡）</td><td class="num">高</td><td class="num">中</td><td>每日 45 分钟硬上限；并发 ≤5；按第 12 节止损规则执行</td></tr>
+        <tr><td>遇到引流号 / 杀猪盘</td><td class="num">高</td><td class="num">中</td><td>打分器的致命项直接判 X；不转账、不点外部链接、平台内举报</td></tr>
+        <tr><td>自己变成话术机器</td><td class="num">中</td><td class="num">高</td><td>每周只跑 3–4 天；保留至少 1 段不按任何模板进行的对话</td></tr>
+        <tr><td>首约体验差，动机崩塌</td><td class="num">中</td><td class="num">中</td><td>首约限 90 分钟、白天、公共场合；把"见面"当成筛选而不是考核</td></tr>
+        <tr><td>过度依赖工具，丧失判断</td><td class="num">中</td><td class="num">中</td><td>每周有一次完全不看打分器、凭感觉决定回谁</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s14">
+  <div class="sec-head"><span class="sec-no">14</span><h2>附录与来源</h2></div>
+
+  <h3>如果现在就动手：最小可执行版本</h3>
+  <p>不需要代码。今天就能做的三步：</p>
+  <ol>
+    <li>重拍 3 张照片（这条最重要，占全部收益的一半）。</li>
+    <li>把最近 3 条对话截图发给我，我按第 7 节打分、按第 8 节给你两个候选回复。</li>
+    <li>挑一个 A 档，用第 8 节第三段的三要素发一条邀约——今天发，不要等明天。</li>
+  </ol>
+
+  <details class="acc">
+    <summary><span>附录 A · 20 条开场钩子模板（填空即用）</span><span class="chev">▶</span></summary>
+    <div class="body">
+      <ol style="font-size:13.5px;line-height:1.9">
+        <li>你照片里那家是 ___ 吧，___ 还是 ___？（物件 + 二选一）</li>
+        <li>写 ___ 但照片在 ___，哪个是真的？</li>
+        <li>你说的 ___ 是这个月还有吗，我路过好几次没敢进</li>
+        <li>___ 和 ___ 你选一个，选错了我请（反套路）</li>
+        <li>你那只 ___ 几岁了，看着不太配合拍照</li>
+        <li>你骑车通勤？___ 还是 ___？我一直想换但怕下雨</li>
+        <li>你在 ___ 那片是吧，那家 ___ 你去过没</li>
+        <li>简介里 ___ 是你的原话还是抄的（有点冒犯但有效）</li>
+        <li>你这张照片是在哪拍的，我猜不出来</li>
+        <li>如果周末只能做一件事，你选 ___ 还是 ___</li>
+        <li>我不信你真能 ___，证明一下</li>
+        <li>你列了三个爱好，我只会一个，还有救吗</li>
+        <li>___ 和 ___ 冲突了，你选哪个（她资料里的两个彼此矛盾的描述）</li>
+        <li>你上周去的那个 ___，值得去吗，我在考虑</li>
+        <li>先说好，我不喝 ___（立场鲜明的自曝）</li>
+        <li>你的歌单里有没有一首你听了超过 100 遍的</li>
+        <li>你看起来像会 ___ 的人，猜对了吗</li>
+        <li>这周末 ___ 那边有 __，你去过吗</li>
+        <li>我不太会开场，你照片里那个 ___ 是什么</li>
+        <li>（直接说事）我周四去 ___，你要是也在附近可以碰一下</li>
+      </ol>
+      <p class="small" style="margin-bottom:4px">用之前必须替换掉空白处，且替换内容必须来自她的资料。<strong>没填的空格比不填更糟。</strong></p>
+    </div>
+  </details>
+
+  <details class="acc">
+    <summary><span>附录 B · 把这套流程丢给 AI 的标准提示词</span><span class="chev">▶</span></summary>
+    <div class="body">
+      <div class="code" style="margin-top:12px">
+        <div class="code-head"><span class="file">prompt.txt</span><button class="copy" data-copy>复制</button></div>
+        <pre><code>你是我的约会对话助理。任务不是替我聊天，是帮我做两件事：判断该不该投入，以及给两个候选回复。
+
+【输入】下面是一段约会软件对话（她的资料 + 全部消息，带时间戳）。
+
+【第一步 · 打分】按这 17 条信号打分，逐条标注命中/未命中：
+正向：回复≥12字且含提问 +18；主动追问我的信息 +15；间隔中位数&lt;15min +14；
+复述我的细节 +12；主动自曝信息 +12；语音或长段 +10；主动开新话题 +10；
+22点后仍回 +8；接住调侃并回敬 +8。
+负向：只有"嗯/哈"且从不提问 −20；一提见面就转移话题×2 −18；间隔&gt;24h无解释 −15；
+推进全靠我 −12；异地&gt;60km −12；资料照不一致 −10；
+让我加别的号 −30（判 X）；提礼物/红包/投资 −50（判 X）。
+
+【第二步 · 分档】A ≥60 直接邀约；B 30–59 再推进一两轮；C &lt;30 停止投入；X 立刻停止。
+
+【第三步 · 起草】给两条候选，都必须满足：
+1. 引用她说过的一个具体细节（指明是哪一句）；
+2. 总长 ≤ 2 行，不出现"小姐姐/美女/在吗/有空出来玩吗"；
+3. 一条偏稳妥、一条偏冒险，风格明显不同；
+4. A 档时必须给的是邀约，包含：具体事件 + 两个时间选项 + 低承诺表述。
+
+【第四步 · 说明】每条候选下面用一句话说明它想达成什么，以及可能失败的方式。
+
+不要写"高情商" "缘分" "你是我的类型" 这类话。不要编造我没做过的经历。
+如果信息不足以判断，直接说"信息不足"，不要猜。</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details class="acc">
+    <summary><span>附录 C · 来源</span><span class="chev">▶</span></summary>
+    <div class="body">
+      <ul class="src">
+        <li><span class="tag fact">事实</span> Tinder Terms of Use，禁止行为第 5 / 9 / 16 条。<a href="https://tinder.com/static/build/build-ssg-next/out/en/terms/intl/en/terms.pdf">tinder.com/…/terms.pdf</a>（本文引用第 16 条原文）</li>
+        <li><span class="tag fact">事实</span> Tinder 帮助中心「My account is banned」：封禁后无法继续使用，且不能创建新账号。<a href="https://www.help.tinder.com/hc/en-us/articles/360009042331-My-account-is-banned">help.tinder.com</a></li>
+        <li><span class="tag fact">事实</span> 探探用户协议「账号注册」：须手机号绑定，且被封禁的手机号不可再注册。<a href="https://tantanapp.com/agreement.html">tantanapp.com/agreement.html</a></li>
+        <li><span class="tag fact">事实</span> 《中华人民共和国个人信息保护法》（2021-11-01 施行）第 6 条、第 13 条；《中华人民共和国刑法》第 253 条之一。</li>
+        <li><span class="tag assume">假设</span> 第 2 节漏斗的全部转化率、第 12 节的指标区间：按公开讨论中的经验量级设定，用于说明结构关系，<strong>不是平台官方数据，也不是实测结果</strong>。替换成你自己的数据后才具备决策价值。</li>
+        <li><span class="tag opinion">判断</span> 第 3 节的检测手段清单、第 5 节的杠杆排序、第 7 节的权重数值、第 10 节的首约设计：本文的判断，非引证。</li>
+      </ul>
+    </div>
+  </details>
+
+  <footer>
+    <b>约会运营手册 v0.1</b> · 单文件 HTML，离线可用，无外部依赖。<br>
+    设计原则：读自动化、写人工化；不绕风控、不多账号、不建库、不群发。<br>
+    数值模型是假设，结论是判断。用之前先换成你自己的数据。
+  </footer>
+</section>
+
+
+
+</main>
+</div>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 阅读进度 ---------- */
+  var bar = document.getElementById("progress");
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop || document.body.scrollTop) / max : 0;
+    bar.style.width = Math.min(100, Math.max(0, p * 100)) + "%";
+    spy();
+  }
+  var ticking = false;
+  window.addEventListener("scroll", function(){
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function(){ ticking = false; onScroll(); });
+  }, {passive:true});
+
+  /* ---------- 目录高亮 ---------- */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var sections = tocLinks.map(function(a){ return document.querySelector(a.getAttribute("href")); });
+  function spy(){
+    var best = 0, bestTop = -Infinity;
+    sections.forEach(function(s, i){
+      if (!s) return;
+      var top = s.getBoundingClientRect().top;
+      if (top <= 140 && top > bestTop){ bestTop = top; best = i; }
+    });
+    tocLinks.forEach(function(a, i){
+      if (i === best) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  }
+
+  /* ---------- 漏斗计算器 ---------- */
+  var PARAMS = [
+    {id:"p-likes",  out:"o-likes",  key:"likes",   fmt:function(v){return v;}},
+    {id:"p-match",  out:"o-match",  key:"match",   fmt:function(v){return v + "%";}},
+    {id:"p-reply",  out:"o-reply",  key:"reply",   fmt:function(v){return v + "%";}},
+    {id:"p-sustain",out:"o-sustain",key:"sustain", fmt:function(v){return v + "%";}},
+    {id:"p-wechat", out:"o-wechat", key:"wechat",  fmt:function(v){return v + "%";}},
+    {id:"p-ask",    out:"o-ask",    key:"ask",     fmt:function(v){return v + "%";}},
+    {id:"p-arrive", out:"o-arrive", key:"arrive",  fmt:function(v){return v + "%";}}
+  ];
+  var PRESETS = {
+    manual: {likes:60,  match:6,   reply:35, sustain:60, wechat:40, ask:50, arrive:70},
+    semi:   {likes:160, match:7,   reply:38, sustain:62, wechat:30, ask:50, arrive:72},
+    auto:   {likes:800, match:1.5, reply:8,  sustain:25, wechat:12, ask:35, arrive:55}
+  };
+  var STAGES = ["右滑", "匹配", "首条回复", "聊满 3 轮", "加微信", "答应见面", "到场"];
+
+  function read(){
+    var o = {};
+    PARAMS.forEach(function(p){
+      var el = document.getElementById(p.id);
+      o[p.key] = parseFloat(el.value);
+      document.getElementById(p.out).value = p.fmt(el.value);
+      document.getElementById(p.out).textContent = p.fmt(el.value);
+    });
+    return o;
+  }
+  function fmtNum(v){
+    if (v >= 100) return v.toFixed(0);
+    if (v >= 10)  return (Math.round(v) === v ? v.toFixed(0) : v.toFixed(1));
+    if (v >= 1)   return v.toFixed(1);
+    return v.toFixed(2);
+  }
+  function render(){
+    var p = read();
+    var vals = [p.likes];
+    vals.push(vals[0] * p.match / 100);
+    vals.push(vals[1] * p.reply / 100);
+    vals.push(vals[2] * p.sustain / 100);
+    vals.push(vals[3] * p.wechat / 100);
+    vals.push(vals[4] * p.ask / 100);
+    vals.push(vals[5] * p.arrive / 100);
+
+    var base = Math.log10(vals[0] + 1);
+    var host = document.getElementById("funnel");
+    host.textContent = "";
+    vals.forEach(function(v, i){
+      var w = base > 0 ? Math.max(2, 100 * Math.log10(v + 1) / base) : 0;
+      var row = document.createElement("div");
+      row.className = "funnel-row";
+      var lab = document.createElement("span");
+      lab.className = "lab"; lab.textContent = STAGES[i];
+      var track = document.createElement("span");
+      track.className = "bar";
+      var fill = document.createElement("i");
+      fill.style.width = w.toFixed(1) + "%";
+      track.appendChild(fill);
+      var val = document.createElement("span");
+      val.className = "val"; val.textContent = fmtNum(v);
+      row.appendChild(lab); row.appendChild(track); row.appendChild(val);
+      host.appendChild(row);
+    });
+
+    var perDay = vals[6];
+    var perMonth = perDay * 30;
+    document.getElementById("final-n").textContent = perMonth >= 10 ? perMonth.toFixed(0) : perMonth.toFixed(1);
+
+    var v = document.getElementById("verdict");
+    var msg;
+    if (p.likes >= 400 && p.reply < 15){
+      msg = "右滑拉到 " + p.likes + "，首回只有 " + p.reply + "%——这是典型的「用数量替代质量」。分母涨了，但最贵的那两环（个性化开场、持续对话）被你自己的产能拖垮了，而且这个参数组合在真实平台上是账号被限流的典型画像。";
+    } else if (perMonth >= 8){
+      msg = "换算下来 30 天约 " + perMonth.toFixed(1) + " 次见面。注意这个数成立的前提是：每天的首条消息都真的引用了她的具体细节，且你有能力同时维护 " + Math.min(5, Math.max(2, Math.round(vals[2])) ) + " 条对话不塌方。";
+    } else if (perMonth >= 3){
+      msg = "30 天约 " + perMonth.toFixed(1) + " 次见面。这是普通人的真实量级——不高，但每一环都还能优化。先看哪一环比第 12 节的区间差最远，只改那一环。";
+    } else {
+      msg = "30 天不到 " + Math.max(1, Math.round(perMonth)) + " 次见面。系统在空转，问题几乎一定不在话术层——回去改照片和第 5 节的杠杆排序。";
+    }
+    v.textContent = msg + " （此数未计封号、限流与账号损耗。）";
+  }
+
+  PARAMS.forEach(function(p){
+    var el = document.getElementById(p.id);
+    if (el) el.addEventListener("input", function(){
+      document.querySelectorAll(".chip[data-preset]").forEach(function(c){ c.setAttribute("aria-pressed","false"); });
+      render();
+    });
+  });
+
+  document.querySelectorAll(".chip[data-preset]").forEach(function(chip){
+    chip.addEventListener("click", function(){
+      var cfg = PRESETS[chip.getAttribute("data-preset")];
+      if (!cfg) return;
+      PARAMS.forEach(function(p){
+        var el = document.getElementById(p.id);
+        if (el && cfg[p.key] !== undefined) el.value = cfg[p.key];
+      });
+      document.querySelectorAll(".chip[data-preset]").forEach(function(c){
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      render();
+    });
+  });
+
+  /* ---------- 打分器 ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".sig input[type=checkbox]"));
+  var scoreEl = document.getElementById("score-n");
+  var tierEl  = document.getElementById("tier-tag");
+  var dotEl   = document.getElementById("gauge-dot");
+  var nextEl  = document.getElementById("next-step");
+
+  var ADVICE = {
+    A: "<b>A 档 · 24–72 小时内必须出手。</b>直接发邀约：一个具体事件 + 两个时间选项 + 一句低承诺（「一小时就够」「逛完各回各家」）。不要再试探性地多聊两轮——A 档窗口期是这套流程里最短的东西。",
+    B: "<b>B 档 · 再推 1–2 轮。</b>用「接住 → 你的同类经历 → 追问」三步，专门注入一个可被追问的具体事实（你上周真的去了哪、买了什么）。下一轮如果她仍然只答不问，降到 C。",
+    C: "<b>C 档 · 停止投入。</b>不追问、不道歉、不连发，也别删。把今天的 45 分钟挪到 A 档身上。C 档唯一的价值是：两周后她可能主动开口，那时才是真信号。",
+    X: "<b>X · 立刻停止。</b>触发的是引流或杀猪盘特征，不是「慢热」。不解释、不告别、不点任何外部链接，平台内举报一次然后不管了。"
+  };
+
+  function score(){
+    var total = 0, fatal = null;
+    boxes.forEach(function(b){
+      if (!b.checked) return;
+      total += parseInt(b.getAttribute("data-w"), 10) || 0;
+      if (b.hasAttribute("data-fatal")) fatal = b.getAttribute("data-fatal");
+    });
+    scoreEl.textContent = (total > 0 ? "+" : "") + total;
+
+    var tier, cls;
+    if (fatal){ tier = "X"; cls = "X"; }
+    else if (total >= 60){ tier = "A"; cls = "A"; }
+    else if (total >= 30){ tier = "B"; cls = "B"; }
+    else { tier = "C"; cls = "C"; }
+
+    tierEl.className = "tier " + cls;
+    tierEl.textContent = tier === "X" ? "X 档 · " + fatal : tier + " 档";
+
+    var pct = Math.min(100, Math.max(0, (total + 60) / 160 * 100));
+    dotEl.style.left = pct.toFixed(1) + "%";
+
+    var any = boxes.some(function(b){ return b.checked; });
+    nextEl.innerHTML = any ? ADVICE[cls]
+      : "勾几条左边的信号，这里会给出该做什么。只勾你<strong>确认观察到</strong>的——凭感觉勾出来的分数没有决策价值。";
+  }
+
+  boxes.forEach(function(b){ b.addEventListener("change", score); });
+  var resetBtn = document.getElementById("reset-score");
+  if (resetBtn) resetBtn.addEventListener("click", function(){
+    boxes.forEach(function(b){ b.checked = false; });
+    score();
+    boxes[0].focus();
+  });
+
+  /* ---------- 复制按钮 ---------- */
+  document.querySelectorAll("[data-copy]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var wrap = btn.closest(".code");
+      var pre = wrap ? wrap.querySelector("code") : null;
+      var text = pre ? pre.textContent : "";
+      var done = function(){
+        var old = btn.textContent;
+        btn.textContent = "已复制";
+        window.setTimeout(function(){ btn.textContent = old; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text, done); });
+      } else {
+        fallbackCopy(text, done);
+      }
+    });
+  });
+  function fallbackCopy(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { /* 离线环境静默失败 */ }
+    document.body.removeChild(ta);
+  }
+
+  onScroll();
+  render();
+  score();
+})();
+</script>
+</body>
+</html>

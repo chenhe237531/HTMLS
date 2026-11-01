@@ -5,6 +5,7 @@
 | 目录 | 内容 |
 | --- | --- |
 | [`Agents/`](Agents/agent-workbench-plan.html) | Agent 工作台设计方案（OpenCode × Pi） |
+| [`date-ops/`](date-ops/index.html) | 约会运营手册：从匹配到线下的系统设计，含漏斗计算器与聊天打分器 |
 | [`skill-atlas/`](skill-atlas/index.html) | Skill Atlas：MiniMax Code 团队 17 个 Skill 逐篇拆解（自包含，可单独发布） |
 
 ## 约定
