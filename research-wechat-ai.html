@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>微信低版本 + AI + 历史导出 · 调研与落地方案</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#16181d; --muted:#5d6470;
+    --line:#e2e5ea; --line-strong:#c9ced6;
+    --accent:#1f6feb; --accent-soft:#e8f0fe;
+    --ok:#137a3f; --ok-soft:#e6f4ec;
+    --warn:#9a5b00; --warn-soft:#fdf1dd;
+    --bad:#a3261f; --bad-soft:#fbe9e7;
+    --idle:#4b5563; --idle-soft:#eef0f3;
+    --radius:10px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono); font-size:.88em; background:#eef1f5; padding:.12em .38em; border-radius:4px}
+  h1,h2,h3{line-height:1.3; letter-spacing:-.01em}
+  h2{font-size:22px; margin:0 0 6px}
+  h3{font-size:16px; margin:22px 0 8px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 22px}
+  header.top{
+    background:linear-gradient(180deg,#10151f 0%,#161d2b 100%);
+    color:#e9edf5; padding:34px 0 30px; border-bottom:1px solid #0b0f16;
+  }
+  header.top .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#8fa3c4}
+  header.top h1{font-size:30px; margin:10px 0 8px; color:#fff}
+  header.top p{margin:0; color:#aebbd0; max-width:820px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; padding:5px 10px; border-radius:999px;
+    background:rgba(255,255,255,.08); color:#d8e2f2; border:1px solid rgba(255,255,255,.12);
+  }
+  .chip b{color:#fff; font-weight:600}
+
+  .layout{display:grid; grid-template-columns:214px minmax(0,1fr); gap:34px; align-items:start; padding:28px 0 60px}
+  nav.side{position:sticky; top:18px; font-size:13.5px}
+  nav.side .nav-title{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px 10px}
+  nav.side a{
+    display:block; padding:7px 10px; border-radius:7px; color:var(--muted);
+    border-left:2px solid transparent;
+  }
+  nav.side a:hover{background:#eceff4; color:var(--ink); text-decoration:none}
+  nav.side a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  .nav-note{margin:14px 10px 0; font-size:12px; color:var(--muted); line-height:1.5}
+
+  main{min-width:0}
+  section{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px 26px; margin-bottom:18px; scroll-margin-top:16px}
+  section > .sec-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+  .sec-num{font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:5px}
+  .lede{color:var(--muted); margin:2px 0 14px}
+
+  .callout{border-radius:8px; padding:12px 14px; margin:14px 0; border:1px solid; font-size:14px}
+  .callout.ok{background:var(--ok-soft); border-color:#bfe3cd; color:#0d4f2a}
+  .callout.warn{background:var(--warn-soft); border-color:#f0d6a8; color:#6b3f00}
+  .callout.bad{background:var(--bad-soft); border-color:#f0c3bf; color:#7c1a15}
+  .callout.info{background:var(--accent-soft); border-color:#c3d9fb; color:#14407f}
+  .callout b{font-weight:700}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  .card{border:1px solid var(--line); border-radius:8px; padding:14px 16px; background:#fbfcfd}
+  .card h4{margin:0 0 6px; font-size:14px}
+  .card p{margin:4px 0; font-size:13.5px; color:var(--muted)}
+  .card .big{font-size:24px; font-weight:700; color:var(--ink); line-height:1.2}
+  .card .big small{font-size:12px; font-weight:500; color:var(--muted)}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:14px 0 10px}
+  .search{
+    flex:1 1 220px; min-width:180px; padding:8px 12px; border:1px solid var(--line-strong);
+    border-radius:7px; font:inherit; font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  .search:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+  .filters{display:flex; gap:6px; flex-wrap:wrap}
+  .filters button{
+    font:inherit; font-size:12.5px; padding:6px 11px; border-radius:999px; cursor:pointer;
+    background:#fff; border:1px solid var(--line-strong); color:var(--muted);
+  }
+  .filters button:hover{border-color:var(--accent); color:var(--accent)}
+  .filters button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:8px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:720px}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:#f1f3f6; font-size:12px; letter-spacing:.04em; color:var(--muted); font-weight:600; white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafbfc}
+  td .name{font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:600}
+  .badge{display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:999px; white-space:nowrap; font-weight:600; border:1px solid}
+  .badge.ok{background:var(--ok-soft); color:var(--ok); border-color:#bfe3cd}
+  .badge.warn{background:var(--warn-soft); color:var(--warn); border-color:#f0d6a8}
+  .badge.bad{background:var(--bad-soft); color:var(--bad); border-color:#f0c3bf}
+  .badge.idle{background:var(--idle-soft); color:var(--idle); border-color:var(--line-strong)}
+  .empty{padding:22px; text-align:center; color:var(--muted); font-size:13.5px}
+
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 0}
+  .tabs button{
+    font:inherit; font-size:13px; padding:8px 14px; cursor:pointer; background:#fff;
+    border:1px solid var(--line-strong); border-bottom:0; border-radius:8px 8px 0 0; color:var(--muted);
+  }
+  .tabs button[aria-selected="true"]{background:var(--panel); color:var(--ink); font-weight:600; border-color:var(--accent); box-shadow:inset 0 2px 0 var(--accent)}
+  .tabpanel{border:1px solid var(--line-strong); border-radius:0 8px 8px 8px; padding:16px 18px; background:#fbfcfd}
+  .tabpanel[hidden]{display:none}
+
+  .steps{list-style:none; padding:0; margin:10px 0; counter-reset:s}
+  .steps li{position:relative; padding:10px 0 10px 40px; border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{
+    counter-increment:s; content:counter(s);
+    position:absolute; left:0; top:10px; width:24px; height:24px; border-radius:50%;
+    background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps li b{display:block; font-size:14px}
+  .steps li span{color:var(--muted); font-size:13.5px}
+
+  pre{
+    background:#111722; color:#dbe4f0; padding:14px 16px; border-radius:8px;
+    overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.6; margin:12px 0;
+  }
+  pre .c{color:#7f8ea6}
+  .codewrap{position:relative}
+  .copy{
+    position:absolute; top:8px; right:8px; font:inherit; font-size:11.5px; padding:4px 9px;
+    border-radius:6px; border:1px solid #33415a; background:#1b2434; color:#9fb0c9; cursor:pointer;
+  }
+  .copy:hover{color:#fff; border-color:#4a5f80}
+
+  .arch{width:100%; height:auto; display:block; margin:6px 0 4px}
+  .arch text{font-family:var(--sans)}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:6px}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .dot{width:9px; height:9px; border-radius:2px; display:inline-block}
+
+  .checklist{list-style:none; padding:0; margin:10px 0}
+  .checklist li{display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--line)}
+  .checklist li:last-child{border-bottom:0}
+  .checklist input{margin-top:4px; width:16px; height:16px; accent-color:var(--accent); cursor:pointer; flex:0 0 auto}
+  .checklist label{cursor:pointer}
+  .checklist label b{display:block; font-size:14px}
+  .checklist label span{color:var(--muted); font-size:13px}
+  .progress{display:flex; align-items:center; gap:12px; margin:10px 0 4px}
+  .bar{flex:1; height:7px; background:#e6e9ee; border-radius:999px; overflow:hidden}
+  .bar i{display:block; height:100%; width:0; background:var(--accent); transition:width .25s ease}
+  .progress small{font-family:var(--mono); font-size:12px; color:var(--muted); white-space:nowrap}
+
+  .kv{display:grid; grid-template-columns:130px 1fr; gap:6px 14px; font-size:13.5px; margin:10px 0}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0}
+
+  footer{padding:0 0 50px; color:var(--muted); font-size:12.5px; text-align:center}
+
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr; gap:16px}
+    nav.side{position:static; display:flex; flex-wrap:wrap; gap:4px; padding:0 0 6px}
+    nav.side .nav-title{display:none}
+    nav.side a{border-left:0; border:1px solid var(--line); padding:5px 9px; font-size:12.5px}
+    nav.side a.active{border-color:var(--accent)}
+    .nav-note{display:none}
+    .grid2,.grid3{grid-template-columns:1fr}
+    header.top h1{font-size:24px}
+    section{padding:18px 16px}
+    .kv{grid-template-columns:1fr}
+  }
+  @media print{
+    nav.side,.toolbar,.copy{display:none}
+    body{background:#fff}
+    section{break-inside:avoid; border-color:#ddd}
+    .layout{display:block}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">调研报告 / 方案评审稿</div>
+    <h1>微信低版本 + AI + 历史记录导出</h1>
+    <p>目标：在 macOS 上锁定一个可解密的微信版本，把几 GB 历史记录导出为本地可检索数据，再用 MCP 接入 AI。本页用于启动前逐项核对，确认后再进入实现。</p>
+    <div class="meta">
+      <span class="chip">平台 <b>macOS</b></span>
+      <span class="chip">数据量 <b>几 GB</b></span>
+      <span class="chip">选定 <b>方案 D（需修正）</b></span>
+      <span class="chip">调研日期 <b>2026-10-29</b></span>
+      <span class="chip">状态 <b>待你核对</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+
+    <nav class="side" aria-label="章节导航">
+      <p class="nav-title">目录</p>
+      <a href="#s1" class="active">01 结论</a>
+      <a href="#s2">02 生态现状</a>
+      <a href="#s3">03 版本矩阵</a>
+      <a href="#s4">04 推荐架构</a>
+      <a href="#s5">05 macOS 落地路径</a>
+      <a href="#s6">06 方案 D 修正</a>
+      <a href="#s7">07 风险与合规</a>
+      <a href="#s8">08 核对清单</a>
+      <a href="#s9">09 下一步</a>
+      <p class="nav-note">本文件为单文件离线页面，不加载任何 CDN。勾选状态仅保存在本机浏览器。</p>
+    </nav>
+
+    <main>
+
+      <!-- 01 -->
+      <section id="s1">
+        <div class="sec-head"><span class="sec-num">01</span><h2>结论先行</h2></div>
+        <p class="lede">先看这一段，决定要不要继续。</p>
+
+        <div class="callout bad">
+          <b>“现成开源方案直接拼”这条路已经断了。</b>
+          2025-10-20，<code>chatlog</code>（9.2k star）和 <code>PyWxDump</code>（9.6k star）在同一天因腾讯法务函删除全部代码；
+          2026-07-10，<code>WeChatFerry</code>（6.8k star）被作者归档为只读；<code>chatlog-bot</code> 已返回 451。
+          依赖这些仓库的教程和脚本，现在大多已经跑不起来。
+        </div>
+
+        <div class="callout ok">
+          <b>可行的路线是“锁定版本 + 自建解密/导出 + 自建 MCP Hub”。</b>
+          核心逻辑不复杂：取密钥 → 解密 SQLite → 解析消息表 → 建全文索引 → 暴露 MCP 工具。
+          代码量约 500–1500 行，好处是完全可控、不会被删库、不依赖第三方二进制。
+        </div>
+
+        <div class="grid3">
+          <div class="card">
+            <h4>最关键约束</h4>
+            <p class="big">4.0.3.80<small> / macOS 取密钥上限</small></p>
+            <p>再高的版本，密钥不再常驻内存，内存扫描直接失效。</p>
+          </div>
+          <div class="card">
+            <h4>方案 D 的问题</h4>
+            <p class="big">Windows<small> only</small></p>
+            <p><code>wcferry</code> 注入的是 Windows 的 <code>WeChatWin.dll</code>，macOS 没有对应实现。</p>
+          </div>
+          <div class="card">
+            <h4>建议节奏</h4>
+            <p class="big">先读<small> 后写</small></p>
+            <p>先做“导出 + AI 读取”，实时自动回复放到第二阶段。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section id="s2">
+        <div class="sec-head"><span class="sec-num">02</span><h2>GitHub 生态现状</h2></div>
+        <p class="lede">状态按 2026-10-29 实际访问核实，不是搜索摘要。可用搜索与状态筛选。</p>
+
+        <div class="toolbar">
+          <input class="search" id="projSearch" type="search" placeholder="搜索项目名 / 技术路线…" aria-label="搜索项目">
+          <div class="filters" id="projFilters" role="group" aria-label="按状态筛选">
+            <button type="button" data-f="all" aria-pressed="true">全部</button>
+            <button type="button" data-f="ok" aria-pressed="false">可用</button>
+            <button type="button" data-f="warn" aria-pressed="false">受限/停更</button>
+            <button type="button" data-f="bad" aria-pressed="false">已删库/下架</button>
+            <button type="button" data-f="idle" aria-pressed="false">已归档</button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table id="projTable">
+            <thead>
+              <tr><th>项目</th><th>Star</th><th>协议</th><th>状态</th><th>技术路线</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+              <tr data-status="bad">
+                <td><span class="name">sjzar/chatlog</span></td><td>9.2k</td><td>MIT</td>
+                <td><span class="badge bad">已删库</span></td><td>数据库解密 + HTTP + MCP</td>
+                <td>2025-10-20 收到微信官方函件，代码与提交历史全部移除。</td>
+              </tr>
+              <tr data-status="bad">
+                <td><span class="name">xaoyaoo/PyWxDump</span></td><td>9.6k</td><td>—</td>
+                <td><span class="badge bad">已删库</span></td><td>内存取 key + 解密 + 导出</td>
+                <td>同日收到律师函，仓库只剩通知页。fork 仍散落各处。</td>
+              </tr>
+              <tr data-status="idle">
+                <td><span class="name">lich0821/WeChatFerry</span></td><td>6.8k</td><td>MIT</td>
+                <td><span class="badge idle">已归档</span></td><td>DLL 注入 Hook</td>
+                <td>2026-07-10 归档只读，最后适配 3.9.12.51；<code>wcferry</code> 仍可安装。</td>
+              </tr>
+              <tr data-status="warn">
+                <td><span class="name">LC044/WeChatMsg</span></td><td>42.3k</td><td>MIT</td>
+                <td><span class="badge warn">停更</span></td><td>解密 + 导出 HTML/CSV/Word</td>
+                <td>支持 4.0，作者明确表示不再更新；适合参考导出格式与数据库结构。</td>
+              </tr>
+              <tr data-status="bad">
+                <td><span class="name">TE0dollary/chatlog-bot</span></td><td>—</td><td>—</td>
+                <td><span class="badge bad">451</span></td><td>chatlog 的 macOS 适配</td>
+                <td>已下架，无法访问。</td>
+              </tr>
+              <tr data-status="ok">
+                <td><span class="name">miloira/wxhook</span></td><td>405</td><td>MIT</td>
+                <td><span class="badge ok">活跃</span></td><td>DLL 注入 Hook</td>
+                <td>支持 3.6 → 4.2.0.9；<code>faked_version</code> 可绕 3.x 低版本登录限制。</td>
+              </tr>
+              <tr data-status="ok">
+                <td><span class="name">aixed/WeChat-Hook</span></td><td>—</td><td>—</td>
+                <td><span class="badge ok">活跃</span></td><td>version.dll 代理 + 本地 HTTP</td>
+                <td>支持 4.1.10.27，<code>:30001</code> 提供消息、SQL 查询等接口。</td>
+              </tr>
+              <tr data-status="ok">
+                <td><span class="name">ydotdog/wechat-export-macos</span></td><td>—</td><td>WTFPL</td>
+                <td><span class="badge ok">可用</span></td><td>macOS 内存扫描 + 解密导出</td>
+                <td>一键 TXT/CSV/JSON，需重签微信 + sudo，仅文本。</td>
+              </tr>
+              <tr data-status="ok">
+                <td><span class="name">Moonlit7/wechat-decrypt1</span></td><td>—</td><td>—</td>
+                <td><span class="badge ok">可用</span></td><td>解密 + 监听 + MCP</td>
+                <td>Win/mac/Linux，自带 MCP server 与实时监听。</td>
+              </tr>
+              <tr data-status="warn">
+                <td><span class="name">wechaty/puppet-padlocal</span></td><td>—</td><td>Apache-2.0</td>
+                <td><span class="badge warn">高风险</span></td><td>iPad 协议模拟</td>
+                <td>功能全，但社区多起封号报告；Web 协议 2019 已关闭。</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" id="projEmpty" hidden>没有匹配的项目，换个关键词或状态试试。</div>
+        </div>
+
+        <div class="callout info">
+          <b>读法：</b>不要看 star 数选型。star 最高的两个恰好是被删得最彻底的。
+          现在的选择标准只有三条：<b>还在维护</b>、<b>能在 macOS 跑</b>、<b>不依赖已被下架的仓库</b>。
+        </div>
+      </section>
+
+      <!-- 03 -->
+      <section id="s3">
+        <div class="sec-head"><span class="sec-num">03</span><h2>版本矩阵：三种“低版本”不是一回事</h2></div>
+        <p class="lede">选错版本是这类项目最常见的返工原因。</p>
+
+        <div class="tabs" role="tablist" aria-label="版本用途">
+          <button role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">导出 / 解密</button>
+          <button role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">Hook / 实时收发</button>
+          <button role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false">UI 自动化</button>
+        </div>
+
+        <div class="tabpanel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+          <h3>只做导出 → 锁 4.0.3.x</h3>
+          <dl class="kv">
+            <dt>Windows 上限</dt><dd><code>4.0.3.36</code></dd>
+            <dt>macOS 上限</dt><dd><code>4.0.3.80</code></dd>
+            <dt>原因</dt><dd>再高的版本密钥不再长时间驻留内存，内存扫描拿不到。</dd>
+            <dt>优点</dt><dd>不需要绕“低版本登录限制”，不修改微信二进制，风险最低。</dd>
+            <dt>代价</dt><dd>不能实时收发；只能读已有数据。</dd>
+          </dl>
+          <div class="callout ok">这是本项目第一阶段应采用的口径。</div>
+        </div>
+
+        <div class="tabpanel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+          <h3>要实时收发 → 需要 Hook，但平台受限</h3>
+          <dl class="kv">
+            <dt>WeChatFerry</dt><dd>仅 Windows，最后适配 <code>3.9.12.51</code>，已归档。</dd>
+            <dt>wxhook</dt><dd>Windows，覆盖 3.6 → 4.2.0.9，活跃。</dd>
+            <dt>macOS</dt><dd><b>没有等价的 DLL Hook 实现。</b></dd>
+            <dt>3.x 问题</dt><dd>会弹“版本过低”，需 <code>faked_version</code> / <code>bypass_version</code>。</dd>
+          </dl>
+          <div class="callout warn">
+            在 macOS 上，“Hook 实时收发”这条路实际上不成立。可行的替代是
+            <b>数据库监听 + Accessibility 发送</b>，属于“伪实时”，维护成本更高。
+          </div>
+        </div>
+
+        <div class="tabpanel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+          <h3>UI 自动化 → 基本失效</h3>
+          <dl class="kv">
+            <dt>微信 4.0</dt><dd>底层渲染重写，UIAutomation 树大面积失效。</dd>
+            <dt>wxauto</dt><dd>已停止维护。</dd>
+            <dt>macOS</dt><dd>Accessibility / AppleScript 仍可用，但依赖 UI 结构，版本一变就要修。</dd>
+          </dl>
+          <div class="callout warn">只适合作为“发送消息”的补充手段，不适合作为数据导出主路径。</div>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section id="s4">
+        <div class="sec-head"><span class="sec-num">04</span><h2>推荐架构：本地 Hub，不上云</h2></div>
+        <p class="lede">数据只在本机流转；AI 通过 MCP 读取，而不是把聊天记录上传。</p>
+
+        <svg class="arch" viewBox="0 0 860 430" role="img" aria-label="架构图：微信客户端经解密或监听进入本地 Hub，再通过 MCP 接入 AI">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#7b8798"/>
+            </marker>
+            <style>
+              .box{fill:#ffffff;stroke:#c9ced6;stroke-width:1.4;rx:8}
+              .box-accent{fill:#e8f0fe;stroke:#1f6feb;stroke-width:1.6}
+              .box-dark{fill:#161d2b;stroke:#161d2b}
+              .t{font-size:13px;fill:#16181d}
+              .t-b{font-size:13px;fill:#16181d;font-weight:600}
+              .t-w{font-size:13px;fill:#e9edf5;font-weight:600}
+              .t-s{font-size:11.5px;fill:#5d6470}
+              .t-sw{font-size:11.5px;fill:#9fb0c9}
+              .ln{stroke:#7b8798;stroke-width:1.4;fill:none}
+            </style>
+          </defs>
+
+          <rect class="box-dark" x="20" y="24" width="240" height="66" rx="8"/>
+          <text class="t-w" x="38" y="50">微信桌面端（锁定版本）</text>
+          <text class="t-sw" x="38" y="70">4.0.3.80 / 关闭自动更新</text>
+
+          <rect class="box" x="20" y="140" width="240" height="74" rx="8"/>
+          <text class="t-b" x="38" y="166">SQLCipher 解密</text>
+          <text class="t-s" x="38" y="186">只读 · 批量解密 message_*.db</text>
+          <text class="t-s" x="38" y="203">输出明文 SQLite</text>
+
+          <rect class="box" x="20" y="258" width="240" height="74" rx="8"/>
+          <text class="t-b" x="38" y="284">监听 / 发送（可选）</text>
+          <text class="t-s" x="38" y="304">fsnotify 监听新消息</text>
+          <text class="t-s" x="38" y="321">Accessibility 发送回复</text>
+
+          <rect class="box-accent" x="330" y="120" width="230" height="180" rx="8"/>
+          <text class="t-b" x="350" y="148">本地 Hub（:5030）</text>
+          <text class="t-s" x="350" y="172">/messages  写入</text>
+          <text class="t-s" x="350" y="192">/search    时间/人物/关键词</text>
+          <text class="t-s" x="350" y="212">/contacts  /sessions</text>
+          <text class="t-s" x="350" y="232">/chat      调用 LLM</text>
+          <text class="t-s" x="350" y="252">/mcp       MCP Server</text>
+          <text class="t-s" x="350" y="278" style="fill:#1f6feb">SQLite + FTS5 全文索引</text>
+
+          <rect class="box" x="630" y="120" width="210" height="74" rx="8"/>
+          <text class="t-b" x="648" y="146">AI 客户端</text>
+          <text class="t-s" x="648" y="166">Claude / Cursor / Cherry Studio</text>
+
+          <rect class="box" x="630" y="226" width="210" height="74" rx="8"/>
+          <text class="t-b" x="648" y="252">模型</text>
+          <text class="t-s" x="648" y="272">Ollama Qwen3 / DeepSeek</text>
+
+          <path class="ln" d="M140,90 L140,140" marker-end="url(#arrow)"/>
+          <path class="ln" d="M140,214 L140,258" marker-end="url(#arrow)"/>
+          <path class="ln" d="M260,177 L330,177" marker-end="url(#arrow)"/>
+          <path class="ln" d="M260,295 L300,295 L300,240 L330,240" marker-end="url(#arrow)"/>
+          <path class="ln" d="M560,157 L630,157" marker-end="url(#arrow)"/>
+          <path class="ln" d="M630,263 L560,263" marker-end="url(#arrow)"/>
+          <path class="ln" d="M560,220 L630,220" marker-end="url(#arrow)"/>
+        </svg>
+
+        <div class="legend">
+          <span><i class="dot" style="background:#161d2b"></i>受版本约束</span>
+          <span><i class="dot" style="background:#1f6feb"></i>自建核心</span>
+          <span><i class="dot" style="background:#c9ced6"></i>可替换</span>
+        </div>
+
+        <h3>四条设计原则</h3>
+        <ol>
+          <li><b>数据层只读。</b>永远不写回微信数据库——写回没有技术必要，风险却最高。</li>
+          <li><b>MCP 是接入 AI 的标准答案。</b>比自建聊天 UI 省一个数量级的工作量，而且 Claude/Cursor/Cherry Studio 都能直接用。</li>
+          <li><b>先 FTS5，后向量。</b>几 GB 数据用 SQLite 全文索引足够；embedding 是加分项，不是前置条件。</li>
+          <li><b>一份数据三种出口。</b>JSONL 保留原始、CSV 供分析、静态 HTML 供存档与人工核对。</li>
+        </ol>
+      </section>
+
+      <!-- 05 -->
+      <section id="s5">
+        <div class="sec-head"><span class="sec-num">05</span><h2>macOS 落地路径</h2></div>
+        <p class="lede">按顺序执行；前四步做完就能导出，第五步之后才是 AI。</p>
+
+        <ol class="steps">
+          <li><b>锁定版本并禁止自动更新</b><span>安装 macOS 微信 ≤ 4.0.3.80；设置里关闭自动更新；hosts 阻断 <code>dldir1.qq.com</code> 与 <code>dldir1v6.qq.com</code>。</span></li>
+          <li><b>手机 → 电脑迁移历史</b><span>手机微信：我 → 设置 → 通用 → 聊天记录迁移与备份 → 迁移到电脑。PC 端默认只有本机收发的消息，这一步不能省。</span></li>
+          <li><b>提取密钥</b><span>用 <code>lldb</code> attach 微信进程（需临时 <code>csrutil disable</code>），或重签微信后走 <code>task_for_pid</code>。取完密钥可以立刻把 SIP 开回去。</span></li>
+          <li><b>批量解密</b><span>SQLCipher 4：AES-256-CBC + HMAC-SHA512，page 4096，reserve 80，KDF 64000/SHA512；微信 4.x 每个库独立 key。几 GB 建议按库分批，避免一次性占满内存。</span></li>
+          <li><b>解析与索引</b><span>消息表按 <code>Msg_&lt;md5(wxid)&gt;</code> 分表；处理 <code>type=49</code> 的 XML、zstd 压缩内容、<code>.dat</code> 图片（XOR/V1/V2 三代）。写入 SQLite 并建 FTS5。</span></li>
+          <li><b>导出三件套</b><span>JSONL（原始）+ CSV（分析）+ 单文件 HTML（人工核对）。先做小样本，确认字段对齐再全量跑。</span></li>
+          <li><b>挂 MCP</b><span>暴露 <code>search_messages</code> / <code>get_session</code> / <code>get_contact</code> 三个工具，接入 Claude Desktop、Cursor 或 Cherry Studio。</span></li>
+        </ol>
+
+        <div class="callout warn">
+          <b>几 GB 的注意点：</b>不要在浏览器里一次性渲染全部消息；导出 HTML 要按会话/时间分片。
+          解密和索引都做成可断点续跑，避免中途失败重来。
+        </div>
+      </section>
+
+      <!-- 06 -->
+      <section id="s6">
+        <div class="sec-head"><span class="sec-num">06</span><h2>方案 D 在 macOS 上的修正</h2></div>
+        <p class="lede">你选了 D（实时 AI 助手）。原方案是 Windows + wcferry，在 macOS 上必须换实现。</p>
+
+        <div class="grid2">
+          <div class="card">
+            <h4>原方案 D</h4>
+            <p><b>Windows 3.9.12.51 + wcferry</b></p>
+            <p>DLL 注入 → 消息回调 → LLM → 直接发送。功能最全，后台可跑。</p>
+            <p><span class="badge bad">macOS 不可用</span></p>
+          </div>
+          <div class="card">
+            <h4>macOS 等价物</h4>
+            <p><b>DB 监听 + Accessibility 发送</b></p>
+            <p>fsnotify 发现新消息 → Hub → LLM → AppleScript/AX 发送。没有真正的消息回调，靠文件变化与轮询。</p>
+            <p><span class="badge warn">伪实时 · 需维护</span></p>
+          </div>
+        </div>
+
+        <h3>建议拆成两个阶段</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>阶段</th><th>能力</th><th>技术</th><th>风险</th><th>建议</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>第一阶段</b></td>
+                <td>导出 + AI 读取（问答、总结、检索）</td>
+                <td>DB 解密 + FTS5 + MCP</td>
+                <td><span class="badge ok">低</span></td>
+                <td>先做，能覆盖 80% 需求</td>
+              </tr>
+              <tr>
+                <td><b>第二阶段</b></td>
+                <td>新消息监听 + AI 自动回复</td>
+                <td>fsnotify + Accessibility</td>
+                <td><span class="badge warn">中</span></td>
+                <td>确认第一阶段稳定后再加</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout info">
+          <b>为什么这样拆：</b>“读”只需要数据库，失败也不影响微信本身；
+          “写”要操作微信 UI，一旦版本更新就可能失效，而且更容易触发风控。
+          先读后写，出问题时损失最小。
+        </div>
+      </section>
+
+      <!-- 07 -->
+      <section id="s7">
+        <div class="sec-head"><span class="sec-num">07</span><h2>风险与合规</h2></div>
+        <p class="lede">这一节不是免责声明，是选型依据。</p>
+
+        <div class="callout bad">
+          <b>已有明确先例：</b>腾讯对 <code>chatlog</code>、<code>PyWxDump</code> 发出法务函，并公开了针对“违规获取及利用微信终端用户数据行为”的打击公告。
+          公开分发、SaaS 化、代运营，是风险最高的三种用法。
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>路线</th><th>封号风险</th><th>法律风险</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>数据库只读解密</td><td><span class="badge ok">最低</span></td><td><span class="badge warn">中</span></td><td>只读内存取密钥，不改微信逻辑；但仍属非官方手段。</td></tr>
+              <tr><td>UI 自动化</td><td><span class="badge warn">中</span></td><td><span class="badge warn">中</span></td><td>行为层接近真人；4.0 后维护成本高。</td></tr>
+              <tr><td>Hook 注入</td><td><span class="badge warn">中高</span></td><td><span class="badge warn">中高</span></td><td>修改进程内存，可被完整性校验/模块扫描发现。</td></tr>
+              <tr><td>协议模拟（PadLocal）</td><td><span class="badge bad">最高</span></td><td><span class="badge bad">高</span></td><td>服务端可识别；社区多起封号。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>必须遵守的边界</h3>
+        <ul>
+          <li><b>只处理本人账号、本人数据</b>，不碰他人聊天记录。</li>
+          <li><b>本地运行、不公开分发、不提供服务</b>；代码不进公开仓库。</li>
+          <li><b>导出数据全盘加密</b>（FileVault / VeraCrypt），不进网盘、不进 Git。</li>
+          <li><b>先用小号验证链路</b>，确认稳定后再考虑主号。</li>
+          <li><b>不做“老板监控”、代运营、群发营销</b>——这是打击重点。</li>
+        </ul>
+      </section>
+
+      <!-- 08 -->
+      <section id="s8">
+        <div class="sec-head"><span class="sec-num">08</span><h2>启动前核对清单</h2></div>
+        <p class="lede">勾选状态只保存在本机浏览器，刷新不丢。全部勾完再进入实现。</p>
+
+        <div class="progress">
+          <div class="bar"><i id="barFill"></i></div>
+          <small id="barText">0 / 8</small>
+        </div>
+
+        <ul class="checklist" id="checklist">
+          <li><input type="checkbox" id="c1"><label for="c1"><b>确认平台与版本</b><span>macOS 上安装的是 ≤ 4.0.3.80，且已关闭自动更新。</span></label></li>
+          <li><input type="checkbox" id="c2"><label for="c2"><b>确认数据范围</b><span>手机端历史已迁移到电脑；知道大概的会话数量与时间跨度。</span></label></li>
+          <li><input type="checkbox" id="c3"><label for="c3"><b>接受“先读后写”</b><span>第一阶段只做导出 + AI 读取，实时回复放第二阶段。</span></label></li>
+          <li><input type="checkbox" id="c4"><label for="c4"><b>接受本地化</b><span>数据不出本机，AI 可用 Ollama 本地模型或自控 API。</span></label></li>
+          <li><input type="checkbox" id="c5"><label for="c5"><b>确认磁盘空间</b><span>预留至少 3 倍数据量的空间（原始库 + 解密库 + 索引/导出）。</span></label></li>
+          <li><input type="checkbox" id="c6"><label for="c6"><b>确认操作窗口</b><span>取密钥时需要临时关闭 SIP，并重启一次。</span></label></li>
+          <li><input type="checkbox" id="c7"><label for="c7"><b>确认风险认知</b><span>理解封号与合规风险，仅用于本人数据，不公开分发。</span></label></li>
+          <li><input type="checkbox" id="c8"><label for="c8"><b>确认交付物</b><span>需要的是：导出器 + 本地 Hub + MCP，而不是一个聊天 UI。</span></label></li>
+        </ul>
+      </section>
+
+      <!-- 09 -->
+      <section id="s9">
+        <div class="sec-head"><span class="sec-num">09</span><h2>下一步</h2></div>
+        <p class="lede">你核对完告诉我“开始”，我就按下面的顺序写代码。</p>
+
+        <div class="grid3">
+          <div class="card">
+            <h4>Step 1 · 探针</h4>
+            <p>确认微信数据目录、数据库清单、版本号，输出一份 <code>inventory.json</code>。</p>
+            <p><span class="badge ok">只读 · 无风险</span></p>
+          </div>
+          <div class="card">
+            <h4>Step 2 · 解密</h4>
+            <p>取 key → 批量解密 → 校验表结构与消息条数。</p>
+            <p><span class="badge warn">需临时关 SIP</span></p>
+          </div>
+          <div class="card">
+            <h4>Step 3 · Hub</h4>
+            <p>SQLite + FTS5 + HTTP API + MCP，先用 1000 条样本跑通。</p>
+            <p><span class="badge ok">纯本地</span></p>
+          </div>
+        </div>
+
+        <h3>我需要的确认</h3>
+        <div class="codewrap">
+<pre id="codeConfirm"><span class="c"># 回复以下三项即可开工</span>
+1. 微信版本：  4.0.3.80 / 其他（请填）
+2. 数据规模：  约 __ GB，约 __ 个会话
+3. 第一步产物：inventory.json（推荐）/ 直接解密 / 先看 HTML 导出样例</pre>
+          <button class="copy" data-copy="#codeConfirm">复制</button>
+        </div>
+
+        <div class="callout info">
+          如果核对中发现任何一项不对（版本、平台、数据范围），现在改成本最低。
+          进入实现后再改版本，通常要重新迁移历史记录。
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">调研稿 · 2026-10-29 · 单文件离线页面 · 仅供本人数据备份与本地分析</div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 侧栏高亮 ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.side a"));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute("href")); });
+
+  function setActive(id){
+    links.forEach(function(a){ a.classList.toggle("active", a.getAttribute("href") === "#" + id); });
+  }
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) setActive(e.target.id);
+      });
+    }, { rootMargin: "-15% 0px -70% 0px", threshold: 0 });
+    sections.forEach(function(s){ if (s) io.observe(s); });
+  }
+
+  /* ---------- 项目表：筛选 + 搜索 ---------- */
+  var rows = Array.prototype.slice.call(document.querySelectorAll("#projTable tbody tr"));
+  var filters = document.getElementById("projFilters");
+  var search = document.getElementById("projSearch");
+  var empty = document.getElementById("projEmpty");
+  var status = "all";
+
+  function apply(){
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function(tr){
+      var okStatus = status === "all" || tr.getAttribute("data-status") === status;
+      var okText = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
+      var show = okStatus && okText;
+      tr.style.display = show ? "" : "none";
+      if (show) shown++;
+    });
+    empty.hidden = shown !== 0;
+  }
+
+  filters.addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-f]");
+    if (!btn) return;
+    status = btn.getAttribute("data-f");
+    Array.prototype.forEach.call(filters.querySelectorAll("button"), function(b){
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    apply();
+  });
+  search.addEventListener("input", apply);
+  apply();
+
+  /* ---------- 版本矩阵 tabs ---------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  tabs.forEach(function(tab){
+    tab.addEventListener("click", function(){
+      tabs.forEach(function(t){
+        var selected = t === tab;
+        t.setAttribute("aria-selected", selected ? "true" : "false");
+        document.getElementById(t.getAttribute("aria-controls")).hidden = !selected;
+      });
+    });
+    tab.addEventListener("keydown", function(e){
+      var i = tabs.indexOf(tab), next = null;
+      if (e.key === "ArrowRight") next = tabs[(i + 1) % tabs.length];
+      if (e.key === "ArrowLeft") next = tabs[(i - 1 + tabs.length) % tabs.length];
+      if (next){ e.preventDefault(); next.focus(); next.click(); }
+    });
+  });
+
+  /* ---------- 核对清单持久化 ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input[type=checkbox]"));
+  var fill = document.getElementById("barFill");
+  var text = document.getElementById("barText");
+  var KEY = "wx-ai-checklist-v1";
+
+  function load(){
+    try{
+      var saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+      boxes.forEach(function(b){ if (saved[b.id]) b.checked = true; });
+    }catch(err){ /* ignore */ }
+  }
+  function save(){
+    var obj = {};
+    boxes.forEach(function(b){ if (b.checked) obj[b.id] = 1; });
+    try{ localStorage.setItem(KEY, JSON.stringify(obj)); }catch(err){ /* ignore */ }
+  }
+  function render(){
+    var n = boxes.filter(function(b){ return b.checked; }).length;
+    fill.style.width = (n / boxes.length * 100) + "%";
+    text.textContent = n + " / " + boxes.length;
+  }
+  boxes.forEach(function(b){
+    b.addEventListener("change", function(){ save(); render(); });
+  });
+  load(); render();
+
+  /* ---------- 复制按钮 ---------- */
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var el = document.querySelector(btn.getAttribute("data-copy"));
+      var txt = el.textContent;
+      function done(){ btn.textContent = "已复制"; setTimeout(function(){ btn.textContent = "复制"; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(done, function(){
+          var ta = document.createElement("textarea");
+          ta.value = txt; document.body.appendChild(ta); ta.select();
+          try{ document.execCommand("copy"); done(); }catch(e){}
+          document.body.removeChild(ta);
+        });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand("copy"); done(); }catch(e){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
