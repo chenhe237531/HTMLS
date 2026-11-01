@@ -6,6 +6,7 @@
 | --- | --- |
 | [`Agents/`](Agents/agent-workbench-plan.html) | Agent 工作台设计方案（OpenCode × Pi） |
 | [`Agents/agents-hub/`](Agents/agents-hub/index.html) | AI Agent 全景：50 个开源 / 闭源产品与各自优点（2026-10） |
+| [`date-ops/`](date-ops/index.html) | 约会运营手册：从匹配到线下的系统设计，含漏斗计算器与聊天打分器 |
 | [`MCP/mcp-hub/`](MCP/mcp-hub/index.html) | MCP Hub 导航：目录、市场与网关汇总（2026-10） |
 | [`MCP/mcp-guide/`](MCP/mcp-guide/index.html) | 怎么选 MCP：从需求到验证的选型教程 |
 | [`AgentsTeam/agent-fleet-1000.html`](AgentsTeam/agent-fleet-1000.html) | Agent 舰队：通往 1000+ Agent 的五条路线 |
