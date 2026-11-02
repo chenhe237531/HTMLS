@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="办黑客松的商业逻辑拆解：为什么“先办会再撬资源”是因果倒置，国内三种商业形态，单位经济模型，以及 To G / To B / To C 三条路径。">
+<title>办黑客松的商业逻辑 · 它是放大器，不是杠杆</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:920px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.quote{font-family:var(--serif);font-size:19px;line-height:1.75;color:var(--ink);border-left:3px solid var(--accent);padding:6px 0 6px 18px;margin:0 0 18px}
+.quote b{color:var(--accent)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.3px;min-width:720px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+.models{display:grid;gap:12px}
+.model{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:17px 18px;box-shadow:var(--shadow)}
+.model .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd9bd;border-radius:5px;padding:1px 6px;display:inline-block;margin-bottom:6px}
+.model h3{margin:0 0 6px;font-size:16px}
+.model dl{margin:0;display:grid;grid-template-columns:64px 1fr;gap:4px 10px;font-size:13.4px}
+.model dt{color:var(--muted);font-size:12.5px}
+.model dd{margin:0;color:var(--ink-2);line-height:1.7}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:17px 18px;box-shadow:var(--shadow)}
+.path .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--accent)}
+.path h3{margin:4px 0 6px;font-size:16px}
+.path p{font-size:13.4px;color:var(--ink-2);margin:0 0 8px;line-height:1.7}
+.path ol{margin:0;padding-left:1.15em;font-size:12.8px;color:var(--ink-2);line-height:1.7}
+.path li{margin:3px 0}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:920px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}.model dl{grid-template-columns:1fr;gap:2px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.calc{display:none}body{background:#fff}.model,.path{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">← 找赛地图</a>
+  <span class="crumb">Hackathons / 商业逻辑 · 2026-11-01</span>
+  <nav class="pager"><a href="#inversion">因果倒置</a><a href="#models">三种形态</a><a href="#paths">三条路径</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>商业分析 · 基于办赛 SOP 经验</div>
+  <h1>黑客松是<em>放大器</em><br>不是杠杆</h1>
+  <p class="lede">很多人想靠办一场黑客松撬动政府、园区和企业资源。但因果被弄反了：不是办了第一届才有资源，而是先有资源，第一届才办得成。这篇拆解“办赛”背后的商业逻辑与资源错位。</p>
+
+  <div class="quote">它只能放大你已经拥有的资源。如果你本身一无所有，放大之后依然是零。</div>
+
+  <section id="inversion">
+    <h2><span class="no">01</span>被弄反的因果</h2>
+    <p class="sub">路径依赖看起来很美，但它把“结果”当成了“原因”。</p>
+
+    <p>常见的想象路径是：自己垫钱做公益 → 找免费团队干活 → 做出声量 → 包装成标品 → 再去找政府 / 园区 / 企业要钱要资源。这条路径里，每一步都在等前一步的产出，而第一步的钱和人都没有着落。</p>
+
+    <div class="callout bad">
+      <span class="t">真正成立的顺序</span>
+      <p>你原本就拥有某些资源——场地、赞助底盘、政企关系、社区名单、执行团队——第一届才有机会办成。没有这些，“办成”往往只是一场自嗨；离“办好”（有商业回报、有长期认可）还差很远。</p>
+    </div>
+
+    <p>这不是说草根不能办赛，而是说：<strong>先盘资源，再定形态</strong>。资源决定了你能做哪一种生意，而不是反过来。</p>
+  </section>
+
+  <section id="models">
+    <h2><span class="no">02</span>国内黑客松的三种商业形态</h2>
+    <p class="sub">三类的“卖点”和“买单方”完全不同。用错形态去谈赞助，对方一眼就能看出来。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>形态</th><th>卖什么</th><th>谁买单</th><th>成功标准</th><th>收入结构</th><th>主要风险</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>独立青年品牌</b><br><span style="color:var(--muted);font-size:12px">如 AdventureX</span></td>
+            <td>社群文化、青年态度、品牌信用</td>
+            <td>看重年轻科技人群的企业；开发者工具 / AI 模型公司</td>
+            <td>技术圈号召力与品牌溢价，能持续吸引优质开发者</td>
+            <td>赞助 + 票务 / 周边</td>
+            <td>高度依赖创始人 IP 与社区运营，换人即断</td>
+          </tr>
+          <tr>
+            <td><b>城市品牌</b><br><span style="color:var(--muted);font-size:12px">如南客松、贵客松</span></td>
+            <td>城市营销、招商引资、招才引智</td>
+            <td>地方政府、园区管委会、地方国企</td>
+            <td>能否作为政绩工程；能否吸引外地项目落地；媒体曝光</td>
+            <td>政府购买服务 / 补贴</td>
+            <td>回款周期长，指标压力大，本质是 To G 服务</td>
+          </tr>
+          <tr>
+            <td><b>企业自办</b><br><span style="color:var(--muted);font-size:12px">如影石黑客松</span></td>
+            <td>解决企业痛点、外部技术外包、团建或 PR</td>
+            <td>企业市场部或研发部预算</td>
+            <td>能否给产品新思路；能否给雇主品牌 / 科技属性贴金</td>
+            <td>企业年度预算</td>
+            <td>预算周期长，内部优先级一变就砍</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="models">
+      <div class="model">
+        <span class="tag">MODEL A</span>
+        <h3>独立青年品牌：卖的是“这群人”</h3>
+        <dl>
+          <dt>核心资产</dt><dd>真实、活跃、高质量的开发者社群，以及“这场活动值得来”的口碑。</dd>
+          <dt>收入逻辑</dt><dd>赞助商买的不是场地和披萨，而是与这群人建立联系的资格。</dd>
+          <dt>冷启动</dt><dd>先做社区再做赛事：持续的内容、小聚、志愿者文化，把第一届口碑做绝。</dd>
+          <dt>判断标准</dt><dd>不办赛的时候，社群还活着吗？</dd>
+        </dl>
+      </div>
+      <div class="model">
+        <span class="tag">MODEL B</span>
+        <h3>城市品牌：卖的是“结果确定性”</h3>
+        <dl>
+          <dt>核心资产</dt><dd>政企关系、本地执行能力、可被写进汇报的材料与传播。</dd>
+          <dt>收入逻辑</dt><dd>政府/园区买的是招商、招才、城市曝光与可展示的政绩。</dd>
+          <dt>冷启动</dt><dd>先进政府主导的孵化器 / 双创中心，拿到信任背书，再进年度预算。</dd>
+          <dt>判断标准</dt><dd>能不能说清“这场活动为本地带来了什么可量化的结果”？</dd>
+        </dl>
+      </div>
+      <div class="model">
+        <span class="tag">MODEL C</span>
+        <h3>企业自办：卖的是“内部价值”</h3>
+        <dl>
+          <dt>核心资产</dt><dd>对企业业务的理解、可交付的赛题设计、内部跨部门协作能力。</dd>
+          <dt>收入逻辑</dt><dd>市场部买 PR 与雇主品牌，研发部买外部创意与人才线索。</dd>
+          <dt>冷启动</dt><dd>先接一个部门的小预算做试点，用结果换下一次更大的预算。</dd>
+          <dt>判断标准</dt><dd>赛后有没有具体的产品/招聘/传播产出被内部认领？</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="barriers">
+    <h2><span class="no">03</span>为什么“空手套白狼”行不通</h2>
+    <p class="sub">三个门槛，一个比一个硬。</p>
+
+    <h3>1. 它是重资源游戏</h3>
+    <p>场地、餐饮、硬件设备、API 额度、评委导师、安保保洁、物料与传播，每一项都是真金白银。靠“团队免费干”只能撑极短时间；没有商业模式支撑，注定不可持续。</p>
+
+    <h3>2. “办成”的门槛极低，“办好”的门槛极高</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>办成</th><th>办好</th></tr></thead>
+        <tbody>
+          <tr><td><b>做法</b></td><td>找个联合办公空间，拉个微信群，买点披萨，找几个学生写代码</td><td>顶级开发者愿意熬夜；赞助商觉得 ROI 够；项目真的能落地转化</td></tr>
+          <tr><td><b>需要的资源</b></td><td>一点点钱和几个人</td><td>社区信任、赞助底盘、评审能力、执行团队、传播</td></tr>
+          <tr><td><b>结果</b></td><td>一场活动</td><td>一个可持续的品牌或一门生意</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>3. 资源方比办会者更精明</h3>
+    <p>政府或大企业赞助，看重的是“结果确定性”或“品牌契合度”。他们的商务 / 市场团队见过太多空壳方案；拿不出已存在的资源与可验证的记录，很难过第一轮。</p>
+
+    <div class="callout warn">
+      <span class="t">一句话检验</span>
+      <p>如果明天就有人给你 20 万赞助，你能在 30 天内交付一场让赞助商愿意续约的活动吗？答不上来，缺的不是钱，是底盘。</p>
+    </div>
+  </section>
+
+  <section id="unit">
+    <h2><span class="no">04</span>先算一笔账</h2>
+    <p class="sub">下面是一个结构化的办赛预算模型，数字仅作示意。先看清“赞助要覆盖到什么程度”，再谈愿景。</p>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="people">参赛人数</label><input id="people" type="number" min="0" step="10" value="150" inputmode="numeric"></div>
+        <div class="field"><label for="days">天数</label><input id="days" type="number" min="1" step="1" value="2" inputmode="numeric"></div>
+        <div class="field"><label for="meal">人均餐饮 / 天（元）</label><input id="meal" type="number" min="0" step="10" value="100" inputmode="numeric"></div>
+        <div class="field"><label for="venue">场地日租（元）</label><input id="venue" type="number" min="0" step="1000" value="8000" inputmode="numeric"></div>
+        <div class="field"><label for="prize">奖金池（元）</label><input id="prize" type="number" min="0" step="5000" value="50000" inputmode="numeric"></div>
+        <div class="field"><label for="stuff">物料 / 设备（元）</label><input id="stuff" type="number" min="0" step="1000" value="20000" inputmode="numeric"></div>
+        <div class="field"><label for="staff">执行人数</label><input id="staff" type="number" min="0" step="1" value="8" inputmode="numeric"></div>
+        <div class="field"><label for="wage">人均日薪（元）</label><input id="wage" type="number" min="0" step="100" value="800" inputmode="numeric"></div>
+        <div class="field"><label for="cloud">云 / API 额度（元）</label><input id="cloud" type="number" min="0" step="1000" value="10000" inputmode="numeric"></div>
+        <div class="field"><label for="sponsor">赞助总额（元）</label><input id="sponsor" type="number" min="0" step="10000" value="120000" inputmode="numeric"></div>
+        <div class="field"><label for="ticket">票务收入（元）</label><input id="ticket" type="number" min="0" step="1000" value="0" inputmode="numeric"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">总成本</span><span class="v" id="o-cost">—</span></div>
+        <div><span class="k">总收入</span><span class="v" id="o-rev">—</span></div>
+        <div><span class="k">盈亏</span><span class="v" id="o-gap">—</span></div>
+        <div><span class="k">每人成本</span><span class="v" id="o-head">—</span></div>
+        <div><span class="k">赞助覆盖率</span><span class="v" id="o-cov">—</span></div>
+      </div>
+      <p class="hint">默认值下总成本约 13.9 万，赞助 12 万仍缺约 1.9 万——这还没算差旅、保险、税费、传播和主办方的人力机会成本。改任何一个数字都能看到缺口怎么变。</p>
+    </div>
+  </section>
+
+  <section id="paths">
+    <h2><span class="no">05</span>三条路径，先做什么</h2>
+    <p class="sub">按你手里已有的资源选，不要三条同时开。</p>
+
+    <div class="paths">
+      <div class="path">
+        <div class="who">TO G · 政府 / 园区</div>
+        <h3>先拿背书，再进预算</h3>
+        <p>本质是公关与落地服务，不是办活动。</p>
+        <ol>
+          <li>混进政府主导的孵化器 / 双创中心，建立信任</li>
+          <li>把方案翻译成“招商 / 招才 / 曝光”的语言</li>
+          <li>争取进年度预算，先做一场小规模试点</li>
+          <li>用可量化的结果换下一年的框架合作</li>
+        </ol>
+      </div>
+      <div class="path">
+        <div class="who">TO B · 企业赞助</div>
+        <h3>先有名单，再谈赞助</h3>
+        <p>你卖的是“精准触达技术人群的流量”，不是一场热闹的派对。</p>
+        <ol>
+          <li>先做垂直社区运营，积累 500 个真实、活跃的开发者</li>
+          <li>做出可展示的触达数据（不是微信群人数）</li>
+          <li>把赞助拆成标准包：曝光、赛题、评审、招聘</li>
+          <li>用一届的交付记录换复购</li>
+        </ol>
+      </div>
+      <div class="path">
+        <div class="who">TO C · 独立品牌</div>
+        <h3>先做社区，再做赛事</h3>
+        <p>像 AdventureX 那样，先有一群死忠粉和志愿者文化。</p>
+        <ol>
+          <li>持续内容与小聚，建立“这群人”的认同</li>
+          <li>把第一届口碑做绝，宁小勿滥</li>
+          <li>让赞助商看到人群质量，而不是人数</li>
+          <li>再扩规模、做品牌溢价</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="audit">
+    <h2><span class="no">06</span>办之前，先盘这六项资源</h2>
+    <ul class="check">
+      <li><b>场地</b>：免费或低成本、能过夜、网络与电力可靠。</li>
+      <li><b>赞助底盘</b>：至少一个已确认的付费方，而不是“聊得不错”。</li>
+      <li><b>政企关系</b>：能直接对接预算决策人，而不只是执行层。</li>
+      <li><b>社区名单</b>：真实、活跃、可触达的开发者，能说出他们最近在做什么。</li>
+      <li><b>执行团队</b>：能连续熬夜的 5–10 人，含技术、运营、传播。</li>
+      <li><b>内容能力</b>：赛题设计、评审标准、导师与传播素材。</li>
+    </ul>
+
+    <div class="callout good" style="margin-top:16px">
+      <span class="t">如果只满足两项</span>
+      <p>别办“大赛”。先办 30–50 人的闭门 build night，把社区和执行团队跑顺；它成本低、交付可控，也是下一次谈赞助的证据。</p>
+    </div>
+  </section>
+
+  <section id="antipatterns">
+    <h2><span class="no">07</span>五个反模式</h2>
+    <ul class="check">
+      <li><b>把结果当原因</b>：指望“先办起来”自然带来资源。</li>
+      <li><b>用免费团队撑规模</b>：志愿者热情撑不过第二届，执行质量会崩。</li>
+      <li><b>拿空壳谈赞助</b>：没有名单、没有案例、没有交付记录，第一轮就被看穿。</li>
+      <li><b>只办一次</b>：没有第二届，就没有品牌复利，赞助也无法续约。</li>
+      <li><b>把赞助当利润</b>：赞助是覆盖成本的收入，不是可分配的利润；算错会导致第二届直接消失。</li>
+    </ul>
+  </section>
+
+  <section id="boundary">
+    <h2><span class="no">08</span>边界说明</h2>
+    <p>本文是对一位有办赛 SOP 经验者的观点整理与结构化，不是行业统计报告。文中的 AdventureX、南客松、贵客松、影石等案例来自原作者举例，未做独立经营数据核验；三种形态也不是穷尽分类，混合形态（如企业 + 城市）很常见。</p>
+    <p>预算模型是结构示意，默认数字为假设值，不同城市、规模与规格差异很大。把它当作“先算缺口”的工具，而不是报价单。</p>
+    <p class="sub" style="margin-top:12px">整理于 2026-11-01。观点归原作者；页面结构与计算器为本页补充。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Hackathons · 商业分析 · 2026-11-01 · <a href="index.html">AI 找赛地图</a></div>
+  <span>本页为观点整理，不构成商业或投资建议。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  function n(id, fb){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) && v >= 0 ? v : fb; }
+  function money(x){ return '¥' + Math.round(x).toLocaleString('en-US'); }
+  function calc(){
+    var people = n('people', 150), days = Math.max(1, n('days', 2));
+    var meal = n('meal', 100), venue = n('venue', 8000), prize = n('prize', 50000);
+    var stuff = n('stuff', 20000), staff = n('staff', 8), wage = n('wage', 800);
+    var cloud = n('cloud', 10000), sponsor = n('sponsor', 120000), ticket = n('ticket', 0);
+
+    var cost = people * days * meal + venue * days + prize + stuff + staff * days * wage + cloud;
+    var rev = sponsor + ticket;
+    var gap = rev - cost;
+    var head = people > 0 ? cost / people : 0;
+    var cov = cost > 0 ? (sponsor / cost) * 100 : 0;
+
+    document.getElementById('o-cost').textContent = money(cost);
+    document.getElementById('o-rev').textContent = money(rev);
+    var g = document.getElementById('o-gap');
+    g.textContent = (gap >= 0 ? '+' : '') + money(gap);
+    g.style.color = gap >= 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('o-head').textContent = money(head);
+    document.getElementById('o-cov').textContent = Math.round(cov) + '%';
+  }
+  ['people','days','meal','venue','prize','stuff','staff','wage','cloud','sponsor','ticket'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

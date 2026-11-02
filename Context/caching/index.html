@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>缓存机制：从 KV cache 到 prompt cache（2026-10）</title>
+<style>
+:root{
+  --paper:#f5f4ee;--paper-2:#edece3;--surface:#fffefb;
+  --ink:#16181a;--ink-2:#3b3f42;--muted:#6d7276;
+  --line:#e2ded2;--line-strong:#cdc8b9;
+  --accent:#1f5f5b;--accent-soft:#e4f0ee;--accent-line:#c4ddd9;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#2a6448;--green-soft:#e7f1ea;
+  --red:#98302f;--red-soft:#fae9e8;
+  --violet:#5b4387;--violet-soft:#eee9f7;
+  --blue:#2b4f9e;--blue-soft:#e8eefb;
+  --code-bg:#161a1c;--code-ink:#e8e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(22,24,26,.05),0 10px 30px -18px rgba(22,24,26,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 86% -6%,rgba(31,95,91,.10),transparent 60%),radial-gradient(900px 480px at 0% 6%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c7e2de;color:#0d1a19}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:266px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.8),rgba(255,254,251,.34));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:22px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#0d1f1e);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:7px;border:2px solid #f4f2e8;border-radius:3px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-45deg)}
+.brand-title{font-family:var(--serif);font-size:16.5px;line-height:1.25}
+.brand-sub{font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:12.8px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-note{margin-top:20px;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:12px;line-height:1.65;color:var(--muted)}
+.side-note b{display:block;color:var(--ink-2);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.side-foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.65}
+main{min-width:0;padding:44px clamp(20px,4.6vw,60px) 96px;max-width:1100px}
+.hero{margin-bottom:42px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5vw,54px);line-height:1.1;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:17.5px;line-height:1.75;color:var(--ink-2);max-width:48em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.15;letter-spacing:-.02em}
+.kpi .n span{font-size:12px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+section{scroll-margin-top:22px;margin-bottom:56px}
+.sec-head{display:flex;gap:13px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:22px}
+.sec-no{font-family:var(--mono);font-size:11.5px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(23px,2.9vw,30px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17px;line-height:1.5;margin:30px 0 10px}
+h4{font-size:13.5px;margin:18px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 13px}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow:auto;font:12.5px/1.65 var(--mono);margin:12px 0 18px;border:1px solid #2a2f33}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.small{font-size:12.5px;color:var(--muted)}
+.lead-in{font-size:16px;color:var(--ink-2);max-width:54em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 17px;margin:18px 0;font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.danger{background:var(--red-soft);border-color:#efcfcd;border-left-color:var(--red)}
+.callout.ok{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout b{color:var(--ink)}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid;vertical-align:1px;white-space:nowrap}
+.tag.fact{color:var(--green);background:var(--green-soft);border-color:#cfe3d8}
+.tag.infer{color:var(--violet);background:var(--violet-soft);border-color:#ddd2ef}
+.tag.risk{color:var(--red);background:var(--red-soft);border-color:#efcfcd}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:16px 0 20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.card h4{margin-top:0}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.table-wrap{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.6;min-width:640px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);font-weight:600}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600}
+.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+details{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:10px 0;overflow:hidden}
+details[open]{box-shadow:var(--shadow)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;gap:9px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);font-weight:400}
+details[open]>summary::before{content:"−"}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.details-body{padding:0 16px 14px;border-top:1px solid var(--line)}
+.details-body>*:first-child{margin-top:12px}
+.formula{font-family:var(--mono);font-size:13px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:10px;padding:12px 15px;margin:12px 0;color:var(--ink-2);overflow-x:auto}
+.formula b{color:var(--accent);font-weight:600}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:18px 0}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+/* 分层缓存 */
+.layers{display:flex;flex-direction:column;gap:8px;margin:16px 0}
+.layer{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 14px}
+.layer .ln{font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);border-radius:6px;padding:2px 0;text-align:center}
+.layer strong{font-size:13.5px}
+.layer p{font-size:12px;color:var(--muted);margin:1px 0 0}
+.layer .lk{font-family:var(--mono);font-size:10.5px;color:var(--amber);border:1px solid #ecd9bd;background:var(--amber-soft);border-radius:5px;padding:1px 6px;white-space:nowrap}
+/* 成本柱 */
+.costbars{display:flex;flex-direction:column;gap:9px;margin:14px 0}
+.cbrow{display:grid;grid-template-columns:88px 1fr 72px;gap:10px;align-items:center;font-size:12px}
+.cbtrack{height:20px;background:var(--paper-2);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.cbfill{height:100%;width:0;transition:width .18s ease}
+.cblabel{font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink-2)}
+/* 计算器 */
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin:18px 0}
+.calc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.field input{width:100%;padding:7px 9px;border:1px solid var(--line-strong);border-radius:8px;font:14px/1.4 var(--sans);background:#fff;color:var(--ink)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.calc-out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.out{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.out .k{font-size:11px;color:var(--muted)}
+.out .v{font-family:var(--mono);font-size:17px;margin-top:2px;color:var(--accent)}
+.calc-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.btn{font:inherit;font-size:12.5px;padding:6px 13px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink-2)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.status{font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid}
+.status.ok{color:var(--green);background:var(--green-soft);border-color:#cfe3d8}
+.status.warn{color:var(--amber);background:var(--amber-soft);border-color:#ecd9bd}
+.status.bad{color:var(--red);background:var(--red-soft);border-color:#efcfcd}
+.top-link{display:block;text-align:right;font-size:11.5px;color:var(--muted);text-decoration:none;margin-top:8px}
+.src li{margin:7px 0}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px}
+  .toc{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .side-note,.side-foot{display:none}
+  main{padding:30px 18px 80px}
+  table{min-width:580px}
+  .layer{grid-template-columns:44px 1fr}
+  .layer .lk{grid-column:2;justify-self:start}
+}
+@media (max-width:760px){
+  .calc-grid,.calc-out{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .figure{overflow-x:auto}
+  .figure svg{min-width:780px}
+  .figure::after{content:"← 左右滑动查看完整图示 →";display:block;text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  body{font-size:15px}
+  .cbrow{grid-template-columns:70px 1fr 62px}
+}
+@media (max-width:480px){
+  .calc-grid,.calc-out{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+@media print{
+  .sidebar,.progress,.calc-actions,.top-link,.skip{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  body{background:#fff}
+  section{margin-bottom:26px}
+  details{border:0}
+  details>summary{display:none}
+  details .details-body{border:0;padding:0}
+  a{color:inherit;text-decoration:none}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  th{position:static}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<nav class="sidebar" aria-label="目录">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Caching</div>
+      <div class="brand-sub">KV · Prefix · Semantic</div>
+    </div>
+  </div>
+  <ol class="toc" id="toc">
+    <li><a href="#s1"><span class="no">01</span><span>四层缓存</span></a></li>
+    <li><a href="#s2"><span class="no">02</span><span>KV cache 如何运作</span></a></li>
+    <li><a href="#s3"><span class="no">03</span><span>Prompt caching</span></a></li>
+    <li><a href="#s4"><span class="no">04</span><span>什么会让缓存失效</span></a></li>
+    <li><a href="#s5"><span class="no">05</span><span>语义缓存与工具缓存</span></a></li>
+    <li><a href="#s6"><span class="no">06</span><span>成本与盈亏平衡</span></a></li>
+    <li><a href="#s7"><span class="no">07</span><span>提高命中率</span></a></li>
+    <li><a href="#s8"><span class="no">08</span><span>安全与多租户</span></a></li>
+    <li><a href="#s9"><span class="no">09</span><span>度量与排障</span></a></li>
+    <li><a href="#s10"><span class="no">10</span><span>来源</span></a></li>
+  </ol>
+  <div class="side-note">
+    <b>先记住</b>
+    缓存命中要求「从第一个 token 开始完全相同」。任何前缀变化，都会让后面全部失效。
+  </div>
+  <div class="side-foot">
+    基于厂商文档与公开资料整理，访问日期 2026-10-31。价格倍率与 TTL 会变，落地前以当前文档为准。
+  </div>
+</nav>
+
+<main id="main">
+<div class="hero">
+  <div class="eyebrow"><span class="dot"></span><span>缓存机制</span><span>·</span><span>推理与 Agent</span><span>·</span><span>2026-10</span></div>
+  <h1>缓存：<em>同一段前缀</em>，第二次为什么更便宜</h1>
+  <p class="lede">从 GPU 里的 KV cache，到 API 层的前缀缓存，再到语义缓存与工具结果缓存——它们都叫「缓存」，但缓存的东西、失效条件、省钱方式完全不同。搞混了，就会出现「明明开了缓存，账单没降、延迟没变」。</p>
+  <div class="meta-row">
+    <span class="pill"><b>KV cache</b> 模型内部</span>
+    <span class="pill">Prefill / Decode</span>
+    <span class="pill">Prefix cache</span>
+    <span class="pill">Semantic cache</span>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">0.1<span>×</span></div><div class="l">Anthropic 缓存读取相对基础输入价的倍率</div></div>
+    <div class="kpi"><div class="n">1.25<span>×</span></div><div class="l">5 分钟 TTL 的缓存写入倍率</div></div>
+    <div class="kpi"><div class="n">1024</div><div class="l">OpenAI 自动缓存的最小前缀 token 量级</div></div>
+    <div class="kpi"><div class="n">2<span>次</span></div><div class="l">1.25× 写入 / 0.1× 读取时的盈亏平衡复用次数</div></div>
+  </div>
+</div>
+
+<section id="s1">
+  <div class="sec-head"><span class="sec-no">01</span><h2>先分清四层缓存</h2></div>
+  <p class="lead-in">「缓存」在不同层解决不同问题。越靠前越省钱，也越容易出错。</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 900 380" role="img" aria-labelledby="c1t c1d">
+      <title id="c1t">四层缓存的位置</title>
+      <desc id="c1d">请求依次经过精确响应缓存、语义缓存、前缀缓存，最后进入推理引擎的 KV cache；任意一层命中都可以提前返回或跳过部分计算。</desc>
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8d9099"></path>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" fill="#3b3f42">
+        <rect x="14" y="150" width="104" height="54" rx="9" fill="#e4f0ee" stroke="#c4ddd9"></rect>
+        <text x="66" y="173" text-anchor="middle" font-weight="600">请求</text>
+        <text x="66" y="190" text-anchor="middle" font-size="10" fill="#6d7276">prompt + 参数</text>
+
+        <rect x="150" y="132" width="150" height="90" rx="9" fill="#fffefb" stroke="#cdc8b9"></rect>
+        <text x="225" y="157" text-anchor="middle" font-weight="600">精确响应缓存</text>
+        <text x="225" y="175" text-anchor="middle" font-size="10.5" fill="#6d7276">完整请求 hash 相同</text>
+        <text x="225" y="192" text-anchor="middle" font-size="10.5" fill="#6d7276">直接返回旧响应</text>
+        <text x="225" y="210" text-anchor="middle" font-size="10" fill="#98302f">仅适合确定性场景</text>
+
+        <rect x="332" y="132" width="150" height="90" rx="9" fill="#fffefb" stroke="#cdc8b9"></rect>
+        <text x="407" y="157" text-anchor="middle" font-weight="600">语义缓存</text>
+        <text x="407" y="175" text-anchor="middle" font-size="10.5" fill="#6d7276">embedding 相似度</text>
+        <text x="407" y="192" text-anchor="middle" font-size="10.5" fill="#6d7276">相似问题复用答案</text>
+        <text x="407" y="210" text-anchor="middle" font-size="10" fill="#9a5712">有误命中风险</text>
+
+        <rect x="514" y="132" width="170" height="90" rx="9" fill="#e8eefb" stroke="#cfd9f3"></rect>
+        <text x="599" y="157" text-anchor="middle" font-weight="600">前缀 / Prompt cache</text>
+        <text x="599" y="175" text-anchor="middle" font-size="10.5" fill="#6d7276">从 token 0 起完全匹配</text>
+        <text x="599" y="192" text-anchor="middle" font-size="10.5" fill="#6d7276">跳过已算过的 prefill</text>
+        <text x="599" y="210" text-anchor="middle" font-size="10" fill="#2b4f9e">省输入费 + 降 TTFT</text>
+
+        <rect x="716" y="120" width="170" height="114" rx="9" fill="#e7f1ea" stroke="#cfe3d8"></rect>
+        <text x="801" y="145" text-anchor="middle" font-weight="600">KV cache</text>
+        <text x="801" y="163" text-anchor="middle" font-size="10.5" fill="#6d7276">GPU 显存里的 K/V 张量</text>
+        <text x="801" y="180" text-anchor="middle" font-size="10.5" fill="#6d7276">decode 每步复用</text>
+        <text x="801" y="197" text-anchor="middle" font-size="10.5" fill="#6d7276">PagedAttention 分块</text>
+        <text x="801" y="216" text-anchor="middle" font-size="10" fill="#2a6448">省算力，不省 token 费</text>
+
+        <path d="M118 177 H150" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M300 177 H332" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M482 177 H514" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+        <path d="M684 177 H716" stroke="#8d9099" fill="none" marker-end="url(#ar)"></path>
+
+        <path d="M225 132 V74 H66 V150" stroke="#2a6448" stroke-dasharray="5 4" fill="none" marker-end="url(#ar)"></path>
+        <text x="120" y="66" font-size="10.5" fill="#2a6448">命中：直接返回，零模型调用</text>
+        <path d="M407 132 V96 H140 V150" stroke="#9a5712" stroke-dasharray="5 4" fill="none" marker-end="url(#ar)"></path>
+        <text x="250" y="90" font-size="10.5" fill="#9a5712">命中：返回相似答案，需审计</text>
+        <path d="M599 132 V252 H801 V234" stroke="#2b4f9e" stroke-dasharray="5 4" fill="none" marker-end="url(#ar)"></path>
+        <text x="640" y="268" font-size="10.5" fill="#2b4f9e">命中：复用 K/V，仍要 decode</text>
+
+        <rect x="514" y="300" width="372" height="52" rx="9" fill="#fbfaf6" stroke="#e2ded2"></rect>
+        <text x="700" y="321" text-anchor="middle" font-size="11" fill="#6d7276">输出 token 的计费与生成，任何缓存都不会替你完成</text>
+        <text x="700" y="338" text-anchor="middle" font-size="11" fill="#6d7276">缓存优化的是「输入侧」与「首 token 延迟」</text>
+      </g>
+    </svg>
+    <figcaption>图 1：四层缓存。越左侧越「业务层」，越右侧越「基础设施层」。</figcaption>
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>层</th><th>缓存什么</th><th>命中条件</th><th>省什么</th><th>主要风险</th></tr></thead>
+    <tbody>
+      <tr><td><b>精确响应缓存</b></td><td>完整响应</td><td>请求字节完全一致</td><td>全部计算与 token</td><td>个性化/时效性内容被错误复用</td></tr>
+      <tr><td><b>语义缓存</b></td><td>问题 → 答案</td><td>embedding 相似度超阈值</td><td>全部计算</td><td>假命中、跨用户泄露</td></tr>
+      <tr><td><b>前缀缓存</b></td><td>前缀的 K/V 或计算结果</td><td>从 token 0 起完全一致</td><td>输入费、prefill 时间</td><td>前缀一变全失效</td></tr>
+      <tr><td><b>KV cache</b></td><td>每层 K/V 张量</td><td>同一序列持续 decode</td><td>重复计算</td><td>显存占用、被驱逐</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout"><b>关键区别：</b>KV cache 是「推理过程中不重复算」，前缀缓存是「跨请求不重复算」，语义缓存是「跨问题不重复答」。它们不是同一个东西，也不能互相替代。</div>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="sec-no">02</span><h2>KV cache：模型内部到底缓存了什么</h2></div>
+  <p class="lead-in">要理解前缀缓存为什么快，先要理解 Transformer 生成时重复计算了什么。</p>
+
+  <h3>2.1 一次生成的两个阶段</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>阶段</th><th>做什么</th><th>并行性</th><th>主要成本</th></tr></thead>
+    <tbody>
+      <tr><td><b>Prefill</b></td><td>把整段输入一次性算完，得到每层、每个 token 的 K/V</td><td class="yes">高，整段并行</td><td>算力；与输入长度近似线性/二次相关</td></tr>
+      <tr><td><b>Decode</b></td><td>每次生成 1 个 token，读取历史 K/V，算注意力</td><td class="no">串行，逐 token</td><td>显存带宽；与已生成长度相关</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>没有 KV cache 时，每生成一个新 token 都要把前面所有 token 的 K/V 重算一遍，复杂度会爆炸。KV cache 把已算过的 K/V 存下来，decode 时直接读。</p>
+
+  <div class="formula"><b>KV 显存</b> ≈ 2 × 层数 × KV 头数 × head_dim × 序列长度 × 每元素字节数</div>
+  <p class="small">2 代表 K 和 V。GQA/MQA 通过减少 KV 头数来降低显存；量化则降低每元素字节数。具体数值取决于模型结构，不是「每个 token 固定多少 KB」。</p>
+
+  <h3>2.2 为什么还会「分块」</h3>
+  <p>早期实现要求 KV 连续存放，长序列会碎片化、浪费显存。PagedAttention 把 KV 切成固定大小的 block，用 block table 做逻辑到物理的映射，类似操作系统的分页：</p>
+  <ul>
+    <li><b>按需分配</b>：生成到哪分到哪，不必预占最大长度；</li>
+    <li><b>共享前缀</b>：多个请求的相同前缀可以指向同一批物理 block，写时复制；</li>
+    <li><b>可驱逐</b>：显存紧张时按 LRU 回收，后续命中再重算。</li>
+  </ul>
+  <p>这也是 vLLM 的 prefix caching 与 SGLang 的 RadixAttention 的基础：把「相同前缀」的 KV 复用起来，而不是每个请求都从零 prefill。</p>
+
+  <h3>2.3 KV cache 救不了什么</h3>
+  <div class="callout warn"><b>它不减少输入 token 的计费。</b>在按 token 计费的 API 里，KV cache 是厂商内部的事；你能看到的是「缓存读取 token」这一项。<b>它也不加速 decode</b>：输出仍然要一个 token 一个 token 生成，长输出的时间省不掉。</div>
+  <p>所以判断收益时要看瓶颈：如果 TTFT（首 token 延迟）占主导、输入很长，缓存有效；如果输出很长、decode 占主导，缓存对总延迟的帮助有限。</p>
+
+  <h3>2.4 自托管时的三个开关</h3>
+  <ul>
+    <li><b>Prefix caching</b>：vLLM 的 <code>--enable-prefix-caching</code>（新版本默认开启），按 block hash 复用。</li>
+    <li><b>显存比例</b>：<code>--gpu-memory-utilization</code> 决定能给 KV cache 多少空间；开太大影响其他进程，太小频繁驱逐。</li>
+    <li><b>块大小与调度</b>：block size、最大并发序列数、chunked prefill 都会影响命中率与尾延迟。</li>
+  </ul>
+  <p class="small">自托管还要考虑「缓存感知路由」：同一个前缀尽量落到同一个副本，否则每个副本都冷启动。网关层的 consistent hashing 或 prefix-aware routing 就是干这个的。</p>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="sec-no">03</span><h2>Prompt caching：API 层的前缀缓存</h2></div>
+  <p class="lead-in">厂商把「前缀的 KV」或「前缀的计算结果」存起来，下一次同样前缀直接复用。你看到的是更低的输入价和更短的 TTFT。</p>
+
+  <h3>3.1 命中要求：从第一个 token 开始完全一致</h3>
+  <p>缓存不是「相似就命中」，而是按块做哈希，并且后一块的哈希包含前一块：</p>
+  <div class="figure">
+    <svg viewBox="0 0 900 300" role="img" aria-labelledby="c3t c3d">
+      <title id="c3t">前缀块哈希链</title>
+      <desc id="c3d">缓存块 B1 到 B4 依次哈希，后一块包含前一块的哈希；请求二的前三块与请求一相同，因此命中 B1 到 B3，第四块不同则从 B4 重新计算。</desc>
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8d9099"></path>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" fill="#3b3f42">
+        <text x="20" y="30" font-size="11" fill="#6d7276" letter-spacing="1">请求一</text>
+        <rect x="20" y="42" width="120" height="52" rx="8" fill="#e8eefb" stroke="#cfd9f3"></rect>
+        <text x="80" y="63" text-anchor="middle" font-weight="600">B1 系统提示</text>
+        <text x="80" y="79" text-anchor="middle" font-size="10" fill="#6d7276">hash(tokens)</text>
+        <rect x="160" y="42" width="120" height="52" rx="8" fill="#e8eefb" stroke="#cfd9f3"></rect>
+        <text x="220" y="63" text-anchor="middle" font-weight="600">B2 工具定义</text>
+        <text x="220" y="79" text-anchor="middle" font-size="10" fill="#6d7276">hash(B1 + tokens)</text>
+        <rect x="300" y="42" width="120" height="52" rx="8" fill="#e8eefb" stroke="#cfd9f3"></rect>
+        <text x="360" y="63" text-anchor="middle" font-weight="600">B3 示例</text>
+        <text x="360" y="79" text-anchor="middle" font-size="10" fill="#6d7276">hash(B2 + tokens)</text>
+        <rect x="440" y="42" width="130" height="52" rx="8" fill="#fae9e8" stroke="#efcfcd"></rect>
+        <text x="505" y="63" text-anchor="middle" font-weight="600">B4 用户问题</text>
+        <text x="505" y="79" text-anchor="middle" font-size="10" fill="#6d7276">hash(B3 + tokens)</text>
+
+        <text x="20" y="146" font-size="11" fill="#6d7276" letter-spacing="1">请求二</text>
+        <rect x="20" y="158" width="120" height="52" rx="8" fill="#e7f1ea" stroke="#cfe3d8"></rect>
+        <text x="80" y="186" text-anchor="middle" font-weight="600">B1 命中</text>
+        <rect x="160" y="158" width="120" height="52" rx="8" fill="#e7f1ea" stroke="#cfe3d8"></rect>
+        <text x="220" y="186" text-anchor="middle" font-weight="600">B2 命中</text>
+        <rect x="300" y="158" width="120" height="52" rx="8" fill="#e7f1ea" stroke="#cfe3d8"></rect>
+        <text x="360" y="186" text-anchor="middle" font-weight="600">B3 命中</text>
+        <rect x="440" y="158" width="130" height="52" rx="8" fill="#fbefdf" stroke="#ecd9bd"></rect>
+        <text x="505" y="186" text-anchor="middle" font-weight="600">B4 不同</text>
+
+        <path d="M140 68 H160" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M280 68 H300" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M420 68 H440" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M140 184 H160" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M280 184 H300" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+        <path d="M420 184 H440" stroke="#8d9099" fill="none" marker-end="url(#ar2)"></path>
+
+        <rect x="630" y="42" width="250" height="168" rx="10" fill="#fbfaf6" stroke="#e2ded2"></rect>
+        <text x="650" y="68" font-size="12" font-weight="600">结果</text>
+        <text x="650" y="92" font-size="11.5" fill="#2a6448">B1–B3：读缓存，约 0.1× 价格</text>
+        <text x="650" y="114" font-size="11.5" fill="#9a5712">B4：重新 prefill</text>
+        <text x="650" y="136" font-size="11.5" fill="#6d7276">输出仍需逐 token 生成</text>
+        <text x="650" y="166" font-size="11" fill="#6d7276">注意：B4 一旦变化，</text>
+        <text x="650" y="184" font-size="11" fill="#6d7276">它之后的块全部不命中。</text>
+
+        <text x="20" y="258" font-size="11" fill="#6d7276">任何位置的前缀变化（改一个字、换工具顺序、插时间戳）都会让该块及其后续块的哈希改变。</text>
+      </g>
+    </svg>
+    <figcaption>图 2：块哈希链。命中是「前缀逐块匹配」，不是「整体相似」。</figcaption>
+  </div>
+
+  <h3>3.2 三种接入方式</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>方式</th><th>代表</th><th>怎么用</th><th>控制粒度</th></tr></thead>
+    <tbody>
+      <tr><td><b>显式断点</b></td><td>Anthropic</td><td>在消息块上加 <code>cache_control</code>，标记可缓存前缀的结束位置</td><td class="yes">高：自己决定缓存到哪</td></tr>
+      <tr><td><b>自动前缀</b></td><td>OpenAI、DeepSeek</td><td>前缀超过最小长度自动缓存，无需改请求</td><td class="mid">中：结构决定命中</td></tr>
+      <tr><td><b>显式缓存对象</b></td><td>Google Gemini</td><td>创建 CachedContent，设置 TTL，请求时引用</td><td class="yes">高：可跨请求复用大段材料</td></tr>
+      <tr><td><b>自托管</b></td><td>vLLM、SGLang</td><td>开启 prefix caching / RadixAttention</td><td class="yes">高：可调块大小、显存、路由</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>3.3 计费模型</h3>
+  <p>以 Anthropic 的公开模型为例（数字会变，务必查当前文档）：</p>
+  <ul>
+    <li><b>缓存写入</b>：5 分钟 TTL 约为基础输入价的 <b>1.25×</b>；1 小时 TTL 约为 <b>2×</b>。</li>
+    <li><b>缓存读取</b>：约为基础输入价的 <b>0.1×</b>。</li>
+    <li><b>TTL</b>：默认 5 分钟，命中通常会刷新；也有 1 小时选项。</li>
+    <li><b>最小长度</b>：按模型有门槛（常见 1024 / 2048 / 4096 tokens），太短不缓存。</li>
+    <li><b>断点数</b>：一条请求最多若干个 <code>cache_control</code> 断点（当前为 4 个）。</li>
+  </ul>
+  <p class="small"><span class="tag fact">事实</span> 倍率与门槛来自 Anthropic 文档，具体数值随模型与时间变化。<span class="tag infer">推断</span> 其他厂商的「缓存折扣」逻辑类似，但计费单位与 TTL 不同，不能直接套用倍率。</p>
+
+  <div class="callout warn"><b>写入不是免费的。</b>如果同一前缀在 TTL 内只被用一次，缓存写入的 1.25× 会比不缓存更贵。盈亏平衡见第 6 节。</div>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="sec-no">04</span><h2>什么会让缓存失效</h2></div>
+  <p class="lead-in">前缀缓存只有一条铁律：从第一个 token 到断点，必须逐字节、逐 token 完全一致。</p>
+
+  <h3>4.1 失效原因清单</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>变更</th><th>影响范围</th><th>说明</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td>系统提示改一个字</td><td class="no">全部</td><td>块哈希从改动点起全变</td><td>版本化发布，别做微调式热改</td></tr>
+      <tr><td>开头放时间戳 / 请求 ID / 用户名</td><td class="no">全部，且每次都写</td><td>每个请求前缀都不同</td><td>移到末尾或用工具查询</td></tr>
+      <tr><td>工具 schema 增删或改描述</td><td class="mid">该块及之后</td><td>工具定义通常在前缀里</td><td>工具集冻结；变更走版本</td></tr>
+      <tr><td>JSON key 顺序不稳定</td><td class="mid">包含该 JSON 的块</td><td>序列化结果不同 → 哈希不同</td><td>固定 key 顺序、稳定序列化</td></tr>
+      <tr><td>多轮对话追加新消息</td><td class="yes">不影响旧前缀</td><td>追加是缓存友好的</td><td>保持只追加，不重写历史</td></tr>
+      <tr><td>编辑/删除早期消息</td><td class="no">从修改点起全部</td><td>后续 token 位置与内容都变</td><td>避免回改历史</td></tr>
+      <tr><td>压缩 / 摘要历史</td><td class="no">全部</td><td>新摘要替换了旧前缀</td><td>接受一次冷启动，之后重新积累</td></tr>
+      <tr><td>换模型或模型版本</td><td class="no">全部</td><td>缓存按模型隔离</td><td>固定版本；灰度时分开统计</td></tr>
+      <tr><td>换租户 / 组织</td><td class="no">全部</td><td>厂商侧通常按组织隔离</td><td>不要把租户信息拼进共享前缀</td></tr>
+      <tr><td>TTL 过期</td><td class="no">全部</td><td>空闲超过 TTL 需重写</td><td>按访问频率选 TTL；定时保活</td></tr>
+      <tr><td>自托管路由到别的副本</td><td class="no">该副本本地</td><td>KV 缓存在各自 GPU 上</td><td>前缀感知路由 / 会话粘性</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>4.2 多轮对话的缓存友好写法</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>友好</h4>
+      <ul>
+        <li>只追加新的 user / assistant / tool 消息；</li>
+        <li>系统提示、工具定义、示例保持稳定；</li>
+        <li>把动态状态放在最后一条消息；</li>
+        <li>断点放在「系统 + 工具 + 示例」之后。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>不友好</h4>
+      <ul>
+        <li>每轮重排消息、重写摘要；</li>
+        <li>把「当前时间/剩余预算/用户名」塞进系统提示；</li>
+        <li>按模型输出动态改工具列表；</li>
+        <li>每轮都做一次全量压缩。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><b>把缓存当成「前缀的指纹」：</b>你改的不是一段文字，而是从那一刻起所有后续 block 的哈希。设计 prompt 时先问：哪些内容在多次请求间真的不变？把它们放前面。</div>
+
+  <h3>4.3 断点放哪</h3>
+  <ul>
+    <li><b>系统 + 工具定义 + 固定示例</b>之后：这是最常见的稳定前缀；</li>
+    <li><b>大段共享材料</b>之后：比如同一份规范、同一份代码库说明，被多个请求复用；</li>
+    <li><b>不要</b>放在用户问题之后：那部分每次都变，缓存没有意义；</li>
+    <li>断点数量有限（Anthropic 当前 4 个），优先覆盖「最长且最稳定」的段。</li>
+  </ul>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="sec-no">05</span><h2>语义缓存与工具缓存：省得更多，也更容易错</h2></div>
+  <p class="lead-in">这两类缓存不在模型内部，而在你的应用层。它们的收益更大，但正确性责任也完全在你。</p>
+
+  <h3>5.1 精确响应缓存</h3>
+  <p>对「完整请求」做哈希，命中就直接返回旧响应。适用条件很苛刻：</p>
+  <ul>
+    <li>输出确定（<code>temperature=0</code>，且模型/版本固定）；</li>
+    <li>不含个性化、时间敏感、权限相关内容；</li>
+    <li>请求 key 必须包含：模型版本、完整 prompt、工具定义、参数（temperature/top_p/max_tokens）、租户。</li>
+  </ul>
+  <p>常见于：文档问答、固定分类、离线批处理。不要用于「我的订单」这类带身份的问题。</p>
+
+  <h3>5.2 语义缓存</h3>
+  <p>把用户问题做 embedding，在缓存里找相似问题；相似度超过阈值就复用答案。它解决的是「换了说法但意思一样」。</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>适合</th><th>不适合</th><th>必须做</th></tr></thead>
+    <tbody>
+      <tr><td>FAQ、产品说明、稳定政策</td><td>个性化、账户状态、实时价格</td><td>按租户分区，禁止跨用户共享</td></tr>
+      <tr><td>高重复、低风险的问答</td><td>多轮对话中的指代与上下文</td><td>阈值 + 置信度 + 回退到模型</td></tr>
+      <tr><td>成本敏感的公开内容</td><td>法律、医疗、财务建议</td><td>TTL、版本号、审计抽样</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>最大的风险是「假命中」：</b>问题相似但关键条件不同（不同地区、不同套餐、不同时间），复用了错误答案。缓解手段：</p>
+  <ul>
+    <li>把关键实体（地区、产品、版本）纳入 key 或过滤条件，而不是只靠向量相似；</li>
+    <li>设置较高的相似度阈值，并对命中做抽样人工审计；</li>
+    <li>命中后仍让模型做一次「是否适用」的校验（成本低于全量生成）；</li>
+    <li>政策变更时按版本整体失效，不要等 TTL。</li>
+  </ul>
+
+  <h3>5.3 工具结果缓存</h3>
+  <p>Agent 的大量 token 花在工具返回上。缓存工具结果通常比缓存模型响应更安全，因为结果是「事实」，只要 key 与时效正确。</p>
+  <pre><code>key = tenant + tool_name + tool_version
+    + normalized_args（排序后的 JSON）
+    + 影响结果的环境（region / dataset / commit）
+
+value = { result, fetched_at, ttl, source_version }
+策略  = TTL + 负缓存 + single-flight（防击穿）</code></pre>
+  <ul>
+    <li><b>只缓存幂等读</b>：查询、文件读取、搜索可以；下单、发消息、改配置不要（除非有幂等键）。</li>
+    <li><b>负缓存要短</b>：404/空结果可以缓存，但 TTL 要远短于成功结果，避免「刚创建却一直查不到」。</li>
+    <li><b>防击穿</b>：同一 key 并发未命中时只放一个请求出去，其余等待结果。</li>
+    <li><b>带版本</b>：代码 commit、数据集版本、政策版本变化时主动失效。</li>
+  </ul>
+
+  <h3>5.4 检索缓存</h3>
+  <p>缓存「查询 → 文档 ID/片段」而不是「查询 → 最终答案」。索引更新、权限变化、文档删除时按文档 ID 失效；权限必须作为 key 的一部分，否则会把无权文档带给用户。</p>
+
+  <h3>5.5 一张表总结</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>缓存</th><th>key</th><th>典型 TTL</th><th>主要风险</th><th>推荐场景</th></tr></thead>
+    <tbody>
+      <tr><td>精确响应</td><td>完整请求 hash</td><td>分钟–小时</td><td>个性化/时效错配</td><td>确定性批处理</td></tr>
+      <tr><td>语义</td><td>embedding + 实体过滤 + 租户</td><td>小时–天</td><td>假命中、泄露</td><td>FAQ、公开文档</td></tr>
+      <tr><td>工具结果</td><td>工具 + 参数 + 版本 + 租户</td><td>秒–小时</td><td>脏读、权限</td><td>查询、读文件、搜索</td></tr>
+      <tr><td>检索</td><td>query + 索引版本 + 权限</td><td>分钟–小时</td><td>索引过期</td><td>RAG 前段</td></tr>
+      <tr><td>前缀</td><td>token 前缀 + 模型</td><td>5 分钟–1 小时</td><td>前缀变化全失效</td><td>长系统提示、多轮</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="sec-no">06</span><h2>成本：什么时候缓存反而更贵</h2></div>
+  <p class="lead-in">缓存写入要花钱，命中才省钱。复用次数不够，缓存就是负收益。</p>
+
+  <h3>6.1 三个公式</h3>
+  <div class="formula"><b>不缓存</b>：C₀ = N × T × p</div>
+  <div class="formula"><b>缓存</b>：C₁ = (W × T + (N − 1) × R × T) × p</div>
+  <div class="formula"><b>盈亏平衡</b>：N* = ceil( W / (1 − R) )</div>
+  <p class="small">T = 前缀 token 数，N = 同一 TTL 内复用次数，p = 每 token 基础输入价，W = 写入倍率，R = 读取倍率。未计 TTL 过期后的重写、缓存存储费与输出费用。</p>
+  <p>代入 Anthropic 的 5 分钟档（W = 1.25，R = 0.1）：N* = ceil(1.25 / 0.9) = <b>2</b>。也就是说，同一前缀在 TTL 内至少用 2 次才划算。1 小时档（W = 2）则要 3 次。</p>
+
+  <h3>6.2 算一算</h3>
+  <div class="calc" id="calc">
+    <div class="calc-grid">
+      <div class="field"><label for="c-prefix">可缓存前缀（tokens）</label><input id="c-prefix" type="number" min="1" step="1000" value="20000" inputmode="numeric"></div>
+      <div class="field"><label for="c-req">同一 TTL 内复用次数 N</label><input id="c-req" type="number" min="1" step="1" value="50" inputmode="numeric"></div>
+      <div class="field"><label for="c-price">基础输入价（美元 / 百万 token）</label><input id="c-price" type="number" min="0" step="0.1" value="3" inputmode="decimal"></div>
+      <div class="field"><label for="c-write">缓存写入倍率 W</label><input id="c-write" type="number" min="1" step="0.05" value="1.25" inputmode="decimal"></div>
+      <div class="field"><label for="c-read">缓存读取倍率 R</label><input id="c-read" type="number" min="0" max="1" step="0.01" value="0.1" inputmode="decimal"></div>
+      <div class="field"><label for="c-store">缓存存储费（美元 / 百万 token / 小时，可填 0）</label><input id="c-store" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div>
+      <div class="field"><label for="c-hours">复用窗口 / TTL（小时）</label><input id="c-hours" type="number" min="0.01" step="0.5" value="1" inputmode="decimal"></div>
+    </div>
+
+    <div class="costbars" aria-hidden="true">
+      <div class="cbrow"><span>不缓存</span><div class="cbtrack"><div class="cbfill" id="bar-uncached" style="background:#b9b3a5"></div></div><span class="cblabel" id="lbl-uncached">—</span></div>
+      <div class="cbrow"><span>缓存</span><div class="cbtrack"><div class="cbfill" id="bar-cached" style="background:#1f5f5b"></div></div><span class="cblabel" id="lbl-cached">—</span></div>
+    </div>
+
+    <div class="calc-out" aria-live="polite">
+      <div class="out"><div class="k">不缓存成本</div><div class="v" id="o-uncached">—</div></div>
+      <div class="out"><div class="k">缓存成本</div><div class="v" id="o-cached">—</div></div>
+      <div class="out"><div class="k">节省</div><div class="v" id="o-save">—</div></div>
+      <div class="out"><div class="k">盈亏平衡次数</div><div class="v" id="o-breakeven">—</div></div>
+      <div class="out"><div class="k">加权后每百万 token</div><div class="v" id="o-effective">—</div></div>
+      <div class="out"><div class="k">结论</div><div class="v"><span class="status ok" id="o-verdict">—</span></div></div>
+    </div>
+    <div class="calc-actions">
+      <button class="btn primary" type="button" id="calc-run">重新计算</button>
+      <button class="btn" type="button" id="calc-reset">恢复默认</button>
+      <span class="small">示例倍率来自 Anthropic 5 分钟档；你的厂商可能不同。</span>
+    </div>
+  </div>
+
+  <h3>6.3 两个容易忽略的成本</h3>
+  <ul>
+    <li><b>写入放大</b>：如果前缀每个请求都变，你会在每个请求上付 W 倍写入，却没有一次命中。监控 <code>cache_creation</code> 与 <code>cache_read</code> 的比值，正常应远小于 1。</li>
+    <li><b>过期重写</b>：TTL 内没有请求，下一次又要付写入费。低频前缀不适合短 TTL；可以定时保活，或干脆不开缓存。</li>
+  </ul>
+  <div class="callout warn"><b>判断标准：</b>同一条稳定前缀，在 TTL 窗口内的平均复用次数是否 ≥ N*。低于它，缓存只会让账单更贵。</div>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="sec-no">07</span><h2>提高命中率：结构比参数重要</h2></div>
+  <p class="lead-in">缓存命中率不是调出来的，是 prompt 结构决定的。下面这些做法，比换模型或调 TTL 更有效。</p>
+
+  <h3>7.1 把 prompt 分成「冷/热」两段</h3>
+  <pre><code>[稳定前缀 · 可缓存]
+  系统角色与硬约束
+  工具定义（顺序固定、描述稳定）
+  固定示例（顺序固定）
+  共享材料（规范/代码库说明/政策全文）
+--- cache_control 断点 ---
+[动态后缀 · 每次不同]
+  当前时间、用户画像、会话状态
+  检索结果、工具输出
+  本轮用户问题
+  输出格式要求</code></pre>
+  <p>原则：<b>越稳定越靠前，越动态越靠后</b>。不要把「当前时间」放在第一行，也不要按用户拼接系统提示。</p>
+
+  <h3>7.2 稳定序列化</h3>
+  <ul>
+    <li>工具定义按固定顺序输出，不要依赖 map 的遍历顺序；</li>
+    <li>JSON 序列化固定 key 顺序（<code>sort_keys</code> 或 schema 顺序）；</li>
+    <li>浮点数、空值、默认值的表示要一致；</li>
+    <li>不要在工具描述里拼版本号、时间戳、环境名。</li>
+  </ul>
+
+  <h3>7.3 多租户与前缀隔离</h3>
+  <p>如果每个租户有不同系统提示，最省的做法不是「拼一个大前缀」，而是<b>按租户分前缀</b>：每个租户的第一段稳定内容独立缓存。厂商侧通常按组织隔离；自托管要自己在 key 里加 tenant。</p>
+  <div class="callout danger"><b>不要</b>为了「共享缓存」把 A 租户的数据放进 B 租户也会用到的前缀。省下的钱远小于一次数据泄露的代价。</div>
+
+  <h3>7.4 自托管：缓存感知路由</h3>
+  <ul>
+    <li>同一个前缀尽量路由到同一个推理副本（consistent hashing / prefix-aware router）；</li>
+    <li>会话粘性：多轮对话固定副本，避免每轮换机器导致本地 KV 失效；</li>
+    <li>副本预热：部署后先用常见前缀打一遍，避免冷启动；</li>
+    <li>监控每副本的 prefix hit rate，而不是全局平均。</li>
+  </ul>
+
+  <h3>7.5 开启顺序</h3>
+  <ol>
+    <li>先量：当前 <code>cache_read</code> / <code>cache_creation</code> / 输入 token 占比；</li>
+    <li>再改结构：稳定前缀、动态后置、固定序列化；</li>
+    <li>再设断点 / 开自动缓存；</li>
+    <li>最后调 TTL、路由、保活；</li>
+    <li>每次改动跑同一组请求，比较命中率、TTFT、单任务成本。</li>
+  </ol>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="sec-no">08</span><h2>安全与多租户：缓存是共享内存，不是私有变量</h2></div>
+  <p class="lead-in">缓存把「一次计算」复用给「多个请求」。只要 key 设计错一次，就可能把 A 的数据给到 B。</p>
+
+  <h3>8.1 威胁与控制</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>威胁</th><th>怎么发生</th><th>控制</th></tr></thead>
+    <tbody>
+      <tr><td><b>跨租户泄露</b></td><td>语义缓存或响应缓存未按租户分区，key 只含问题文本</td><td>key 强制包含 tenant / user scope；缓存层做命名空间隔离</td></tr>
+      <tr><td><b>缓存投毒</b></td><td>攻击者诱导系统缓存一段恶意内容，后续请求复用</td><td>只缓存可信来源；外部内容不进入可复用前缀；写入前校验</td></tr>
+      <tr><td><b>过期政策</b></td><td>政策/价格更新后，旧答案仍在 TTL 内</td><td>内容版本号进 key；发布时主动 purge</td></tr>
+      <tr><td><b>敏感数据落盘</b></td><td>把密钥、身份证、病历写进缓存</td><td>缓存前脱敏；禁止缓存秘密；加密与访问审计</td></tr>
+      <tr><td><b>权限提升</b></td><td>检索缓存未包含权限，复用了用户无权看的文档</td><td>权限作为 key 或过滤条件；命中后再做一次授权检查</td></tr>
+      <tr><td><b>时序侧信道</b></td><td>共享前缀的命中/未命中时间差，可能暴露某些内容是否存在</td><td>敏感场景按租户隔离缓存；不要把秘密放进共享前缀</td></tr>
+      <tr><td><b>不可审计</b></td><td>不知道某次回答来自缓存还是模型</td><td>响应里带 <code>cache_hit</code> / <code>source</code>；记录 key 版本</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">时序侧信道在多数业务里不是首要风险，但只要缓存跨安全域共享，就值得在威胁模型里写一笔。<span class="tag infer">推断</span></p>
+
+  <h3>8.2 一个合格的 cache key</h3>
+  <pre><code>{
+  "tenant_id": "t_123",            // 必须
+  "model": "claude-sonnet-4-6",    // 必须：模型/版本
+  "prompt_version": "sp-2026-10-3",// 必须：提示词版本
+  "tools_version": "tools-17",     // 必须：工具 schema 版本
+  "scope": "faq",                  // 业务分区
+  "locale": "zh-CN",
+  "policy_version": "refund-2026-09",
+  "query_hash": "…",               // 语义缓存：embedding + 实体
+  "auth_scope": "role:support"     // 权限相关
+}</code></pre>
+  <p>少一个维度，就可能多一次错误命中。宁可多失效，也不要错复用。</p>
+
+  <h3>8.3 清理与轮换</h3>
+  <ul>
+    <li>政策发布、模型升级、工具变更时，按版本前缀批量 purge；</li>
+    <li>语义缓存保留「原始问题 + 答案 + 来源 + 命中次数」，便于审计与回滚；</li>
+    <li>定期抽样人工复核语义命中的正确率；</li>
+    <li>缓存日志与模型调用日志使用同一个 trace ID，能追到「为什么返回了这个」。</li>
+  </ul>
+  <div class="callout danger"><b>不要把「缓存命中率」当成唯一 KPI。</b>命中率 99% 但答案错，比命中率 0 更糟。正确性、时效性、隔离性要先于命中率。</div>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="sec-no">09</span><h2>度量与排障</h2></div>
+  <p class="lead-in">缓存问题几乎都能从四个数字看出来：读了多少、写了多少、命中率、首 token 延迟。</p>
+
+  <h3>9.1 五个指标</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>指标</th><th>算法</th><th>看什么</th><th>异常信号</th></tr></thead>
+    <tbody>
+      <tr><td><b>token 命中率</b></td><td>cache_read ÷ (cache_read + cache_creation + input)</td><td>按 token 而不是按请求</td><td>长期 &lt; 20%（有稳定前缀时）</td></tr>
+      <tr><td><b>写入/读取比</b></td><td>cache_creation ÷ cache_read</td><td>写入是否过多</td><td>&gt; 0.5，说明前缀总在变</td></tr>
+      <tr><td><b>有效输入价</b></td><td>输入总费用 ÷ 输入总 token</td><td>真实省钱效果</td><td>接近原价，缓存没起作用</td></tr>
+      <tr><td><b>TTFT</b></td><td>首 token 时间 p50/p90</td><td>prefill 是否被跳过</td><td>命中率升但 TTFT 不变 → decode 瓶颈</td></tr>
+      <tr><td><b>语义假命中</b></td><td>抽样审计中的错误复用比例</td><td>正确性</td><td>&gt; 1–2% 就要收紧阈值</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">不同厂商字段名不同（如 <code>cache_read_input_tokens</code>、<code>cached_tokens</code>、<code>prompt_cache_hit_tokens</code>），但含义一致。<span class="tag fact">事实</span></p>
+
+  <h3>9.2 排障顺序</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>现象</th><th>先查</th><th>常见原因</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>命中率 0</td><td>前缀是否逐字节一致</td><td>开头有时间戳/用户名；工具顺序变了；低于最小长度</td><td>动态内容后置；固定序列化；加长稳定前缀</td></tr>
+      <tr><td>命中率突然下降</td><td>最近一次发布</td><td>系统提示、工具 schema、模型版本变了</td><td>回滚或接受一次冷启动后重测</td></tr>
+      <tr><td>成本没降反升</td><td>写入/读取比</td><td>每个请求都写、TTL 太短、复用次数低于盈亏平衡</td><td>延长稳定前缀；调 TTL；关掉无收益的缓存</td></tr>
+      <tr><td>TTFT 没变</td><td>输出长度 / decode 占比</td><td>瓶颈在 decode，不在 prefill</td><td>别指望缓存；优化输出长度或流式</td></tr>
+      <tr><td>答案不一致</td><td>语义缓存命中记录</td><td>相似问题被错误复用；政策过期</td><td>提高阈值；加实体过滤；版本失效</td></tr>
+      <tr><td>只有部分副本命中</td><td>路由与副本指标</td><td>自托管未做前缀亲和</td><td>会话粘性 / 前缀感知路由</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>9.3 上线检查</h3>
+  <ul>
+    <li>稳定前缀里没有时间戳、请求 ID、用户名；</li>
+    <li>工具定义与 JSON 序列化顺序固定；</li>
+    <li>断点覆盖了最长且最稳定的段；</li>
+    <li>TTL 与访问频率匹配，低频前缀不强行缓存；</li>
+    <li>缓存 key 含租户、模型、提示词版本、工具版本；</li>
+    <li>有 purge 流程与语义命中抽样审计；</li>
+    <li>同时监控命中率、成本、TTFT 与正确性。</li>
+  </ul>
+  <a class="top-link" href="#main">回到顶部 ↑</a>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="sec-no">10</span><h2>来源与口径</h2></div>
+  <p>结构性事实与倍率来自以下公开材料，访问日期 2026-10-31：</p>
+  <ul class="src">
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener noreferrer">Anthropic: Prompt caching</a>：显式断点、TTL、写入/读取倍率、最小长度。</li>
+    <li><a href="https://platform.openai.com/docs/guides/prompt-caching" target="_blank" rel="noopener noreferrer">OpenAI: Prompt caching</a>：自动前缀、最小长度与增量、<code>prompt_cache_key</code>、usage 字段。</li>
+    <li><a href="https://cloud.google.com/vertex-ai/generative-ai/docs/context-cache/context-cache-overview" target="_blank" rel="noopener noreferrer">Google Cloud: Context caching</a>：隐式/显式缓存、TTL 与存储计费。</li>
+    <li><a href="https://api-docs.deepseek.com/guides/kv_cache" target="_blank" rel="noopener noreferrer">DeepSeek: Context caching</a>：自动缓存与命中计价。</li>
+    <li><a href="https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html" target="_blank" rel="noopener noreferrer">vLLM: Automatic prefix caching</a>：块哈希、复用与驱逐。</li>
+    <li><a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank" rel="noopener noreferrer">SGLang: RadixAttention</a>：用 radix tree 管理前缀复用。</li>
+    <li><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener noreferrer">PagedAttention / vLLM 论文</a>：KV cache 分页与共享。</li>
+  </ul>
+  <h3>口径</h3>
+  <ul>
+    <li><span class="tag fact">事实</span> 倍率、TTL、最小 token 数等来自厂商文档；数值会调整，落地前请核对当前版本。</li>
+    <li><span class="tag infer">推断</span> 盈亏平衡、命中率目标、排障顺序是工程推导与经验，不是厂商承诺。</li>
+    <li>不同厂商的「缓存」实现不同：有的缓存 KV，有的缓存前缀计算结果，有的只做请求级去重；不要假设行为一致。</li>
+    <li>本文的成本模型只覆盖输入侧缓存，不含输出费用、网络、存储与向量检索成本。</li>
+  </ul>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  var progress = document.getElementById("progress");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  tocLinks.forEach(function(a){ linkById[a.getAttribute("href").slice(1)] = a; });
+  var ticking = false;
+
+  function onScroll(){
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (max > 0 ? Math.min(100, Math.max(0, (y / max) * 100)) : 0) + "%";
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++){
+      if (sections[i].getBoundingClientRect().top <= 170) current = sections[i];
+    }
+    tocLinks.forEach(function(a){ a.removeAttribute("aria-current"); });
+    if (current && linkById[current.id]) linkById[current.id].setAttribute("aria-current", "true");
+    ticking = false;
+  }
+  function requestScroll(){
+    if (!ticking){ ticking = true; window.requestAnimationFrame(onScroll); }
+  }
+  window.addEventListener("scroll", requestScroll, { passive: true });
+  window.addEventListener("resize", requestScroll);
+  onScroll();
+
+  var defaults = {
+    "c-prefix": 20000,
+    "c-req": 50,
+    "c-price": 3,
+    "c-write": 1.25,
+    "c-read": 0.1,
+    "c-store": 0,
+    "c-hours": 1
+  };
+
+  function readNum(id, fallback, allowZero){
+    var el = document.getElementById(id);
+    if (!el) return fallback;
+    var v = parseFloat(el.value);
+    if (!Number.isFinite(v) || v < 0 || (!allowZero && v === 0)) return fallback;
+    return v;
+  }
+  function money(n){
+    var digits = Math.abs(n) < 10 ? 3 : 2;
+    return "$" + new Intl.NumberFormat("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
+  }
+  function fmtPct(n){
+    return (n * 100).toFixed(1) + "%";
+  }
+  function put(id, text){
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function setWidth(id, pct){
+    var el = document.getElementById(id);
+    if (el) el.style.width = Math.max(1, Math.min(100, pct)) + "%";
+  }
+
+  function calculate(){
+    var T = readNum("c-prefix", defaults["c-prefix"]);
+    var N = Math.max(1, Math.round(readNum("c-req", defaults["c-req"])));
+    var p = readNum("c-price", defaults["c-price"], true);
+    var W = Math.max(1, readNum("c-write", defaults["c-write"]));
+    var R = Math.min(1, readNum("c-read", defaults["c-read"], true));
+    var store = readNum("c-store", defaults["c-store"], true);
+    var hours = readNum("c-hours", defaults["c-hours"]);
+
+    var uncached = (N * T / 1e6) * p;
+    var storage = store * (T / 1e6) * hours;
+    var cached = ((W * T + (N - 1) * R * T) / 1e6) * p + storage;
+    var save = uncached > 0 ? (1 - cached / uncached) : 0;
+    var breakEven = (R < 1) ? Math.ceil(W / (1 - R)) : 1;
+    var effective = (N * T > 0) ? cached / (N * T / 1e6) : 0;
+
+    put("o-uncached", money(uncached));
+    put("o-cached", money(cached));
+    put("o-save", fmtPct(Math.max(-9.999, save)));
+    put("o-breakeven", breakEven + " 次");
+    put("o-effective", money(effective) + " / M");
+    put("lbl-uncached", money(uncached));
+    put("lbl-cached", money(cached));
+
+    var verdict = document.getElementById("o-verdict");
+    if (verdict){
+      var good = (N >= breakEven) && (cached < uncached);
+      verdict.className = "status " + (good ? "ok" : "bad");
+      verdict.textContent = good ? "值得" : (cached >= uncached ? "不值得" : "复用不足");
+    }
+
+    var denom = Math.max(uncached, cached, 0.000001);
+    setWidth("bar-uncached", (uncached / denom) * 100);
+    setWidth("bar-cached", (cached / denom) * 100);
+  }
+
+  Object.keys(defaults).forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", calculate);
+    el.addEventListener("change", calculate);
+  });
+  var runBtn = document.getElementById("calc-run");
+  if (runBtn) runBtn.addEventListener("click", calculate);
+  var resetBtn = document.getElementById("calc-reset");
+  if (resetBtn){
+    resetBtn.addEventListener("click", function(){
+      Object.keys(defaults).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.value = String(defaults[id]);
+      });
+      calculate();
+    });
+  }
+  calculate();
+})();
+</script>
+
+</main>
+</div>
+</body>
+</html>

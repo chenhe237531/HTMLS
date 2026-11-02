@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="FreeLLMAPI 拆解：把 34 家免费模型额度聚合成一个 OpenAI 兼容端点，自动故障转移、加密密钥、用量追踪；含路由机制、安装方式、限制与成本估算。">
+<title>FreeLLMAPI 拆解 · 34 家免费额度，一个 /v1 端点</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:920px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+table{width:100%;border-collapse:collapse;font-size:13.2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+td b{font-weight:650}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:920px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs,.calc{display:none}body{background:#fff}.kpi,.panel,.figure{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../Tools/index.html">← 工具调研</a>
+  <span class="crumb">Agents/FreeAPI / FreeLLMAPI · 2026-11-02</span>
+  <nav class="pager"><a href="#how">路由机制</a><a href="#start">装起来</a><a href="#limits">边界</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>MIT · 本地优先 · OpenAI 兼容</div>
+  <h1>FreeLLMAPI<br><em>34 家免费额度，一个 /v1 端点</em></h1>
+  <p class="lede">每家 AI 实验室都送一点免费额度：单独看都是玩具，叠起来是每月几十亿 token 的实验容量。FreeLLMAPI 把 34 个 provider、635 个免费端点收进一个本地路由，限流就换下一条链。</p>
+
+  <div class="meta-row">
+    <span class="pill">MIT</span>
+    <span class="pill">TypeScript · Node 20+</span>
+    <span class="pill">v0.16.16 · 2026-11-01</span>
+    <span class="pill">桌面 / Docker / 自托管</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">34<span>providers</span></div><div class="l">免费额度来源</div></div>
+    <div class="kpi"><div class="n">635<span>endpoints</span></div><div class="l">474 个模型家族</div></div>
+    <div class="kpi"><div class="n">7.4B<span>tokens/月</span></div><div class="l">官方估算的总容量</div></div>
+    <div class="kpi"><div class="n">46K<span>stars</span></div><div class="l">2026-11-02 抓取</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>它解决什么问题</h2>
+    <p class="sub">不是“又一个代理”，而是把 34 套 SDK、34 套限流、34 个失败点收成一个接口。</p>
+
+    <p>免费额度的问题是“叠起来很痛”：每家有自己的鉴权、RPM/RPD/TPM 限制、错误码和上下线节奏。手动接 34 家，等于维护 34 个客户端和 34 份配额表。</p>
+
+    <p>FreeLLMAPI 的做法是本地跑一个路由，对外只暴露一个 OpenAI 兼容的 base URL：</p>
+
+    <pre><code><span class="k">from</span> openai <span class="k">import</span> OpenAI
+
+client = OpenAI(
+    base_url=<span class="s">"http://localhost:3001/v1"</span>,
+    api_key=<span class="s">"freellmapi-your-unified-key"</span>,
+)
+
+resp = client.chat.completions.create(
+    model=<span class="s">"auto"</span>,  <span class="c"># 或 auto:fast / auto:smart / 某个 profile</span>
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"一句话总结罗马的衰落。"</span>}],
+)
+print(resp.choices[0].message.content)
+print(<span class="s">"Routed via:"</span>, resp.headers.get(<span class="s">"x-routed-via"</span>))</code></pre>
+
+    <p>每个响应都带 <code>X-Routed-Via: &lt;platform&gt;/&lt;model&gt;</code>，你能看到这次到底是哪家接的。</p>
+  </section>
+
+  <section id="how">
+    <h2><span class="no">02</span>路由机制：一条请求怎么走</h2>
+    <p class="sub">核心不是“选最强”，而是“在配额与健康度允许的前提下，选当前最合适的一条”。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 780 380" role="img" aria-label="FreeLLMAPI 路由流程">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/></marker></defs>
+
+        <rect x="20" y="16" width="230" height="50" rx="9" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="36" y="36" font-size="12" fill="#17181b">客户端</text>
+        <text x="36" y="53" font-size="10.5" fill="#6f7279">OpenAI SDK / Claude Code / 任意客户端</text>
+
+        <line x1="250" y1="41" x2="286" y2="41" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="286" y="16" width="200" height="50" rx="9" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="302" y="36" font-size="12" fill="#17181b">统一鉴权</text>
+        <text x="302" y="53" font-size="10.5" fill="#6f7279">只认 freellmapi-… token</text>
+
+        <line x1="486" y1="41" x2="522" y2="41" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="522" y="16" width="238" height="50" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="538" y="36" font-size="12" fill="#17181b">路由决策</text>
+        <text x="538" y="53" font-size="10.5" fill="#6f7279">优先级 · 健康 · 速率 · 粘性会话</text>
+
+        <line x1="641" y1="66" x2="641" y2="92" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="380" y="92" width="380" height="112" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="396" y="113" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#2b4f9e">FALLBACK CHAIN</text>
+        <rect x="396" y="122" width="348" height="22" rx="5" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="406" y="138" font-size="11" fill="#17181b">① provider A / model X　配额充足 · 健康</text>
+        <rect x="396" y="149" width="348" height="22" rx="5" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="406" y="165" font-size="11" fill="#17181b">② provider B / model Y　429 → 冷却，跳过</text>
+        <rect x="396" y="176" width="348" height="22" rx="5" fill="#efece4" stroke="#e3ded3"/>
+        <text x="406" y="192" font-size="11" fill="#17181b">③ provider C / model Z　备用</text>
+
+        <line x1="380" y1="148" x2="300" y2="148" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="20" y="204" width="360" height="70" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="36" y="225" font-size="12" fill="#17181b">配额账本（每个 key / 模型）</text>
+        <text x="36" y="243" font-size="10.5" fill="#6f7279">RPM · RPD · TPM · TPD 计数器</text>
+        <text x="36" y="260" font-size="10.5" fill="#6f7279">从 provider 返回的报错里学习真实上限</text>
+
+        <rect x="20" y="292" width="360" height="66" rx="9" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="36" y="313" font-size="12" fill="#17181b">上游 provider ×34</text>
+        <text x="36" y="331" font-size="10.5" fill="#6f7279">Google · Groq · Cerebras · Mistral · OpenRouter</text>
+        <text x="36" y="347" font-size="10.5" fill="#6f7279">Cloudflare · Cohere · Z.ai · NVIDIA · HF · 自定义端点…</text>
+
+        <line x1="200" y1="238" x2="200" y2="292" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="420" y="240" width="340" height="96" rx="9" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="436" y="261" font-size="12" fill="#17181b">加密与存储</text>
+        <text x="436" y="279" font-size="10.5" fill="#6f7279">provider key：AES-256-GCM，存在 SQLite</text>
+        <text x="436" y="296" font-size="10.5" fill="#6f7279">请求时在内存解密，应用只看到统一 token</text>
+        <text x="436" y="313" font-size="10.5" fill="#6f7279">本地优先：请求从你的机器直连上游</text>
+        <text x="436" y="330" font-size="10.5" fill="#6f7279">目录：签名 feed，每天同步两次</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>请求先过统一鉴权，再由路由按“优先级 + 健康 + 配额 + 粘性”选一条链；429/5xx 只冷却当前 key，然后自动落到下一条。配额账本是它敢叠 34 家的前提。</p>
+
+    <h3>六个路由策略，一句话版</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>能力</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><b>自动故障转移</b></td><td>429/5xx 冷却当前 key，按链重试下一个；带 key 轮换</td></tr>
+          <tr><td><b>实时评分</b></td><td>按速度、能力、可靠性给模型打分，决定链内顺序</td></tr>
+          <tr><td><b>统一模型</b></td><td>同一模型在多家的端点合并成一个条目，组内严格故障转移</td></tr>
+          <tr><td><b>Profile 链</b></td><td>命名链（coding / vision），用 <code>auto:&lt;profile&gt;</code> 指定</td></tr>
+          <tr><td><b>粘性会话</b></td><td>对话在同一模型上保持 30 分钟；必要时生成上下文交接摘要</td></tr>
+          <tr><td><b>用量追踪</b></td><td>每个 <code>(platform, model, key)</code> 记 RPM/RPD/TPM/TPD</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="surfaces">
+    <h2><span class="no">03</span>不只是 /v1/chat/completions</h2>
+    <p class="sub">它把主流客户端需要的“协议面”都做了一层，所以 Claude Code、Gemini CLI、Ollama 客户端都能直接接。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>接口面</th><th>端点</th><th>谁在用</th></tr></thead>
+        <tbody>
+          <tr><td>OpenAI</td><td><code>/v1/chat/completions</code>、<code>/v1/responses</code>、<code>/v1/completions</code>、embeddings、images、videos、audio、models</td><td>通用 SDK、Codex CLI、编辑器补全</td></tr>
+          <tr><td>Anthropic Messages</td><td><code>/v1/messages</code></td><td>Claude Code、Anthropic SDK</td></tr>
+          <tr><td>Gemini</td><td><code>/v1beta</code>（generateContent、流式、token 计数）</td><td>Gemini CLI</td></tr>
+          <tr><td>Ollama（可选）</td><td>NDJSON chat / generate、tags、embeddings</td><td>Zed、JetBrains 等本地模型客户端</td></tr>
+          <tr><td>MCP</td><td><code>/mcp</code></td><td>ChatGPT、支持 MCP 的 agent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>还有一个虚拟模型 <code>fusion</code>：把同一个 prompt 并行发给一组不同模型，再用一个 judge 模型合成答案。它适合“想要更稳的输出”，代价是 token 消耗成倍。</p>
+  </section>
+
+  <section id="start">
+    <h2><span class="no">04</span>装起来：三条路</h2>
+    <p class="sub">桌面版最省事；Docker 适合长期跑；给 coding agent 接则用一条 setup 命令。</p>
+
+    <div class="tabs" role="tablist" aria-label="安装方式">
+      <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">A · 桌面应用</button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">B · Docker / 自托管</button>
+      <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false">C · 接 coding agent</button>
+    </div>
+
+    <div class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+      <p><strong>适合：</strong>个人本机、想零配置跑起来。</p>
+      <ul>
+        <li>macOS：Releases 的 <code>.dmg</code>（arm64 / x64，macOS 12+）</li>
+        <li>Windows：<code>FreeLLMAPI-Setup-*.exe</code> 安装器</li>
+        <li>Linux：AppImage / deb / rpm</li>
+        <li>移动端：README 提供 Google Play 与 App Store 入口</li>
+      </ul>
+      <p class="sub" style="margin:10px 0 0">桌面版没有账号密码：从托盘打开 Dashboard，用托盘里显示的 unified key。数据在 <code>~/Library/Application Support/FreeLLMAPI/</code>（macOS）或 <code>%APPDATA%\FreeLLMAPI\</code>（Windows）。卸载 App 不会删这个目录。</p>
+    </div>
+
+    <div class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <p><strong>适合：</strong>homelab、常开机器、多客户端共用。</p>
+      <pre><code><span class="c"># 需要 Docker；会创建 ~/freellmapi、生成加密密钥、拉镜像并启动</span>
+curl -fsSL https://freellmapi.co/install.sh | bash
+
+<span class="c"># 然后打开</span>
+http://localhost:3001
+
+<span class="c"># 停止</span>
+docker compose down -v</code></pre>
+      <p class="sub" style="margin:10px 0 0">服务端安装有邮箱 + 密码账号；忘记密码时，一次性验证码会打到服务端日志里，15 分钟有效。</p>
+    </div>
+
+    <div class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+      <p><strong>适合：</strong>Claude Code / Codex 等 agent 想直接吃这个池子。</p>
+      <pre><code><span class="c"># 大多数 agent 一条命令：读实时目录、备份原配置、合并写入</span>
+npx freellmapi setup-claude --url http://localhost:3001 --api-key &lt;unified-key&gt;
+
+<span class="c"># 不想把凭据写进配置文件</span>
+npx freellmapi launch          <span class="c"># Claude Code</span>
+npx freellmapi launch-codex    <span class="c"># Codex</span></code></pre>
+      <p class="sub" style="margin:10px 0 0">支持 Claude Code、Codex CLI、Gemini CLI、Cursor、Cline、Roo Code、OpenCode、Aider、Continue、Goose、Zed 等；也接受任意 OpenAI / Anthropic / Gemini / Ollama 兼容客户端。</p>
+    </div>
+
+    <h3>装完要做的三件事</h3>
+    <ol class="check">
+      <li>在 Keys 页添加 provider key；先加 2–3 家，别一次全加。</li>
+      <li>调整 Fallback Chain 顺序：把稳定、快的放前面，能力强的留作升级档。</li>
+      <li>从 Keys 页头部拿 unified key，填进客户端，跑一次带 <code>X-Routed-Via</code> 的请求验证。</li>
+    </ol>
+  </section>
+
+  <section id="security">
+    <h2><span class="no">05</span>密钥、数据与安全</h2>
+    <ul class="check">
+      <li><b>加密存储</b>：provider key 用 AES-256-GCM 加密后放 SQLite，请求时在内存解密。</li>
+      <li><b>只有一个出口 token</b>：应用只看到 <code>freellmapi-…</code>，拿不到上游 key。</li>
+      <li><b>本地优先</b>：请求从你的机器直连上游；目录服务器看不到 prompt、completion 和 key。</li>
+      <li><b>目录签名</b>：模型目录从 freellmapi.co 拉取，用固定 Ed25519 公钥校验后才应用。</li>
+      <li><b>LAN 要小心</b>：桌面版默认只服务本机；开放到局域网时会出现登录页，别把 Dashboard 直接暴露公网。</li>
+      <li><b>备份</b>：支持加密 DB 备份；换机时迁移数据目录比重新加 key 省事。</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="t">合规边界</span>
+      <p>免费额度仍然受各家 ToS 约束；代理转发不改变你和 provider 的协议关系。项目自己也在 README 里逐家 review 了 ToS，并明确“个人实验，不要上生产”。</p>
+    </div>
+  </section>
+
+  <section id="catalog">
+    <h2><span class="no">06</span>目录更新与 Premium</h2>
+    <p class="sub">免费层的模型和额度每周都在变，这个项目把“目录”本身做成了订阅。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>免费</th><th>Premium</th></tr></thead>
+        <tbody>
+          <tr><td><b>目录来源</b></td><td>签名目录的月度快照</td><td>实时签名目录</td></tr>
+          <tr><td><b>新模型延迟</b></td><td>进入实时 feed 后 30 天</td><td>当天</td></tr>
+          <tr><td><b>规模</b></td><td>README 称比实时版落后约 303 个模型</td><td>34 家 / 474 家族 / 635 端点</td></tr>
+          <tr><td><b>价格</b></td><td>免费</td><td>$19/年 或 $49 买断</td></tr>
+          <tr><td><b>许可</b></td><td colspan="2">路由本体始终 MIT、完全免费；Premium 只卖实时目录</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>它没有把核心功能锁起来——免费版一样能路由、能故障转移、能加密密钥，只是模型清单晚一个月。这是个挺克制的商业化设计。</p>
+  </section>
+
+  <section id="cost">
+    <h2><span class="no">07</span>把“7.4B tokens”拆开</h2>
+    <p class="sub">官方说的是“列出的免费容量”，不是“你实际能用到的量”。改下面几个数，看差距在哪。</p>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="prov">接入的 provider 数</label><input id="prov" type="number" min="0" step="1" value="34" inputmode="numeric"></div>
+        <div class="field"><label for="per">每家每月免费 token（百万）</label><input id="per" type="number" min="0" step="10" value="220" inputmode="numeric"></div>
+        <div class="field"><label for="use">实际利用率（%）</label><input id="use" type="number" min="0" max="100" step="5" value="55" inputmode="decimal"></div>
+        <div class="field"><label for="price">付费对照价（USD/百万）</label><input id="price" type="number" min="0" step="0.05" value="0.5" inputmode="decimal"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">名义容量 / 月</span><span class="v" id="o-nom">—</span></div>
+        <div><span class="k">可用容量 / 月</span><span class="v" id="o-use">—</span></div>
+        <div><span class="k">等价付费价值</span><span class="v" id="o-val">—</span></div>
+      </div>
+      <p class="hint">默认 34 × 220M = 7.48B 名义容量；按 55% 利用率算约 4.1B 可用，等价约 $2,050/月的付费额度。利用率是这里最不确定的变量：限流、模型下线、上下文长度、失败重试都会吃掉它。数字仅作结构示意。</p>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">08</span>限制与风险</h2>
+
+    <div class="callout bad">
+      <span class="t">项目自己的定位</span>
+      <p>“Personal experimentation and learning, not production.” 免费层不是稳定、有支持的推理基础设施；要在上面做真实产品，发布前换付费 API。</p>
+    </div>
+
+    <ul class="check">
+      <li><b>没有前沿模型</b>：免费层的能力上限明显低于付费旗舰；复杂推理会露馅。</li>
+      <li><b>延迟不稳定</b>：不同 provider 的排队、限流、冷启动差异很大。</li>
+      <li><b>配额会“日内衰减”</b>：热门模型先被用光，UTC 零点重置；下午的“智能程度”可能低于早上。</li>
+      <li><b>没有 SLA</b>：provider 改额度、下线模型、改错误码，你的路由要跟着变。</li>
+      <li><b>ToS 责任在你</b>：代理不改变协议；商业使用、转售、共享账号都可能违规。</li>
+      <li><b>单用户设计</b>：本地优先、单用户；多人共用要自己加隔离与配额。</li>
+    </ul>
+
+    <h3>适合谁</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>场景</th><th>建议</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>个人原型、学习、跑 agent 实验</td><td><b>合适</b></td><td>零成本起步，接口统一，故障转移省心</td></tr>
+          <tr><td>多模型对比、prompt 评测</td><td><b>合适</b></td><td>一个端点切模型，带路由溯源</td></tr>
+          <tr><td>给 Claude Code / Codex 当备用池</td><td><b>可用</b></td><td>支持 Anthropic / OpenAI 协议面，配置成本低</td></tr>
+          <tr><td>生产、SaaS、对外提供服务</td><td><b>不合适</b></td><td>无 SLA、配额不稳、ToS 风险</td></tr>
+          <tr><td>需要强隐私或合规审计</td><td>谨慎</td><td>数据直连上游，仍受各家条款约束</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">我的判断</span>
+      <p>它最值得抄的不是“白嫖清单”，而是那套<b>配额账本 + 健康评分 + 链式故障转移</b>。即使你全用付费 API，这套路由骨架也能直接搬去做出成本感知的模型网关；免费额度只是它最好的演示场景。</p>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">09</span>来源</h2>
+    <ul class="sources">
+      <li>仓库与 README：<a href="https://github.com/tashfeenahmed/freellmapi" rel="noreferrer">github.com/tashfeenahmed/freellmapi</a></li>
+      <li>Releases（dmg / exe / AppImage / deb / rpm）：<a href="https://github.com/tashfeenahmed/freellmapi/releases" rel="noreferrer">releases</a></li>
+      <li>官网与模型目录：<a href="https://freellmapi.co" rel="noreferrer">freellmapi.co</a> · <a href="https://freellmapi.co/models.html" rel="noreferrer">/models</a></li>
+      <li>架构与限制：仓库 <code>docs/en/architecture/00-high-level-index.md</code></li>
+      <li>Star / release 数据：GitHub API，2026-11-02 抓取（45,939 stars）</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">数字取自 README 与抓取日的仓库状态；7.4B 与 34/635 均为官方口径，未独立复测。是否合规使用请自行核对各 provider 条款。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Agents/FreeAPI · FreeLLMAPI 拆解 · 2026-11-02 · <a href="../Tools/index.html">工具调研</a> · <a href="ecosystem.html">免费 LLM API 项目地图</a></div>
+  <span>本页为独立分析，与项目方无隶属关系；安装与使用请以仓库文档为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+
+(function(){
+  function n(id, fb){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) && v >= 0 ? v : fb; }
+  function tok(x){
+    if (x >= 1e9) return (x / 1e9).toFixed(2) + 'B';
+    if (x >= 1e6) return (x / 1e6).toFixed(2) + 'M';
+    return Math.round(x).toString();
+  }
+  function calc(){
+    var prov = n('prov', 34);
+    var per = n('per', 220) * 1e6;
+    var use = Math.min(100, Math.max(0, n('use', 55))) / 100;
+    var price = n('price', 0.5);
+
+    var nominal = prov * per;
+    var usable = nominal * use;
+    var value = usable / 1e6 * price;
+
+    document.getElementById('o-nom').textContent = tok(nominal);
+    document.getElementById('o-use').textContent = tok(usable);
+    document.getElementById('o-val').innerHTML = '$' + Math.round(value).toLocaleString('en-US') + ' <small>USD/月</small>';
+  }
+  ['prov','per','use','price'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

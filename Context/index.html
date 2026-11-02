@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>上下文工程：让 Agent 把注意力花在对的地方（2026-10）</title>
+<style>
+:root{
+  --paper:#f5f4ee;--paper-2:#edece3;--surface:#fffefb;
+  --ink:#16181a;--ink-2:#3b3f42;--muted:#6d7276;
+  --line:#e2ded2;--line-strong:#cdc8b9;
+  --accent:#1f5f5b;--accent-soft:#e4f0ee;--accent-line:#c4ddd9;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#2a6448;--green-soft:#e7f1ea;
+  --red:#98302f;--red-soft:#fae9e8;
+  --violet:#5b4387;--violet-soft:#eee9f7;
+  --blue:#2b4f9e;--blue-soft:#e8eefb;
+  --code-bg:#161a1c;--code-ink:#e8e6de;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(22,24,26,.05),0 10px 30px -18px rgba(22,24,26,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 86% -6%,rgba(31,95,91,.10),transparent 60%),radial-gradient(900px 480px at 0% 6%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c7e2de;color:#0d1a19}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:266px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.8),rgba(255,254,251,.34));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:22px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#0d1f1e);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:7px;border:2px solid #f4f2e8;border-radius:50%;border-right-color:transparent;transform:rotate(-30deg)}
+.brand-title{font-family:var(--serif);font-size:16.5px;line-height:1.25}
+.brand-sub{font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;white-space:nowrap}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:12.8px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-note{margin-top:20px;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:12px;line-height:1.65;color:var(--muted)}
+.side-note b{display:block;color:var(--ink-2);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.side-note code{font-size:.92em}
+.side-foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.65}
+main{min-width:0;padding:44px clamp(20px,4.6vw,60px) 96px;max-width:1100px}
+.hero{margin-bottom:42px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5vw,54px);line-height:1.1;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:17.5px;line-height:1.75;color:var(--ink-2);max-width:48em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.15;letter-spacing:-.02em}
+.kpi .n span{font-size:12px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+section{scroll-margin-top:22px;margin-bottom:56px}
+.sec-head{display:flex;gap:13px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:22px}
+.sec-no{font-family:var(--mono);font-size:11.5px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(23px,2.9vw,30px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17px;line-height:1.5;margin:30px 0 10px}
+h4{font-size:13.5px;margin:18px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 13px}
+ul,ol{margin:0 0 15px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow:auto;font:12.5px/1.65 var(--mono);margin:12px 0 18px;border:1px solid #2a2f33}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.small{font-size:12.5px;color:var(--muted)}
+.lead-in{font-size:16px;color:var(--ink-2);max-width:54em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 17px;margin:18px 0;font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.danger{background:var(--red-soft);border-color:#efcfcd;border-left-color:var(--red)}
+.callout.ok{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout b{color:var(--ink)}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:1px 6px;border-radius:5px;border:1px solid;vertical-align:1px;white-space:nowrap}
+.tag.fact{color:var(--green);background:var(--green-soft);border-color:#cfe3d8}
+.tag.infer{color:var(--violet);background:var(--violet-soft);border-color:#ddd2ef}
+.tag.risk{color:var(--red);background:var(--red-soft);border-color:#efcfcd}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:16px 0 20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.card h4{margin-top:0}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.table-wrap{overflow-x:auto;margin:14px 0 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.6;min-width:620px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);font-weight:600}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600}
+.num{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+details{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:10px 0;overflow:hidden}
+details[open]{box-shadow:var(--shadow)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;gap:9px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);font-weight:400}
+details[open]>summary::before{content:"−"}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.details-body{padding:0 16px 14px;border-top:1px solid var(--line)}
+.details-body>*:first-child{margin-top:12px}
+.formula{font-family:var(--mono);font-size:13px;background:var(--surface);border:1px dashed var(--line-strong);border-radius:10px;padding:12px 15px;margin:12px 0;color:var(--ink-2);overflow-x:auto}
+.formula b{color:var(--accent);font-weight:600}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:18px 0}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+/* 六种操作 */
+.ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:18px 0 8px}
+.op{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px;position:relative}
+.op .ohead{display:flex;gap:9px;align-items:baseline;margin-bottom:5px}
+.op .oid{font-family:var(--mono);font-size:10.5px;color:#fff;background:var(--accent);border-radius:5px;padding:1px 6px;flex:0 0 auto}
+.op strong{font-size:14px}
+.op p{font-size:12.8px;color:var(--ink-2);margin:0 0 7px}
+.op .when{font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}
+.op .when b{color:var(--amber);font-weight:600}
+/* 预算条 */
+.budgetbar{display:flex;height:30px;border-radius:8px;overflow:hidden;border:1px solid var(--line-strong);background:#fff}
+.budgetbar span{display:block;height:100%;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
+.legend b{color:var(--ink-2);font-weight:600}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin:18px 0}
+.calc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.field input{width:100%;padding:7px 9px;border:1px solid var(--line-strong);border-radius:8px;font:14px/1.4 var(--sans);background:#fff;color:var(--ink)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.calc-out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.out{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.out .k{font-size:11px;color:var(--muted)}
+.out .v{font-family:var(--mono);font-size:17px;margin-top:2px;color:var(--accent)}
+.calc-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.btn{font:inherit;font-size:12.5px;padding:6px 13px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink-2)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.status{font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid}
+.status.ok{color:var(--green);background:var(--green-soft);border-color:#cfe3d8}
+.status.warn{color:var(--amber);background:var(--amber-soft);border-color:#ecd9bd}
+.status.bad{color:var(--red);background:var(--red-soft);border-color:#efcfcd}
+/* 反模式 */
+.anti{counter-reset:a;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px}
+.anti li{counter-increment:a;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 14px 12px 14px;font-size:13.2px;position:relative}
+.anti li::before{content:counter(a,decimal-leading-zero);font-family:var(--mono);font-size:10px;color:var(--red);display:block;margin-bottom:2px;letter-spacing:.06em}
+.anti li b{display:block;color:var(--ink);margin-bottom:2px}
+.anti li span{color:var(--muted);font-size:12.3px}
+/* 清单 */
+.checklist{list-style:none;margin:14px 0;padding:0;display:grid;gap:7px}
+.checklist li{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13.5px;margin:0}
+.checklist input{margin-top:5px;width:15px;height:15px;accent-color:var(--accent);flex:0 0 auto}
+.checklist label{cursor:pointer}
+.checklist input:checked+label{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.top-link{display:block;text-align:right;font-size:11.5px;color:var(--muted);text-decoration:none;margin-top:8px}
+.src li{margin:7px 0}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:20px}
+  .toc{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+  .side-note,.side-foot{display:none}
+  main{padding:30px 18px 80px}
+  table{min-width:560px}
+}
+@media (max-width:760px){
+  .calc-grid,.calc-out{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  body{font-size:15px}
+}
+@media (max-width:480px){
+  .calc-grid,.calc-out{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+@media print{
+  .sidebar,.progress,.calc-actions,.top-link,.skip{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  body{background:#fff}
+  section{margin-bottom:26px}
+  details{border:0}
+  details>summary{display:none}
+  details .details-body{border:0;padding:0}
+  a{color:inherit;text-decoration:none}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  th{position:static}
+  .checklist input{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<nav class="sidebar" aria-label="目录">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Context</div>
+      <div class="brand-sub">Attention is a budget</div>
+    </div>
+  </div>
+  <ol class="toc" id="toc">
+    <li><a href="#s1"><span class="no">01</span><span>前提：预算不是仓库</span></a></li>
+    <li><a href="#s2"><span class="no">02</span><span>解剖一次请求</span></a></li>
+    <li><a href="#s3"><span class="no">03</span><span>六种操作</span></a></li>
+    <li><a href="#s4"><span class="no">04</span><span>场景配方</span></a></li>
+    <li><a href="#s5"><span class="no">05</span><span>压缩与记忆</span></a></li>
+    <li><a href="#s6"><span class="no">06</span><span>工具与 MCP</span></a></li>
+    <li><a href="#s7"><span class="no">07</span><span>多 Agent 隔离</span></a></li>
+    <li><a href="#s8"><span class="no">08</span><span>度量与成本</span></a></li>
+    <li><a href="#s9"><span class="no">09</span><span>反模式与清单</span></a></li>
+    <li><a href="#s10"><span class="no">10</span><span>来源</span></a></li>
+  </ol>
+  <div class="side-note">
+    <b>一句话</b>
+    好的上下文不是「把知道的都告诉模型」，而是「让模型在这一步只需要知道这些」。
+  </div>
+  <div class="side-foot">
+    基于公开研究与工程实践整理，访问日期 2026-10-31。经验阈值均标注为启发式，需按模型与任务复测。
+  </div>
+</nav>
+
+<main id="main">
+<div class="hero">
+  <div class="eyebrow"><span class="dot"></span><span>上下文工程</span><span>·</span><span>Agent 实践</span><span>·</span><span>2026-10</span></div>
+  <h1>上下文工程：<em>把注意力当预算</em></h1>
+  <p class="lede">同一个模型，喂 8 千 token 能稳定完成的任务，喂 8 万 token 反而开始忘事、跑偏、重复犯错。Agent 的能力上限，常常不是模型决定的，而是你每一步让它「看见什么、按什么顺序看见」决定的。</p>
+  <div class="meta-row">
+    <span class="pill"><b>Context</b> 不是 prompt</span>
+    <span class="pill">不是 RAG</span>
+    <span class="pill">不是聊天记录</span>
+    <span class="pill">是运行时资源</span>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">n²</div><div class="l">n 个 token 之间的注意力关系数</div></div>
+    <div class="kpi"><div class="n">18</div><div class="l">Chroma 测试的模型，全部随输入变长而降级</div></div>
+    <div class="kpi"><div class="n">5</div><div class="l">Claude Code 压缩后保留的最近文件数</div></div>
+    <div class="kpi"><div class="n">4</div><div class="l">核心操作：外置 / 检索 / 压缩 / 隔离</div></div>
+  </div>
+</div>
+
+<section id="s1">
+  <div class="sec-head"><span class="sec-no">01</span><h2>前提：上下文是预算，不是仓库</h2></div>
+  <p class="lead-in">几乎所有上下文问题，都源于一个错误类比：把 context window 当成「可以随便塞的数据库」。</p>
+
+  <h3>1.1 三个硬约束</h3>
+  <ol>
+    <li><b>注意力是有限的。</b>模型不是均匀地读第 100 个和第 100,000 个 token。Anthropic 把它称为「attention budget」：每多一个 token，都在消耗预算，边际收益递减。</li>
+    <li><b>复杂度是 n²。</b>Transformer 里每个 token 都要和其他 token 建立关系；上下文翻倍，关系数变四倍。窗口变大不等于理解变强。</li>
+    <li><b>训练分布偏短。</b>模型见过的短序列远多于长序列，对「跨越很长距离的依赖」经验更少。</li>
+  </ol>
+  <div class="callout"><b>结论：</b>「把窗口扩到 1M」只推迟了问题，没有消除问题。你要优化的是<b>信噪比</b>，不是<b>召回率</b>。</div>
+
+  <h3>1.2 Context rot 不是玄学</h3>
+  <p>Chroma 在 2025 年 7 月发布的 <i>Context Rot</i> 报告测试了 18 个模型（含 GPT-4.1、Claude 4、Gemini 2.5、Qwen3），结论不是「长上下文完全不能用」，而是更麻烦的一件事：</p>
+  <ul>
+    <li>即使任务难度不变、只增加无关内容，性能也会随输入变长而下降；</li>
+    <li>加入<b>一个</b>干扰项就能拉低表现，四个干扰项进一步放大；</li>
+    <li>问题与答案的语义相似度越低，长上下文下退化越明显；</li>
+    <li>模型家族行为不同：有的倾向拒答，有的倾向编一个「听起来合理」的错答案。</li>
+  </ul>
+  <p>这意味着：<b>「相关信息在上下文里」是必要条件，不是充分条件。</b>呈现方式、干扰项、位置，都会改变结果。Chroma 还发现，在他们的实验里打乱 haystack 的顺序反而提升了表现——这提醒我们不要凭直觉定「最佳排版」，要测。</p>
+  <p>更早的 <i>Lost in the Middle</i> 也观察到类似现象：关键信息在开头或结尾时利用得最好，被埋在大段中间时明显下降。所以「放进去」之后，还要问「放在哪」。</p>
+  <p class="small"><span class="tag fact">事实</span> 报告与可复现实验：<a href="https://www.trychroma.com/research/context-rot" target="_blank" rel="noopener noreferrer">Context Rot</a>（2025-07-14）。<span class="tag infer">推断</span> 具体任务上的最优排布必须自测，不能把论文结论当模板。</p>
+
+  <h3>1.3 四种失效模式</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>失效</th><th>表现</th><th>典型原因</th><th>第一反应</th></tr></thead>
+    <tbody>
+      <tr><td><b>溢出</b></td><td>请求报错、被截断、输出被挤掉</td><td>历史与工具输出无上限</td><td>清理工具结果、压缩、预留输出</td></tr>
+      <tr><td><b>稀释</b></td><td>关键约束被忽略，回答变得笼统</td><td>无关文档太多、top-k 太大</td><td>减少证据、提高相关性、重排</td></tr>
+      <tr><td><b>污染</b></td><td>过时事实、错误记忆、注入指令被当真</td><td>记忆只写不清、网页/工具输出含指令</td><td>来源分级、去重、过期、隔离为数据</td></tr>
+      <tr><td><b>失序</b></td><td>中间的信息想不起来，前后矛盾</td><td>关键内容埋在长历史中部</td><td>把目标与约束放首尾，结构化分段</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>1.4 一个自检问题</h3>
+  <div class="callout warn"><b>如果你不能用一句话说清「这一步模型必须看到哪几条信息」，你就还没有做上下文设计，只是在堆输入。</b></div>
+  <p>下面所有的技巧，都是围绕这句话展开的：先决定「必须看到什么」，再决定「怎么放、放多少、放多久」。</p>
+</section>
+
+<section id="s2">
+  <div class="sec-head"><span class="sec-no">02</span><h2>解剖一次请求：钱和注意力花在哪</h2></div>
+  <p class="lead-in">把一次 Agent 调用拆开，你会发现大部分 token 并不在「你写的 prompt」里。</p>
+
+  <h3>2.1 八层结构</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>层</th><th>内容</th><th>典型占比</th><th>失控信号</th></tr></thead>
+    <tbody>
+      <tr><td>指令</td><td>系统提示、角色、硬约束、输出格式</td><td class="num">1–3%</td><td>越写越长，规则互相冲突</td></tr>
+      <tr><td>工具</td><td>工具名、描述、JSON Schema</td><td class="num">3–10%</td><td>工具几十个，模型选错或重复调用</td></tr>
+      <tr><td>任务</td><td>当前目标、验收标准、上下文边界</td><td class="num">&lt;1%</td><td>目标模糊，模型自行发挥</td></tr>
+      <tr><td>证据</td><td>检索文档、网页、日志、代码片段</td><td class="num">10–30%</td><td>top-k 越来越大，引用率却下降</td></tr>
+      <tr><td>历史</td><td>用户轮次、助手推理、工具调用与结果</td><td class="num">30–60%</td><td>长会话后半段开始重复、遗忘</td></tr>
+      <tr><td>草稿</td><td>计划、TODO、中间结论</td><td class="num">2–5%</td><td>只存在模型脑子里，压缩后丢失</td></tr>
+      <tr><td>记忆</td><td>跨会话事实、偏好、经验</td><td class="num">2–10%</td><td>越积越多，过期信息不清理</td></tr>
+      <tr><td>输出预留</td><td>回答、思考、工具参数的生成空间</td><td class="num">5–15%</td><td>没预留，最后被硬截断</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">占比是经验区间，不是规范。<span class="tag infer">推断</span> 但它揭示了一个常被忽略的事实：<b>历史 + 工具结果通常占一半以上</b>，而它们恰恰是最容易清理的部分。</p>
+
+  <h3>2.2 推荐顺序（以及为什么）</h3>
+  <ol>
+    <li><b>稳定前缀</b>：系统指令 → 工具定义。放在最前，且不要插入时间戳、随机 ID、动态用户信息。</li>
+    <li><b>任务与约束</b>：当前目标、验收标准、禁止事项。越靠近生成点，越容易被遵守。</li>
+    <li><b>证据</b>：带来源、带时间、带适用范围；无关的先删，不要靠模型自己筛。</li>
+    <li><b>历史</b>：从旧到新；旧轮次可摘要，最近 3–5 轮保留原文。</li>
+    <li><b>草稿 / 记忆</b>：只放「这一步会用到的」，不要把整个 NOTES.md 灌进去。</li>
+    <li><b>输出指令</b>：格式、长度、停止条件。放在最后，紧贴生成。</li>
+  </ol>
+  <div class="callout"><b>缓存视角：</b>prompt caching 命中依赖前缀完全一致。把动态内容放前面，会让整段缓存失效——这既是性能问题，也是成本问题。</div>
+
+  <h3>2.3 一个 200k 窗口的预算示例</h3>
+  <div class="figure">
+    <div class="budgetbar" aria-hidden="true">
+      <span style="width:1.5%;background:#2b4f9e"></span>
+      <span style="width:4%;background:#5b4387"></span>
+      <span style="width:10%;background:#9a5712"></span>
+      <span style="width:30%;background:#1f5f5b"></span>
+      <span style="width:2.5%;background:#2a6448"></span>
+      <span style="width:8%;background:#b9b3a5"></span>
+      <span style="width:44%;background:#f0eee6"></span>
+    </div>
+    <div class="legend">
+      <span><i style="background:#2b4f9e"></i>指令 <b>3k</b></span>
+      <span><i style="background:#5b4387"></i>工具 <b>8k</b></span>
+      <span><i style="background:#9a5712"></i>证据 <b>20k</b></span>
+      <span><i style="background:#1f5f5b"></i>历史 <b>60k</b></span>
+      <span><i style="background:#2a6448"></i>草稿 <b>5k</b></span>
+      <span><i style="background:#b9b3a5"></i>输出预留 <b>16k</b></span>
+      <span><i style="background:#f0eee6;border:1px solid #ddd"></i>空闲 <b>88k</b></span>
+    </div>
+    <figcaption>图 1：示例预算。注意「空闲」不是浪费，它是给工具结果和下一轮思考留的余量。</figcaption>
+  </div>
+  <div class="callout warn"><b>不要把空闲吃满。</b>Agent 的下一步往往要调用工具、读文件、看报错。没有余量，第一次工具返回就会触发截断或强制压缩。</div>
+</section>
+
+<section id="s3">
+  <div class="sec-head"><span class="sec-no">03</span><h2>六种操作：所有技巧都能归到这六类</h2></div>
+  <p class="lead-in">Anthropic 的实践覆盖四类核心动作：外置、检索、压缩、隔离。工程上再加两个：排序与清除。</p>
+
+  <div class="ops">
+    <div class="op">
+      <div class="ohead"><span class="oid">01</span><strong>外置 Write</strong></div>
+      <p>把状态写到上下文之外：文件、对象存储、数据库、任务队列。上下文里只留「句柄」——路径、ID、URL、查询。</p>
+      <p class="when"><b>何时：</b>内容超过一屏、需要跨轮/跨会话、可被重新读取。<br><b>代价：</b>多一次工具调用；要保证句柄可解析。</p>
+    </div>
+    <div class="op">
+      <div class="ohead"><span class="oid">02</span><strong>检索 Select</strong></div>
+      <p>按需取回最小片段：RAG、grep/glob、SQL、工具搜索、网页抓取。关键是<b>先给索引，再给内容</b>。</p>
+      <p class="when"><b>何时：</b>语料大于窗口、答案稀疏、需要引用。<br><b>代价：</b>检索质量决定上限；top-k 过大会稀释。</p>
+    </div>
+    <div class="op">
+      <div class="ohead"><span class="oid">03</span><strong>压缩 Compress</strong></div>
+      <p>摘要、去重、结构化、只留结论与引用。压缩不是「写短」，而是「保留可继续工作的最小状态」。</p>
+      <p class="when"><b>何时：</b>接近窗口上限、历史重复、工具输出冗长。<br><b>代价：</b>有损；过度压缩会丢掉后来才显现的关键细节。</p>
+    </div>
+    <div class="op">
+      <div class="ohead"><span class="oid">04</span><strong>隔离 Isolate</strong></div>
+      <p>让子任务在独立上下文里完成，只回传结论、证据与失败原因。子 Agent、代码执行、独立工具进程都属于此类。</p>
+      <p class="when"><b>何时：</b>多源调研、探索性搜索、大日志分析、并行子任务。<br><b>代价：</b>协调成本；回传契约设计不好会丢信息。</p>
+    </div>
+    <div class="op">
+      <div class="ohead"><span class="oid">05</span><strong>排序 Order</strong></div>
+      <p>把目标、硬约束、当前状态放在开头和结尾；把参考材料放中间并分段。利用首因与近因，而不是平均铺开。</p>
+      <p class="when"><b>何时：</b>长上下文、多个约束、需要精确遵守格式。<br><b>代价：</b>没有通用最优解，需要按任务评测。</p>
+    </div>
+    <div class="op">
+      <div class="ohead"><span class="oid">06</span><strong>清除 Evict</strong></div>
+      <p>删掉过期、可重取、低价值的内容：旧工具结果、已解决的报错、重复轮次、失效记忆。保留「调用发生过」的记录。</p>
+      <p class="when"><b>何时：</b>工具密集、长会话、上下文接近阈值。<br><b>代价：</b>模型可能重复调用；需要可重取保证。</p>
+    </div>
+  </div>
+
+  <h3>3.1 操作之间的关系</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>你想解决的问题</th><th>优先操作</th><th>不要先做</th></tr></thead>
+    <tbody>
+      <tr><td>窗口要爆了</td><td>清除旧工具结果 → 压缩历史 → 外置</td><td>直接换更大窗口的模型</td></tr>
+      <tr><td>模型找不到重点</td><td>减少证据 → 重排 → 明确任务</td><td>加更多「请注意」</td></tr>
+      <tr><td>长任务丢状态</td><td>外置计划文件 → 结构化笔记</td><td>让模型「记住」</td></tr>
+      <tr><td>多源信息打架</td><td>隔离子 Agent → 证据表 → 来源分级</td><td>把所有原文塞进主上下文</td></tr>
+      <tr><td>工具调用太贵</td><td>精简工具集 → 懒加载 schema → 输出契约</td><td>给每个工具都加详细说明</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>3.2 一条判断规则</h3>
+  <div class="callout ok"><b>能重新取到的，就不要常驻；能算出来的，就不要复述；能交给子上下文做的，就不要放进主上下文。</b></div>
+  <p>这三句话覆盖了 80% 的优化空间。剩下的 20% 是排序、格式和评测。</p>
+</section>
+
+<section id="s4">
+  <div class="sec-head"><span class="sec-no">04</span><h2>场景配方：不同 Agent，不同的上下文结构</h2></div>
+  <p class="lead-in">没有通用最优解。但每个场景都有一条「常驻什么、按需取什么、什么时候清」的主线。</p>
+
+  <details open>
+    <summary>编码 Agent：索引 + 局部读取 + 计划文件</summary>
+    <div class="details-body">
+      <p><b>常驻：</b>仓库约定（构建/测试/风格）、当前任务与验收标准、最近编辑过的文件路径、当前失败测试的<b>尾部</b>输出。</p>
+      <p><b>按需：</b>符号表/文件树（只给名字和大小）、grep 结果、按行号读取的片段。不要预加载整个仓库，也不要把 embedding 索引当唯一入口——<code>grep</code> 往往更快更准。</p>
+      <p><b>外置：</b><code>PLAN.md</code>（目标、步骤、已完成、卡点）、<code>NOTES.md</code>（踩过的坑）、补丁文件。压缩后至少保留计划与最近 5 个文件。</p>
+      <p><b>清除：</b>成功命令的完整输出只留摘要；失败的测试只留首个错误与堆栈关键行；重复的 <code>ls</code>/<code>cat</code> 结果。</p>
+      <p class="small"><b>失败信号：</b>反复读同一个文件、重复同一处修改、忘记已通过的测试、把旧报错当新问题。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>客服 / 业务 Agent：短历史 + 政策片段 + 结构化档案</summary>
+    <div class="details-body">
+      <p><b>常驻：</b>角色与语气、可执行动作清单、禁止承诺、当前工单状态、用户身份与套餐（摘要，不是全量档案）。</p>
+      <p><b>按需：</b>政策条款的精确片段（带版本号与生效日期）、订单/账单的字段级查询结果、历史工单的结论。</p>
+      <p><b>清除：</b>已解决的中间查询、重复的身份校验、超过 N 轮的寒暄；工具返回只留字段与状态码。</p>
+      <p><b>触发：</b>当轮次超过 8–10 轮或工具结果累计超过预算 30% 时，把「用户诉求 + 已确认事实 + 待办」压成结构化卡片。</p>
+      <p class="small"><b>失败信号：</b>引用过期政策、重复问用户已提供的信息、承诺了没有权限的动作。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>深度研究：子 Agent + 证据表 + 写作分离</summary>
+    <div class="details-body">
+      <p><b>结构：</b>主 Agent 只维护「问题树 + 证据表 + 结论草稿」；每个来源或子问题交给子 Agent，回传「结论 + 3 条证据 + 来源 + 置信度」。</p>
+      <p><b>证据表字段：</b>主张、来源链接、原文摘录（≤ 2 句）、日期、支持/反驳、可信度。原文留在文件里，上下文只放摘录与链接。</p>
+      <p><b>清除：</b>抓取失败的页面、重复转载、与问题无关的段落；子 Agent 的完整推理轨迹不回传。</p>
+      <p class="small"><b>失败信号：</b>结论没有引用、同一来源被重复计入、把摘要当原文、越写越像综述而没有回答原问题。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>长时运维 / 自动化：状态机 + 时间线 + 运行手册</summary>
+    <div class="details-body">
+      <p><b>常驻：</b>当前事件状态（正常/降级/故障）、SLO、值班约束、最近一次变更、下一步动作与回滚方案。</p>
+      <p><b>外置：</b>事件时间线（时间、观察、动作、结果）、运行手册链接、仪表盘查询语句。上下文里只放最近 10 条与未解决项。</p>
+      <p><b>压缩：</b>把「已排除的假设」单独列出，避免多轮后重复排查；保留每个动作的前置条件与影响范围。</p>
+      <p class="small"><b>失败信号：</b>重复执行同一检查、忘记回滚、把历史告警当当前状态、在没有审批的情况下扩大影响面。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>多工具助手：少而清晰的工具 + 惰性 schema</summary>
+    <div class="details-body">
+      <p><b>原则：</b>同时暴露的工具控制在 5–7 个；名字动词化、边界互斥；工具描述写「什么时候用」，不是「它做了什么」。</p>
+      <p><b>按需：</b>工具多时用工具搜索/分组加载，先给目录，再加载 schema；MCP 服务器按域拆分。</p>
+      <p><b>输出：</b>统一返回 <code>summary + items + truncated + total + artifact_path + next_cursor</code>，让模型能决定「继续取」还是「够了」。</p>
+      <p class="small"><b>失败信号：</b>选错工具、参数幻觉、同一工具反复调用、忽略 <code>truncated</code> 直接下结论。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>多 Agent 协作：契约式回传，不共享轨迹</summary>
+    <div class="details-body">
+      <p><b>主线：</b>主 Agent 持有目标与最终决策；子 Agent 只拿到「任务 + 输入句柄 + 输出契约」，不继承完整对话。</p>
+      <p><b>回传：</b>结论、证据、未决问题、产物路径、失败原因。禁止回传「我思考了 30 步」的流水账。</p>
+      <p><b>共享：</b>共享只读事实库（带版本），不共享各自的工作草稿；写操作通过主 Agent 串行化。</p>
+      <p class="small"><b>失败信号：</b>子 Agent 重复主 Agent 的工作、回传内容互相矛盾、主上下文被多个子轨迹撑爆。</p>
+    </div>
+  </details>
+
+  <h3>4.1 配方速查</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>场景</th><th>主策略</th><th>压缩触发</th><th>最关键的一件事</th></tr></thead>
+    <tbody>
+      <tr><td>编码</td><td>按需读 + 计划外置</td><td>测试输出超 2k 行 / 轮次 &gt; 20</td><td>别让模型凭记忆改代码</td></tr>
+      <tr><td>客服</td><td>短历史 + 政策片段</td><td>轮次 &gt; 8–10</td><td>事实与政策要带版本</td></tr>
+      <tr><td>研究</td><td>子 Agent + 证据表</td><td>来源 &gt; 5 个 / 证据表 &gt; 预算 25%</td><td>结论必须可追溯到原文</td></tr>
+      <tr><td>运维</td><td>状态机 + 时间线</td><td>事件持续 &gt; 30 分钟</td><td>区分「已排除」与「未验证」</td></tr>
+      <tr><td>多工具</td><td>工具裁剪 + 输出契约</td><td>工具结果 &gt; 预算 30%</td><td>让模型知道结果被截断了</td></tr>
+      <tr><td>多 Agent</td><td>隔离 + 契约回传</td><td>子任务返回即压缩</td><td>不回传轨迹，只回传结论与证据</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="sec-head"><span class="sec-no">05</span><h2>压缩与记忆：最容易被做坏的两件事</h2></div>
+  <p class="lead-in">压缩不是「让模型写短一点」，记忆也不是「把聊天记录存起来」。它们是两种不同的状态管理。</p>
+
+  <h3>5.1 三种手段，别混用</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>手段</th><th>作用范围</th><th>解决什么</th><th>不解决什么</th></tr></thead>
+    <tbody>
+      <tr><td><b>Compaction</b></td><td>整段对话（含工具调用、旧摘要）</td><td>历史整体膨胀</td><td>工具结果占比过高、跨会话记忆</td></tr>
+      <tr><td><b>Tool-result clearing</b></td><td>只替换旧 <code>tool_result</code> 块</td><td>工具输出堆积，且大多可重取</td><td>对话本身冗长、推理重复</td></tr>
+      <tr><td><b>Memory</b></td><td>上下文之外的文件/库</td><td>跨会话、跨任务的状态</td><td>当前窗口内的注意力稀释</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>顺序很重要：<b>先清工具结果</b>（无损、可重取），<b>再压缩历史</b>（有损），<b>最后才考虑加记忆</b>（引入长期维护成本）。反过来做，往往会用记忆去弥补本该清理的垃圾。</p>
+
+  <h3>5.2 压缩保留什么、丢弃什么</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>必须保留</h4>
+      <ul>
+        <li>目标、验收标准、硬约束</li>
+        <li>已做的决策与理由</li>
+        <li>失败过的尝试（避免重跑）</li>
+        <li>未解决的问题与下一步</li>
+        <li>关键文件路径、命令、ID、URL</li>
+        <li>用户明确表达的偏好与禁止项</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>可以丢弃</h4>
+      <ul>
+        <li>寒暄、确认、重复复述</li>
+        <li>完整的工具输出（保留路径/摘要）</li>
+        <li>已解决的报错全文</li>
+        <li>重复的推理与自我纠正</li>
+        <li>与当前目标无关的旁支讨论</li>
+        <li>过期的中间结论</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout warn"><b>有损是必然的。</b>Anthropic 的建议是：先在复杂 trace 上把压缩提示词调到「高召回」，确保不漏关键信息，再逐步提高精度、删冗余。不要一上来就追求短。</div>
+
+  <h3>5.3 一个可用的压缩提示词</h3>
+  <pre><code>把下面的工作记录压缩成一份“可继续工作”的状态摘要。
+
+必须保留：
+- 当前目标与验收标准
+- 硬约束、用户偏好、禁止事项
+- 已做出的决策及理由
+- 失败过的尝试及失败原因（避免重复）
+- 未解决的问题、风险、待确认项
+- 关键文件路径 / 命令 / ID / URL
+- 下一步的具体动作
+
+可以丢弃：
+- 寒暄与重复内容
+- 完整工具输出（改为：一句话摘要 + 产物路径）
+- 已经解决的报错细节
+
+输出格式（Markdown，≤ 800 tokens）：
+## 目标
+## 约束
+## 已完成
+## 失败与原因
+## 未决
+## 关键引用
+## 下一步</code></pre>
+  <p class="small">把「≤ 800 tokens」换成你预算的比例，但不要只写「尽量简短」——那会触发下面的问题。</p>
+
+  <h3>5.4 上下文坍塌：越摘要越笨</h3>
+  <p>ACE（Agentic Context Engineering，2025）记录了一个典型故障：让模型反复「整体重写」累积上下文，它会不断压缩，直到把知识压没。论文里的例子是：第 60 步还有 18,282 tokens、准确率 66.7；下一步被压成 122 tokens，准确率掉到 57.1，比不 adapt 的基线 63.7 还差。</p>
+  <p>两个根因：</p>
+  <ul>
+    <li><b>简洁偏置（brevity bias）</b>：优化目标奖励短而通用的表述，丢掉了领域细节、工具用法、失败模式。</li>
+    <li><b>上下文坍塌（context collapse）</b>：每次都整体重写，信息在多次有损变换中单调流失。</li>
+  </ul>
+  <p>ACE 的做法值得借鉴：把上下文当成<b>不断演进的 playbook</b>，用「生成 → 反思 → 策展」分离角色，并且做<b>增量 delta 更新</b>，而不是每次重写全文。论文报告在 agent 类基准上 +10.6%，金融类 +8.6%，且适配延迟与 rollout 成本下降。</p>
+  <p class="small"><span class="tag fact">事实</span> 数据与机制见 <a href="https://arxiv.org/abs/2510.04618" target="_blank" rel="noopener noreferrer">Agentic Context Engineering</a>（arXiv:2510.04618）。<span class="tag infer">推断</span> 对多数团队，先做到「增量更新 + 保留引用」就能避开大部分坍塌，不必完整实现三角色架构。</p>
+
+  <h3>5.5 什么时候压：别等到 100%</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>水位（占可用窗口）</th><th>动作</th><th>原因</th></tr></thead>
+    <tbody>
+      <tr><td class="num">50–60%</td><td>开始整理：去重、清旧工具结果、把结论写进笔记</td><td>此时还有余量做无损清理</td></tr>
+      <tr><td class="num">70–80%</td><td>执行压缩；保留最近 3–5 轮原文</td><td>避免下一步工具返回就溢出</td></tr>
+      <tr><td class="num">85–90%</td><td>强制压缩 + 外置产物；暂停新工具调用</td><td>给输出和重试留空间</td></tr>
+      <tr><td class="num">&gt; 95%</td><td>已经太晚：截断、丢约束、缓存失效</td><td>不要设计成会走到这里</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">阈值是启发式，不是标准。<span class="tag infer">推断</span> 关键不是具体数字，而是「在还有余量时动手」。压缩本身也要花 token，别在只剩 500 的时候才想起它。</p>
+
+  <h3>5.6 记忆：写、读、忘</h3>
+  <p>把记忆分成三类，分别设计策略：</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>类型</th><th>例子</th><th>写入</th><th>读取</th><th>过期</th></tr></thead>
+    <tbody>
+      <tr><td><b>情节</b></td><td>上次做了什么、结果如何</td><td>任务结束自动写</td><td>按时间/相似度取最近</td><td>30–90 天，或任务关闭</td></tr>
+      <tr><td><b>语义</b></td><td>用户偏好、项目事实、术语</td><td>用户确认后写</td><td>按实体/项目精确取</td><td>有变更即失效，带来源与日期</td></tr>
+      <tr><td><b>程序</b></td><td>某类任务的做法、工具技巧</td><td>复盘后人工/半自动写</td><td>按任务类型取</td><td>版本化，失败率上升即回滚</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>写入策略</b>比存储技术更重要：只写「未来会再用到、且不易重新推导」的内容；每条带来源、时间、适用范围；冲突时保留新旧两版而不是覆盖。</p>
+  <p><b>读取策略</b>：先按项目/实体过滤，再按相关性排序，限制条数与总 token；不要把整库拼进 prompt。</p>
+  <p><b>遗忘策略</b>：到期删除、被新事实取代、连续 N 次未被检索命中则降权。没有遗忘的记忆迟早会变成污染源。</p>
+  <p class="small">MemGPT 的分层思路仍然适用：主上下文只放「热」数据，冷数据放在外部存储，通过工具换入换出；区别在于今天更多是用文件与检索实现，而不是改造模型。</p>
+
+  <h4>一个最小记忆文件</h4>
+  <pre><code># STATE
+goal:           当前目标（一句话）
+constraints:    硬约束 / 用户偏好 / 禁止项
+done:           已完成 + 产物路径
+failed:         失败尝试 + 原因（避免重跑）
+open:           未决问题 + 下一步
+refs:           文件 / 命令 / URL / ID
+updated:        ISO 时间 + 来源
+
+# FACTS
+- [2026-10-20] 生产数据库只读；写操作走 approval 流程
+  source: runbook/db.md   scope: project-x   confidence: high</code></pre>
+  <p class="small">用固定小节而不是自由散文，压缩和检索都更容易；每条事实带日期与来源，冲突时才知道信谁。</p>
+
+  <h3>5.7 记忆污染</h3>
+  <ul>
+    <li><b>过时</b>：政策改了，记忆还停在旧版本。→ 带生效日期，检索时校验。</li>
+    <li><b>越权</b>：A 项目的结论被 B 项目读到。→ 记忆按租户/项目分区，默认不跨区检索。</li>
+    <li><b>注入</b>：网页或工具输出里藏了「请记住：以后都……」→ 外部内容只作为数据，写入记忆需经过校验与来源标记。</li>
+    <li><b>自证</b>：模型把自己上一轮的猜测写成事实。→ 区分「观察」「推断」「用户确认」，不要把推断升级为事实。</li>
+  </ul>
+</section>
+
+<section id="s6">
+  <div class="sec-head"><span class="sec-no">06</span><h2>工具与 MCP：最大的隐形上下文开销</h2></div>
+  <p class="lead-in">你数过工具定义本身占多少 token 吗？在很多 Agent 里，它比系统提示还大。</p>
+
+  <h3>6.1 工具的三个成本</h3>
+  <ol>
+    <li><b>Schema 常驻成本</b>：每个工具的 name、description、参数树都在每次请求里重复计费。二三十个工具轻松吃掉几千到上万 token。</li>
+    <li><b>选择成本</b>：工具越多、边界越模糊，模型越容易选错、重复调用、编造参数。Anthropic 的建议很直接：如果人类工程师都说不清该用哪个，模型更不行。</li>
+    <li><b>结果成本</b>：一次 <code>cat</code> 或 API 返回可能几万 token，而且会在后续每一轮重复计入，直到被清除。</li>
+  </ol>
+  <div class="callout danger"><b>最常见的浪费：</b>把 40 个工具全量挂上，然后靠「请谨慎选择工具」这句话来补救。正确做法是裁剪工具集，或做惰性加载。</div>
+
+  <h3>6.2 渐进披露：先目录，后 schema</h3>
+  <p>当工具数量不可避免时，不要一次性暴露全部定义。可以：</p>
+  <ul>
+    <li>按域分组（文件、数据库、工单、监控），先给「组 + 一句话」，选中后再加载成员 schema；</li>
+    <li>提供 <code>search_tools(query)</code>，让模型按需发现；</li>
+    <li>MCP 服务器按职责拆分，避免一个 server 挂几十个工具；</li>
+    <li>把低频工具放到「扩展包」，通过显式命令启用。</li>
+  </ul>
+  <p class="small">这与 Skill / 插件系统的「渐进披露」是同一个思路：先让模型知道「有什么」，再让它决定「看哪个」。</p>
+
+  <h3>6.3 工具输出契约</h3>
+  <p>工具返回不是给人看的日志，而是给模型做决策的输入。建议统一结构：</p>
+  <pre><code>{
+  "summary": "在 12 个文件中找到 3 处调用；2 处缺少错误处理",
+  "items": [ { "path": "src/a.ts", "line": 42, "note": "..." } ],
+  "truncated": true,
+  "total": 137,
+  "next_cursor": "eyJvZmZzZXQiOjIwfQ==",
+  "artifact_path": "/artifacts/search-7f3c.json"
+}</code></pre>
+  <ul>
+    <li><code>summary</code> 先给结论，模型不必解析全部条目；</li>
+    <li><code>truncated</code> + <code>total</code> 让模型知道「不完整」，避免基于残缺结果下结论；</li>
+    <li><code>next_cursor</code> 支持继续取，而不是一次全量；</li>
+    <li><code>artifact_path</code> 把大结果外置，需要细节时再读。</li>
+  </ul>
+
+  <h4>坏输出 vs 好输出</h4>
+  <div class="grid2">
+    <div class="card">
+      <h4>坏：原样回灌</h4>
+      <pre style="margin:0"><code>... 8,000 行构建日志 ...
+（模型不知道哪里重要，
+  也不知道有没有截断）</code></pre>
+    </div>
+    <div class="card">
+      <h4>好：摘要 + 定位 + 句柄</h4>
+      <pre style="margin:0"><code>summary: 构建失败，首个错误在
+  src/api.ts:118，类型不匹配
+first_error: TS2322 ...
+tail: 最后 20 行
+total_lines: 8123
+artifact: /logs/build-7f3c.txt</code></pre>
+    </div>
+  </div>
+
+  <h3>6.4 工具结果清除策略</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>结果类型</th><th>保留</th><th>清除条件</th></tr></thead>
+    <tbody>
+      <tr><td>文件内容</td><td>摘要 + 路径 + 读取范围</td><td>超过 2–3 轮，且文件可重读</td></tr>
+      <tr><td>搜索结果</td><td>前 10 条 + 总数</td><td>已选定目标后</td></tr>
+      <tr><td>命令输出</td><td>退出码 + 首错 + 尾 20 行</td><td>下一步不再依赖</td></tr>
+      <tr><td>API 响应</td><td>关键字段 + 状态码 + 请求 ID</td><td>已提取所需字段</td></tr>
+      <tr><td>报错堆栈</td><td>错误类型 + 首个业务帧</td><td>已修复或已定位</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>清除时保留 <code>tool_use</code> 记录（「调用发生过」），只替换 <code>tool_result</code> 的内容为占位符。这样模型知道「我查过」，需要时可以再查，而不是以为自己没查过。</p>
+</section>
+
+<section id="s7">
+  <div class="sec-head"><span class="sec-no">07</span><h2>多 Agent：上下文隔离，而不是上下文复制</h2></div>
+  <p class="lead-in">多 Agent 最大的价值不是「更多智能」，而是「更干净的上下文」。如果每个子 Agent 都继承完整对话，你只是把成本乘了几倍。</p>
+
+  <h3>7.1 为什么隔离有效</h3>
+  <ul>
+    <li><b>注意力</b>：子 Agent 只面对一个子问题，信噪比高；</li>
+    <li><b>并行</b>：多个来源可以同时处理；</li>
+    <li><b>失败隔离</b>：一个子任务跑偏，不会污染主上下文；</li>
+    <li><b>成本</b>：子上下文可以便宜模型、短提示、用完即弃。</li>
+  </ul>
+  <p>但代价是：<b>信息在边界上会丢</b>。所以真正的设计重点是「回传契约」，而不是「怎么拆」。不要用多 Agent 去做一件单文件修改——拆分的协调成本会大于收益。</p>
+
+  <h3>7.2 回传契约</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>字段</th><th>内容</th><th>反例</th></tr></thead>
+    <tbody>
+      <tr><td><code>answer</code></td><td>对子问题的直接回答（1–3 句）</td><td>「我经过了仔细分析……」</td></tr>
+      <tr><td><code>evidence</code></td><td>≤ 5 条，带来源与原文摘录</td><td>整页复制</td></tr>
+      <tr><td><code>artifacts</code></td><td>产物路径 / ID / 查询语句</td><td>把产物内容贴回来</td></tr>
+      <tr><td><code>open</code></td><td>未决问题、冲突、需要主 Agent 决策的点</td><td>隐藏不确定性</td></tr>
+      <tr><td><code>failed</code></td><td>试过但失败的方法及原因</td><td>只报成功</td></tr>
+      <tr><td><code>confidence</code></td><td>high / medium / low + 依据</td><td>一律 high</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>7.3 Handoff 模板</h3>
+  <pre><code>## TASK
+给子 Agent 的唯一目标（一句话）+ 验收标准
+
+## INPUT
+只给必要的句柄：文件路径、查询、URL、范围
+不要给完整对话历史
+
+## CONTRACT
+返回：answer / evidence(≤5) / artifacts / open / failed / confidence
+不要返回：推理轨迹、完整工具输出、与任务无关的背景
+
+## BOUNDARY
+允许访问的资源、禁止的动作、时间/成本上限</code></pre>
+
+  <h3>7.4 共享什么，不共享什么</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>共享</h4>
+      <ul>
+        <li>只读事实库（带版本与来源）</li>
+        <li>任务 ID、产物目录、术语表</li>
+        <li>全局约束与安全策略</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>不共享</h4>
+      <ul>
+        <li>各自的完整对话与推理轨迹</li>
+        <li>未验证的中间猜测</li>
+        <li>各自的工作草稿（除非显式发布）</li>
+      </ul>
+    </div>
+  </div>
+  <p>写操作要让主 Agent 串行化或加锁，否则两个子 Agent 会各自基于旧状态修改，最后互相覆盖。</p>
+</section>
+
+<section id="s8">
+  <div class="sec-head"><span class="sec-no">08</span><h2>度量与成本：别用「感觉变好了」验收</h2></div>
+  <p class="lead-in">上下文优化最容易自欺： prompt 变短了，但任务成功率也掉了。必须同时看效果与成本。</p>
+
+  <h3>8.1 六个指标</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>指标</th><th>定义</th><th>为什么重要</th><th>粗略目标</th></tr></thead>
+    <tbody>
+      <tr><td><b>tokens / 成功任务</b></td><td>总输入输出 token ÷ 成功任务数</td><td>把「便宜」与「有效」绑在一起</td><td>持续下降，成功率不降</td></tr>
+      <tr><td><b>上下文利用率</b></td><td>已用 ÷ 可用（扣除输出预留）</td><td>过高会触发退化与截断</td><td>决策点 40–70%</td></tr>
+      <tr><td><b>工具输出占比</b></td><td>tool_result token ÷ 总输入</td><td>最大的可清理项</td><td>&lt; 25%</td></tr>
+      <tr><td><b>压缩频率 / 压缩比</b></td><td>每任务压缩次数；压缩前后 token 比</td><td>过频说明结构有问题；过狠会丢信息</td><td>按任务类型设基线</td></tr>
+      <tr><td><b>缓存读取占比</b></td><td>cache_read ÷ 总输入</td><td>直接反映前缀稳定性与成本</td><td>稳定负载下越高越好</td></tr>
+      <tr><td><b>长会话漂移</b></td><td>同一问题在第 1 轮 vs 第 N 轮的答案一致性</td><td>捕捉「越聊越忘」</td><td>关键约束不丢</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small">目标值是经验区间，不是行业标准。<span class="tag infer">推断</span> 先建立自己的基线，再谈优化幅度。</p>
+
+  <h3>8.2 让缓存站在你这边</h3>
+  <ul>
+    <li><b>稳定前缀</b>：system → tools → 固定示例。不要在前面插时间戳、请求 ID、用户名。</li>
+    <li><b>动态内容后置</b>：把用户输入、检索结果、当前状态放在稳定前缀之后。</li>
+    <li><b>少改动</b>：每次请求都改一个空格，也会让缓存失效；模板变更要按版本发布。</li>
+    <li><b>长 TTL 要匹配访问模式</b>：低频任务开长缓存可能只付写入费不命中。</li>
+  </ul>
+  <div class="callout"><b>反直觉但常见：</b>为了「更个性化」把用户画像放在系统提示最前面，结果每个用户都缓存不中，成本翻倍。把个性化放到后缀，或做成工具查询。</div>
+  <p class="small">展开阅读：<a href="caching/index.html">缓存机制</a>——KV cache、前缀缓存、语义缓存与盈亏平衡的计算。</p>
+
+  <h3>8.3 预算与成本估算</h3>
+  <p>调一下你目前的分配，看看余量和单任务成本。默认值是一个 200k 窗口、中等历史长度的示例。</p>
+  <div class="calc" id="calc">
+    <div class="calc-grid">
+      <div class="field"><label for="c-window">上下文窗口（tokens）</label><input id="c-window" type="number" min="1000" step="1000" value="200000" inputmode="numeric"></div>
+      <div class="field"><label for="c-reserve">输出预留（tokens）</label><input id="c-reserve" type="number" min="0" step="1000" value="16000" inputmode="numeric"></div>
+      <div class="field"><label for="c-system">系统指令（tokens）</label><input id="c-system" type="number" min="0" step="500" value="3000" inputmode="numeric"></div>
+      <div class="field"><label for="c-tools">工具 schema（tokens）</label><input id="c-tools" type="number" min="0" step="500" value="8000" inputmode="numeric"></div>
+      <div class="field"><label for="c-evidence">检索证据（tokens）</label><input id="c-evidence" type="number" min="0" step="1000" value="20000" inputmode="numeric"></div>
+      <div class="field"><label for="c-history">对话历史（tokens）</label><input id="c-history" type="number" min="0" step="1000" value="60000" inputmode="numeric"></div>
+      <div class="field"><label for="c-notes">草稿 / 记忆（tokens）</label><input id="c-notes" type="number" min="0" step="500" value="5000" inputmode="numeric"></div>
+      <div class="field"><label for="c-price">输入单价（美元 / 百万 token）</label><input id="c-price" type="number" min="0" step="0.1" value="3" inputmode="decimal"></div>
+      <div class="field"><label for="c-tasks">每日任务数</label><input id="c-tasks" type="number" min="1" step="10" value="200" inputmode="numeric"></div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="budgetbar" id="bar" role="img" aria-label="上下文预算分配图">
+        <span id="seg-system" style="width:1.5%;background:#2b4f9e"></span>
+        <span id="seg-tools" style="width:4%;background:#5b4387"></span>
+        <span id="seg-evidence" style="width:10%;background:#9a5712"></span>
+        <span id="seg-history" style="width:30%;background:#1f5f5b"></span>
+        <span id="seg-notes" style="width:2.5%;background:#2a6448"></span>
+        <span id="seg-reserve" style="width:8%;background:#b9b3a5"></span>
+        <span id="seg-free" style="width:44%;background:#f0eee6"></span>
+      </div>
+      <div class="legend">
+        <span><i style="background:#2b4f9e"></i>指令</span>
+        <span><i style="background:#5b4387"></i>工具</span>
+        <span><i style="background:#9a5712"></i>证据</span>
+        <span><i style="background:#1f5f5b"></i>历史</span>
+        <span><i style="background:#2a6448"></i>草稿</span>
+        <span><i style="background:#b9b3a5"></i>输出预留</span>
+        <span><i style="background:#f0eee6;border:1px solid #ddd"></i>空闲</span>
+      </div>
+    </div>
+
+    <div class="calc-out" aria-live="polite">
+      <div class="out"><div class="k">已用（不含输出预留）</div><div class="v" id="o-used">—</div></div>
+      <div class="out"><div class="k">剩余可用</div><div class="v" id="o-free">—</div></div>
+      <div class="out"><div class="k">利用率</div><div class="v" id="o-util">—</div></div>
+      <div class="out"><div class="k">单任务输入成本</div><div class="v" id="o-cost">—</div></div>
+      <div class="out"><div class="k">每日输入成本</div><div class="v" id="o-day">—</div></div>
+      <div class="out"><div class="k">状态</div><div class="v"><span class="status ok" id="o-status">—</span></div></div>
+    </div>
+    <div class="calc-actions">
+      <button class="btn primary" type="button" id="calc-run">重新计算</button>
+      <button class="btn" type="button" id="calc-reset">恢复默认</button>
+      <span class="small">只估输入 token；不含输出、缓存折扣、检索与工具调用费用。</span>
+    </div>
+  </div>
+
+  <h3>8.4 做一次像样的 A/B</h3>
+  <ol>
+    <li><b>固定任务集</b>：30–50 个代表性任务，含长会话、工具密集、多源冲突三类。</li>
+    <li><b>固定预算</b>：比较「同一 token 预算下谁做得更好」，而不是「谁用的 token 更多」。</li>
+    <li><b>扫上下文长度</b>：把历史/证据从 25% 扫到 100%，画成功率曲线，找拐点。</li>
+    <li><b>记录失败类型</b>：忘约束、引用错、重复调用、过早结论、格式错。不要只看总分。</li>
+    <li><b>看成本</b>：tokens / 成功任务、缓存命中、压缩次数。</li>
+    <li><b>回归</b>：每次改提示词、工具、压缩策略，都重跑同一套。</li>
+  </ol>
+  <div class="callout ok"><b>最小可行评测：</b>20 个任务 × 3 种上下文配置 × 2 次重复。一个下午能跑完，足以发现「塞得越多越差」的拐点。</div>
+</section>
+
+<section id="s9">
+  <div class="sec-head"><span class="sec-no">09</span><h2>反模式与上线清单</h2></div>
+
+  <h3>9.1 十二个反模式</h3>
+  <ol class="anti">
+    <li><b>窗口大就全塞</b><span>把「能放下」当成「该放下」，用长度换确定性。</span></li>
+    <li><b>历史无限保留</b><span>每轮都带全部对话，成本和稀释一起涨。</span></li>
+    <li><b>摘要套摘要</b><span>反复整体重写，信息单调流失，最后比不压缩还差。</span></li>
+    <li><b>工具输出原样回灌</b><span>几万行日志进入后续每一轮，且大多可重取。</span></li>
+    <li><b>top-k 越大越好</b><span>召回上去了，精度和引用率下来，干扰项变多。</span></li>
+    <li><b>system prompt 写成手册</b><span>规则互相冲突，模型抓不住重点。</span></li>
+    <li><b>所有工具都挂上</b><span>schema 常驻、选择困难、参数幻觉。</span></li>
+    <li><b>多 Agent 传全量轨迹</b><span>隔离失效，成本乘倍数，信息反而更乱。</span></li>
+    <li><b>记忆只写不清</b><span>过期事实越积越多，最终污染所有回答。</span></li>
+    <li><b>动态内容放前缀</b><span>缓存全失效，延迟和成本双输。</span></li>
+    <li><b>靠自然语言让模型记住</b><span>没有外部状态，压缩或重启就丢。</span></li>
+    <li><b>只测单轮</b><span>不测长会话漂移，上线后才发现越聊越差。</span></li>
+  </ol>
+
+  <h3>9.2 上线前清单</h3>
+  <ul class="checklist">
+    <li><input type="checkbox" id="k1"><label for="k1">我能用一句话说出「这一步模型必须看到的 3 条信息」。</label></li>
+    <li><input type="checkbox" id="k2"><label for="k2">系统提示与工具定义在最前，且不包含动态内容。</label></li>
+    <li><input type="checkbox" id="k3"><label for="k3">输出预留至少占窗口 10%，且不会被历史挤掉。</label></li>
+    <li><input type="checkbox" id="k4"><label for="k4">每个工具都返回 summary / truncated / total / 句柄。</label></li>
+    <li><input type="checkbox" id="k5"><label for="k5">旧工具结果有清理策略，且保留「调用发生过」的记录。</label></li>
+    <li><input type="checkbox" id="k6"><label for="k6">长会话有明确的压缩阈值，不会等到 100%。</label></li>
+    <li><input type="checkbox" id="k7"><label for="k7">压缩保留目标、约束、决策、失败、未决、引用。</label></li>
+    <li><input type="checkbox" id="k8"><label for="k8">计划与进度写在文件里，而不是只存在上下文。</label></li>
+    <li><input type="checkbox" id="k9"><label for="k9">记忆条目带来源、日期、适用范围，并有遗忘策略。</label></li>
+    <li><input type="checkbox" id="k10"><label for="k10">子 Agent 有回传契约，不回传完整轨迹。</label></li>
+    <li><input type="checkbox" id="k11"><label for="k11">监控 tokens/成功任务、工具输出占比、缓存命中。</label></li>
+    <li><input type="checkbox" id="k12"><label for="k12">有 20+ 任务的长会话回归集，改动后重跑。</label></li>
+  </ul>
+  <p class="small">清单可打印；勾选状态不会保存，刷新后重置。</p>
+
+  <h3>9.3 一页决策树</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>如果你的任务是…</th><th>先做什么</th><th>再做什么</th></tr></thead>
+    <tbody>
+      <tr><td>单轮、可一次完成</td><td>直接做，别建记忆</td><td>只保留必要证据与输出格式</td></tr>
+      <tr><td>多轮、同一会话</td><td>计划文件 + 最近 3–5 轮原文</td><td>清理旧工具结果；到阈值再压缩</td></tr>
+      <tr><td>超出窗口</td><td>外置产物 + 压缩历史</td><td>把「可重取」的内容全部改成句柄</td></tr>
+      <tr><td>多来源、需交叉验证</td><td>子 Agent 隔离 + 证据表</td><td>主 Agent 只做整合与决策</td></tr>
+      <tr><td>跨会话、长期</td><td>外部记忆 + 检索</td><td>写入校验、分区、过期与冲突处理</td></tr>
+      <tr><td>低延迟 / 低成本</td><td>稳定前缀 + 小工具集</td><td>缓存友好排序；按需加载 schema</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout ok"><b>最后一条建议：</b>先把「清理」做好，再谈「记忆」；先把「句柄」做好，再谈「压缩」；先把「回传契约」做好，再谈「多 Agent」。顺序反了，复杂度和成本都会先于效果到来。</div>
+  <a class="top-link" href="#main">回到顶部 ↑</a>
+</section>
+
+<section id="s10">
+  <div class="sec-head"><span class="sec-no">10</span><h2>来源与口径</h2></div>
+  <p>事实性内容主要来自以下公开材料，访问日期 2026-10-31：</p>
+  <ul class="src">
+    <li><a href="https://www.anthropic.com/research/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener noreferrer">Anthropic: Effective context engineering for AI agents</a>（2025-09-29）：attention budget、context rot、外置/检索/压缩/隔离、compaction 与结构化笔记。</li>
+    <li><a href="https://claude.com/resources/articles/context-management" target="_blank" rel="noopener noreferrer">Anthropic: Managing context on the Claude Developer Platform</a>（2025-09-29）：context editing 与 memory tool。</li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener noreferrer">Claude Docs: Context windows</a>：窗口计入项、context rot、服务端压缩。</li>
+    <li><a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer">Anthropic: Effective harnesses for long-running agents</a>（2025-11-26）：初始化 Agent 与增量进展。</li>
+    <li><a href="https://www.trychroma.com/research/context-rot" target="_blank" rel="noopener noreferrer">Chroma: Context Rot</a>（2025-07-14）：18 个模型、输入长度与干扰项实验。</li>
+    <li><a href="https://arxiv.org/abs/2510.04618" target="_blank" rel="noopener noreferrer">Agentic Context Engineering (ACE)</a>（arXiv:2510.04618）：brevity bias、context collapse、增量 playbook 更新。</li>
+    <li><a href="https://arxiv.org/abs/2307.03172" target="_blank" rel="noopener noreferrer">Lost in the Middle</a>（arXiv:2307.03172）：长上下文中部信息利用下降。</li>
+    <li><a href="https://arxiv.org/abs/2310.08560" target="_blank" rel="noopener noreferrer">MemGPT</a>（arXiv:2310.08560）：分层记忆与虚拟上下文管理。</li>
+  </ul>
+  <h3>口径</h3>
+  <ul>
+    <li><span class="tag fact">事实</span> 标记的内容可在上述材料中找到对应表述；具体数字保留原始实验条件。</li>
+    <li><span class="tag infer">推断</span> 标记的是工程判断与经验阈值（如 60/80/95% 压缩水位、40–70% 利用率），不是论文结论或厂商承诺。</li>
+    <li>模型与 API 变化很快，压缩、缓存、上下文编辑的具体行为请以你使用的版本文档为准。</li>
+    <li>本文不提供「万能上下文模板」。同一套策略在编码、客服、研究上的最优参数不同，必须用自己的任务集评测。</li>
+  </ul>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  var progress = document.getElementById("progress");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  tocLinks.forEach(function(a){ linkById[a.getAttribute("href").slice(1)] = a; });
+  var ticking = false;
+
+  function onScroll(){
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (max > 0 ? Math.min(100, Math.max(0, (y / max) * 100)) : 0) + "%";
+
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++){
+      if (sections[i].getBoundingClientRect().top <= 170) current = sections[i];
+    }
+    tocLinks.forEach(function(a){ a.removeAttribute("aria-current"); });
+    if (current && linkById[current.id]) linkById[current.id].setAttribute("aria-current", "true");
+    ticking = false;
+  }
+  function requestScroll(){
+    if (!ticking){ ticking = true; window.requestAnimationFrame(onScroll); }
+  }
+  window.addEventListener("scroll", requestScroll, { passive: true });
+  window.addEventListener("resize", requestScroll);
+  onScroll();
+
+  var defaults = {
+    "c-window": 200000,
+    "c-reserve": 16000,
+    "c-system": 3000,
+    "c-tools": 8000,
+    "c-evidence": 20000,
+    "c-history": 60000,
+    "c-notes": 5000,
+    "c-price": 3,
+    "c-tasks": 200
+  };
+  var segs = {
+    "seg-system": "c-system",
+    "seg-tools": "c-tools",
+    "seg-evidence": "c-evidence",
+    "seg-history": "c-history",
+    "seg-notes": "c-notes",
+    "seg-reserve": "c-reserve"
+  };
+
+  function readNum(id, fallback, allowZero){
+    var el = document.getElementById(id);
+    if (!el) return fallback;
+    var v = parseFloat(el.value);
+    if (!Number.isFinite(v) || v < 0 || (!allowZero && v === 0)) return fallback;
+    return v;
+  }
+  function fmt(n){
+    if (Math.abs(n) >= 1000) return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Math.round(n));
+    return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 }).format(n);
+  }
+  function money(n){
+    return "$" + new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  }
+  function put(id, text){
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function setWidth(id, pct){
+    var el = document.getElementById(id);
+    if (el) el.style.width = Math.max(0, Math.min(100, pct)) + "%";
+  }
+
+  function calculate(){
+    var win = readNum("c-window", defaults["c-window"]);
+    var reserve = readNum("c-reserve", defaults["c-reserve"], true);
+    var system = readNum("c-system", defaults["c-system"], true);
+    var tools = readNum("c-tools", defaults["c-tools"], true);
+    var evidence = readNum("c-evidence", defaults["c-evidence"], true);
+    var history = readNum("c-history", defaults["c-history"], true);
+    var notes = readNum("c-notes", defaults["c-notes"], true);
+    var price = readNum("c-price", defaults["c-price"], true);
+    var tasks = readNum("c-tasks", defaults["c-tasks"]);
+
+    var used = system + tools + evidence + history + notes;
+    var capacity = win - reserve;
+    var free = capacity - used;
+    var util = capacity > 0 ? (used / capacity) : 1;
+    var cost = (used / 1e6) * price;
+    var day = cost * tasks;
+
+    put("o-used", fmt(used));
+    put("o-free", fmt(free));
+    put("o-util", (util * 100).toFixed(0) + "%");
+    put("o-cost", money(cost));
+    put("o-day", money(day));
+
+    var status = document.getElementById("o-status");
+    if (status){
+      status.className = "status " + (free < 0 ? "bad" : (util >= 0.85 ? "warn" : (util >= 0.7 ? "warn" : "ok")));
+      status.textContent = free < 0 ? "超限" : (util >= 0.85 ? "接近上限" : (util >= 0.7 ? "偏高" : "健康"));
+    }
+
+    var total = Math.max(win, used + reserve, 1);
+    Object.keys(segs).forEach(function(segId){
+      var v = {
+        "seg-system": system, "seg-tools": tools, "seg-evidence": evidence,
+        "seg-history": history, "seg-notes": notes, "seg-reserve": reserve
+      }[segId];
+      setWidth(segId, (v / total) * 100);
+    });
+    setWidth("seg-free", (Math.max(0, free) / total) * 100);
+  }
+
+  Object.keys(defaults).forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", calculate);
+    el.addEventListener("change", calculate);
+  });
+  var runBtn = document.getElementById("calc-run");
+  if (runBtn) runBtn.addEventListener("click", calculate);
+  var resetBtn = document.getElementById("calc-reset");
+  if (resetBtn){
+    resetBtn.addEventListener("click", function(){
+      Object.keys(defaults).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.value = String(defaults[id]);
+      });
+      calculate();
+    });
+  }
+  calculate();
+})();
+</script>
+
+</main>
+</div>
+</body>
+</html>

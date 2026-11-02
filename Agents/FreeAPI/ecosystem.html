@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="GitHub 免费 LLM API 项目调研：9router、OmniRoute、FreeLLMAPI、LiteLLM、Bifrost、New API、claude-code-router 等 13 个项目的免费来源、路由机制、许可与合规风险。">
+<title>免费 LLM API 项目地图 · 9router 与它的同类们</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:1080px;margin:0 auto;padding:46px clamp(18px,5vw,40px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+.fcard .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--amber)}
+.fcard h3{margin:4px 0 6px;font-size:15.5px}
+.fcard p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.68}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 240px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.repo{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px}
+.repo-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.repo-name{font-family:var(--mono);font-size:13.5px;font-weight:600;line-height:1.4;word-break:break-word}
+.repo-zh{font-size:12px;color:var(--muted);margin-top:2px}
+.badge{font-size:10px;font-family:var(--mono);letter-spacing:.03em;padding:2px 6px;border-radius:5px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-2);white-space:nowrap}
+.badge.low{background:var(--green-soft);border-color:#cfe3d8;color:var(--green)}
+.badge.mid{background:var(--amber-soft);border-color:#ecd9bd;color:var(--amber)}
+.badge.high{background:var(--red-soft);border-color:#f0d2d1;color:var(--red)}
+.repo p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.7}
+.meta{display:grid;gap:5px;font-size:12.3px;margin:0}
+.meta div{display:grid;grid-template-columns:52px 1fr;gap:8px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0;color:var(--ink-2);line-height:1.65;word-break:break-word}
+.repo a.go{align-self:flex-start;font-size:12.5px;text-decoration:none;border:1px solid var(--line-strong);border-radius:8px;padding:4px 10px;color:var(--ink-2)}
+.repo a.go:hover{border-color:var(--accent);color:var(--accent)}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:12.9px;min-width:780px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,40px) 40px;max-width:1080px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.toolbar,.search,.chips{display:none}body{background:#fff}.repo,.fcard{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">← FreeLLMAPI</a>
+  <span class="crumb">FreeAPI / 生态调研 · 2026-11-02</span>
+  <nav class="pager"><a href="#kinds">四种免费</a><a href="#list">项目清单</a><a href="#risk">风险</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>GitHub · 13 个项目</div>
+  <h1>免费 LLM API<br><em>项目地图</em></h1>
+  <p class="lede">9router 不是孤例。GitHub 上有一整条谱系：有的聚合官方免费额度，有的把订阅 OAuth 转成 API，有的只是通用网关，还有的靠抓网页。它们的“免费”完全不是一回事，风险也差一个量级。</p>
+
+  <section id="kinds">
+    <h2><span class="no">01</span>先分清四种“免费”</h2>
+    <p class="sub">同样是“一个端点调很多模型”，钱和合规从哪里来，决定了它能不能长期用。</p>
+
+    <div class="four">
+      <div class="fcard">
+        <div class="n">TYPE A</div>
+        <h3>官方免费额度聚合</h3>
+        <p>你注册各家账号、拿官方 key，路由只负责合并与故障转移。免费来自厂商的 free tier，条款最清楚。</p>
+      </div>
+      <div class="fcard">
+        <div class="n">TYPE B</div>
+        <h3>订阅 / OAuth 转 API</h3>
+        <p>把 Claude Code、Codex、Copilot、Cursor 等客户端订阅或登录态，转成 OpenAI 兼容接口。省钱，但通常游走在 ToS 边缘。</p>
+      </div>
+      <div class="fcard">
+        <div class="n">TYPE C</div>
+        <h3>通用网关（自带 key）</h3>
+        <p>软件本身免费开源，模型仍按你的 key 计费。价值在路由、限流、预算、可观测，不在“送额度”。</p>
+      </div>
+      <div class="fcard">
+        <div class="n">TYPE D</div>
+        <h3>逆向 / 网页抓取</h3>
+        <p>不通过官方 API，直接模拟网页或客户端。随时失效、账号风险高，不建议任何正式用途。</p>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:16px">
+      <span class="t">9router 属于哪类</span>
+      <p>它同时覆盖 A 和 B：既有官方 free tier，也支持 OAuth 订阅，甚至提供 IDE 流量拦截（MITM bridge）。它的 README 也提醒“mind each tool's policy”。省钱的另一面，是账号与条款风险。</p>
+    </div>
+  </section>
+
+  <section id="list">
+    <h2><span class="no">02</span>项目清单</h2>
+    <p class="sub">Star 与最近提交为 2026-11-02 抓取。风险标签看的是“免费来源是否合规”，不是代码质量。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="free" aria-pressed="false">额度聚合</button>
+        <button class="chip" type="button" data-filter="sub" aria-pressed="false">订阅 / OAuth</button>
+        <button class="chip" type="button" data-filter="gw" aria-pressed="false">通用网关</button>
+        <button class="chip" type="button" data-filter="list" aria-pressed="false">清单 / 索引</button>
+        <button class="chip" type="button" data-filter="risky" aria-pressed="false">高风险</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5 21 21"></path></svg>
+        <input id="q" type="search" placeholder="搜项目、机制或关键词（按 / 聚焦）" aria-label="搜索项目">
+      </div>
+    </div>
+    <p class="result-line" id="count" role="status" aria-live="polite">共 13 个项目</p>
+
+    <div class="grid" id="grid">
+
+      <article class="repo" data-type="free sub" data-risk="mid" data-text="9router decolua 免费 路由 60 providers oauth 订阅 claude code codex cursor mitm 三层 fallback mit">
+        <div class="repo-top"><div><div class="repo-name">decolua/9router</div><div class="repo-zh">免费 AI 路由 · 订阅 + 免费 + 廉价三层</div></div><span class="badge mid">中高风险</span></div>
+        <p>把 Claude Code、Codex、Gemini、Cursor 等客户端接到 60+ provider，按“订阅 → 廉价 → 免费”三层 fallback。支持 OpenAI / Claude / Gemini 请求形状互转。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>31.8K stars · MIT · 最近提交 2026-10-28</dd></div>
+          <div><dt>免费来源</dt><dd>官方 free tier + OAuth 订阅 + 自备 key</dd></div>
+          <div><dt>风险点</dt><dd>OAuth 登录态转 API、IDE 流量拦截（MITM）可能违反工具条款；多账号轮询有封号风险</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/decolua/9router" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="free sub" data-risk="mid" data-text="omniroute diegosouzapw 375 providers 150 free 1.62b tokens 4 tier fallback mit fork 9router">
+        <div class="repo-top"><div><div class="repo-name">diegosouzapw/OmniRoute</div><div class="repo-zh">9router 的重度分支</div></div><span class="badge mid">中高风险</span></div>
+        <p>9router 的 TypeScript 分支，宣称 375 个 provider、150+ 免费层、约 1.62B tokens/月，带四层 fallback、语义缓存、多模态接口。README 自带“条款风险目录”，标了 12 家建议避开。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>83.7K stars · MIT · 最近提交 2026-11-02</dd></div>
+          <div><dt>免费来源</dt><dd>第三方 free tier 聚合 + 自带账号</dd></div>
+          <div><dt>风险点</dt><dd>数字是“池子去重后的估算”，不是额度承诺；同样涉及订阅/登录态</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/diegosouzapw/OmniRoute" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="free" data-risk="low" data-text="freellmapi tashfeenahmed 34 providers 635 endpoints 7.4b tokens 官方免费额度 本地 路由 加密">
+        <div class="repo-top"><div><div class="repo-name">tashfeenahmed/freellmapi</div><div class="repo-zh">FreeLLMAPI · 官方免费额度聚合</div></div><span class="badge low">较低风险</span></div>
+        <p>只聚合各家官方 free tier 的 key，34 provider / 635 端点 / 约 7.4B tokens 容量，一个 OpenAI 兼容端点，带配额账本、故障转移、AES-256-GCM 加密。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>46.0K stars · MIT · 最近提交 2026-11-01</dd></div>
+          <div><dt>免费来源</dt><dd>官方 API key 的免费额度（不转订阅、不抓网页）</dd></div>
+          <div><dt>风险点</dt><dd>仍受各厂商 ToS 与配额约束；项目定位“个人实验，非生产”</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/tashfeenahmed/freellmapi" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="sub" data-risk="mid" data-text="claude-code-router musistudio ccr 本地 网关 控制面 claude code codex oauth 订阅 代理">
+        <div class="repo-top"><div><div class="repo-name">musistudio/claude-code-router</div><div class="repo-zh">CCR · Agent 的本地控制面</div></div><span class="badge mid">中风险</span></div>
+        <p>给 Claude Code、Codex、Grok CLI、Kimi CLI、OpenCode 等一个本地端点，统一管理 provider、账号、路由、fallback、日志与成本。不是“送免费额度”，而是把已有订阅与 key 用顺。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>38.0K stars · MIT · 最近提交 2026-10-10</dd></div>
+          <div><dt>免费来源</dt><dd>你已有的订阅 / key</dd></div>
+          <div><dt>风险点</dt><dd>把订阅用于非官方客户端可能违反条款；配置复杂</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/musistudio/claude-code-router" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="sub risky" data-risk="high" data-text="aiclient-2-api justlovemaki antigravity codex grok kiro oauth 代理 openai 兼容 gpl">
+        <div class="repo-top"><div><div class="repo-name">justlovemaki/AIClient-2-API</div><div class="repo-zh">把“客户端专用”接口包成 API</div></div><span class="badge high">高风险</span></div>
+        <p>针对 Antigravity、Codex、Grok、Kiro 等“只在客户端里能用”的接口，模拟请求并封装成 OpenAI 兼容服务。Docker 下载量很大，但这类做法的合规性最模糊。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>9.0K stars · GPL-3.0 · 最近提交 2026-10-26</dd></div>
+          <div><dt>免费来源</dt><dd>客户端登录态 / 免费额度</dd></div>
+          <div><dt>风险点</dt><dd>明确违反部分厂商条款；登录态与凭据集中存放，安全面大</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/justlovemaki/AIClient-2-API" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="gw" data-risk="low" data-text="litellm berriai ai gateway 100+ llm proxy openai 格式 预算 密钥 路由">
+        <div class="repo-top"><div><div class="repo-name">BerriAI/litellm</div><div class="repo-zh">通用 AI Gateway</div></div><span class="badge low">低风险</span></div>
+        <p>最常被引用的开源网关：100+ LLM、OpenAI 格式、proxy、虚拟 key、预算与限流、fallback。它不提供免费额度，但能把任何 key（包括免费 key）管得像内部平台。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>62.5K stars · 自定义/部分开源 · 最近提交 2026-11-02</dd></div>
+          <div><dt>免费来源</dt><dd>无，自备 key</dd></div>
+          <div><dt>风险点</dt><dd>企业功能与开源边界要看许可；自托管要自己管密钥与升级</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/BerriAI/litellm" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="gw" data-risk="low" data-text="bifrost maximhq 高性能 ai gateway 23 providers mcp agent gateway failover">
+        <div class="repo-top"><div><div class="repo-name">maximhq/bifrost</div><div class="repo-zh">高性能 AI / MCP 网关</div></div><span class="badge low">低风险</span></div>
+        <p>Go 写的高性能网关，统一 23+ provider，带自动 failover、负载均衡、语义缓存；同时做 MCP 与 agent 网关。适合把“路由”当基础设施而不是脚本。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>9.3K stars · Apache-2.0 · 最近提交 2026-11-02</dd></div>
+          <div><dt>免费来源</dt><dd>无，自备 key</dd></div>
+          <div><dt>风险点</dt><dd>功能多、配置面广；免费额度仍取决于你的 key</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/maximhq/bifrost" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="gw" data-risk="low" data-text="portkey gateway ai gateway 1600 llm guardrails mit 路由 缓存">
+        <div class="repo-top"><div><div class="repo-name">Portkey-AI/gateway</div><div class="repo-zh">带 guardrails 的 AI 网关</div></div><span class="badge low">低风险</span></div>
+        <p>老牌开源网关，宣称支持 1,600+ 模型与 50+ guardrails，强项是路由策略、缓存、可观测与内容安全。最近提交停在 2026-05，选型时要看维护节奏。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>13.3K stars · MIT · 最近提交 2026-05-25</dd></div>
+          <div><dt>免费来源</dt><dd>无，自备 key</dd></div>
+          <div><dt>风险点</dt><dd>更新放缓；部分能力在托管版</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/Portkey-AI/gateway" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="gw" data-risk="low" data-text="new-api calcium-ion 网关 计费 多渠道 openai claude gemini 分发 agpl">
+        <div class="repo-top"><div><div class="repo-name">Calcium-Ion/new-api</div><div class="repo-zh">网关 + 计费 + 多渠道分发</div></div><span class="badge low">低风险</span></div>
+        <p>one-api 生态里最活跃的分支之一：OpenAI / Claude / Gemini 兼容、渠道管理、令牌计费、用户体系。适合做团队内部“模型入口”，不提供免费额度。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>51.2K stars · AGPL-3.0 · 最近提交 2026-11-02</dd></div>
+          <div><dt>免费来源</dt><dd>无，自备 key</dd></div>
+          <div><dt>风险点</dt><dd>AGPL 对二次分发有约束；计费/多租户配置复杂</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/Calcium-Ion/new-api" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="gw" data-risk="low" data-text="one-api songquanpeng 老牌 分发 openai 格式 渠道 令牌 mit 维护放缓">
+        <div class="repo-top"><div><div class="repo-name">songquanpeng/one-api</div><div class="repo-zh">经典的 API 管理与分发</div></div><span class="badge low">低风险</span></div>
+        <p>中文圈最知名的“把多家 API 合成一个入口”项目，渠道、令牌、用户、额度一应俱全。功能稳定，但主仓库最近提交停在 2026-01，新项目更建议看活跃分支。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>37.3K stars · MIT · 最近提交 2026-01-09</dd></div>
+          <div><dt>免费来源</dt><dd>无，自备 key</dd></div>
+          <div><dt>风险点</dt><dd>维护放缓；老版本依赖与安全补丁要自己跟</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/songquanpeng/one-api" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="list" data-risk="low" data-text="awesome-free-llm-apis mnfst 清单 免费 api key cc0 索引">
+        <div class="repo-top"><div><div class="repo-name">mnfst/awesome-free-llm-apis</div><div class="repo-zh">永久免费 API 清单</div></div><span class="badge low">低风险</span></div>
+        <p>不做代理，只维护“哪些厂商有永久免费 API、怎么拿 key、限额多少”的清单。适合作为自建聚合器的上游资料，也适合判断某个项目的免费来源是否真实。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>11.9K stars · CC0-1.0 · 最近提交 2026-11-01</dd></div>
+          <div><dt>免费来源</dt><dd>指向厂商官方 free tier</dd></div>
+          <div><dt>风险点</dt><dd>清单会过期；以厂商页面为准</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/mnfst/awesome-free-llm-apis" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="risky" data-risk="high" data-text="gpt4free xtekky 逆向 抓取 网页 免费 gpl 高风险 不稳定">
+        <div class="repo-top"><div><div class="repo-name">xtekky/gpt4free</div><div class="repo-zh">网页逆向 / 抓取</div></div><span class="badge high">最高风险</span></div>
+        <p>通过模拟网页与客户端来“免费”访问模型，不依赖官方 API key。Star 很高，但接口随时失效，且明确违反多数厂商条款；只适合研究协议，不适合任何依赖它的产品。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>67.0K stars · GPL-3.0 · 最近提交 2026-11-02</dd></div>
+          <div><dt>免费来源</dt><dd>网页 / 客户端逆向</dd></div>
+          <div><dt>风险点</dt><dd>账号封禁、法律与条款风险、稳定性极差、供应链不可控</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/xtekky/gpt4free" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="repo" data-type="free" data-risk="low" data-text="flagshiprouter therizwan 免费 模型 编码工具 本地 openai 兼容 网关">
+        <div class="repo-top"><div><div class="repo-name">theRizwan/FlagshipRouter</div><div class="repo-zh">面向编码工具的免费网关</div></div><span class="badge low">较低风险</span></div>
+        <p>把免费模型接成 Claude Code、Codex 等工具的本地 OpenAI 兼容网关，定位更窄、配置更轻。适合想先试“免费池”而不想上大型路由的人。</p>
+        <dl class="meta">
+          <div><dt>数据</dt><dd>225 stars · MIT · 最近提交 2026-10-26</dd></div>
+          <div><dt>免费来源</dt><dd>官方免费层</dd></div>
+          <div><dt>风险点</dt><dd>项目较新、生态小；长期维护不确定</dd></div>
+        </dl>
+        <a class="go" href="https://github.com/theRizwan/FlagshipRouter" rel="noreferrer">打开 →</a>
+      </article>
+
+    </div>
+    <div class="empty" id="empty" hidden>没有匹配的项目。清空搜索或换个筛选。</div>
+  </section>
+
+  <section id="table">
+    <h2><span class="no">03</span>一张表对比</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>项目</th><th>类型</th><th>免费来源</th><th>许可</th><th>风险</th><th>最适合</th></tr></thead>
+        <tbody>
+          <tr><td><b>9router</b></td><td>聚合 + 订阅</td><td>free tier / OAuth / key</td><td>MIT</td><td>中高</td><td>想最大化已有订阅、接受条款风险</td></tr>
+          <tr><td><b>OmniRoute</b></td><td>聚合 + 订阅</td><td>375 家 / 150+ 免费层</td><td>MIT</td><td>中高</td><td>要更大目录与多模态接口</td></tr>
+          <tr><td><b>FreeLLMAPI</b></td><td>额度聚合</td><td>官方 key free tier</td><td>MIT</td><td>较低</td><td>只想叠官方免费额度</td></tr>
+          <tr><td><b>claude-code-router</b></td><td>订阅路由</td><td>自有订阅 / key</td><td>MIT</td><td>中</td><td>多个编码 agent 统一控制面</td></tr>
+          <tr><td><b>AIClient-2-API</b></td><td>客户端转 API</td><td>客户端登录态</td><td>GPL-3.0</td><td>高</td><td>研究协议，不建议生产</td></tr>
+          <tr><td><b>LiteLLM</b></td><td>通用网关</td><td>无（自备 key）</td><td>自定义</td><td>低</td><td>团队级 key/预算/路由</td></tr>
+          <tr><td><b>Bifrost</b></td><td>通用网关</td><td>无（自备 key）</td><td>Apache-2.0</td><td>低</td><td>高性能、MCP/agent 网关</td></tr>
+          <tr><td><b>Portkey</b></td><td>通用网关</td><td>无（自备 key）</td><td>MIT</td><td>低</td><td>guardrails 与可观测</td></tr>
+          <tr><td><b>New API</b></td><td>网关 + 计费</td><td>无（自备 key）</td><td>AGPL-3.0</td><td>低</td><td>内部多租户、渠道计费</td></tr>
+          <tr><td><b>One API</b></td><td>网关 + 分发</td><td>无（自备 key）</td><td>MIT</td><td>低</td><td>经典稳定部署（注意维护放缓）</td></tr>
+          <tr><td><b>awesome-free-llm-apis</b></td><td>清单</td><td>指向官方 free tier</td><td>CC0</td><td>低</td><td>自建前的资料底稿</td></tr>
+          <tr><td><b>gpt4free</b></td><td>网页逆向</td><td>抓取</td><td>GPL-3.0</td><td>最高</td><td>协议研究，不建议依赖</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="risk">
+    <h2><span class="no">04</span>风险分级：免费从哪里来</h2>
+
+    <div class="callout good">
+      <span class="t">绿色：官方额度 + 自备 key</span>
+      <p>FreeLLMAPI、LiteLLM、Bifrost、New API、One API、清单类。你仍然受厂商配额与条款约束，但至少没有“借用客户端登录态”这层风险。</p>
+    </div>
+    <div class="callout warn">
+      <span class="t">黄色：订阅 / OAuth 转 API</span>
+      <p>9router、OmniRoute、claude-code-router。技术上可行，但很多工具的条款只允许“在官方客户端内使用”。一旦规模化或商用，封号与纠纷的概率显著上升。</p>
+    </div>
+    <div class="callout bad">
+      <span class="t">红色：网页逆向 / 模拟客户端</span>
+      <p>AIClient-2-API、gpt4free。接口随时失效，凭据与账号风险最高，供应链也不可控。可以读代码学习，不要把它放进生产链路。</p>
+    </div>
+
+    <h3>看一个项目靠不靠谱，先问七句</h3>
+    <ul class="check">
+      <li><b>它要我的密码或 cookie 吗？</b>要，就是高风险；OAuth 也要看条款是否允许第三方客户端。</li>
+      <li><b>免费额度从哪来？</b>能指向厂商 free tier 的，最可解释。</li>
+      <li><b>有没有中转服务器？</b>本地路由 vs 云端中转，隐私模型完全不同。</li>
+      <li><b>密钥怎么存？</b>明文、加密、还是只存登录态；有没有导出/备份机制。</li>
+      <li><b>许可是什么？</b>MIT/Apache 更宽松；AGPL 对分发有要求；GPL 逆向项目不适合闭源集成。</li>
+      <li><b>最近提交是什么时候？</b>免费层每周变，三个月不更新基本等于失效。</li>
+      <li><b>它解释配额与失败吗？</b>只有“无限免费”口号、没有配额账本或错误处理的，直接跳过。</li>
+    </ul>
+  </section>
+
+  <section id="choose">
+    <h2><span class="no">05</span>怎么选：按你的目标</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>你的目标</th><th>建议</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>只想零成本跑个人实验</td><td>FreeLLMAPI 或 FlagshipRouter</td><td>只用官方免费 key，配置轻，风险最低</td></tr>
+          <tr><td>已有 Claude Code / Codex 订阅，想多用几个客户端</td><td>claude-code-router</td><td>控制面成熟，但不建议多账号轮询</td></tr>
+          <tr><td>想体验“60+ provider 自动 fallback”</td><td>9router / OmniRoute</td><td>目录最大，但接受订阅/登录态风险</td></tr>
+          <tr><td>团队内部统一入口、要预算与审计</td><td>LiteLLM / Bifrost / New API</td><td>免费软件 + 自备 key，治理能力完整</td></tr>
+          <tr><td>要先搞清楚有哪些免费额度</td><td>awesome-free-llm-apis</td><td>清单不碰请求，最适合做调研底稿</td></tr>
+          <tr><td>想自己做一个 9router 类产品</td><td>读 9router + FreeLLMAPI + Bifrost</td><td>分别学协议翻译、配额账本、网关工程</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">如果目标是“长期可用”</span>
+      <p>把免费层当“开发期燃料”，把付费 key 当“上线开关”。任何依赖免费额度的架构，都要能在一个环境变量里切到付费 provider——这是比选哪个项目更重要的一条。</p>
+    </div>
+  </section>
+
+  <section id="build">
+    <h2><span class="no">06</span>自建一个类似项目的组件清单</h2>
+    <p class="sub">如果看完想自己写，最小可用版本其实只有六块。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>组件</th><th>做什么</th><th>可直接参考</th></tr></thead>
+        <tbody>
+          <tr><td><b>协议层</b></td><td>OpenAI / Claude / Gemini 请求互转、流式</td><td>9router、LiteLLM</td></tr>
+          <tr><td><b>Provider 适配</b></td><td>鉴权、base URL、错误码、能力声明</td><td>FreeLLMAPI、Bifrost</td></tr>
+          <tr><td><b>配额账本</b></td><td>RPM/RPD/TPM/TPD，从报错学习真实上限</td><td>FreeLLMAPI、OmniRoute</td></tr>
+          <tr><td><b>路由与冷却</b></td><td>优先级、健康分、429 冷却、key 轮换</td><td>9router、LiteLLM</td></tr>
+          <tr><td><b>密钥安全</b></td><td>加密存储、统一 token、审计</td><td>FreeLLMAPI、New API</td></tr>
+          <tr><td><b>可观测</b></td><td>请求日志、p50/p95、成本、路由溯源</td><td>CCR、Portkey</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">07</span>来源</h2>
+    <ul class="sources">
+      <li>9Router 文档：<a href="https://docs.9router.com/" rel="noreferrer">docs.9router.com</a> · 仓库：<a href="https://github.com/decolua/9router" rel="noreferrer">decolua/9router</a></li>
+      <li>OmniRoute：<a href="https://github.com/diegosouzapw/OmniRoute" rel="noreferrer">diegosouzapw/OmniRoute</a></li>
+      <li>FreeLLMAPI：<a href="https://github.com/tashfeenahmed/freellmapi" rel="noreferrer">tashfeenahmed/freellmapi</a></li>
+      <li>CCR：<a href="https://github.com/musistudio/claude-code-router" rel="noreferrer">musistudio/claude-code-router</a></li>
+      <li>网关：<a href="https://github.com/BerriAI/litellm" rel="noreferrer">LiteLLM</a> · <a href="https://github.com/maximhq/bifrost" rel="noreferrer">Bifrost</a> · <a href="https://github.com/Portkey-AI/gateway" rel="noreferrer">Portkey</a></li>
+      <li>分发：<a href="https://github.com/Calcium-Ion/new-api" rel="noreferrer">New API</a> · <a href="https://github.com/songquanpeng/one-api" rel="noreferrer">One API</a></li>
+      <li>清单：<a href="https://github.com/mnfst/awesome-free-llm-apis" rel="noreferrer">awesome-free-llm-apis</a></li>
+      <li>高风险示例：<a href="https://github.com/justlovemaki/AIClient-2-API" rel="noreferrer">AIClient-2-API</a> · <a href="https://github.com/xtekky/gpt4free" rel="noreferrer">gpt4free</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">Star、许可、最近提交为 2026-11-02 通过 GitHub API 抓取。项目能力来自各自 README/文档，未逐个独立复测；合规风险判断是编辑意见，不构成法律建议。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Agents/FreeAPI · 免费 LLM API 项目地图 · 2026-11-02 · <a href="index.html">FreeLLMAPI 拆解</a></div>
+  <span>本页为独立调研，与所列项目无隶属关系；使用前请自行核对各厂商条款。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#grid .repo'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var type = 'all';
+
+  function apply(){
+    var needle = q.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var types = ' ' + c.getAttribute('data-type') + ' ';
+      var okType = type === 'all' || types.indexOf(' ' + type + ' ') !== -1;
+      var okText = !needle || c.getAttribute('data-text').toLowerCase().indexOf(needle) !== -1;
+      var show = okType && okText;
+      c.hidden = !show;
+      if (show) shown++;
+    });
+    count.textContent = (needle || type !== 'all')
+      ? '匹配 ' + shown + ' 个 / 共 ' + cards.length + ' 个'
+      : '共 ' + cards.length + ' 个项目';
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      type = btn.getAttribute('data-filter');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', apply);
+
+  addEventListener('keydown', function(e){
+    var tag = (e.target && e.target.tagName) || '';
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      e.preventDefault(); q.focus(); q.select();
+    } else if (e.key === 'Escape' && document.activeElement === q) {
+      q.value = ''; apply(); q.blur();
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="herdr 的客户端/服务器模型、会话恢复边界、多机管理与安全分析。">
+<title>herdr · 工具分析（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="./index.html">← 工具调研</a>
+<span class="crumb">Tools / herdr</span>
+<span class="date">2026-11-01 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>终端运行时 / 会话保活</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>herdr<br><em>把 Agent 的终端从客户端里拆出来</em></h1>
+<p class="lede">herdr 的核心不是「更好看的 tmux」，而是把终端进程放进一个后台 server：关掉客户端、断 SSH，Agent 还在跑。但「关电脑也能跑」是误读——机器重启后进程仍然会死，恢复的是布局与会话。</p>
+<div class="pills">
+<span class="pill"><b>Apache-2.0</b></span>
+<span class="pill">Rust 单二进制</span>
+<span class="pill"><b>4.74 万</b> star</span>
+<span class="pill">macOS / Linux / Windows（beta）</span>
+<span class="pill">无 Electron</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>经常 SSH 到远端跑 Agent，连接一断就丢任务</li>
+<li>想要 tmux 的保活，但需要 Agent 状态与多机视图</li>
+<li>偏好键盘操作、单二进制、低开销</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>需要 GUI、分屏拖拽、内置浏览器</li>
+<li>希望合盖/关机后任务继续</li>
+<li>不愿维护 SSH 与远端 server</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么</a></li>
+<li><a href="#s02">02 · 为什么需要它</a></li>
+<li><a href="#s03">03 · 运作方式</a></li>
+<li><a href="#s04">04 · 上手</a></li>
+<li><a href="#s05">05 · 日常用法</a></li>
+<li><a href="#s06">06 · 边界与代价</a></li>
+<li><a href="#s07">07 · 安全与权限</a></li>
+<li><a href="#s08">08 · 和谁比</a></li>
+<li><a href="#s09">09 · 结论</a></li>
+<li><a href="#s10">10 · 核验与来源</a></li>
+</ol><div class="toc-note">第 6 节纠正一个关键说法：herdr 不能跨机器关机保活。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
+<p class="sub">官方定义：the runtime your coding agents live on。</p>
+
+<p>herdr 是一个终端工作区管理器，用客户端/服务器模型把真实 PTY 放进后台 server。客户端可以是本地终端、另一台机器，或通过 SSH 连过来；server 持续持有 shell、Agent、测试进程。</p>
+<div class="grid2">
+  <div class="panel pos"><h3>核心能力</h3><ul>
+    <li>detach / reattach：<code>ctrl+b q</code> 离开，<code>herdr</code> 回来</li>
+    <li>workspace / tab / pane，键盘与鼠标都支持</li>
+    <li>每个 pane 标记 working / blocked / idle</li>
+    <li>多台机器一个窗口；每台机器独立 server</li>
+    <li>CLI + socket API；Agent 可以驱动 herdr</li>
+  </ul></div>
+  <div class="panel neg"><h3>它不做的</h3><ul>
+    <li>不提供模型，不包装 Agent</li>
+    <li>不抗机器重启/关机（见第 6 节）</li>
+    <li>不是 GUI 终端，没有内置浏览器</li>
+    <li>不替你管理 Git 分支或 PR</li>
+  </ul></div>
+</div>
+
+</section>
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>为什么需要它</h2></div>
+<p class="sub">远程开发的核心矛盾：连接是脆弱的，任务是长时的。</p>
+
+<ul>
+  <li><b>SSH 断线：</b>网络切换、笔记本休眠、VPN 重连，都会杀掉前台终端里的 Agent。</li>
+  <li><b>多机切换：</b>本地、构建机、GPU 机各有 Agent，开多个终端窗口很难知道谁卡住。</li>
+  <li><b>状态不可见：</b>tmux 只告诉你 pane 还在，不告诉你 Agent 是在工作、等输入，还是已经退出。</li>
+  <li><b>Agent 之间协作：</b>一个 Agent 需要另一个 Agent 的输出，手动复制粘贴很脆弱。</li>
+</ul>
+<div class="callout"><span class="t">它真正提供的</span><p>「进程生命周期」与「客户端连接」解耦。这是 tmux 的核心思想，herdr 把它做成 Agent 感知的运行时。</p></div>
+
+</section>
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
+<p class="sub">四种恢复路径，强度依次下降。</p>
+
+<ol class="steps">
+  <li><b>Detach / reattach（最强）：</b>server 不停，原进程从没死过；屏幕、Agent 会话都还在。</li>
+  <li><b>Server 重启：</b>进程没了；恢复 workspace/tab/pane 布局、cwd、焦点。能恢复的 Agent 用原生 session ID 续聊。</li>
+  <li><b>快照：</b>屏幕历史可回放，但不是活进程；不能恢复正在跑的训练或测试。</li>
+  <li><b>Live handoff：</b>更新时尽力把受支持的 server 交接过去，减少中断；不是所有情况都成功。</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>场景</th><th>进程继续</th><th>布局恢复</th><th>Agent 对话续上</th></tr></thead>
+<tbody>
+<tr><td>Detach / reattach</td><td class="yes">是</td><td>是</td><td>是（进程没停）</td></tr>
+<tr><td>Server 重启</td><td class="no">否</td><td>是</td><td>仅原生 session 恢复</td></tr>
+<tr><td>机器重启 / 关机</td><td class="no">否</td><td>是</td><td>仅原生 session 恢复</td></tr>
+<tr><td>断电 / 强制关机</td><td class="no">否</td><td>可能丢最近状态</td><td>可能丢</td></tr>
+</tbody></table></div>
+
+</section>
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
+<p class="sub">一条安装命令，然后在你工作所在的机器上启动。</p>
+
+<pre><code># macOS / Linux
+curl -fsSL https://herdr.dev/install.sh | sh
+
+# 或
+brew install herdr
+mise use -g herdr
+
+# Windows
+powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"</code></pre>
+<pre><code>herdr            # 启动/附着
+ctrl+b q         # detach，server 继续跑
+herdr            # 回来</code></pre>
+<p>多机：保存 SSH 机器后，在同一个窗口切换 Local 与远端；每台机器有自己的 server、session 和进程，一台断线不影响另一台。</p>
+
+</section>
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>日常用法</h2></div>
+<p class="sub">把「谁卡住了」变成一眼可见的状态。</p>
+
+<ul>
+  <li><b>状态标记：</b>每个 pane 显示 working / blocked / idle；侧栏汇总每个 workspace 的 Agent。</li>
+  <li><b>Agent 自动化：</b>Agent 通过 CLI/socket 建 pane、给另一个 Agent 发提示、等它真正 blocked 再继续。</li>
+  <li><b>键盘 + 鼠标：</b>tmux 风格 prefix 键与点击拖拽分屏都支持，不用二选一。</li>
+  <li><b>插件：</b>扩展 pane 与工作流；插件市场可浏览。</li>
+  <li><b>远端：</b>SSH 保存一次，之后在机器间切换；支持压缩以减少屏幕更新流量。</li>
+</ul>
+<div class="note"><b>适合的拓扑：</b>本地一台笔记本做客户端，远端一台常开 Linux 工作站做 server。Agent 跑在远端，笔记本合盖也不影响。</div>
+
+</section>
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>边界与代价</h2></div>
+<p class="sub">关于「关电脑也能跑」的准确说法。</p>
+
+<div class="callout bad"><span class="t">纠正一个常见误读</span><p>herdr 能让任务在<b>关闭终端窗口、断开 SSH、关闭客户端</b>后继续，因为进程在后台 server 里。但它<b>不能让任务跨机器重启、关机或断电继续</b>。server 所在机器必须保持开机；否则进程会死，只能恢复布局与受支持的 Agent 会话。</p></div>
+<div class="panel neg"><ul>
+  <li><b>机器必须常开：</b>笔记本合盖休眠也会停；要 24/7 就用常开主机或云 VM。</li>
+  <li><b>恢复不是无损：</b>server 重启后，shell、测试、训练进程都不会回来；能续的只有声明支持原生 session 的 Agent。</li>
+  <li><b>Windows 仍是 beta：</b>README 单独标注 Windows 支持状态。</li>
+  <li><b>多机依赖 SSH：</b>要维护 SSH 配置、密钥、网络可达性；没有托管中继。</li>
+  <li><b>单二进制不等于零配置：</b>插件、socket API、agent skill 都需要理解其权限边界。</li>
+</ul></div>
+
+</section>
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>安全与权限</h2></div>
+<p class="sub">Agent 能驱动 herdr，意味着「能开 pane 的进程」权限不小。</p>
+
+<ul>
+  <li><b>Socket API：</b>本机进程可以创建 pane、发按键、读屏幕；多用户机器上要限制 socket 文件权限。</li>
+  <li><b>Agent 互相驱动：</b>一个 Agent 可以让另一个 Agent 执行任务；这是能力也是权限链，审计要能看到「谁让谁做的」。</li>
+  <li><b>SSH：</b>herdr 复用你的 SSH 连接与配置；远端 server 的权限等于你的账号权限。</li>
+  <li><b>插件：</b>插件运行在本地，能访问 pane 与工作流；只装可信来源。</li>
+  <li><b>会话恢复：</b>恢复的是布局与 session ID，不会自动执行任意历史命令（具体以文档为准）。</li>
+</ul>
+
+</section>
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>和谁比</h2></div>
+<p class="sub">herdr 最像 tmux + Agent 状态层，而不是 cmux。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>工具</th><th>形态</th><th>跨机器重启保活</th><th>GUI</th><th>最适合</th></tr></thead>
+<tbody>
+<tr><td><b>herdr</b></td><td>TUI + 后台 server</td><td class="no">否</td><td class="no">无</td><td>SSH/多机长任务</td></tr>
+<tr><td>tmux</td><td>终端复用器</td><td class="no">否</td><td class="no">无</td><td>通用会话保活</td></tr>
+<tr><td>cmux</td><td>macOS GUI 终端</td><td class="no">否</td><td class="yes">原生</td><td>本机多 Agent 视觉组织</td></tr>
+<tr><td>Paseo</td><td>daemon + 全端客户端</td><td class="no">否（daemon 需常开）</td><td class="yes">桌面/手机</td><td>手机监督</td></tr>
+<tr><td>云 VM + tmux</td><td>托管主机</td><td class="yes">是（主机常开）</td><td class="no">无</td><td>真正 24/7</td></tr>
+</tbody></table></div>
+
+</section>
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>把 herdr 装在远端常开主机上，本地只做客户端；先用 detach/reattach 跑一周，确认断网不丢任务，再启用 agent skill 与多机。不要把它当作「关机保活」方案。</p></div>
+<p>如果需求是 GUI 分屏与浏览器验证，选 cmux；如果是手机接管，选 Paseo/T3；如果只要终端保活，tmux 仍然更简单。</p>
+
+</section>
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/herdrdev/herdr" target="_blank" rel="noopener noreferrer">herdrdev/herdr</a>（用户给的 ogulcancelik/herdr 已指向该仓库）；Apache-2.0；Rust；约 47,414 star（2026-11-01 API）；文档版本 0.9.5。</li>
+  <li><a href="https://github.com/herdrdev/herdr/blob/master/README.md" target="_blank" rel="noopener noreferrer">README</a>：安装、detach、多机、agent skill。</li>
+  <li><a href="https://herdr.dev/docs/session-state/" target="_blank" rel="noopener noreferrer">Session state and restore</a>：四种恢复路径与「server restart 不保留进程」的明确说明。</li>
+  <li><a href="https://herdr.dev/docs/connecting-machines/" target="_blank" rel="noopener noreferrer">Connecting machines</a>：每台机器独立 server、SSH 连接。</li>
+  <li><span class="tag infer">推断</span> 「约 10MB」来自用户提供的描述，未在 README/文档中核实；单二进制与无 Electron 已由 README 确认。</li>
+</ul>
+
+</section>
+<footer><span>herdr · 分析于 2026-11-01</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>(function(){var p=document.getElementById("progress");if(!p)return;function u(){var h=document.documentElement;var m=h.scrollHeight-h.clientHeight;p.style.width=(m>0?Math.min(100,Math.max(0,h.scrollTop/m*100)):0)+"%";}addEventListener("scroll",u,{passive:true});u();})();</script>
+</body></html>

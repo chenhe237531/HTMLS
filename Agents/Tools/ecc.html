@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="ECC（Everything Claude Code）拆解：71 个 agent、314 个技能、98 个命令的 harness 优化系统，跨工具适配、安全扫描、安装路径与真实边界。">
+<title>ECC 拆解 · 给 Agent Harness 做一层操作系统</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:920px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+table{width:100%;border-collapse:collapse;font-size:13.2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+td b{font-weight:650}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono)}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:920px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs,.calc{display:none}body{background:#fff}.kpi,.panel,.figure{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="index.html">← 工具调研</a>
+  <span class="crumb">Agents/Tools / ECC · 2026-11-02</span>
+  <nav class="pager"><a href="#what">是什么</a><a href="#install">怎么装</a><a href="#limits">边界</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>Everything Claude Code · MIT</div>
+  <h1>ECC<br><em>给 Agent Harness 做一层操作系统</em></h1>
+  <p class="lede">它不是模型，也不是新的编码 agent。它把“一个人用 Claude Code 十个月攒下来的工作方式”拆成 71 个 agent、314 个技能、98 个命令和一套安全扫描，再通过适配层装进七个不同的 harness。</p>
+
+  <div class="meta-row">
+    <span class="pill">MIT（Pro 另计）</span>
+    <span class="pill">JavaScript / TypeScript / Shell</span>
+    <span class="pill">v2.2.3 · 2026-10-01</span>
+    <span class="pill">Node 18+ · Claude Code 2.1+</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">295K<span>stars</span></div><div class="l">2026-11-02 抓取</div></div>
+    <div class="kpi"><div class="n">314<span>skills</span></div><div class="l">按需加载的工作流</div></div>
+    <div class="kpi"><div class="n">71<span>agents</span></div><div class="l">专用子代理</div></div>
+    <div class="kpi"><div class="n">98<span>commands</span></div><div class="l">斜杠命令 shim</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>它到底是什么</h2>
+    <p class="sub">一句话：把“资深工程师的流程与约束”产品化成可安装的 harness 配置，而不是再写一个 agent 框架。</p>
+
+    <p>ECC 的自我定位是 <b>agent harness performance optimization system</b>。拆开看是四件事：</p>
+
+    <ul class="check">
+      <li><b>流程</b>：TDD、规划、评审、安全审查、研究，写成可被 agent 按需加载的 skill 和 agent。</li>
+      <li><b>约束</b>：rules 与 hooks 把“必须这样做”从提示词里拿出来，放到模型上下文之外执行。</li>
+      <li><b>记忆</b>：跨会话的 instinct / memory 层，让下一次会话不必从零解释项目。</li>
+      <li><b>安全</b>：AgentShield 扫描 hooks、MCP 配置、技能与凭据泄漏，自带 1,282 条测试。</li>
+    </ul>
+
+    <div class="callout">
+      <span class="t">和“配置包”的区别</span>
+      <p>普通 dotfiles 是复制文件；ECC 有安装器、插件市场、跨工具适配层、版本化发布和付费的 GitHub App。它把“个人经验”做成了有分发渠道的产品。</p>
+    </div>
+  </section>
+
+  <section id="arch">
+    <h2><span class="no">02</span>架构：一份源，多套适配</h2>
+    <p class="sub">根目录是唯一事实来源，平台目录只做映射。这是它能同时维护七个 harness 的关键。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 780 360" role="img" aria-label="ECC 架构：根目录源与多 harness 适配">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/></marker></defs>
+
+        <rect x="20" y="20" width="740" height="70" rx="10" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="38" y="43" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b4f9e">SOURCE OF TRUTH</text>
+        <text x="38" y="63" font-size="13" fill="#17181b">agents/ 71 · skills/ 314 · commands/ 98 · rules/ · hooks/ · scripts/</text>
+        <text x="38" y="80" font-size="11.5" fill="#6f7279">SKILL.md + YAML frontmatter；脚本与检查放在 skill 内部，按需加载</text>
+
+        <line x1="390" y1="90" x2="390" y2="112" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="20" y="112" width="740" height="54" rx="10" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="38" y="134" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9a5712">ADAPTERS</text>
+        <text x="38" y="153" font-size="12.5" fill="#17181b">Claude Code 插件 · Codex 插件 · Cursor 项目适配 · OpenCode 插件 · Copilot 指令 · Qoder / Kimi / 其他</text>
+
+        <line x1="150" y1="166" x2="150" y2="190" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+        <line x1="390" y1="166" x2="390" y2="190" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+        <line x1="630" y1="166" x2="630" y2="190" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="30" y="190" width="220" height="70" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="46" y="211" font-size="12" fill="#17181b">Claude Code（主参考）</text>
+        <text x="46" y="229" font-size="11" fill="#6f7279">插件或选择性安装</text>
+        <text x="46" y="246" font-size="11" fill="#6f7279">hooks 原生；规则需手动装</text>
+
+        <rect x="280" y="190" width="220" height="70" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="296" y="211" font-size="12" fill="#17181b">Codex / Qoder</text>
+        <text x="296" y="229" font-size="11" fill="#6f7279">原生插件，部分 hook</text>
+        <text x="296" y="246" font-size="11" fill="#6f7279">需要显式信任</text>
+
+        <rect x="530" y="190" width="220" height="70" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="546" y="211" font-size="12" fill="#17181b">Cursor / OpenCode</text>
+        <text x="546" y="229" font-size="11" fill="#6f7279">Beta 适配，能力子集</text>
+        <text x="546" y="246" font-size="11" fill="#6f7279">agent 发现随版本变化</text>
+
+        <rect x="30" y="284" width="720" height="56" rx="9" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="46" y="305" font-size="12" fill="#17181b">hooks 在模型上下文之外执行 —— 这是“约束”而不是“建议”</text>
+        <text x="46" y="323" font-size="11" fill="#6f7279">sessionStart · beforeShellExecution · afterFileEdit · beforeMCPExecution · beforeSubmitPrompt …</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>上面是内容，中间是适配，下面是执行。内容只写一份，平台差异由适配层吃掉——这也是它和“给每个工具各维护一套配置”最大的区别。</p>
+
+    <h3>五个组件，各自的职责</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>组件</th><th>是什么</th><th>什么时候进上下文</th><th>典型用途</th></tr></thead>
+        <tbody>
+          <tr><td><b>Skills</b></td><td>可复用的工作流与领域知识（SKILL.md + 可选脚本）</td><td>任务需要时按需加载</td><td>TDD、深度研究、安全评审、写作</td></tr>
+          <tr><td><b>Agents</b></td><td>有独立上下文与工具权限的子代理</td><td>被委派时启动</td><td>规划、实现、评审、构建修复</td></tr>
+          <tr><td><b>Rules</b></td><td>项目或语言的持久标准</td><td>常驻</td><td>编码规范；所以要选择性安装</td></tr>
+          <tr><td><b>Hooks</b></td><td>由 harness 事件触发的脚本</td><td>不进模型上下文</td><td>提交前检查、权限拦截、记忆写入</td></tr>
+          <tr><td><b>Commands</b></td><td>斜杠命令 shim</td><td>调用时展开</td><td>把常用流程做成一个入口</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="platforms">
+    <h2><span class="no">03</span>跨工具支持：主参考只有一个</h2>
+    <p class="sub">官方自己的措辞是“parity: partial”。别把“支持七个工具”理解成“七个工具体验一样”。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Harness</th><th>状态</th><th>安装方式</th><th>关键限制</th></tr></thead>
+        <tbody>
+          <tr><td><b>Claude Code</b></td><td>Stable · 主参考</td><td>插件或选择性安装</td><td>插件会把整个目录暴露给模型；上下文敏感时要手动裁剪</td></tr>
+          <tr><td><b>Codex</b></td><td>Supported</td><td>市场插件 / 仓库配置</td><td>原生 hooks 需显式信任，不走 Claude 的 hook profile</td></tr>
+          <tr><td><b>Qoder</b></td><td>Supported</td><td>CLI 本地插件 / IDE ZIP</td><td>只启用审核过的 SessionStart hook</td></tr>
+          <tr><td><b>Cursor</b></td><td>Beta</td><td><code>--target cursor</code> 选择性安装</td><td>agent 发现依 Cursor 版本；不承诺完整对齐</td></tr>
+          <tr><td><b>OpenCode</b></td><td>Beta</td><td>构建插件 + 选择性安装</td><td>只装目录子集；要自己接 provider 与模型</td></tr>
+          <tr><td><b>GitHub Copilot</b></td><td>Instruction-only / Beta CLI</td><td>指令文件；或 <code>--target copilot</code></td><td>Chat 不适配 hooks；CLI 不装命令 shim</td></tr>
+          <tr><td><b>Gemini、Zed、Kimi 等</b></td><td>Experimental</td><td>各 harness 的选择性 target</td><td>只验证了文件放置与指令可移植性</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">平台限制是真实的</span>
+      <p>README 自己列了：macOS 上独立的 GAN shell 路径与系统 Bash 3.2 不兼容；Windows 原生下 continuous-learning 的守护进程与 memory-vault 写入有未修问题。跨平台团队要按能力表验收，不要按宣传语验收。</p>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2><span class="no">04</span>怎么装：三条路，只选一条</h2>
+    <p class="sub">官方明确要求“Pick one path only”。叠加安装是社区里最常见的故障来源。</p>
+
+    <div class="tabs" role="tablist" aria-label="安装路径">
+      <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">A · 引导安装</button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">B · 原生插件</button>
+      <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false">C · 手动裁剪</button>
+    </div>
+
+    <div class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+      <p><strong>适合：</strong>第一次装、想一次配好多个 harness、之后还要改 hook profile。</p>
+      <pre><code><span class="c"># 需要 Node 18+、Git、Claude Code 2.1+</span>
+npx ecc-universal@2.2.3 setup
+
+<span class="c"># 一次配多个 harness（Codex / Kimi Code 等）</span>
+npx ecc-universal@2.2.3 install --guided
+
+<span class="c"># 验证</span>
+claude --version
+<span class="c"># 然后在 Claude Code 里</span>
+/plugin list</code></pre>
+      <p class="sub" style="margin:10px 0 0">同一个命令也用于更新、改作用域、改 hook profile。</p>
+    </div>
+
+    <div class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <p><strong>适合：</strong>只想用 Claude Code，且习惯用官方插件市场。</p>
+      <pre><code><span class="c"># 在 Claude Code 会话里</span>
+/plugin marketplace add https://github.com/affaan-m/ECC
+/plugin install ecc@ecc</code></pre>
+      <p class="sub" style="margin:10px 0 0">插件装不了 rules。需要规则时，单独复制 <code>rules/common</code> 加一个语言包，别再把完整手动安装叠上去。</p>
+    </div>
+
+    <div class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+      <p><strong>适合：</strong>上下文预算紧、只想要几个 agent / 规则、或要审查每一行配置。</p>
+      <pre><code>git clone https://github.com/affaan-m/ECC.git
+<span class="k">cd</span> ECC
+
+<span class="c"># 只要 agent</span>
+cp agents/*.md ~/.claude/agents/
+
+<span class="c"># 只要规则：先装 common，再加一个语言包</span>
+mkdir -p ~/.claude/rules/ecc
+cp -R rules/common ~/.claude/rules/ecc/
+cp -R rules/typescript ~/.claude/rules/ecc/</code></pre>
+      <p class="sub" style="margin:10px 0 0">手动路径不会自动更新；把版本号记在安装记录里，升级时重新对照。</p>
+    </div>
+
+    <div class="callout bad" style="margin-top:16px">
+      <span class="t">只从官方渠道装</span>
+      <p>README 明确警告：第三方转存与镜像未经审核，可能含恶意代码。官方渠道只有 GitHub 仓库、npm 的 <code>ecc-universal</code> / <code>ecc-agentshield</code>、GitHub App、插件 slug <code>ecc@ecc</code> 和 ecc.tools。版本号固定不等于安全审计，装之前仍要看 release 与 registry integrity。</p>
+    </div>
+  </section>
+
+  <section id="design">
+    <h2><span class="no">05</span>五个值得抄的设计</h2>
+
+    <h3>1. 选择性加载，而不是全量灌入</h3>
+    <p>314 个技能不可能全进上下文。ECC 用 SKILL.md 的描述做发现、按任务加载；agent 是独立上下文；hooks 干脆不进模型。这套分层是它能“很大但不炸”的前提。</p>
+
+    <h3>2. 约束放到 hooks，而不是提示词</h3>
+    <p>“提交前必须跑测试”“写文件前检查权限”这类要求，写在 prompt 里会被忽略，写成 hook 就是硬约束。代价是平台适配复杂——所以它才需要一层 adapter。</p>
+
+    <h3>3. 一份源，多套适配</h3>
+    <p>根目录是唯一事实来源，各平台只做映射。这让新增一个 harness 的成本落在“写适配”而不是“复制维护七份内容”。</p>
+
+    <h3>4. 把安全做成可执行的扫描</h3>
+    <p>AgentShield 面向的是 agent 配置本身：hooks、MCP、技能、凭据泄漏。官方给的数字是 1,282 条测试、98% 覆盖、102 条静态规则。对“agent 会执行命令”的场景，这比再多 prompt 都实在。</p>
+
+    <h3>5. 用 GitHub App 做商业化，而不是把仓库关掉</h3>
+    <p>MIT 永久免费；Pro 是托管 GitHub App：私有仓库分析、PR 审计、团队用量。开源做分发，托管做收入——这是这类“配置型项目”少见的可持续路径。</p>
+  </section>
+
+  <section id="cost">
+    <h2><span class="no">06</span>先算上下文，再决定装多少</h2>
+    <p class="sub">ECC 自己把 token 优化写进了 README：默认 sonnet、50% 就压缩、MCP 控制在 10 个以内、活跃工具控制在 80 个以内。下面这个估算器帮你判断“装全量”还剩多少窗口。</p>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="win">上下文窗口（token）</label><input id="win" type="number" min="1000" step="1000" value="200000" inputmode="numeric"></div>
+        <div class="field"><label for="mcp">启用 MCP 数</label><input id="mcp" type="number" min="0" step="1" value="6" inputmode="numeric"></div>
+        <div class="field"><label for="per">每个 MCP 的工具定义（token）</label><input id="per" type="number" min="0" step="100" value="2500" inputmode="numeric"></div>
+        <div class="field"><label for="rules">常驻 rules（token）</label><input id="rules" type="number" min="0" step="500" value="8000" inputmode="numeric"></div>
+        <div class="field"><label for="base">系统提示 / 环境（token）</label><input id="base" type="number" min="0" step="500" value="10000" inputmode="numeric"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">已占用</span><span class="v" id="o-used">—</span></div>
+        <div><span class="k">剩余可用</span><span class="v" id="o-left">—</span></div>
+        <div><span class="k">占用比例</span><span class="v" id="o-pct">—</span></div>
+      </div>
+      <p class="hint">默认值下约占 23%，还剩 15 万多 token。把 MCP 拉到 20 个、每个 3,000 token，占用会迅速过半——这就是 ECC 反复强调“别一次开所有 MCP”的原因。估算不含对话历史与工具返回。</p>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">07</span>边界与风险</h2>
+
+    <ul class="check">
+      <li><b>上下文税</b>：314 个技能 + 71 个 agent 的目录会进模型视野；插件模式尤其明显。上下文敏感时要走选择性安装。</li>
+      <li><b>跨平台不齐</b>：Cursor / OpenCode 是 Beta，Copilot 只到指令层，其余是实验适配。</li>
+      <li><b>质量不是均质的</b>：几百个技能由不同阶段沉淀而来，命名、边界、脚本质量会有差异；别默认“装了就等于会”。</li>
+      <li><b>供应链风险</b>：项目自己警告第三方镜像可能含恶意代码；hooks 与脚本会以你的权限执行。</li>
+      <li><b>快速演进</b>：v2.0.0 到 v2.2.3 几个月内多次改动目录与安装方式；照着旧博客装很容易踩坑。</li>
+      <li><b>数字口径会变</b>：71 agents / 314 skills / 98 commands 是当前 main 的 README 数字；v2.0.0 时是 67 / 281 / 94。引用时带版本。</li>
+    </ul>
+
+    <h3>它适合谁</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>场景</th><th>建议</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>同时用 Claude Code / Codex / Cursor 的个人</td><td><b>值得试</b></td><td>一份流程多端复用，省去重复配置</td></tr>
+          <tr><td>想把 TDD、安全评审固化成团队标准</td><td><b>值得试</b></td><td>hooks + rules + 选择性安装可以裁剪成团队版</td></tr>
+          <tr><td>上下文预算极紧、只用单一 agent</td><td>谨慎</td><td>优先手动装几个 skill / rule，别上全量插件</td></tr>
+          <tr><td>要求供应链可审计、禁止外部 hooks</td><td>不适配</td><td>需要逐个 review 脚本，成本高于收益</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">我的判断</span>
+      <p>ECC 的真正价值不是“295K stars 的配置包”，而是它示范了一件事：<b>把个人工作方式做成有安装器、有适配层、有安全边界、有商业闭环的产品</b>。你可以不装它，但如果你在做团队级 agent 规范，这五层（内容 / 适配 / 执行 / 审计 / 分发）值得照抄。</p>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">08</span>来源</h2>
+    <ul class="sources">
+      <li>仓库与 README：<a href="https://github.com/affaan-m/ECC" rel="noreferrer">github.com/affaan-m/ECC</a>（组件数、平台表、安装、token 优化）</li>
+      <li>发布：<a href="https://github.com/affaan-m/ECC/releases" rel="noreferrer">Releases</a>（v2.2.3，2026-10-01）</li>
+      <li>官网：<a href="https://ecc.tools" rel="noreferrer">ecc.tools</a> · GitHub App：<a href="https://github.com/apps/ecc-tools" rel="noreferrer">ECC Tools</a></li>
+      <li>AgentShield 数字（1,282 tests / 98% / 102 rules）：README 的 Ecosystem Tools 段</li>
+      <li>Star / fork 数：GitHub API，2026-11-02 抓取（295K / 43.6K）</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">数字随时间变化；本文以抓取日的仓库状态为准。未独立审计其代码与供应链，安装前请自行 review。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Agents/Tools · ECC 拆解 · 2026-11-02 · <a href="index.html">工具调研</a> · <a href="agent-desktop.html">agent-desktop</a></div>
+  <span>本页为独立分析，与项目方无隶属关系；安装与安全判断请以仓库为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+
+(function(){
+  function n(id, fb){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) && v >= 0 ? v : fb; }
+  function fmt(x){
+    if (x >= 1e6) return (x / 1e6).toFixed(2) + 'M';
+    if (x >= 1e3) return (x / 1e3).toFixed(1) + 'K';
+    return Math.round(x).toString();
+  }
+  function calc(){
+    var win = Math.max(1000, n('win', 200000));
+    var mcp = n('mcp', 6), per = n('per', 2500), rules = n('rules', 8000), base = n('base', 10000);
+    var used = mcp * per + rules + base;
+    var left = win - used;
+    var pct = win > 0 ? (used / win) * 100 : 0;
+
+    document.getElementById('o-used').textContent = fmt(used);
+    var l = document.getElementById('o-left');
+    l.textContent = fmt(Math.max(0, left));
+    l.style.color = left < 0 ? 'var(--red)' : 'var(--ink)';
+    document.getElementById('o-pct').textContent = Math.round(pct) + '%';
+  }
+  ['win','mcp','per','rules','base'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

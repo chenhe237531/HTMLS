@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>AI Agent 全景 · 50 个产品与它们的优点（2026-10）</title>
+<title>AI Agent 全景 · 68 个产品与它们的优点（2026-10）</title>
 <style>
 :root{
   --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
@@ -127,7 +127,7 @@ tbody tr:hover{background:#fdfcf8}
 .tag.free{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
 .agent-foot a{margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap}
 
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}
+.cat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
 .cat{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
 .cat:hover{transform:translateY(-2px);border-color:var(--line-strong)}
 .cat:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -151,6 +151,10 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
   main{padding:32px 20px 72px}
   h1{font-size:clamp(34px,9vw,48px)}
   .agent-grid{grid-template-columns:1fr}
+  .cat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .cat-grid{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
 @media print{
@@ -176,7 +180,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     <div class="brand-mark" aria-hidden="true"></div>
     <div>
       <div class="brand-title">AI Agent 全景</div>
-      <div class="brand-sub">50 个产品 · 2026-10</div>
+      <div class="brand-sub">68 个产品 · 2026-10</div>
     </div>
   </div>
   <nav aria-label="目录">
@@ -190,8 +194,8 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     </ul>
   </nav>
   <div class="side-foot">
-    50 个代表产品<br>
-    23 开源 · 27 闭源<br>
+    68 个代表产品<br>
+    23 开源 · 45 闭源<br>
     核验 2026-10-31 · 离线可用
   </div>
 </aside>
@@ -200,17 +204,17 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
   <header class="hero">
     <p class="eyebrow"><span class="dot"></span>Agent 全景<span class="dot"></span>2026-10-31</p>
     <h1>AI Agent <em>全景</em></h1>
-    <p class="lede">50 个正在被真实使用的 Agent 产品，按「编码 / 通用 / 框架 / 企业 / 垂直」分成五类，每个都只写一件事：它最强的地方在哪。开源与闭源并列，不按立场排序。</p>
+    <p class="lede">68 个正在被真实使用的 AI 产品，按「编码 / 通用 / 消费级助手 / 框架 / 企业 / 垂直」分成六类，每个都只写一件事：它最强的地方在哪。这一版补上了用户量最大、但上一版漏掉的消费级助手：豆包、ChatGPT、Gemini、Muse、WorkBuddy 等。开源与闭源并列，不按立场排序。</p>
     <div class="meta-row">
       <span class="pill">口径 <b>2026-10 仍可用</b></span>
       <span class="pill">覆盖 <b>开源 + 闭源</b></span>
       <span class="pill">标注 <b>中国团队 / 免费档</b></span>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="n">50<span>个</span></div><div class="l">代表性 Agent 产品</div></div>
+      <div class="kpi"><div class="n">68<span>个</span></div><div class="l">代表性 AI 产品</div></div>
       <div class="kpi"><div class="n">23<span>个</span></div><div class="l">可自托管或开源</div></div>
-      <div class="kpi"><div class="n">5<span>类</span></div><div class="l">编码 / 通用 / 框架 / 企业 / 垂直</div></div>
-      <div class="kpi"><div class="n">1<span>张</span></div><div class="l">按目标选型表</div></div>
+      <div class="kpi"><div class="n">6<span>类</span></div><div class="l">编码 / 通用 / 消费级 / 框架 / 企业 / 垂直</div></div>
+      <div class="kpi"><div class="n">18<span>个</span></div><div class="l">本轮补上的消费级助手</div></div>
     </div>
   </header>
 
@@ -239,8 +243,8 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     </div>
 
     <div class="callout">
-      <span class="t">为什么是 50 个</span>
-      这个领域每月都有新项目，穷举没有意义。本页保留「有公开产品、社区有真实使用、2026-10 仍可获取」的代表，另外在最后列了 12 个补充名字。被略去的不代表不好。
+      <span class="t">为什么从 50 变成 68</span>
+      上一版只收「Agent 产品」，漏掉了用户量最大的消费级助手。这一版补了 18 个：豆包、千问、夸克、DeepSeek、腾讯元宝、Kimi、WorkBuddy、ChatGPT、Gemini、Copilot、Meta AI、Grok、Claude、Perplexity、Muse、Character.AI、Talkie、Le Chat。它们不全是自主 Agent，但已经是大多数人接触 AI 的入口，不能缺席；末尾另列了 8 个高用量垂类产品，说明为什么没有单列。
     </div>
   </section>
 
@@ -256,6 +260,11 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
       <button class="cat" type="button" data-jump="general">
         <div class="cnum">8</div><div class="cname">通用 / 个人 Agent</div>
         <div class="cdesc">浏览器操作、桌面助理、研究型 Agent。能力边界最模糊。</div>
+        <span class="go">查看清单 →</span>
+      </button>
+      <button class="cat" type="button" data-jump="consumer">
+        <div class="cnum">18</div><div class="cname">消费级助手</div>
+        <div class="cdesc">豆包、ChatGPT、Gemini、Muse… 用户量最大，Agent 能力参差，但是真实入口。</div>
         <span class="go">查看清单 →</span>
       </button>
       <button class="cat" type="button" data-jump="framework">
@@ -277,7 +286,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
 
     <div class="callout good">
       <span class="t">一句话选型</span>
-      要写代码 → 编码类；要替代重复操作 → 垂直/工作流；要自己造 → 框架；要在公司里合规落地 → 企业平台；要一个什么都能干的助理 → 通用类（但期望值放低）。
+      要写代码 → 编码类；要替代重复操作 → 垂直/工作流；要自己造 → 框架；要在公司里合规落地 → 企业平台；要日常问答与写作 → 消费级助手；要无人值守地替你做事 → 通用/个人 Agent（但期望值放低）。
     </div>
   </section>
   <section id="s03" aria-labelledby="h03">
@@ -289,6 +298,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
         <button class="chip" type="button" data-cat="all" aria-pressed="true">全部分类</button>
         <button class="chip" type="button" data-cat="coding" aria-pressed="false">编码 22</button>
         <button class="chip" type="button" data-cat="general" aria-pressed="false">通用 8</button>
+        <button class="chip" type="button" data-cat="consumer" aria-pressed="false">消费级 18</button>
         <button class="chip" type="button" data-cat="framework" aria-pressed="false">框架 8</button>
         <button class="chip" type="button" data-cat="enterprise" aria-pressed="false">企业 7</button>
         <button class="chip" type="button" data-cat="vertical" aria-pressed="false">垂直 5</button>
@@ -305,7 +315,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
       <button class="chip" type="button" data-lic="open" aria-pressed="false">开源 / 可自托管</button>
       <button class="chip" type="button" data-lic="closed" aria-pressed="false">闭源</button>
     </div>
-    <p class="result-line" id="agentCount" role="status" aria-live="polite">显示 50 / 50 个产品</p>
+    <p class="result-line" id="agentCount" role="status" aria-live="polite">显示 68 / 68 个产品</p>
 
     <div class="agent-grid" id="agentGrid">
 
@@ -549,6 +559,155 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
         <div class="agent-foot"><span class="tag">开源</span><span class="tag">自托管</span><a href="https://github.com/openclaw/openclaw" target="_blank" rel="noopener noreferrer">仓库 →</a></div>
       </article>
 
+      <div class="callout" id="consumerNote" style="grid-column:1/-1;margin:6px 0 2px">
+        <span class="t">本轮补充：消费级助手（18 个）</span>
+        用户量最大的一层，之前整层缺失。MAU 为第三方估算（QuestMobile 2026-09、AICPB 2026-06/07），App 与全端口径不同，只看量级，不要相加。
+      </div>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="豆包 Doubao 字节跳动 通用 助手 中文 语音">
+        <div class="agent-top"><div><div class="name">豆包</div><div class="pos">国民级通用 AI 助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">字节跳动的通用助手，QuestMobile 2026-09 月活约 4.19 亿，国内 AI 原生 App 第一。</p>
+        <ul class="pros"><li>中文对话、写作、拍照解题、语音与多端体验完整</li><li>免费额度大，学生与职场日常覆盖广</li></ul>
+        <p class="note"><b>注意：</b>2026 年引入付费档后月活出现波动；复杂多步任务仍不如专业 Agent 稳。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">4.19 亿 MAU</span><a href="https://www.doubao.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="千问 Qwen 通义 阿里 通用 助手 中文">
+        <div class="agent-top"><div><div class="name">千问</div><div class="pos">Qwen 官方入口</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">阿里 Qwen 的官方助手，2026-09 月活约 1.58 亿，是国内头部里增速最快的一个。</p>
+        <ul class="pros"><li>模型迭代快，写作、编程、学习场景覆盖全</li><li>与夸克、钉钉等阿里生态协同</li></ul>
+        <p class="note"><b>注意：</b>与豆包的差距在缩小，但复杂 Agent 能力要按具体任务验证。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">1.58 亿 MAU</span><a href="https://www.tongyi.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="夸克 Quark 阿里 AI 搜索 浏览器 拍题 扫描">
+        <div class="agent-top"><div><div class="name">夸克</div><div class="pos">AI 搜索与浏览器</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">阿里的 AI 搜索入口，2026-06 月活约 1.59 亿，把搜索、拍题、扫描、写作和网盘放在一起。</p>
+        <ul class="pros"><li>搜索是高频入口，学习与文档工具做得深</li><li>浏览器 + 工具集合，适合直接上手</li></ul>
+        <p class="note"><b>注意：</b>更像 AI 搜索与工具集合，不是通用任务 Agent。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">1.59 亿 MAU</span><a href="https://quark.cn/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="DeepSeek 深度求索 推理 代码 通用 助手">
+        <div class="agent-top"><div><div class="name">DeepSeek</div><div class="pos">推理型通用助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">以推理见长的通用助手，2026-09 月活约 1.23 亿，App 与 API 双线都强。</p>
+        <ul class="pros"><li>推理与代码能力突出，免费档可用</li><li>API 价格低，开发者生态广</li></ul>
+        <p class="note"><b>注意：</b>月活同比下滑；高峰期体验与多模态能力弱于头部产品。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">1.23 亿 MAU</span><a href="https://www.deepseek.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="腾讯元宝 Yuanbao 混元 DeepSeek 微信 助手">
+        <div class="agent-top"><div><div class="name">腾讯元宝</div><div class="pos">腾讯系 AI 助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">腾讯的 AI 助手，DeepSeek + 混元双模型，2026-09 月活约 3,733 万。</p>
+        <ul class="pros"><li>微信、腾讯文档、ima 等生态入口</li><li>拍题、搜索、写作、P 图等日常功能齐全</li></ul>
+        <p class="note"><b>注意：</b>独立 App 的定位受微信内助手影响，长期价值需要观察。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">3,733 万 MAU</span><a href="https://yuanbao.tencent.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Kimi 月之暗面 Moonshot 长文本 办公 K2 K3">
+        <div class="agent-top"><div><div class="name">Kimi</div><div class="pos">长文本与办公助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">月之暗面的助手，2026-07 月活约 2,621 万，K2/K3 模型主打推理与办公产出。</p>
+        <ul class="pros"><li>长文档阅读与写作体验好</li><li>PPT、表格、翻译等办公能力完整</li></ul>
+        <p class="note"><b>注意：</b>规模小于头部；长文本优势正被更大窗口的通用助手稀释。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">2,621 万 MAU</span><a href="https://kimi.moonshot.cn/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="WorkBuddy 腾讯云 办公 工作台 文档 PPT 技能">
+        <div class="agent-top"><div><div class="name">WorkBuddy</div><div class="pos">AI 办公工作台</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">腾讯云的 AI 工作台，桌面 + App + 小程序，140+ 专家、2.2 万技能插件；2026-07 环比增速 397%。</p>
+        <ul class="pros"><li>文档、表格、PPT 等办公产物交付完整</li><li>云端与本机双模式，微信扫码即用</li></ul>
+        <p class="note"><b>注意：</b>按 Credits 计费，重度任务要算成本；复杂任务仍需人工验收。</p>
+        <div class="agent-foot"><span class="tag cn">中国团队</span><span class="tag">腾讯云</span><a href="https://www.workbuddy.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="ChatGPT OpenAI 通用 助手 语音 图像 agent">
+        <div class="agent-top"><div><div class="name">ChatGPT</div><div class="pos">消费级 AI 入口</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">OpenAI 的消费级助手，2026 年中月活接近 10 亿，是大多数人接触 AI 的第一站。</p>
+        <ul class="pros"><li>问答、写作、图像、语音与 Agent 模式覆盖最全</li><li>生态与第三方连接最多，迁移成本低</li></ul>
+        <p class="note"><b>注意：</b>免费档有额度限制；Agent 模式与连接器在部分地区受限。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">~10 亿 MAU</span><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Gemini 谷歌 Google 多模态 Workspace 助手">
+        <div class="agent-top"><div><div class="name">Gemini</div><div class="pos">Google 的多模态助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Google 的助手，App 月活约 1.63 亿、全端约 4 亿，与搜索和 Workspace 深度整合。</p>
+        <ul class="pros"><li>多模态与长上下文强</li><li>Gmail、Docs、Calendar 原生协同</li></ul>
+        <p class="note"><b>注意：</b>独立 App 使用低于 ChatGPT；地区与账号限制较多。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">1.63 亿 App MAU</span><a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Microsoft Copilot 微软 Windows Office M365 助手">
+        <div class="agent-top"><div><div class="name">Microsoft Copilot</div><div class="pos">跨端办公助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">微软的跨端助手，覆盖 Windows、Edge、M365 与独立 App，全端月活约 2.5 亿+。</p>
+        <ul class="pros"><li>企业身份与 Office 集成最深</li><li>Windows 系统级入口，员工无需另装</li></ul>
+        <p class="note"><b>注意：</b>独立 App 月活约 1,760 万，声量大于主动使用；企业版另计费。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">2.5 亿+ 全端</span><a href="https://copilot.microsoft.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Meta AI 社交 WhatsApp Instagram 助手">
+        <div class="agent-top"><div><div class="name">Meta AI</div><div class="pos">社交分发型助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">嵌在 WhatsApp、Instagram、Messenger 里的助手，全端月活约 6 亿–10 亿，独立 App 约 7,300 万。</p>
+        <ul class="pros"><li>分发几乎零门槛，覆盖海量非技术用户</li><li>社交与多模态场景自然</li></ul>
+        <p class="note"><b>注意：</b>大量是入口曝光而非主动使用；隐私与地区策略差异大。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">6 亿+ 全端</span><a href="https://www.meta.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Grok xAI X Twitter 实时 助手">
+        <div class="agent-top"><div><div class="name">Grok</div><div class="pos">X 生态助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">xAI 的助手，2026-06 App 月活约 6,788 万，与 X 的内容和实时信息深度绑定。</p>
+        <ul class="pros"><li>实时信息与 X 内容结合紧</li><li>风格直接，迭代速度快</li></ul>
+        <p class="note"><b>注意：</b>内容安全争议多；独立使用与 X 内使用的口径差异很大。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">6,788 万 App MAU</span><a href="https://grok.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Claude Anthropic 写作 代码 长文 Artifacts">
+        <div class="agent-top"><div><div class="name">Claude</div><div class="pos">写作与代码助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Anthropic 的助手，App 月活约 4,000 万，长文写作、代码与文档理解是主场。</p>
+        <ul class="pros"><li>长文与代码质量稳，风格克制</li><li>Artifacts、Projects 适合持续工作</li></ul>
+        <p class="note"><b>注意：</b>消费级规模小于 ChatGPT；重度使用依赖订阅或 API。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">4,000 万 App MAU</span><a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Perplexity 搜索 引用 答案引擎 研究">
+        <div class="agent-top"><div><div class="name">Perplexity</div><div class="pos">带引用的答案引擎</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">以搜索与引用为核心的助手，App 月活约 2,750 万，适合研究型问答。</p>
+        <ul class="pros"><li>来源透明、可追问，事实核查效率高</li><li>搜索体验比通用聊天更聚焦</li></ul>
+        <p class="note"><b>注意：</b>不是通用任务 Agent；Comet 浏览器是另一条产品线。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">2,750 万 App MAU</span><a href="https://www.perplexity.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Muse Meta 个人 Agent 购物 邮件 日程 虚拟机">
+        <div class="agent-top"><div><div class="name">Muse</div><div class="pos">个人生活 Agent</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Meta 2026-09 推出的个人 Agent，40 天用户破 1,000 万、DAU 约 250 万，独立 Secure VM 可在后台持续执行。</p>
+        <ul class="pros"><li>能开浏览器、发邮件、比价购物、订行程</li><li>关闭 App 后继续工作，带审批与活动日志</li></ul>
+        <p class="note"><b>注意：</b>目前仅美/加/日/新等地区；需授予邮箱、日历、支付权限，注意提示注入与审计。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">1,000 万+ 用户</span><span class="tag">新</span><a href="https://muse.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Character.AI 角色 陪伴 社区 对话">
+        <div class="agent-top"><div><div class="name">Character.AI</div><div class="pos">角色扮演与陪伴</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">角色扮演型助手，月活约 2,000 万，用户自建角色超过 1,800 万个。</p>
+        <ul class="pros"><li>角色生态与沉浸感最强</li><li>年轻用户粘性高，使用时长长</li></ul>
+        <p class="note"><b>注意：</b>内容安全与未成年人保护争议持续；不适合工作型任务。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">2,000 万 MAU</span><a href="https://character.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Talkie MiniMax 陪伴 角色 语音 海外">
+        <div class="agent-top"><div><div class="name">Talkie</div><div class="pos">AI 陪伴应用</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">MiniMax 的海外陪伴应用，2026-06 App 月活约 3,285 万，增长快。</p>
+        <ul class="pros"><li>角色对话与语音体验成熟</li><li>新兴市场渗透强</li></ul>
+        <p class="note"><b>注意：</b>内容审核与地区合规是主要风险；不是生产力工具。</p>
+        <div class="agent-foot"><span class="tag">全球</span><span class="tag">3,285 万 App MAU</span><a href="https://www.talkie-ai.com/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
+      <article class="agent" data-cat="consumer" data-lic="closed" data-name="Le Chat Mistral 欧洲 助手 开源 模型">
+        <div class="agent-top"><div><div class="name">Le Chat</div><div class="pos">欧洲通用助手</div></div><span class="lic closed">闭源</span></div>
+        <p class="desc">Mistral 的助手，月活约 1,000 万，主打欧洲市场、响应速度与可控部署。</p>
+        <ul class="pros"><li>响应快、价格友好</li><li>欧洲数据与合规叙事强，可私有化</li></ul>
+        <p class="note"><b>注意：</b>模型能力与生态小于美国头部；中文场景较弱。</p>
+        <div class="agent-foot"><span class="tag">欧洲</span><span class="tag">~1,000 万 MAU</span><a href="https://chat.mistral.ai/" target="_blank" rel="noopener noreferrer">官网 →</a></div>
+      </article>
+
       <article class="agent" data-cat="framework" data-lic="open" data-name="LangGraph 状态机 编排 HITL">
         <div class="agent-top"><div><div class="name">LangGraph</div><div class="pos">图状态机编排</div></div><span class="lic open">开源</span></div>
         <p class="desc">用图描述 Agent 的状态与转移，适合需要持久化、人工介入与可恢复的长流程。</p>
@@ -790,6 +949,24 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
   <section id="s06" aria-labelledby="h06">
     <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">补充与来源</h2></div>
 
+    <h3>高使用量但未单列（垂类）</h3>
+    <p class="small" style="margin-top:0">这些产品月活很高，但不是通用助手，或与已列产品同源，所以只在表里点名，不占卡片。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>名称</th><th>量级</th><th>定位</th><th>为什么未单列</th></tr></thead>
+        <tbody>
+          <tr><td>蚂蚁阿福</td><td class="num">3,479 万（2026-09）</td><td>AI 健康顾问</td><td>垂类顾问，不提供通用任务闭环</td></tr>
+          <tr><td>即梦 AI</td><td class="num">8,736 万（2026-06）</td><td>图像 / 视频创作</td><td>创作工具，不是 Agent</td></tr>
+          <tr><td>豆包爱学</td><td class="num">约 1,944 万（2026-06）</td><td>学科教育</td><td>教育垂类</td></tr>
+          <tr><td>小猿 AI</td><td class="num">2026-09 榜单第 6</td><td>AI 学习</td><td>教育垂类</td></tr>
+          <tr><td>Lovekey</td><td class="num">2026-09 榜单第 9</td><td>AI 社交</td><td>社交陪伴，非生产力</td></tr>
+          <tr><td>Dola（原 Cici）</td><td class="num">7,936 万（2026-06）</td><td>字节海外通用助手</td><td>与豆包同源，避免重复</td></tr>
+          <tr><td>纳米 AI</td><td class="num">808 万（2026-06）</td><td>多智能体搜索 / 视频</td><td>规模较小，能力与通用助手重叠</td></tr>
+          <tr><td>可灵 AI</td><td class="num">811 万（2026-06）</td><td>视频生成</td><td>创作工具，不是 Agent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <h3>还有这些（未单独展开）</h3>
     <div class="table-wrap">
       <table>
@@ -814,6 +991,9 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     <h3>来源与口径</h3>
     <ul class="small">
       <li>产品能力与许可：各产品官网、文档与公开仓库（2026-10-31 核对）。</li>
+      <li>用户量：QuestMobile 2026-09（经快科技 / 腾讯新闻 2026-10-20）、AICPB 全球 / 国内 App 榜 2026-06、AI 产品榜 2026-07（WorkBuddy 环比 +397%）、Presenc AI 2026-05（全端估算）。</li>
+      <li>Muse：Meta 2026-09-08 发布稿；TechCrunch / The Verge 2026-10-20 与 2026-10-21（40 天 1,000 万用户、DAU 约 250 万）。</li>
+      <li>陪伴类：Character.AI 统计（DemandSage 2026-10）、Talkie / AICPB 2026-06。</li>
       <li>编码 Agent 横向信息参考：TechLogHub（2026-10）、CodePick（2026-10）、Agentic.ai（2026-10）、OpenHands 博客（2026-06）。</li>
       <li>企业平台参考：Dataiku（2026-08）、Airtable、Alice Labs（2026-06）、AWS / Microsoft / Salesforce / Google 官方文档。</li>
       <li>开源项目状态参考：GitHub 仓库与趋势整理（2026-10）。</li>
@@ -822,7 +1002,7 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
   </section>
 
   <footer>
-    <span>AI Agent 全景 · 2026-10-31 · 50 个产品</span>
+    <span>AI Agent 全景 · 2026-10-31 · 68 个产品</span>
     <span>开源与闭源并列，不按立场排序</span>
   </footer>
 </main>
@@ -887,6 +1067,8 @@ footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--mute
     });
     count.textContent = "显示 " + shown + " / " + agents.length + " 个产品";
     empty.hidden = shown !== 0;
+    var note = document.getElementById("consumerNote");
+    if (note) { note.hidden = !(activeCat === "all" || activeCat === "consumer"); }
   }
 
   function pressCat(cat) {

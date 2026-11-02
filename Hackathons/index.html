@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="AI 黑客松去哪找：Luma、Devpost、MLH、DoraHacks、Eventbrite、Meetup、London Hackathons、HackathonRadar 八个平台的定位、适合人群与组合用法。">
+<title>AI 黑客松地图 · 8 个平台怎么选、怎么组合</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:1060px;margin:0 auto;padding:46px clamp(18px,5vw,40px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.6vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer;line-height:1.6}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.search{position:relative;flex:1 1 240px;max-width:320px}
+.search input{width:100%;font:inherit;font-size:13.5px;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.result-line{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.hub{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:9px}
+.hub-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.hub-name{font-size:16px;font-weight:650;line-height:1.4}
+.hub-op{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono);word-break:break-all}
+.badge{font-size:10.5px;font-family:var(--mono);letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--paper-2);border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.hub p{margin:0;font-size:13.6px;color:var(--ink-2);line-height:1.7}
+.hub .use{font-size:12.4px;color:var(--muted);line-height:1.65;border-top:1px dashed var(--line);padding-top:8px}
+.hub .use b{color:var(--ink-2)}
+.hub a.go{align-self:flex-start;font-size:12.5px;text-decoration:none;border:1px solid var(--line-strong);border-radius:8px;padding:4px 10px;color:var(--ink-2);margin-top:2px}
+.hub a.go:hover{border-color:var(--accent);color:var(--accent)}
+.empty{border:1px dashed var(--line-strong);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.3px;min-width:720px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+.step .k{font-family:var(--mono);font-size:10.5px;color:var(--amber);letter-spacing:.06em}
+.step h3{margin:3px 0 5px;font-size:15px}
+.step p{margin:0;font-size:13.3px;color:var(--ink-2);line-height:1.68}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,40px) 40px;max-width:1060px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.toolbar,.search,.chips{display:none}body{background:#fff}.hub,.kpi,.step{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../README.md">← 仓库索引</a>
+  <span class="crumb">Hackathons / 8 platforms · 2026-11-01</span>
+  <nav class="pager"><a href="#map">全部平台</a><a href="#playbook">怎么组合</a><a href="#checklist">报名检查</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>AI Hackathon · 找赛地图</div>
+  <h1>AI 黑客松<br><em>去哪找</em></h1>
+  <p class="lede">八个平台，解决的是四个不同的问题：发现（Radar）、报名（Devpost / DoraHacks）、线下社交（Luma / Eventbrite / Meetup）、身份与社群（MLH）。先想清楚你要哪种，再挑入口。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">8<span>个平台</span></div><div class="l">覆盖线上、线下、学生、Web3</div></div>
+    <div class="kpi"><div class="n">4<span>类问题</span></div><div class="l">发现 / 报名 / 本地 / 社群</div></div>
+    <div class="kpi"><div class="n">3<span>步漏斗</span></div><div class="l">聚合 → 规则 → 线下</div></div>
+    <div class="kpi"><div class="n">6<span>项检查</span></div><div class="l">报名前的硬条件</div></div>
+  </div>
+
+  <section id="map">
+    <h2><span class="no">01</span>八个平台</h2>
+    <p class="sub">按“你缺什么”排序，不按流量排序。域名在 2026-11-01 实测可访问；两处官方域名已经变了，卡片里标了。</p>
+
+    <div class="toolbar">
+      <div class="chips" role="group" aria-label="按用途筛选">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" type="button" data-filter="online" aria-pressed="false">线上比赛</button>
+        <button class="chip" type="button" data-filter="local" aria-pressed="false">线下 / 本地</button>
+        <button class="chip" type="button" data-filter="student" aria-pressed="false">学生 / 新手</button>
+        <button class="chip" type="button" data-filter="web3" aria-pressed="false">Web3 / 开源</button>
+        <button class="chip" type="button" data-filter="agg" aria-pressed="false">聚合 / 发现</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5 21 21"></path></svg>
+        <input id="q" type="search" placeholder="搜平台、用途或关键词（按 / 聚焦）" aria-label="搜索平台">
+      </div>
+    </div>
+    <p class="result-line" id="count" role="status" aria-live="polite">共 8 个平台</p>
+
+    <div class="grid" id="grid">
+
+      <article class="hub" data-type="local agg" data-text="luma lu.ma luma.com 线下 活动 报名 社交 hackathon meetup demo pitch 赞助">
+        <div class="hub-top"><div><div class="hub-name">Luma</div><div class="hub-op">luma.com（lu.ma 会跳转）</div></div><span class="badge">线下 / 社交</span></div>
+        <p>线下活动的发布与报名页。很多 hackathon、build night、demo day 用它做报名和日历；活动页里通常能找到赞助方、评委和日程。</p>
+        <div class="use"><b>怎么用：</b>关注城市与主办方，直接搜 <code>hackathon</code>、<code>AI</code>、<code>build night</code>；看到感兴趣的活动先点主办方主页，判断是不是长期办。</div>
+        <div class="use"><b>注意：</b>平台不审核活动质量，报名人数上限和“是否真的办”要看主办方历史。</div>
+        <a class="go" href="https://luma.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="online" data-text="devpost 线上 比赛 奖金 作品集 hackathon 规则 往届 winners">
+        <div class="hub-top"><div><div class="hub-name">Devpost</div><div class="hub-op">devpost.com</div></div><span class="badge">线上比赛</span></div>
+        <p>全球最大的 hackathon 平台之一，线上、线下、混合都有。赛题、规则、截止时间和提交材料写得很明确，往届获奖项目可以直接翻。</p>
+        <div class="use"><b>怎么用：</b>按 <code>AI/ML</code> 标签和截止日期筛；先看往届 winners 的技术栈与提交材料，再决定要不要投入。</div>
+        <div class="use"><b>注意：</b>多数比赛要求“新项目”、明确代码归属与提交项；地区/学生资格、团队人数限制要在规则页确认。</div>
+        <a class="go" href="https://devpost.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="student" data-text="mlh major league hacking mlh.com 学生 新手 赛季 社区 学习资源">
+        <div class="hub-top"><div><div class="hub-name">MLH</div><div class="hub-op">mlh.com（mlh.io 会跳转）</div></div><span class="badge">学生 / 新手</span></div>
+        <p>面向学生的开发者社区，按赛季组织大量学生 hackathon 与线上活动，社区氛围偏友好，适合第一次参赛。</p>
+        <div class="use"><b>怎么用：</b>看赛季日历，优先选离你近的会员赛；新手先参加带 workshop / starter kit 的场次。</div>
+        <div class="use"><b>注意：</b>多数活动限学生，可能查证件；差旅报销与名额政策每场不同。</div>
+        <a class="go" href="https://www.mlh.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="web3 online" data-text="dorahacks web3 开源 grant bounty 黑客松 生态 链上">
+        <div class="hub-top"><div><div class="hub-name">DoraHacks</div><div class="hub-op">dorahacks.io</div></div><span class="badge">Web3 / 开源</span></div>
+        <p>偏 Web3 与开源生态的比赛与资助平台，除了 hackathon，还有 bounty 和 grant；全球社区活动多，奖励常以奖金池或项目资助形式出现。</p>
+        <div class="use"><b>怎么用：</b>按生态（公链 / 协议）筛选；先看 BUIDL 提交要求和评审维度，再组队。</div>
+        <div class="use"><b>注意：</b>注意钱包、KYC 与代币奖励的波动；有些 grant 是里程碑拨款，不是一次性发放。</div>
+        <a class="go" href="https://dorahacks.io/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="local" data-text="eventbrite 本地 活动 城市 hack night workshop 付费 培训">
+        <div class="hub-top"><div><div class="hub-name">Eventbrite</div><div class="hub-op">eventbrite.co.uk（可切城市/地区）</div></div><span class="badge">本地活动</span></div>
+        <p>本地活动的通用目录。除了正式比赛，还有大量 hack night、工作坊、行业聚会；切到所在城市就能看到。</p>
+        <div class="use"><b>怎么用：</b>搜 <code>hackathon</code>、<code>AI</code>、<code>build night</code>，按时间排序；先看主办方过往活动。</div>
+        <div class="use"><b>注意：</b>质量参差，可能混着付费培训、招聘会或纯商业宣讲。</div>
+        <a class="go" href="https://www.eventbrite.co.uk/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="local" data-text="meetup 社区 技术聚会 组队 本地 ai developers">
+        <div class="hub-top"><div><div class="hub-name">Meetup</div><div class="hub-op">meetup.com</div></div><span class="badge">社区 / 组队</span></div>
+        <p>技术社群与线下聚会的集合。搜 AI、Tech、Hackathon 能找到本地开发者群组，适合找组队搭子和长期圈子。</p>
+        <div class="use"><b>怎么用：</b>加入 2–3 个活跃群组，看最近一次活动的照片和报名人数；先参加一次小聚会再谈组队。</div>
+        <div class="use"><b>注意：</b>群组活跃度差异很大，有的已经名存实亡；看“最近活动时间”比看成员数可靠。</div>
+        <a class="go" href="https://www.meetup.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="local agg" data-text="london hackathons 伦敦 聚合 本地 汇总">
+        <div class="hub-top"><div><div class="hub-name">London Hackathons</div><div class="hub-op">londonhackathons.com</div></div><span class="badge">城市聚合</span></div>
+        <p>伦敦本地的 hackathon 汇总站，把多个平台的入口收在一页，省去逐个平台翻的时间。</p>
+        <div class="use"><b>怎么用：</b>当作“伦敦索引”，看到条目后回到主办方原页确认时间与报名。</div>
+        <div class="use"><b>注意：</b>只覆盖伦敦；聚合信息可能滞后。国内可以照这个模式找本地的聚合号/社群。</div>
+        <a class="go" href="https://londonhackathons.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+      <article class="hub" data-type="agg" data-text="hackathonradar 聚合 搜索 按主题 技术 筛选 总入口">
+        <div class="hub-top"><div><div class="hub-name">HackathonRadar</div><div class="hub-op">hackathonradar.com</div></div><span class="badge">聚合搜索</span></div>
+        <p>跨平台聚合搜索。不知道去哪找时，先用它按主题、技术方向、线上/线下筛一遍，再回到原平台看规则。</p>
+        <div class="use"><b>怎么用：</b>先用宽关键词（AI、LLM、agents）扫一遍，把候选按截止日期排序，再逐个核对资格。</div>
+        <div class="use"><b>注意：</b>聚合站不掌握报名状态；以主办方页面为准。</div>
+        <a class="go" href="https://www.hackathonradar.com/" rel="noreferrer">打开 →</a>
+      </article>
+
+    </div>
+    <div class="empty" id="empty" hidden>没有匹配的平台。清空搜索或换个筛选。</div>
+  </section>
+
+  <section id="table">
+    <h2><span class="no">02</span>一张表看完</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>平台</th><th>它解决什么</th><th>活动形态</th><th>最适合</th><th>主要代价</th></tr></thead>
+        <tbody>
+          <tr><td><b>Luma</b></td><td>线下活动发现与报名</td><td>线下 / 混合</td><td>想认识人、找线下局</td><td>质量依赖主办方</td></tr>
+          <tr><td><b>Devpost</b></td><td>线上比赛与作品集</td><td>线上为主</td><td>冲奖金、攒项目</td><td>规则与提交材料要求高</td></tr>
+          <tr><td><b>MLH</b></td><td>学生赛事与社群</td><td>线下 + 线上</td><td>学生、第一次参赛</td><td>学生资格限制</td></tr>
+          <tr><td><b>DoraHacks</b></td><td>Web3 / 开源比赛与 grant</td><td>线上为主</td><td>Web3、开源项目</td><td>链上/KYC 门槛</td></tr>
+          <tr><td><b>Eventbrite</b></td><td>本地活动目录</td><td>线下</td><td>找本地 hack night</td><td>信息杂、质量参差</td></tr>
+          <tr><td><b>Meetup</b></td><td>技术社群与组队</td><td>线下为主</td><td>长期圈子、找搭子</td><td>活跃度差异大</td></tr>
+          <tr><td><b>London Hackathons</b></td><td>城市级汇总</td><td>线下</td><td>伦敦本地</td><td>只覆盖一城</td></tr>
+          <tr><td><b>HackathonRadar</b></td><td>跨平台搜索</td><td>线上 + 线下</td><td>快速初筛</td><td>信息可能滞后</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="playbook">
+    <h2><span class="no">03</span>怎么组合用：三步漏斗</h2>
+    <p class="sub">别在八个平台之间来回刷。用一个固定顺序，从宽到窄，最后只留 3 个候选。</p>
+
+    <div class="flow">
+      <div class="step">
+        <div class="k">STEP 1 · 10 分钟</div>
+        <h3>用聚合站铺开</h3>
+        <p>HackathonRadar 搜 <code>AI</code> / <code>LLM</code> / <code>agents</code>，London Hackathons 看本地，先把候选拉到 10–15 个，只记截止日期和地点。</p>
+      </div>
+      <div class="step">
+        <div class="k">STEP 2 · 30 分钟</div>
+        <h3>回原平台读规则</h3>
+        <p>Devpost / DoraHacks / MLH 看资格、提交材料、评审维度、往届 winners。删掉不满足硬条件的，留 5 个。</p>
+      </div>
+      <div class="step">
+        <div class="k">STEP 3 · 线下补人</div>
+        <h3>用 Luma / Meetup 找队友</h3>
+        <p>先参加一次线下 meetup 或 build night，认识 2–3 个能一起熬夜的人，再决定报哪个赛。Eventbrite 补本地工作坊。</p>
+      </div>
+    </div>
+
+    <div class="callout good" style="margin-top:16px">
+      <span class="t">AI 赛事的搜索词</span>
+      <p>英文：<code>AI</code>、<code>LLM</code>、<code>GenAI</code>、<code>agents</code>、<code>RAG</code>、<code>multimodal</code>、<code>inference</code>、<code>fine-tuning</code>、<code>AI safety</code>、<code>robotics</code>。中文：<code>黑客松</code>、<code>开发者大赛</code>、<code>创客</code>、<code>算法赛</code>。搜不到就换“主办方 + AI”而不是换平台。</p>
+    </div>
+  </section>
+
+  <section id="checklist">
+    <h2><span class="no">04</span>报名前的六项检查</h2>
+    <ul class="check">
+      <li><b>资格</b>：地区、年龄、学生身份、职业限制；团队人数上限与是否允许单人。</li>
+      <li><b>项目要求</b>：必须新写？能否用赛前代码/开源库？是否要求现场提交 commit。</li>
+      <li><b>知识产权</b>：代码归属、赞助方使用权、是否要求开源。</li>
+      <li><b>评审与奖项</b>：评委构成、评分维度、奖金/额度是否含税、发放条件。</li>
+      <li><b>成本</b>：报名费、差旅、住宿；线上赛的时间投入与 API 账单。</li>
+      <li><b>交付</b>：Demo 时长、视频、文档、可运行链接；缺一项是否直接淘汰。</li>
+    </ul>
+
+    <div class="callout warn" style="margin-top:16px">
+      <span class="t">两个常见误判</span>
+      <p>“报名人数多 = 比赛好”——不一定，可能只是流量大；“奖金高 = 值得去”——要看评审是否真看技术，以及获奖概率。用往届 winners 的质量判断，比用奖金判断可靠。</p>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">05</span>域名核对</h2>
+    <ul class="sources">
+      <li>Luma：<a href="https://luma.com/" rel="noreferrer">luma.com</a>（<code>lu.ma</code> 301 跳转到此，实际用 luma.com）</li>
+      <li>Devpost：<a href="https://devpost.com/" rel="noreferrer">devpost.com</a></li>
+      <li>MLH：<a href="https://www.mlh.com/" rel="noreferrer">mlh.com</a>（<code>mlh.io</code> 跳转到此）</li>
+      <li>DoraHacks：<a href="https://dorahacks.io/" rel="noreferrer">dorahacks.io</a></li>
+      <li>Eventbrite：<a href="https://www.eventbrite.co.uk/" rel="noreferrer">eventbrite.co.uk</a>（英国站，可切地区）</li>
+      <li>Meetup：<a href="https://www.meetup.com/" rel="noreferrer">meetup.com</a></li>
+      <li>London Hackathons：<a href="https://londonhackathons.com/" rel="noreferrer">londonhackathons.com</a></li>
+      <li>HackathonRadar：<a href="https://www.hackathonradar.com/" rel="noreferrer">hackathonradar.com</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">全部域名于 2026-11-01 实测可访问。平台功能与活动状态会变，报名前以主办方原页为准。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Hackathons · AI 找赛地图 · 2026-11-01 · <a href="business.html">商业分析：黑客松是放大器</a></div>
+  <span>本页为独立整理，与所列平台无隶属关系。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('#grid .hub'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var type = 'all';
+
+  function apply(){
+    var needle = q.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var okType = type === 'all' || (' ' + c.getAttribute('data-type') + ' ').indexOf(' ' + type + ' ') !== -1;
+      var okText = !needle || c.getAttribute('data-text').toLowerCase().indexOf(needle) !== -1;
+      var show = okType && okText;
+      c.hidden = !show;
+      if (show) shown++;
+    });
+    count.textContent = (needle || type !== 'all')
+      ? '匹配 ' + shown + ' 个 / 共 ' + cards.length + ' 个'
+      : '共 ' + cards.length + ' 个平台';
+    empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      type = btn.getAttribute('data-filter');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', apply);
+
+  addEventListener('keydown', function(e){
+    var tag = (e.target && e.target.tagName) || '';
+    if (e.key === '/' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      e.preventDefault(); q.focus(); q.select();
+    } else if (e.key === 'Escape' && document.activeElement === q) {
+      q.value = ''; apply(); q.blur();
+    }
+  });
+})();
+</script>
+</body>
+</html>

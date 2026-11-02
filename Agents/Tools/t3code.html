@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="T3 Code 的架构、远程访问、权限模式、PR 工作流与风险分析。">
+<title>T3 Code · 工具分析（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="./index.html">← 工具调研</a>
+<span class="crumb">Tools / T3 Code</span>
+<span class="date">2026-11-01 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>控制面 / 远程</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>T3 Code<br><em>给已有的编码 Agent 装一个远程驾驶舱</em></h1>
+<p class="lede">它不生产 Agent，也不替换 Claude Code 或 Codex。它把「跑在你机器上的 Agent」变成一个有服务器、有事件日志、能在手机和浏览器里安全接管的工作区。真正的卖点是远程与多端，而不是模型能力。</p>
+<div class="pills">
+<span class="pill"><b>MIT</b></span>
+<span class="pill">TypeScript</span>
+<span class="pill"><b>3.87 万</b> star</span>
+<span class="pill">macOS / Windows / Linux 服务器</span>
+<span class="pill">iOS / Android / Web / 桌面</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>已经装好 Claude Code、Codex、Cursor 等 CLI，想要统一入口</li>
+<li>人离开工位后，仍想用手机查看进度、审 diff、处理审批</li>
+<li>需要把一个仓库的线程、检查点与 PR 关联起来</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>没有安装任何 Agent CLI，希望开箱即用</li>
+<li>不愿让一台机器长期在线做服务器</li>
+<li>对默认 Full access 权限模式敏感、又不想配策略</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么，不是什么</a></li>
+<li><a href="#s02">02 · 它解决的具体问题</a></li>
+<li><a href="#s03">03 · 运作方式</a></li>
+<li><a href="#s04">04 · 上手</a></li>
+<li><a href="#s05">05 · 日常流程</a></li>
+<li><a href="#s06">06 · 强项</a></li>
+<li><a href="#s07">07 · 边界与代价</a></li>
+<li><a href="#s08">08 · 安全与权限</a></li>
+<li><a href="#s09">09 · 和谁比</a></li>
+<li><a href="#s10">10 · 结论</a></li>
+<li><a href="#s11">11 · 核验与来源</a></li>
+</ol><div class="toc-note">重点看第 8 节：默认权限是 Full access，这是它最需要改的默认值。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么，不是什么</h2></div>
+<p class="sub">先划清边界：T3 Code 是「Agent 的宿主与控制面」，不是新的编码模型。</p>
+
+<p>T3 Code 官方把自己称为 <b>agent harness control surface</b>。它接管你机器上已经安装并登录的 Agent 进程，通过一个本地服务器持有终端、Git、项目文件和 provider 凭据，再把「线程」投射到 Web、桌面和手机客户端。</p>
+<div class="grid2">
+  <div class="panel pos"><h3>它负责</h3><ul>
+    <li>启动、恢复、切换多个 Agent 线程</li>
+    <li>保存事件日志、检查点、PR 关联</li>
+    <li>把同一环境暴露给手机、浏览器、另一台电脑</li>
+    <li>统一权限模式与审批请求</li>
+  </ul></div>
+  <div class="panel neg"><h3>它不负责</h3><ul>
+    <li>模型推理（用你订阅的 Claude / Codex / Cursor 等）</li>
+    <li>替代 Agent 自己的工具与提示词</li>
+    <li>替你托管代码（默认代码留在服务器所在机器）</li>
+    <li>保证 Agent 一定做对（它只提供控制与审计面）</li>
+  </ul></div>
+</div>
+<div class="callout"><span class="t">一句话</span><p>如果你只在本机终端里写代码，T3 Code 的复杂度不值得；它的价值在「离开键盘之后」。</p></div>
+
+</section>
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>它解决的具体问题</h2></div>
+<p class="sub">不是「让 Agent 更聪明」，而是「让 Agent 可被远程监督」。</p>
+
+<ul class="steps">
+  <li><b>多 provider 割裂：</b>Claude Code、Codex、Cursor、Grok Build、OpenCode、Antigravity、fx 各有自己的会话与登录，T3 Code 用统一线程模型接住它们。</li>
+  <li><b>远程不可用：</b>Agent 在桌面跑，人在地铁上。T3 Code 的服务器把环境暴露给手机与浏览器，而不是把代码同步到手机。</li>
+  <li><b>审批碎片化：</b>不同 Agent 的权限模型不同，T3 Code 用 Supervised / Auto-accept edits / Auto / Full access 四档统一表达。</li>
+  <li><b>PR 与线程脱节：</b>一个任务改了什么、对应哪个 PR、CI 是否过了，T3 Code 把 PR 链接与 diff 放回线程。</li>
+  <li><b>长任务不可恢复：</b>事件日志 + 隐藏 Git ref 检查点，让「回滚到某一轮之前」有据可依。</li>
+</ul>
+
+</section>
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
+<p class="sub">服务端拥有环境，客户端只是视图；这条边界决定了它的安全模型。</p>
+
+<p>官方架构文档写得很明确：<b>provider 进程、终端、Git、项目文件都属于服务器</b>，客户端不能用自己的文件系统或凭据替代。桌面端内置服务器，但渲染进程仍然遵守同一条边界。</p>
+<ol class="steps">
+  <li><b>服务器：</b>运行 Agent CLI、持有登录态与 Git 凭据、执行工具、写事件日志。</li>
+  <li><b>RPC 契约：</b>客户端通过认证 RPC 订阅线程状态；只订阅当前线程，不拉全量历史。</li>
+  <li><b>事件日志：</b>命令先落库、再产生副作用；重试幂等，投影不会跑到日志前面。</li>
+  <li><b>检查点：</b>用隐藏 Git ref 捕获工作区，不往你的分支加提交；回滚要与 Agent 会话状态一起处理。</li>
+  <li><b>PR 同步：</b>合并、关闭、CI 状态变化会触发重新读取；外部 <code>gh pr merge</code> 也能被后续同步捕获。</li>
+</ol>
+<div class="callout warn"><span class="t">这意味着</span><p>服务器所在机器必须保持运行且可达。手机只是遥控器，不是执行环境；关机后任务不会继续。</p></div>
+
+</section>
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
+<p class="sub">先装 Agent、登录，再装 T3 Code；顺序反了会发现「没有 provider 可用」。</p>
+
+<p>至少安装并登录一个 provider：Codex（<code>codex login</code>）、Claude Code（<code>claude auth login</code>）、Cursor CLI（<code>agent login</code>）、Grok Build（<code>grok login</code>）、OpenCode（<code>opencode auth login</code>）等。</p>
+<pre><code># 安装 CLI 并启动本地服务器
+curl -fsSL https://t3.codes/install.sh | sh
+t3
+
+# 常驻后台
+t3 service install
+
+# 不安装，先试
+npx t3@latest</code></pre>
+<p>桌面端可从 GitHub Releases、Homebrew（<code>brew install --cask t3-code</code>）、winget、scoop、deb、AUR、Nix 安装。远程访问有三种：T3 Connect 中继、局域网直连、Tailscale/SSH 等既有网络。</p>
+<pre><code># 让其他设备连进来
+t3 up                 # 选择 T3 Connect / LAN
+t3 pair               # 生成一次性配对链接
+t3 status --json      # 查看当前连接方式</code></pre>
+
+</section>
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>日常流程</h2></div>
+<p class="sub">一个线程 = 一个任务，不是一个终端窗口。</p>
+
+<ol class="steps">
+  <li><b>建线程：</b>选 provider、模型、权限模式；权限可以按线程覆盖。</li>
+  <li><b>跑任务：</b>Agent 在服务器上执行；客户端看到流式消息、工具调用与 diff。</li>
+  <li><b>审改动：</b>Diff 面板按轮次或提交查看；合并/变基带进来的文件不会混进「本轮改动」。</li>
+  <li><b>连 PR：</b>支持 GitHub、GitLab、Forgejo、Gitea、Bitbucket、Azure DevOps、GitCafe；可关联多个 PR、查看栈。</li>
+  <li><b>远程接管：</b>手机审批、追问、看 PR；桌面端继续同一线程。</li>
+  <li><b>收尾：</b>线程结算可由 PR 状态与空闲时间驱动；合并后缓存失效并重新检查。</li>
+</ol>
+<details><summary>多账号与多环境</summary><div class="body"><p>provider 支持多个账号；设置分为「客户端偏好」与「服务器/项目默认值」，客户端不能把偏好写回别的环境。T3 Connect 免费账号可连 3 台机器，Pro 10 台，Premier 100 台；手机与浏览器不计入机器数。</p></div></details>
+
+</section>
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>强项</h2></div>
+<p class="sub">它强在工程边界，而不是功能列表。</p>
+
+<div class="panel pos"><ul>
+  <li><b>远程优先的架构：</b>不是把桌面 UI 投屏，而是服务器持有环境、客户端按 RPC 订阅。</li>
+  <li><b>多 provider 统一：</b>7 种 Agent 共用线程、权限、diff、PR 模型，迁移成本低。</li>
+  <li><b>事件日志 + 幂等命令：</b>长任务、断线重连、重复提交都有明确语义。</li>
+  <li><b>隐藏 Git ref 检查点：</b>能回到某一轮之前，又不污染分支历史。</li>
+  <li><b>移动端不是阉割版：</b>iOS/Android 可审批、看 diff、连 PR，适合「离开工位」场景。</li>
+  <li><b>多 forge：</b>GitHub 之外还支持 GitLab、Forgejo、Gitea、Bitbucket、Azure DevOps、GitCafe。</li>
+</ul></div>
+
+</section>
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>边界与代价</h2></div>
+<p class="sub">官方自己说「非常非常早期」；这决定了它能用在什么场合。</p>
+
+<div class="panel neg"><ul>
+  <li><b>服务器必须在线：</b>关机、休眠、断网，手机就连不上；任务也不会在云端继续。</li>
+  <li><b>默认权限是 Full access：</b>新线程默认不询问命令与文件修改。官方支持管理员用 managed policy 限制，但默认值不适合不可信仓库。</li>
+  <li><b>provider 差异：</b>Auto 模式并非所有 provider 都支持；OpenCode、Antigravity 会退回询问；fx 不支持 Auto-accept / Full access。</li>
+  <li><b>早期项目：</b>README 明确「expect bugs」，且基本不接受大功能贡献。</li>
+  <li><b>远程依赖：</b>T3 Connect 是托管中继；不用它就自己要解决 LAN/VPN/SSH 的可达性与证书。</li>
+  <li><b>机器数限制：</b>免费 3 台，更多要 T3 Chat 付费档。</li>
+</ul></div>
+<div class="note"><b>适合的部署：</b>一台常开的 Mac mini 或 Linux 工作站做服务器，代码与凭据留在上面，手机只做审批与查看。</div>
+
+</section>
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>安全与权限</h2></div>
+<p class="sub">默认值、配对、密钥存储，是三个必须检查的点。</p>
+
+<dl class="kv">
+  <dt>权限模式</dt><dd>Supervised（命令与改动都问）、Auto-accept edits（自动改文件）、Auto（provider 自动审查）、Full access（全放行）。新线程初始默认 Full access。</dd>
+  <dt>管理员上限</dt><dd>可用 managed policy 限制单机可用的最高模式；超过上限的模式会显示管理者。</dd>
+  <dt>凭据</dt><dd>GitHub token 存在服务器的 secret store；也支持 <code>GH_TOKEN</code> 或已登录的 <code>gh</code>。远端客户端不会带来自己的凭据。</dd>
+  <dt>配对</dt><dd>一次性配对链接；<code>t3 pair</code> 可刷新。LAN 模式接受局域网与 tailnet 连接，配对码是唯一门槛。</dd>
+  <dt>中继</dt><dd>T3 Connect 负责跨网可达；不开启时可走 LAN、Tailscale、SSH 或自己的 URL。</dd>
+</dl>
+<div class="callout bad"><span class="t">最需要改的默认</span><p>把新线程默认改成 <b>Supervised</b>，至少对包含生产凭据或不可信依赖的仓库如此。Full access 适合你完全信任的 Agent 与代码库，不适合「先跑起来再说」。</p></div>
+
+</section>
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>和谁比</h2></div>
+<p class="sub">同样解决「多 Agent」，切入点不同。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>工具</th><th>核心抽象</th><th>最强场景</th><th>主要代价</th></tr></thead>
+<tbody>
+<tr><td><b>T3 Code</b></td><td>服务器 + 线程 + 远程客户端</td><td>离开工位后继续审阅与审批</td><td>服务器常开；早期；默认 Full access</td></tr>
+<tr><td>cmux</td><td>macOS 原生终端 + 通知</td><td>本机多 Agent 的视觉组织</td><td>仅 macOS；不保活进程</td></tr>
+<tr><td>herdr</td><td>终端运行时 + 会话保活</td><td>SSH/断线后不丢 Agent</td><td>机器重启仍会丢进程</td></tr>
+<tr><td>Paseo</td><td>本地 daemon + 全端客户端</td><td>手机为中心的跨设备监督</td><td>daemon 常开；生态较新</td></tr>
+<tr><td>Orchestrator.inc</td><td>主 Agent + Worker 舰队 + PR 看板</td><td>并行开发到合并的流水线</td><td>桌面应用；遥测；云端可选</td></tr>
+</tbody></table></div>
+<p class="sub" style="margin-top:8px">T3 Code 的差异点是「服务器拥有环境 + RPC 视图 + 事件日志」，不是「终端分屏」。</p>
+
+</section>
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>把 T3 Code 装在一台常开的工作站上，先只接 Claude Code 或 Codex 其中一个；把默认权限改成 Supervised；用手机完成一次「审批 + 看 diff + 连 PR」的闭环。跑通后再加第二个 provider。</p></div>
+<p>它不适合作为「第一个 Agent 工具」：没有 provider、没有 Git 凭据、没有常开机器，体验会很差。它适合已经有一套 CLI Agent 工作流、现在需要远程与多端的人。</p>
+
+</section>
+<section id="s11">
+<div class="sec-head"><span class="sec-no">11</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/pingdotgg/t3code" target="_blank" rel="noopener noreferrer">pingdotgg/t3code</a>；MIT；TypeScript；约 38,745 star（2026-11-01 API）。</li>
+  <li><a href="https://github.com/pingdotgg/t3code/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：provider 列表、安装方式、早期项目声明。</li>
+  <li><a href="https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md" target="_blank" rel="noopener noreferrer">docs/internals/overview.md</a>：服务器边界、RPC、事件日志、检查点、PR 同步。</li>
+  <li><a href="https://github.com/pingdotgg/t3code/blob/main/docs/user/permission-modes.md" target="_blank" rel="noopener noreferrer">权限模式</a>、<a href="https://github.com/pingdotgg/t3code/blob/main/docs/user/remote-access.md" target="_blank" rel="noopener noreferrer">远程访问</a>、<a href="https://github.com/pingdotgg/t3code/blob/main/docs/user/source-control.md" target="_blank" rel="noopener noreferrer">源代码托管</a>。</li>
+  <li><span class="tag infer">推断</span> 「适合/不适合」与风险排序是编辑判断；未对客户端做独立渗透或性能测试。</li>
+</ul>
+
+</section>
+<footer><span>T3 Code · 分析于 2026-11-01</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>(function(){var p=document.getElementById("progress");if(!p)return;function u(){var h=document.documentElement;var m=h.scrollHeight-h.clientHeight;p.style.width=(m>0?Math.min(100,Math.max(0,h.scrollTop/m*100)):0)+"%";}addEventListener("scroll",u,{passive:true});u();})();</script>
+</body></html>
