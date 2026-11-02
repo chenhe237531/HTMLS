@@ -7,7 +7,7 @@
 | [`Agents/agent-workbench/`](Agents/agent-workbench/index.html) | Agent 工作台设计方案（OpenCode × Pi）；[公众号文章分析（含 17 张原文配图）](Agents/agent-workbench/wechat-agent-automation-analysis.html) |
 | [`Agents/agents-hub/`](Agents/agents-hub/index.html) | AI Agent 全景：68 个产品与各自优点，含 18 个消费级助手与用量数据（2026-10） |
 | [`Agents/Tools/`](Agents/Tools/index.html) | Agent 工具调研：Orca、OpenCode、Hermes、Pi、Goose、OpenHands、agent-desktop、ECC、T3 Code、cmux、herdr、Paseo、Orchestrator.inc、CoreSpeed Tie、Mainplane、PraisonAI、oh-my-pi、CLI-Anything 等（20 篇） |
-| [`Agents/FreeAPI/`](Agents/FreeAPI/index.html) | FreeLLMAPI 拆解：34 家免费额度聚合成一个 /v1 端点，含路由机制、安装与限制 |
+| [`Agents/FreeAPI/`](Agents/FreeAPI/index.html) | FreeLLMAPI 拆解 + [免费 LLM API 项目地图](Agents/FreeAPI/ecosystem.html)（9router、OmniRoute、LiteLLM 等 13 个） |
 | [`MCP/mcp-hub/`](MCP/mcp-hub/index.html) | MCP Hub 导航：目录、市场与网关汇总（2026-10） |
 | [`MCP/mcp-guide/`](MCP/mcp-guide/index.html) | 怎么选 MCP：从需求到验证的选型教程 |
 | [`MCP/interop-protocols/`](MCP/interop-protocols/index.html) | Agent 互操作协议图谱：MCP 之外的 13 个协议、优劣与趋势 |
