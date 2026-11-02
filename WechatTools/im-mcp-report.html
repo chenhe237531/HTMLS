@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>im-mcp 调研报告 · 本地只读的微信 / 钉钉检索 MCP 服务</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --ink:#12151c;
+    --muted:#5a6270;
+    --faint:#858d9c;
+    --line:#e3e6ec;
+    --line-2:#cfd4dd;
+    --accent:#2b4acb;
+    --accent-soft:#eaeeff;
+    --teal:#0f6f66;
+    --teal-soft:#e3f4f1;
+    --amber:#9a5b00;
+    --amber-soft:#fdf1dd;
+    --red:#a3261f;
+    --red-soft:#fbe9e7;
+    --green:#16713f;
+    --green-soft:#e6f4ec;
+    --violet:#6b3fa0;
+    --violet-soft:#f0eafb;
+    --radius:12px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:20px}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+  }
+  [hidden]{display:none !important}
+  a{color:var(--accent); text-decoration:none; text-underline-offset:3px}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono); font-size:.87em; background:#eef0f4; padding:.1em .36em; border-radius:4px; color:#26303f}
+  h1,h2,h3,h4{line-height:1.35; letter-spacing:-.01em}
+  h2{font-size:23px; margin:0 0 4px}
+  h3{font-size:16.5px; margin:26px 0 8px}
+  h4{font-size:14px; margin:18px 0 6px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase}
+  p{margin:9px 0}
+  ul,ol{margin:9px 0; padding-left:22px}
+  li{margin:5px 0}
+  strong{font-weight:650}
+  .skip{position:absolute; left:-9999px; top:0; background:#fff; color:var(--accent); padding:10px 16px; z-index:99; border-radius:0 0 8px 0}
+  .skip:focus{left:0}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 22px}
+
+  /* ---------- header ---------- */
+  header.top{
+    background:
+      radial-gradient(900px 320px at 8% -10%, rgba(96,140,255,.28), transparent 70%),
+      radial-gradient(700px 300px at 92% 0%, rgba(15,111,102,.30), transparent 70%),
+      linear-gradient(170deg,#0d1424 0%,#141d31 100%);
+    color:#e9edf5; padding:40px 0 34px; border-bottom:1px solid #0a0f18;
+  }
+  header.top .kicker{font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:#93a7c8}
+  header.top h1{font-size:34px; margin:12px 0 10px; color:#fff; font-weight:680}
+  header.top h1 .sub{display:block; font-size:15px; font-weight:400; color:#a9b8cf; margin-top:10px; letter-spacing:0}
+  header.top h1 .cursor{color:#8fa8ff}
+  header.top .lede{margin:0; color:#b7c3d6; max-width:840px; font-size:14.6px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; padding:5px 11px; border-radius:999px;
+    background:rgba(255,255,255,.07); color:#d6e0ef;
+    border:1px solid rgba(255,255,255,.13); white-space:nowrap;
+  }
+  .chip b{color:#fff; font-weight:650; font-variant-numeric:tabular-nums}
+  .verdict-strip{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px;
+    margin-top:22px;
+  }
+  .verdict-strip div{
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+    border-radius:10px; padding:11px 13px; font-size:13px; color:#c4d0e2;
+  }
+  .verdict-strip b{display:block; color:#fff; font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:3px; font-weight:600}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid; grid-template-columns:212px minmax(0,1fr); gap:36px; align-items:start; padding:30px 0 64px}
+  nav.side{position:sticky; top:18px; font-size:13.3px}
+  nav.side .nav-title{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin:0 0 8px 11px}
+  nav.side a{
+    display:block; padding:7px 11px; border-radius:7px; color:var(--muted);
+    border-left:2px solid transparent; transition:background .15s,color .15s;
+  }
+  nav.side a:hover{background:#ebedf2; text-decoration:none; color:var(--ink)}
+  nav.side a[aria-current="true"]{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  nav.side .foot{margin:16px 11px 0; font-size:11.5px; color:var(--faint); line-height:1.55}
+
+  section.card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px 26px 26px; margin-bottom:18px;
+  }
+  section.card > .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:650; margin-bottom:6px}
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+  .sec-head .note{font-size:12.5px; color:var(--faint)}
+
+  /* ---------- generic bits ---------- */
+  .lede-2{font-size:15.5px; color:#2c3444}
+  .callout{
+    border-left:3px solid var(--accent); background:#f7f9ff; padding:12px 16px;
+    border-radius:0 9px 9px 0; margin:14px 0; font-size:14.3px;
+  }
+  .callout.warn{border-left-color:#d08a1e; background:#fffaf0}
+  .callout.bad{border-left-color:var(--red); background:#fdf6f5}
+  .callout.ok{border-left-color:var(--green); background:#f5fbf7}
+  .callout b{color:var(--ink)}
+  .callout p:first-child{margin-top:0}
+  .callout p:last-child{margin-bottom:0}
+
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:14px; margin:14px 0}
+  .grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:14px 0}
+  .mini{border:1px solid var(--line); border-radius:10px; padding:14px 15px; background:#fcfcfd}
+  .mini h4{margin:0 0 6px; color:var(--ink); text-transform:none; letter-spacing:0; font-size:14.5px; font-weight:650}
+  .mini p{margin:0; font-size:13.5px; color:var(--muted)}
+  .mini ul{margin:6px 0 0; font-size:13.5px; color:var(--muted)}
+
+  .tag{display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; letter-spacing:.02em; white-space:nowrap; border:1px solid transparent}
+  .tag.blue{background:var(--accent-soft); color:var(--accent)}
+  .tag.teal{background:var(--teal-soft); color:var(--teal)}
+  .tag.violet{background:var(--violet-soft); color:var(--violet)}
+  .tag.amber{background:var(--amber-soft); color:var(--amber)}
+  .tag.red{background:var(--red-soft); color:var(--red)}
+  .tag.green{background:var(--green-soft); color:var(--green)}
+  .tag.gray{background:#eef0f4; color:#4b5563}
+
+  /* ---------- pipeline ---------- */
+  .pipe{list-style:none; padding:0; margin:16px 0 6px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px}
+  .pipe li{
+    position:relative; background:#fbfbfd; border:1px solid var(--line); border-radius:10px;
+    padding:13px 13px 12px; font-size:12.6px; line-height:1.6; color:var(--muted);
+    display:flex; flex-direction:column;
+  }
+  .pipe li .step{font-family:var(--mono); font-size:10.5px; color:var(--accent); letter-spacing:.05em}
+  .pipe li b{display:block; color:var(--ink); font-size:13.6px; margin:3px 0 3px; line-height:1.4}
+  .pipe li .d{display:block}
+  .pipe li .art{font-family:var(--mono); font-size:10.8px; color:#3d4657; background:#eef0f4; border-radius:4px; padding:1px 5px; align-self:flex-start; margin-top:auto; overflow-wrap:anywhere}
+  .pipe li .d{padding-bottom:8px}
+
+  /* ---------- compare ---------- */
+  .compare{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; margin:14px 0}
+  .compare .col{border:1px solid var(--line); border-radius:11px; overflow:hidden}
+  .compare .col header{background:#f7f8fb; padding:11px 15px; border-bottom:1px solid var(--line); font-weight:650; font-size:14px; display:flex; gap:8px; align-items:center}
+  .compare .col .body{padding:13px 15px; font-size:13.6px}
+  .compare .col .body ul{margin:0; padding-left:18px}
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13.4px; margin:6px 0}
+  .kv dt{color:var(--faint); white-space:nowrap}
+  .kv dd{margin:0; color:#2c3444}
+
+  /* ---------- tables ---------- */
+  .tablewrap{overflow-x:auto; margin:14px 0 6px; border:1px solid var(--line); border-radius:11px}
+  .tablewrap:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  table{border-collapse:collapse; width:100%; font-size:13.6px; background:#fff}
+  thead th{
+    text-align:left; font-size:11.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--faint); font-weight:650; padding:11px 14px; background:#fafbfc;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  tbody td{padding:11px 14px; border-bottom:1px solid #eef0f4; vertical-align:top; color:#2c3444}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fbfcfe}
+
+  /* tool explorer */
+  .explorer{margin-top:6px}
+  .explorer-bar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:6px 0 12px}
+  .search{position:relative; flex:1 1 260px; max-width:380px}
+  .search input{
+    width:100%; font:inherit; font-size:14px; padding:9px 34px 9px 12px;
+    border:1px solid var(--line-2); border-radius:9px; background:#fff; color:var(--ink);
+  }
+  .search input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+  .search .clear{
+    position:absolute; right:5px; top:50%; transform:translateY(-50%);
+    border:0; background:transparent; color:var(--faint); font-size:17px; cursor:pointer;
+    width:26px; height:26px; border-radius:50%; line-height:1;
+  }
+  .search .clear:hover{background:#eef0f4; color:var(--ink)}
+  .filters{display:flex; flex-wrap:wrap; gap:6px}
+  .fchip{
+    font:inherit; font-size:12.5px; padding:6px 11px; border-radius:999px; cursor:pointer;
+    background:#fff; border:1px solid var(--line-2); color:var(--muted);
+  }
+  .fchip:hover{border-color:#aab4c4; color:var(--ink)}
+  .fchip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:#fff}
+  .fchip .n{opacity:.6; margin-left:4px; font-variant-numeric:tabular-nums}
+  .fchip:focus-visible, .copy:focus-visible, summary:focus-visible, nav.side a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .count{font-size:12.5px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .empty{border:1px dashed var(--line-2); border-radius:10px; padding:22px; text-align:center; color:var(--muted); font-size:14px}
+  .empty button{font:inherit; font-size:13.5px; margin-top:8px; padding:6px 12px; border-radius:8px; border:1px solid var(--line-2); background:#fff; cursor:pointer}
+
+  table.tools td:first-child{min-width:210px}
+  table.tools .tname{font-family:var(--mono); font-size:12.4px; background:none; padding:0; color:#1d2a44; font-weight:600; white-space:nowrap}
+  table.tools .cat{margin-top:5px; display:inline-block}
+  table.tools .q{color:var(--muted); font-size:13px}
+  table.tools td:nth-child(2){min-width:250px}
+
+  /* code blocks */
+  .code{margin:12px 0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#111826}
+  .code .bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#0c1220; border-bottom:1px solid #1e2a42; padding:6px 8px 6px 12px;
+  }
+  .code .bar span{font-family:var(--mono); font-size:11.5px; color:#8fa1bf; letter-spacing:.04em}
+  .copy{
+    font:inherit; font-family:var(--sans); font-size:11.5px; padding:4px 10px; border-radius:6px; cursor:pointer;
+    background:#1d2942; color:#d9e3f5; border:1px solid #2b3a58;
+  }
+  .copy:hover{background:#26344f}
+  .copy.done{background:#17402e; border-color:#1d5c3f; color:#b9f0cf}
+  .code pre{margin:0; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12.6px; line-height:1.62; color:#dbe4f3}
+  .code pre code{background:none; padding:0; font-size:inherit; color:inherit}
+  .code .cm{color:#7f8fae}
+  .code .st{color:#a6d9a0}
+  .code .kw{color:#93b4ff}
+
+  /* details */
+  details{border:1px solid var(--line); border-radius:10px; padding:0; margin:10px 0; background:#fcfcfd}
+  details summary{cursor:pointer; padding:11px 15px; font-weight:600; font-size:14px; list-style:none; display:flex; align-items:center; gap:9px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+"; font-family:var(--mono); color:var(--accent); font-size:15px; width:12px}
+  details[open] summary::before{content:"–"}
+  details .inner{padding:0 15px 14px 36px; font-size:13.8px; color:#2c3444}
+  details .inner p:first-child{margin-top:0}
+  details .inner p:last-child{margin-bottom:0}
+
+  /* risk list */
+  .risks{list-style:none; padding:0; margin:12px 0 0}
+  .risks li{
+    display:grid; grid-template-columns:74px 1fr; gap:12px; align-items:start;
+    padding:13px 0; border-top:1px solid var(--line);
+  }
+  .risks li:first-child{border-top:0}
+  .risks .lvl{font-size:11px; font-weight:700; letter-spacing:.05em; padding:2px 8px; border-radius:5px; text-align:center}
+  .risks .lvl.high{background:var(--red-soft); color:var(--red)}
+  .risks .lvl.mid{background:var(--amber-soft); color:var(--amber)}
+  .risks .lvl.low{background:#eef0f4; color:#4b5563}
+  .risks b{display:block; margin-bottom:2px}
+  .risks p{margin:0; font-size:13.6px; color:var(--muted)}
+  .risks .ref{font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+
+  /* verdict split */
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0}
+  .split .box{border:1px solid var(--line); border-radius:11px; padding:15px 17px}
+  .split .box.good{background:#f6fbf8; border-color:#cfe8da}
+  .split .box.bad{background:#fdf8f7; border-color:#f0d8d5}
+  .split .box h4{margin:0 0 8px; text-transform:none; letter-spacing:0; font-size:14.5px; color:var(--ink)}
+  .split .box ul{margin:0; padding-left:18px; font-size:13.7px; color:#2c3444}
+  .split .box li{margin:4px 0}
+
+  footer.foot{border-top:1px solid var(--line); padding:22px 0 46px; color:var(--faint); font-size:12.5px}
+  footer.foot .wrap{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between}
+
+  .src{list-style:none; padding:0; margin:10px 0 0; font-size:13.8px}
+  .src li{padding:9px 0; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap; align-items:baseline}
+  .src li:first-child{border-top:0}
+  .src .lab{font-family:var(--mono); font-size:11.5px; color:var(--faint); min-width:96px}
+
+  @media (max-width:900px){
+    .pipe{grid-template-columns:1fr; gap:8px}
+    .pipe li{display:grid; grid-template-columns:40px minmax(0,1fr); column-gap:10px; padding:12px 13px}
+    .pipe li .step{grid-column:1; grid-row:1; align-self:center; font-size:10px}
+    .pipe li b{grid-column:2; grid-row:1; margin:0}
+    .pipe li .d{grid-column:2; grid-row:2; margin-top:2px}
+    .pipe li .art{grid-column:2; grid-row:3; justify-self:start; margin-top:2px}
+    .pipe li .d{padding-bottom:0}
+    .layout{grid-template-columns:minmax(0,1fr); gap:16px; padding-top:18px}
+    nav.side{position:static; border:1px solid var(--line); background:#fff; border-radius:11px; padding:10px}
+    nav.side .nav-title{margin-left:8px}
+    nav.side a{display:inline-block; border-left:0; border-bottom:2px solid transparent; padding:6px 10px}
+    nav.side a[aria-current="true"]{border-left-color:transparent; border-bottom-color:var(--accent)}
+    nav.side .foot{display:none}
+    header.top h1{font-size:27px}
+  }
+  @media (max-width:760px){
+    section.card{padding:19px 16px 20px}
+    .split{grid-template-columns:1fr}
+    table.tools thead{display:none}
+    .tablewrap.tools-wrap{border:0; overflow:visible}
+    table.tools, table.tools tbody, table.tools tr, table.tools td{display:block; width:100%}
+    table.tools tr{border:1px solid var(--line); border-radius:10px; margin-bottom:9px; padding:11px 13px; background:#fff}
+    table.tools td{padding:3px 0; border:0; min-width:0 !important; overflow-wrap:anywhere}
+    table.tools td + td{border-top:1px dashed #eceff4; margin-top:5px; padding-top:6px}
+    table.tools td[data-label]::before{content:attr(data-label); display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:1px}
+    .tablewrap.stack-wrap{border:0; overflow:visible}
+    table.stack, table.stack tbody, table.stack tr, table.stack td{display:block; width:100%}
+    table.stack thead{display:none}
+    table.stack tr{border:1px solid var(--line); border-radius:10px; margin-bottom:9px; padding:10px 13px; background:#fff}
+    table.stack td{border:0; padding:3px 0}
+    table.stack td + td{border-top:1px dashed #eceff4; margin-top:5px; padding-top:6px}
+    table.stack td[data-label]::before{content:attr(data-label); display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:1px}
+    .risks li{grid-template-columns:64px 1fr; gap:10px}
+  }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{transition:none !important} }
+  @media print{
+    body{background:#fff; font-size:11.5pt}
+    header.top{background:#fff; color:#000; border-bottom:2px solid #000; padding:0 0 12px}
+    header.top h1,header.top .lede,header.top .kicker{color:#000}
+    .meta,.verdict-strip,.copy,nav.side,.search .clear{display:none}
+    .layout{display:block; padding:12px 0}
+    section.card{border:0; padding:0; margin:0 0 16px; break-inside:avoid}
+    .code{background:#f4f4f4} .code pre{color:#111} .code .bar{background:#eee} .code .bar span{color:#333}
+    details{border:0} details .inner{display:block !important}
+    .tablewrap{overflow:visible !important; border:0}
+    table{font-size:9.6pt}
+    thead th{background:#f2f2f2}
+    a{color:#000; text-decoration:underline}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">项目调研 · Model Context Protocol · 本地数据检索</div>
+    <h1>im-mcp<span class="sub">把微信 / 钉钉的聊天记录变成 AI Agent 可以查询的本地数据库</span></h1>
+    <p class="lede">
+      一个本地、只读的 MCP 服务器：直接读取解密后的 SQLite 数据，用 FTS5 做全文检索，全程离线，
+      不向聊天软件发送任何消息，也不改动原始数据库。
+    </p>
+    <div class="meta">
+      <span class="chip">仓库 <b>stkoecn/im-mcp</b></span>
+      <span class="chip">语言 <b>Python</b></span>
+      <span class="chip">★ <b>78</b></span>
+      <span class="chip">Fork <b>40</b></span>
+      <span class="chip">Commits <b>51</b></span>
+      <span class="chip">MCP 工具 <b>34</b></span>
+      <span class="chip">License <b>MIT</b>（pyproject 声明）</span>
+      <span class="chip">数据截至 <b>2026-11-01</b></span>
+    </div>
+    <div class="verdict-strip">
+      <div><b>一句话结论</b>思路干净、工具面很全的个人知识库工具，适合本机自用；生产/多人场景慎用。</div>
+      <div><b>最大卖点</b>29 个微信工具 + 5 个钉钉工具，覆盖检索、聚合分析、文件、图片、表情。</div>
+      <div><b>最大代价</b>会在本机生成明文数据库与密钥文件，必须配合清理流程。</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="side" aria-label="目录">
+    <p class="nav-title">目录</p>
+    <a href="#overview">概览</a>
+    <a href="#positioning">项目定位</a>
+    <a href="#how">工作原理</a>
+    <a href="#tools">工具能力</a>
+    <a href="#compat">兼容性</a>
+    <a href="#deploy">安装与接入</a>
+    <a href="#security">安全与隐私</a>
+    <a href="#risks">风险与限制</a>
+    <a href="#verdict">适用建议</a>
+    <a href="#sources">来源</a>
+    <p class="foot">本页为单文件离线报告，所有内容来自公开仓库文档与 API 元数据，不含本地路径与个人数据。</p>
+  </nav>
+
+  <main id="main">
+
+    <!-- 概览 -->
+    <section class="card" id="overview">
+      <div class="eyebrow">01 · 概览</div>
+      <div class="sec-head">
+        <h2>它解决的是什么问题</h2>
+        <span class="note">按仓库 README / CHANGELOG / Issue 整理</span>
+      </div>
+      <p class="lede-2">
+        聊天记录是很多人真正的工作知识库，但它锁在客户端里：搜索弱、导出难、AI 也读不到。
+        im-mcp 的做法是把「解密 → 建索引 → 暴露成 MCP 工具」这一段全部放在本机完成，
+        让 Claude Desktop、Cursor、Cline、Pi 这类客户端像调用普通工具一样查询历史消息。
+      </p>
+      <div class="grid3">
+        <div class="mini"><h4>本地</h4><p>不上传、不依赖云服务；MCP 服务通过 stdio 与客户端通信，没有开放端口。</p></div>
+        <div class="mini"><h4>只读</h4><p>不发送消息、不改原库；同步类工具只重建本地快照与索引。</p></div>
+        <div class="mini"><h4>快</h4><p>SQLite + FTS5 倒排索引，README 自述「毫秒级响应」（未附独立基准测试）。</p></div>
+      </div>
+      <div class="callout">
+        <p><b>一个容易忽略的细节：</b>检索读的是<b>解密快照目录</b>（<code>~/.wechat_mcp/decrypted/</code> 等），
+        而不是微信/钉钉的原库。原库因此不会被写坏，但磁盘上会多出一份明文副本 —— 这是后面安全一节的核心。</p>
+      </div>
+    </section>
+
+    <!-- 定位 -->
+    <section class="card" id="positioning">
+      <div class="eyebrow">02 · 项目定位</div>
+      <h2>定位：给 Agent 用的「聊天档案检索层」</h2>
+      <div class="grid2">
+        <div class="mini">
+          <h4>它是</h4>
+          <ul>
+            <li>一个 MCP Server，向 AI 客户端暴露 34 个只读工具</li>
+            <li>一套本地 ETL：解密 → 解析消息格式 → 建 FTS5 索引</li>
+            <li>一套交换式 CLI：<code>wechat-init</code> / <code>dingtalk-init</code> / <code>im-clean</code></li>
+            <li>一份面向 Agent 的运维规范（<code>skills/im-mcp/SKILL.md</code>）</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <h4>它不是</h4>
+          <ul>
+            <li>不是聊天记录导出器 / 备份工具（没有批量导出 UI）</li>
+            <li>不是爬虫，也不调用任何官方 API 或云端接口</li>
+            <li>不是多用户服务，没有鉴权、审计、租户隔离</li>
+            <li>不是「装上就永远能用」—— 客户端升级可能打断解密</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        名字里的 <code>im</code> 指 instant messaging。仓库 README 里把微信写作「绿泡泡」、钉钉写作「DuangDuang」，
+        代码、CLI 与工具名仍然使用 <code>wechat</code> / <code>dingtalk</code>。推测是规避关键词检索的写法，
+        不影响功能，但读文档时需要对上号。
+      </p>
+    </section>
+
+    <!-- 原理 -->
+    <section class="card" id="how">
+      <div class="eyebrow">03 · 工作原理</div>
+      <h2>从加密数据库到一次 AI 回答</h2>
+      <ol class="pipe">
+        <li><span class="step">STEP 1</span><b>读取加密库</b><span class="d">微信 WCDB / 钉钉 128 分表，原始文件保持不动</span><span class="art">SQLite + WAL</span></li>
+        <li><span class="step">STEP 2</span><b>取得密钥并解密</b><span class="d">内存扫描或 passphrase 派生，离线校验后落盘</span><span class="art">~/.wechat_mcp/</span></li>
+        <li><span class="step">STEP 3</span><b>解析与 ETL</b><span class="d">压缩消息体解压、XML/卡片解析、会话与联系人归一</span><span class="art">app.db</span></li>
+        <li><span class="step">STEP 4</span><b>建 FTS5 索引</b><span class="d">倒排索引支撑全文检索与 snippet 命中上下文</span><span class="art">FTS5</span></li>
+        <li><span class="step">STEP 5</span><b>MCP 工具调用</b><span class="d">stdio 上的 JSON-RPC，Agent 拿到结构化结果再总结</span><span class="art">wechat-mcp / dingtalk-mcp</span></li>
+      </ol>
+
+      <h3>两条解密路径，复杂度差别很大</h3>
+      <div class="compare">
+        <div class="col">
+          <header><span class="tag blue">微信</span> 需要密钥，Windows 要管理员权限</header>
+          <div class="body">
+            <dl class="kv">
+              <dt>Windows</dt><dd>运行时扫描 <code>Weixin.exe</code> 的 Config.Cipher，动态提取 Salt 密钥；终端需管理员身份，且微信已登录</dd>
+              <dt>macOS</dt><dd>系统原生 CommonCrypto（CCCrypt）零额外依赖解密；微信 4.1+ 可传 <code>--passphrase</code>（64 位 hex），走 256,000 轮 PBKDF2</dd>
+              <dt>校验</dt><dd>离线 HMAC 校验，失败即判定密钥不对，不会产出坏库</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="col">
+          <header><span class="tag teal">钉钉</span> 纯 Python，普通权限即可</header>
+          <div class="body">
+            <dl class="kv">
+              <dt>密钥</dt><dd>读取用户目录下的 <code>user_config</code>，PBKDF2-HMAC-SHA1 + MD5 推导 AES-128 密钥</dd>
+              <dt>解密</dt><dd>V2 / V3 的 AES-ECB，并合并 WAL 事务，避免读到半提交状态</dd>
+              <dt>查询</dt><dd>消息分散在 <code>tbmsg_000</code> ~ <code>tbmsg_127</code> 共 128 张分表，查询时跨表聚合，并把联系人映射成实名</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <p class="note" style="font-size:12.6px;color:var(--faint)">
+        步骤描述取自 README 与 CHANGELOG 的公开说明；具体实现细节以仓库代码为准。钉钉 V2/V3 与 WAL 合并的修复记录见 commit「fix(dingtalk): fix WAL decrypted checksum mismatch…」。
+      </p>
+
+      <h3>格式解析覆盖到哪一层</h3>
+      <div class="tablewrap stack-wrap" tabindex="0" role="group" aria-label="表格，可横向滚动">
+        <table class="stack">
+          <thead><tr><th>内容类型</th><th>微信</th><th>钉钉</th></tr></thead>
+          <tbody>
+            <tr><td data-label="内容类型">文本 / 引用消息</td><td data-label="微信">支持</td><td data-label="钉钉">支持</td></tr>
+            <tr><td data-label="内容类型">富文本卡片 / Markdown 卡片</td><td data-label="微信">支持</td><td data-label="钉钉">支持</td></tr>
+            <tr><td data-label="内容类型">小程序、协同日程通知</td><td data-label="微信">小程序支持</td><td data-label="钉钉">日程通知支持</td></tr>
+            <tr><td data-label="内容类型">文件（PDF / Excel / Word 等）</td><td data-label="微信">支持，返回磁盘路径</td><td data-label="钉钉">支持附件提取</td></tr>
+            <tr><td data-label="内容类型">图片</td><td data-label="微信">三代格式：旧 XOR / V1 固定密钥 / V2 账号级密钥</td><td data-label="钉钉">不在公开工具表内</td></tr>
+            <tr><td data-label="内容类型">表情包</td><td data-label="微信">需要 <code>prepare_emoticons</code> 生成明文库，<code>wxgf</code> 按需转码</td><td data-label="钉钉">—</td></tr>
+            <tr><td data-label="内容类型">合并转发的「聊天记录」</td><td data-label="微信"><code>get_chat_record</code> 展开为结构化条目</td><td data-label="钉钉">—</td></tr>
+            <tr><td data-label="内容类型">收藏 / 头像</td><td data-label="微信">收藏列表；头像只返回本地路径不返回 base64</td><td data-label="钉钉">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <p><b>图片的 V2 密钥是个特例：</b>它不落盘，只在账号查看图片时临时驻留 <code>Weixin.exe</code> 内存。
+        所以 <code>extract_image_key</code> 的正确用法是「先在客户端点开 1–2 张图，再立刻调用」；未命中时工具返回
+        <code>ok=false</code> 与原因，不会谎报成功。这也说明这类解密方案天生依赖客户端内部实现，版本一变就可能失效。</p>
+      </div>
+    </section>
+
+    <!-- 工具能力 -->
+    <section class="card" id="tools">
+      <div class="eyebrow">04 · 工具能力</div>
+      <div class="sec-head">
+        <h2>34 个 MCP 工具 <span style="font-size:14px;color:var(--muted);font-weight:400">微信 29 + 钉钉 5</span></h2>
+        <span class="note">全部只读；同步类工具只重建本地快照</span>
+      </div>
+      <p>
+        工具面是这个项目最实在的部分：不是只有一个 <code>search</code>，而是把「找消息、找群、找人、找文件、
+        做统计、出日报、同步」都拆成了独立能力。下表可按关键词与类别筛选。
+      </p>
+
+      <div class="explorer">
+        <div class="explorer-bar">
+          <div class="search">
+            <label for="toolQ" class="skip">搜索工具</label>
+            <input id="toolQ" type="search" placeholder="搜索工具名、能力或用法…" autocomplete="off">
+            <button class="clear" type="button" id="toolClear" aria-label="清空搜索">×</button>
+          </div>
+          <div class="filters" role="group" aria-label="按类别筛选">
+            <button class="fchip" type="button" data-cat="all" aria-pressed="true">全部<span class="n">34</span></button>
+            <button class="fchip" type="button" data-cat="msg" aria-pressed="false">消息检索<span class="n">5</span></button>
+            <button class="fchip" type="button" data-cat="people" aria-pressed="false">会话通讯录<span class="n">5</span></button>
+            <button class="fchip" type="button" data-cat="media" aria-pressed="false">媒体文件<span class="n">10</span></button>
+            <button class="fchip" type="button" data-cat="analysis" aria-pressed="false">分析同步<span class="n">9</span></button>
+            <button class="fchip" type="button" data-cat="dingtalk" aria-pressed="false">钉钉<span class="n">5</span></button>
+          </div>
+        </div>
+        <p class="count" id="toolCount" aria-live="polite">显示 34 / 34</p>
+
+        <div class="tablewrap tools-wrap" tabindex="0" role="group" aria-label="工具列表，可横向滚动">
+          <table class="tools" id="toolTable">
+            <thead>
+              <tr><th scope="col">工具</th><th scope="col">能力说明</th><th scope="col">典型用法</th></tr>
+            </thead>
+            <tbody>
+              <tr data-cat="msg">
+                <td data-label="工具"><code class="tname">search_wechat_messages</code><br><span class="tag blue cat">消息检索</span></td>
+                <td data-label="能力">全文检索聊天消息，多词 AND，可限定会话 / 发言人 / 时间窗，支持 <code>offset</code> 分页，每条带 <code>snippet</code> 命中上下文。</td>
+                <td data-label="典型用法" class="q">「找一下群里谁发过关于某某需求的讨论」</td>
+              </tr>
+              <tr data-cat="msg">
+                <td data-label="工具"><code class="tname">get_session_history</code><br><span class="tag blue cat">消息检索</span></td>
+                <td data-label="能力">取指定会话的最近对话，按时间正序，可限定天数。</td>
+                <td data-label="典型用法" class="q">「总结这个项目群最近 50 条消息」</td>
+              </tr>
+              <tr data-cat="msg">
+                <td data-label="工具"><code class="tname">get_messages_by_date</code><br><span class="tag blue cat">消息检索</span></td>
+                <td data-label="能力">按指定日期拉取全量或限定会话的记录，支持 <code>offset</code> 分页。</td>
+                <td data-label="典型用法" class="q">「汇总某一天所有沟通，写成日报」</td>
+              </tr>
+              <tr data-cat="msg">
+                <td data-label="工具"><code class="tname">get_messages_by_range</code><br><span class="tag blue cat">消息检索</span></td>
+                <td data-label="能力">自定义时间范围（可跨天、任意时段、按人过滤）拉取记录，支持分页。</td>
+                <td data-label="典型用法" class="q">「拉一下上周三到周五这个群聊了什么」</td>
+              </tr>
+              <tr data-cat="msg">
+                <td data-label="工具"><code class="tname">get_messages_since</code><br><span class="tag blue cat">消息检索</span></td>
+                <td data-label="能力">增量游标：只取 <code>after_id</code> / <code>after_time</code> 之后的新消息，返回 <code>next_cursor</code> 与 <code>has_more</code>。</td>
+                <td data-label="典型用法" class="q">「面板刷新新消息 / 脚本增量同步，不重复拉全量」</td>
+              </tr>
+
+              <tr data-cat="people">
+                <td data-label="工具"><code class="tname">list_wechat_sessions</code><br><span class="tag teal cat">会话通讯录</span></td>
+                <td data-label="能力">查询群聊或联系人列表，给出唯一 ID 与未读快照 <code>unread</code>。</td>
+                <td data-label="典型用法" class="q">「关于『量化』有哪些群」</td>
+              </tr>
+              <tr data-cat="people">
+                <td data-label="工具"><code class="tname">get_unread_sessions</code><br><span class="tag teal cat">会话通讯录</span></td>
+                <td data-label="能力">列出有未读消息的会话，按最近活跃倒序。</td>
+                <td data-label="典型用法" class="q">「还有哪些群没看」</td>
+              </tr>
+              <tr data-cat="people">
+                <td data-label="工具"><code class="tname">get_session_overview</code><br><span class="tag teal cat">会话通讯录</span></td>
+                <td data-label="能力">单会话轻量概览：累计条数、范围消息量、发言人数、峰值时段、类型 TopN、首末时间。</td>
+                <td data-label="典型用法" class="q">「切群前先看这个群多大、什么时候最热」</td>
+              </tr>
+              <tr data-cat="people">
+                <td data-label="工具"><code class="tname">search_contacts</code><br><span class="tag teal cat">会话通讯录</span></td>
+                <td data-label="能力">按昵称 / 备注 / 微信号搜索联系人。</td>
+                <td data-label="典型用法" class="q">「查一下张工的微信号和备注名」</td>
+              </tr>
+              <tr data-cat="people">
+                <td data-label="工具"><code class="tname">list_chatroom_members</code><br><span class="tag teal cat">会话通讯录</span></td>
+                <td data-label="能力">列出指定群聊成员名单，自动关联昵称与微信号。</td>
+                <td data-label="典型用法" class="q">「这个群一共多少人，都有谁」</td>
+              </tr>
+
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">get_message_image</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">按消息 ID 定位并按需解密聊天图片，返回本地物理路径或多模态 Base64。缺 V2 密钥时会自动尝试提取一次。</td>
+                <td data-label="典型用法" class="q">「把刚才查到的那张聊天图片解密出来看下」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">get_chat_record</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">展开「聊天记录」合并转发消息，把被合并的正文解析为结构化条目（文本 / 图片 / 视频 / 文件）。</td>
+                <td data-label="典型用法" class="q">「这条聊天记录里到底转了些什么」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">get_user_avatars</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">批量取用户 / 群 / 公众号头像的本地路径（供宿主直接读盘渲染，不返回 base64）。</td>
+                <td data-label="典型用法" class="q">「把群里发言者的头像都给我」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">search_shared_files</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">查找聊天中发送 / 接收的文件文档。</td>
+                <td data-label="典型用法" class="q">「找一下上周有人发在群里的那个 Excel」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">search_media_files</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">查找聊天中的图片 / 文件 / 视频及其磁盘路径。</td>
+                <td data-label="典型用法" class="q">「把群里发过的截图路径给我」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">list_favorites</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">查询收藏条目（标题 / 描述 / 来源）。</td>
+                <td data-label="典型用法" class="q">「我收藏过哪些资料」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">list_emoticons</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">列出表情包与表情，含官方文字说明。</td>
+                <td data-label="典型用法" class="q">「那个『偷听』表情在哪个包里」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">prepare_emoticons</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">生成 / 刷新本地明文表情库：调用外部 <code>wxemo</code> 做一次性 GPU 搜索，把账号级加密表情摊平到 <code>~/.wechat_mcp/emoticons/&lt;md5&gt;.&lt;ext&gt;</code>。</td>
+                <td data-label="典型用法" class="q">「让表情能直接出图」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">get_emoticon_image</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">按表情 md5 取明文表情图路径（gif / png / jpg / webp / APNG），<code>wxgf</code> 首次取用时转码并缓存。</td>
+                <td data-label="典型用法" class="q">「把这条 [表情] 消息的那个表情图给我」</td>
+              </tr>
+              <tr data-cat="media">
+                <td data-label="工具"><code class="tname">extract_image_key</code><br><span class="tag violet cat">媒体文件</span></td>
+                <td data-label="能力">从运行中的微信进程内存提取 V2 图片解密密钥，经真实密文块判定式验证后写入密钥文件。</td>
+                <td data-label="典型用法" class="q">「V2 图片解密报缺 image_aes_key，把密钥取出来」</td>
+              </tr>
+
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_chat_activity_stats</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">活跃度全量聚合：消息 / 发言人数、小时与日分布、跨天 <code>hourly_series</code>、类型分布、参与度分桶、会话片段、集中度、成员多维榜、引用网络、撤回事件。</td>
+                <td data-label="典型用法" class="q">「这个群什么时候最活跃」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_group_digest</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">日报 / 周报所需的聚合数据（= 活跃度统计 + 金句候选 <code>highlights</code>）。</td>
+                <td data-label="典型用法" class="q">「给这个群出一份日报 / 周报」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_member_profile</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">单个成员的群聊画像：活跃节奏、内容结构、互动对象，可选附带最近 N 条原文。</td>
+                <td data-label="典型用法" class="q">「分析群里这个人的发言风格与关注点」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_persona_style</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">分析某联系人的沟通风格：画像 + 高频用语 + 典型语句。</td>
+                <td data-label="典型用法" class="q">「模仿一下这个人的说话风格」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_sync_status</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">查看本地索引的新鲜度与规模，判断是否需要重新同步。</td>
+                <td data-label="典型用法" class="q">「数据是不是最新的」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">sync_wechat_database</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">阻塞式同步：先重新解密源库，再重建本地索引（只重建索引拿不到新消息）。</td>
+                <td data-label="典型用法" class="q">「刚聊了几句，更新一下数据库再查」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">start_sync</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">后台同步，立即返回，用 <code>get_auto_sync_status</code> 轮询，绕过宿主单次调用 120s 超时。</td>
+                <td data-label="典型用法" class="q">「面板里点同步，但别把界面卡死」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">set_auto_sync</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">开启 / 关闭定时同步（重新解密 + 重建索引），状态持久化，服务重启后自动恢复；间隔钳制在 5–1440 分钟。</td>
+                <td data-label="典型用法" class="q">「每半小时自动同步一次微信数据」</td>
+              </tr>
+              <tr data-cat="analysis">
+                <td data-label="工具"><code class="tname">get_auto_sync_status</code><br><span class="tag amber cat">分析同步</span></td>
+                <td data-label="能力">查看定时同步的开关、间隔、运行次数与上次结果。</td>
+                <td data-label="典型用法" class="q">「定时同步到底有没有在跑」</td>
+              </tr>
+
+              <tr data-cat="dingtalk">
+                <td data-label="工具"><code class="tname">search_dingtalk_messages</code><br><span class="tag red cat">钉钉</span></td>
+                <td data-label="能力">全文检索钉钉消息，支持按群 / 私聊过滤。</td>
+                <td data-label="典型用法" class="q">「搜一下钉钉里谁发过报表统计结果」</td>
+              </tr>
+              <tr data-cat="dingtalk">
+                <td data-label="工具"><code class="tname">list_dingtalk_conversations</code><br><span class="tag red cat">钉钉</span></td>
+                <td data-label="能力">列出最近会话，自动解析群名与实名。</td>
+                <td data-label="典型用法" class="q">「看看钉钉里最近活跃的项目组群」</td>
+              </tr>
+              <tr data-cat="dingtalk">
+                <td data-label="工具"><code class="tname">get_dingtalk_messages</code><br><span class="tag red cat">钉钉</span></td>
+                <td data-label="能力">获取指定会话的历史消息上下文。</td>
+                <td data-label="典型用法" class="q">「拉取某个项目组最近的历史消息」</td>
+              </tr>
+              <tr data-cat="dingtalk">
+                <td data-label="工具"><code class="tname">list_dingtalk_contacts</code><br><span class="tag red cat">钉钉</span></td>
+                <td data-label="能力">查询团队通讯录与联系人（手机号、邮箱、真名）。</td>
+                <td data-label="典型用法" class="q">「查一下某个同事的联系方式」</td>
+              </tr>
+              <tr data-cat="dingtalk">
+                <td data-label="工具"><code class="tname">sync_dingtalk_data</code><br><span class="tag red cat">钉钉</span></td>
+                <td data-label="能力">自动拷贝钉钉数据库并执行 WAL 解密同步。</td>
+                <td data-label="典型用法" class="q">「重新同步最新的钉钉聊天记录」</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="empty" id="toolEmpty" hidden>
+          没有匹配的工具。换个关键词，或
+          <button type="button" id="toolReset">重置筛选</button>
+        </div>
+      </div>
+
+      <details>
+        <summary>这 34 个工具里，哪几个最值得先试</summary>
+        <div class="inner">
+          <p><b>做日报 / 周报：</b><code>get_group_digest</code> 或 <code>get_chat_activity_stats</code> 一次拿到聚合数据，比让模型自己数消息可靠得多。</p>
+          <p><b>找东西：</b><code>search_wechat_messages</code>（带命中片段）+ <code>search_shared_files</code>（文件）+ <code>get_chat_record</code>（合并转发）。</p>
+          <p><b>接自己的面板：</b><code>get_messages_since</code> 的增量游标 + <code>get_user_avatars</code> 返回本地路径，明显是为宿主 UI 设计的。</p>
+          <p><b>注意：</b>同步相关工具（<code>sync_*</code> / <code>start_sync</code> / <code>set_auto_sync</code>）会触发本地快照重解密与索引重建，会写磁盘、耗时较长，不属于「纯查询」。</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 兼容性 -->
+    <section class="card" id="compat">
+      <div class="eyebrow">05 · 兼容性</div>
+      <div class="sec-head">
+        <h2>支持范围与实测版本</h2>
+        <span class="note">版本号均为仓库自述</span>
+      </div>
+      <div class="tablewrap stack-wrap" tabindex="0" role="group" aria-label="表格，可横向滚动">
+        <table class="stack">
+          <thead>
+            <tr><th>平台</th><th>支持版本</th><th>实测验证版本</th><th>系统 / 架构</th><th>权限</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="平台"><span class="tag blue">微信</span></td>
+              <td data-label="支持版本">4.x 全系列<br>兼容 3.9.x</td>
+              <td data-label="实测验证版本"><code>4.1.15.13</code>（Windows）<br><code>4.1.35.15</code>（macOS ARM64）<br><code>4.1.15 (270115)</code>（macOS x86_64）</td>
+              <td data-label="系统 / 架构">Windows x64<br>macOS Apple Silicon / Intel</td>
+              <td data-label="权限">Windows 需管理员；macOS 需 passphrase 或配置持久化</td>
+            </tr>
+            <tr>
+              <td data-label="平台"><span class="tag teal">钉钉</span></td>
+              <td data-label="支持版本">7.x 全系列<br>涵盖 V2 / V3</td>
+              <td data-label="实测验证版本"><code>7.6.0.x</code><br>另称覆盖 7.5.x / 7.0.x</td>
+              <td data-label="系统 / 架构">Windows x64 / macOS</td>
+              <td data-label="权限">普通用户权限</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        客户端侧支持 Claude Desktop、Cursor、Cline、Pi、Claude Code 等任何兼容 MCP 的宿主；
+        通过 stdio 传输，不需要开放端口。运行环境为 <b>Python ≥ 3.10</b>，核心依赖是 <code>mcp</code> SDK、
+        <code>pydantic</code>，可选依赖 <code>pycryptodome</code>（解密）与 <code>zstandard</code>（微信压缩消息体）。
+      </p>
+      <div class="callout warn">
+        <p><b>版本兼容要按「客户端版本」而不是「项目版本」来理解。</b>这类方案依赖客户端内部数据结构与密钥派生方式，
+        微信的一次小版本更新就可能让密钥提取失效 —— 下面风险清单里的 Issue #32 就是实例。
+        打算长期用的话，建议固定客户端版本，或用 <code>--passphrase</code> 这类相对稳定的路径。</p>
+      </div>
+    </section>
+
+    <!-- 部署 -->
+    <section class="card" id="deploy">
+      <div class="eyebrow">06 · 安装与接入</div>
+      <h2>三步：装 CLI → 初始化 → 客户端接入</h2>
+      <p>仓库遵循 PEP 517 / 621 打包，支持 <code>uv</code> / <code>uvx</code> / <code>pip</code>，无需手动建虚拟环境。</p>
+
+      <h3>1. 安装 CLI 工具链</h3>
+      <div class="code">
+        <div class="bar"><span>bash · 推荐：uv tool 全局隔离安装</span><button class="copy" type="button">复制</button></div>
+        <pre><code><span class="cm"># 一次安装，注册 wechat-init / dingtalk-init / wechat-mcp / dingtalk-mcp / im-clean</span>
+uv tool install "git+https://github.com/stkoecn/im-mcp.git" --with "im-mcp[all]"
+
+<span class="cm"># 国内网络可换 Gitee 镜像</span>
+uv tool install "git+https://gitee.com/ws4m/im-mcp.git" --with "im-mcp[all]"
+
+<span class="cm"># 之后升级</span>
+uv tool upgrade im-mcp</code></pre>
+      </div>
+
+      <h3>2. 初始化本地数据库（各跑一次）</h3>
+      <div class="code">
+        <div class="bar"><span>bash · 初始化</span><button class="copy" type="button">复制</button></div>
+        <pre><code><span class="cm"># 微信：Windows 需管理员终端，且微信已登录</span>
+wechat-init
+
+<span class="cm"># 微信：macOS 4.1+ 传 64 位 hex passphrase</span>
+wechat-init --passphrase &lt;64位十六进制&gt;
+
+<span class="cm"># 钉钉：普通权限即可</span>
+dingtalk-init
+
+<span class="cm"># 常用开关</span>
+wechat-init --only-extract      <span class="cm"># 只提取密钥，不立即解密</span>
+wechat-init --etl-only          <span class="cm"># 只重建 FTS5 索引，不重复解密</span>
+wechat-init --output &lt;dir&gt;      <span class="cm"># 指定解密库输出目录</span></code></pre>
+      </div>
+
+      <h3>3. 客户端接入配置</h3>
+      <div class="code">
+        <div class="bar"><span>json · claude_desktop_config.json / mcp.json</span><button class="copy" type="button">复制</button></div>
+        <pre><code>{
+  "mcpServers": {
+    "wechat": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/stkoecn/im-mcp.git[all]", "wechat-mcp"],
+      "env": { "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1" }
+    },
+    "dingtalk": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/stkoecn/im-mcp.git[all]", "dingtalk-mcp"],
+      "env": { "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1" }
+    }
+  }
+}</code></pre>
+      </div>
+      <p style="font-size:13.6px;color:var(--muted)">
+        已用 <code>uv tool install</code> 安装的话，可把 <code>command</code> 直接写成 <code>wechat-mcp</code> / <code>dingtalk-mcp</code>，
+        冷启动更快。若 uv 提示命令不在 PATH 中，执行 <code>uv tool update-shell</code> 或改用绝对路径。
+      </p>
+
+      <details>
+        <summary>让 Agent 自己完成配置（仓库提供的提示词）</summary>
+        <div class="inner">
+          <p>项目同时提供了一份面向 Agent 的运维规范 <code>skills/im-mcp/SKILL.md</code>，内容包括依赖策略、初始化前置检查、
+          工具调用 SOP 与异常处置禁令。把技能文件复制到对应目录后，可直接把下面这段发给客户端：</p>
+          <div class="code">
+            <div class="bar"><span>text · 复制给 AI 客户端</span><button class="copy" type="button">复制</button></div>
+            <pre><code>请阅读并遵循开源项目 https://github.com/stkoecn/im-mcp 中的 README.md 与 skills/im-mcp/SKILL.md，帮我配置并启用本机的微信与钉钉 MCP 服务。</code></pre>
+          </div>
+          <div class="code">
+            <div class="bar"><span>bash · 安装技能文件</span><button class="copy" type="button">复制</button></div>
+            <pre><code><span class="cm"># 通用 Agent（Pi / Codex 等）</span>
+mkdir -p ~/.agents/skills/im-mcp &amp;&amp; cp skills/im-mcp/SKILL.md ~/.agents/skills/im-mcp/
+
+<span class="cm"># Claude Code / Desktop</span>
+mkdir -p ~/.claude/skills/im-mcp &amp;&amp; cp skills/im-mcp/SKILL.md ~/.claude/skills/im-mcp/</code></pre>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>卸载与彻底清理的顺序</summary>
+        <div class="inner">
+          <p>顺序很重要，否则 SQLite 句柄会锁住文件删不掉：</p>
+          <ol>
+            <li>完全退出 AI 客户端（或结束 <code>wechat-mcp</code> / <code>dingtalk-mcp</code> 进程）；</li>
+            <li><code>im-clean -y</code>（可先 <code>im-clean --dry-run</code> 预览；残留句柄用 <code>--force</code>，也可只清 <code>--scope wechat</code> / <code>--scope dingtalk</code>）；</li>
+            <li><code>uv tool uninstall im-mcp</code>（或 <code>pip uninstall im-mcp</code>；uvx 用户可 <code>uv cache clean</code>）；</li>
+            <li>手动删除各客户端的 MCP 配置与技能文件（程序无法跨权限改其他软件配置）。</li>
+          </ol>
+        </div>
+      </details>
+    </section>
+
+    <!-- 安全 -->
+    <section class="card" id="security">
+      <div class="eyebrow">07 · 安全与隐私</div>
+      <h2>「只读」不等于「没有痕迹」</h2>
+      <p>
+        README 反复强调本地、只读、不上云，这些在代码层面对应的是：MCP 走 stdio、没有网络出口、不调用发送接口、
+        写入只落在自己的数据目录。但同样要看清它在磁盘上留下了什么。
+      </p>
+      <div class="split">
+        <div class="box good">
+          <h4>设计上收敛的部分</h4>
+          <ul>
+            <li>不修改微信/钉钉原库，读取的是解密快照</li>
+            <li>无监听端口，stdio 通信，攻击面局限在本机进程</li>
+            <li>工具全部只读语义，同步只重建本地索引</li>
+            <li>提供 <code>im-clean</code> 做生命周期收尾，支持 dry-run 预览</li>
+            <li>密钥提取失败时返回原因，不谎报成功</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <h4>必须自己承担的部分</h4>
+          <ul>
+            <li>明文 SQLite 副本会长期留在 <code>~/.wechat_mcp/</code>、<code>~/.dingtalk_mcp/</code></li>
+            <li>密钥文件（<code>all_keys.json</code>、<code>image_aes_key</code>）与明文表情库同目录</li>
+            <li>Windows 下以管理员权限扫描进程内存，权限很宽</li>
+            <li>任何能调用该 MCP 的 Agent 都能读到全部历史消息与通讯录</li>
+            <li>从 Git 源安装，更新即换代码，无版本签名与发布包</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout bad">
+        <p><b>最实际的风险不是「上云」，而是「本机上的明文」。Prompt 注入同样成立：</b>
+        群聊里的消息内容会进入模型上下文，一条被精心构造的消息就可能诱导 Agent 去查别的会话、把通讯录或文件路径带出来。
+        只读限制的是写入，不限制读取范围。</p>
+      </div>
+      <h3>实践建议</h3>
+      <ul>
+        <li><b>先 dry-run 再决定：</b>安装后立即跑一次 <code>im-clean --dry-run</code>，亲眼看看会生成哪些路径、占多少磁盘。</li>
+        <li><b>按需安装：</b>只需要微信就装 <code>im-mcp[wechat]</code>，少一套依赖也少一份数据。</li>
+        <li><b>用完即清：</b>临时借用他人设备分析时，任务结束就 <code>im-clean -y</code>，不要留着 <code>decrypted/</code>。</li>
+        <li><b>控制客户端权限：</b>只在你信任的宿主里启用，避免把 MCP 暴露给会自行规划多步任务的自动化 Agent。</li>
+        <li><b>固定版本：</b>从 Git 安装的话，记录下用到的 commit，出问题能回退。</li>
+        <li><b>合规前提：</b>只处理自己账号的数据。读取他人设备、公司设备上的聊天记录涉及法律与公司制度，与本项目是否开源无关。</li>
+      </ul>
+    </section>
+
+    <!-- 风险 -->
+    <section class="card" id="risks">
+      <div class="eyebrow">08 · 风险与限制</div>
+      <h2>还没解决的问题，和文档里没写的部分</h2>
+      <p>以下按公开 Issue 与仓库元数据整理，标注了对应的编号，便于自行核对最新状态。</p>
+
+      <ul class="risks">
+        <li>
+          <span class="lvl high">高</span>
+          <div>
+            <b>密钥提取会随客户端版本失效</b>
+            <p>Issue #32 记录：Windows 微信 <code>4.1.15.56</code> 扫到 23 个候选密钥但无一通过验证，功能直接不可用。这类失败不是配置问题，而是方案本身的脆弱点。</p>
+            <span class="ref">#32 · open</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl high">高</span>
+          <div>
+            <b>数据正确性仍有未关闭的缺陷</b>
+            <p>Issue #33 / #29 / #30 涉及分页排序不稳定、增量游标漏消息、ETL 失败被报成成功、图片静默损坏。用于「找资料」可接受，用于报表或审计类结论前需要抽样核对。</p>
+            <span class="ref">#33 #30 #29 · open</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl mid">中</span>
+          <div>
+            <b>同步入口缺少跨进程互斥</b>
+            <p>Issue #31 指出阻塞同步、后台同步、定时同步可能并发执行，同时重解密同一份快照。开启定时同步后手动点同步，属于这类冲突场景。</p>
+            <span class="ref">#31 · open</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl mid">中</span>
+          <div>
+            <b>没有发布版本，也没有 GitHub Release</b>
+            <p>版本号停在 <code>0.0.1</code>，没有 tag 与发布包；用户拿到的就是分支最新代码。复现问题时缺少「哪个版本」这个锚点。</p>
+            <span class="ref">releases: 0</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl mid">中</span>
+          <div>
+            <b>维护集中度较高</b>
+            <p>51 次提交里 33 次来自同一贡献者（ShiroEirin），另有 5 次与 1 次来自两位贡献者。项目活跃但巴士因子低。</p>
+            <span class="ref">contributors: 3</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl low">观察</span>
+          <div>
+            <b>许可证信息不一致</b>
+            <p>GitHub API 未返回 license 字段（页面未标注协议），而 <code>pyproject.toml</code> 里写的是 MIT。商用或二次分发前应直接向作者确认。</p>
+            <span class="ref">license: null / MIT</span>
+          </div>
+        </li>
+        <li>
+          <span class="lvl low">观察</span>
+          <div>
+            <b>文档里的「上游 / fork」关系对不上</b>
+            <p>CHANGELOG 说改动是「相对上游 stkoecn/im-mcp 初始版本」，但本仓库本身就叫 <code>stkoecn/im-mcp</code>，且 GitHub 标记为非 fork。读变更记录时需要留意这层歧义。</p>
+            <span class="ref">fork: false</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 结论 -->
+    <section class="card" id="verdict">
+      <div class="eyebrow">09 · 适用建议</div>
+      <h2>什么情况下值得用</h2>
+      <div class="split">
+        <div class="box good">
+          <h4>适合</h4>
+          <ul>
+            <li>个人把群聊当资料库：找文件、找结论、找谁说过什么</li>
+            <li>需要 AI 帮忙写日报 / 周报 / 群聊纪要，且数据只在本机</li>
+            <li>想接自己的看板：增量游标、头像路径、头像与文件都返回本地路径</li>
+            <li>愿意按需清理明文数据、能接受偶发的版本兼容问题</li>
+          </ul>
+        </div>
+        <div class="box bad">
+          <h4>不适合</h4>
+          <ul>
+            <li>多人共享的检索服务：没有鉴权、审计与租户隔离</li>
+            <li>合规审计、法律取证：正确性缺陷未关闭，且无版本锚点</li>
+            <li>需要实时消息推送：这是检索工具，不是消息网关</li>
+            <li>处理非本人账号的数据，或公司明确禁止的设备</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>如果决定上手，建议的顺序</h3>
+      <ol>
+        <li>先在非主力机器或虚拟机里跑通 <code>wechat-init</code>，确认密钥提取在你当前的客户端版本上能成功 —— 这是最大的不确定性。</li>
+        <li>只接微信或只接钉钉，减少变量；确认基础检索与文件路径可用。</li>
+        <li>用 <code>get_group_digest</code> 做一次周报，和人工印象对照，感受一下统计口径是否符合预期。</li>
+        <li>再开定时同步，并注意不要与手动同步同时触发。</li>
+        <li>把 <code>im-clean --dry-run</code> 记在心里，出差、换机、借用设备前跑一次 <code>im-clean -y</code>。</li>
+      </ol>
+
+      <div class="callout ok">
+        <p><b>总评：</b>架构选择是对的 —— 本地解密快照 + FTS5 + 只读 MCP，比让模型直接啃导出文件靠谱得多；
+        工具划分也明显来自真实使用场景，而不是 API 包装。短板同样清楚：正确性缺陷还开着、没有发布版本、
+        强度依赖客户端内部实现，以及明文数据需要用户自己收拾。</p>
+      </div>
+    </section>
+
+    <!-- 来源 -->
+    <section class="card" id="sources">
+      <div class="eyebrow">10 · 来源</div>
+      <h2>核对入口</h2>
+      <p style="font-size:13.6px;color:var(--muted)">以下链接需要联网打开；本页自身不加载任何外部资源。</p>
+      <ul class="src">
+        <li><span class="lab">仓库主页</span><a href="https://github.com/stkoecn/im-mcp" target="_blank" rel="noopener noreferrer">github.com/stkoecn/im-mcp</a></li>
+        <li><span class="lab">README</span><a href="https://github.com/stkoecn/im-mcp/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a>（特性、兼容表、工具表、安装与接入）</li>
+        <li><span class="lab">CHANGELOG</span><a href="https://github.com/stkoecn/im-mcp/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">CHANGELOG.md</a>（工具从 19 → 26 → 29 的演进与实现细节）</li>
+        <li><span class="lab">Agent 技能</span><a href="https://github.com/stkoecn/im-mcp/blob/main/skills/im-mcp/SKILL.md" target="_blank" rel="noopener noreferrer">skills/im-mcp/SKILL.md</a>（运维 SOP、权限矩阵、故障处理）</li>
+        <li><span class="lab">Issues</span><a href="https://github.com/stkoecn/im-mcp/issues" target="_blank" rel="noopener noreferrer">issue 列表</a>（#29–#33 为本文风险条目依据）</li>
+        <li><span class="lab">元数据快照</span>GitHub REST API，读取于 2026-11-01：78 stars / 40 forks / 8 open issues / 51 commits / 3 contributors / 无 release</li>
+        <li><span class="lab">外部依赖</span><a href="https://github.com/azazo1/wxemo" target="_blank" rel="noopener noreferrer">wxemo</a>（表情明文库依赖的 GPU 搜索工具）</li>
+      </ul>
+      <p style="font-size:12.6px;color:var(--faint);margin-top:14px">
+        说明：性能表述（「毫秒级」）与解密原理来自项目文档自述，本文未做独立基准测试；版本兼容范围为作者实测结果，
+        不代表覆盖全部客户端版本。
+      </p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>im-mcp 调研报告 · 单文件离线 HTML · 生成于 2026-11-01</span>
+    <span>内容依据公开仓库文档与 API 元数据整理，不含个人数据</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 目录滚动高亮 ---------- */
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.side a[href^="#"]'));
+  var sections = navLinks.map(function (a) {
+    return document.getElementById(a.getAttribute('href').slice(1));
+  }).filter(Boolean);
+
+  function setCurrent(id) {
+    navLinks.forEach(function (a) {
+      a.setAttribute('aria-current', a.getAttribute('href') === '#' + id ? 'true' : 'false');
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    var visible = new Map();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0); });
+      var best = null, bestRatio = 0;
+      visible.forEach(function (ratio, id) { if (ratio > bestRatio) { bestRatio = ratio; best = id; } });
+      if (best) setCurrent(best);
+    }, { rootMargin: '-15% 0px -55% 0px', threshold: [0, 0.15, 0.4, 0.75, 1] });
+    sections.forEach(function (s) { io.observe(s); });
+    setCurrent(sections.length ? sections[0].id : '');
+  }
+
+  /* ---------- 工具筛选 ---------- */
+  var table = document.getElementById('toolTable');
+  var rows = table ? Array.prototype.slice.call(table.querySelectorAll('tbody tr')) : [];
+  var input = document.getElementById('toolQ');
+  var countEl = document.getElementById('toolCount');
+  var emptyEl = document.getElementById('toolEmpty');
+  var tableWrap = table ? table.parentElement : null;
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.fchip'));
+  var activeCat = 'all';
+
+  rows.forEach(function (r) {
+    r.dataset.search = r.textContent.replace(/\s+/g, ' ').toLowerCase();
+  });
+
+  function applyFilter() {
+    var q = (input.value || '').trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var okCat = activeCat === 'all' || r.dataset.cat === activeCat;
+      var okQ = !q || r.dataset.search.indexOf(q) !== -1;
+      var show = okCat && okQ;
+      r.hidden = !show;
+      if (show) shown++;
+    });
+    countEl.textContent = '显示 ' + shown + ' / ' + rows.length;
+    emptyEl.hidden = shown !== 0;
+    tableWrap.hidden = shown === 0;
+    tableWrap.style.display = shown === 0 ? 'none' : '';
+  }
+
+  function setCat(cat) {
+    activeCat = cat;
+    chips.forEach(function (c) {
+      c.setAttribute('aria-pressed', c.dataset.cat === cat ? 'true' : 'false');
+    });
+    applyFilter();
+  }
+
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () { setCat(c.dataset.cat); });
+  });
+  if (input) {
+    input.addEventListener('input', applyFilter);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { input.value = ''; applyFilter(); }
+    });
+  }
+  var clearBtn = document.getElementById('toolClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () { input.value = ''; input.focus(); applyFilter(); });
+  }
+  var resetBtn = document.getElementById('toolReset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      if (input) input.value = '';
+      setCat('all');
+      if (input) input.focus();
+    });
+  }
+  applyFilter();
+
+  /* ---------- 代码块复制 ---------- */
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.querySelectorAll('.code .copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.closest('.code').querySelector('pre');
+      var text = pre ? pre.innerText : '';
+      var finish = function (ok) {
+        var old = btn.textContent;
+        btn.textContent = ok ? '已复制' : '请手动复制';
+        btn.classList.toggle('done', ok);
+        setTimeout(function () {
+          btn.textContent = old;
+          btn.classList.remove('done');
+        }, 1800);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(fallbackCopy(text)); });
+      } else {
+        finish(fallbackCopy(text));
+      }
+    });
+  });
+
+  /* ---------- 打印时展开折叠 ---------- */
+  var dts = Array.prototype.slice.call(document.querySelectorAll('details'));
+  function onBeforePrint() { dts.forEach(function (d) { d.open = true; }); }
+  if (window.matchMedia) {
+    var mq = window.matchMedia('print');
+    if (mq.addEventListener) mq.addEventListener('change', function (e) { if (e.matches) onBeforePrint(); });
+  }
+  window.addEventListener('beforeprint', onBeforePrint);
+
+  /* ---------- 页内锚点平滑滚动（保持键盘可用） ---------- */
+  navLinks.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var target = document.getElementById(a.getAttribute('href').slice(1));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try { history.replaceState(null, '', a.getAttribute('href')); } catch (err) { /* file:// 下部分浏览器禁写历史 */ }
+      target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+    });
+  });
+})();
+</script>
+</body>
+</html>
