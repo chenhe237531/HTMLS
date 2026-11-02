@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="voiceType · AI 语音输入工具 · 独立分析 04 / 04：能力、成本、隐私、风险与验证清单。">
+<title>voiceType · macOS 语音输入分析报告</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#14171c; --muted:#5c6470;
+  --line:#e3e6eb; --line-strong:#cbd1da;
+  --accent:#0f766e; --accent-soft:#e6f4f1; --accent-ink:#0b5f59;
+  --ok:#166534; --ok-soft:#e8f5ec; --bad:#a3261f; --bad-soft:#fdecea;
+  --warn:#8a4b00; --warn-soft:#fff4e0; --info:#1e40af; --info-soft:#e8eefc;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid rgba(0,0,0,.14)}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.86em;background:#eef1f5;padding:.12em .38em;border-radius:4px}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.01em}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:20px}
+li{margin:5px 0}
+strong{font-weight:650}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;color:#000;padding:10px 14px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:12px;top:12px}
+.readbar{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60;pointer-events:none}
+.readbar i{display:block;height:100%;width:0;background:var(--accent)}
+.hero{background:linear-gradient(180deg,#0d1219 0%,#141b26 100%);color:#e8edf5;padding:34px 0 30px;border-bottom:1px solid #0a0e14}
+.series{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#8fa0b8}
+.hero h1{font-size:clamp(28px,4vw,42px);margin:10px 0 8px;color:#fff;letter-spacing:-.02em}
+.lede{max-width:880px;color:#b6c2d4;font-size:16px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#d6dfec}
+.chip b{color:#fff;font-weight:600}
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:22px}
+.v{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px}
+.v .l{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8fa0b8}
+.v .t{font-size:14.5px;font-weight:600;color:#fff;margin-top:5px}
+.v .n{font-size:12px;color:#a9b6c8;margin-top:3px;line-height:1.5}
+.hero-foot{font-size:12px;color:#8fa0b8;margin:16px 0 0}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);gap:32px;align-items:start;padding-top:28px;padding-bottom:72px}
+.toc{position:sticky;top:16px;font-size:13px}
+.toc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+.toc nav{display:flex;flex-direction:column;gap:1px}
+.toc a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;font-size:13px;border-bottom:0}
+.toc a:hover{background:#eef1f5;color:var(--ink);text-decoration:none}
+.toc a.active{background:var(--accent-soft);color:var(--accent-ink);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin:14px 10px 0;font-size:11.5px;color:var(--muted);line-height:1.55}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin:0 0 18px;scroll-margin-top:18px}
+.sec-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.sec-num{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--accent-ink);background:var(--accent-soft);border:1px solid rgba(0,0,0,.04);border-radius:6px;padding:3px 6px;margin-top:2px}
+.sec-head h2{font-size:21px;margin:0}
+.sub{color:var(--muted);font-size:13.5px;margin:2px 0 0}
+h3{font-size:15.5px;margin:20px 0 8px}
+h4{font-size:13.5px;margin:14px 0 6px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0 16px}
+.callout strong{color:var(--accent-ink)}
+.alert{border:1px solid #f0c9a0;background:#fff7ec;border-radius:10px;padding:14px 16px;margin:14px 0}
+.alert h3{margin:0 0 6px;font-size:15px;color:#8a4b00}
+.alert ol,.alert ul{margin:6px 0 0}
+.note{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note strong{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fcfcfd}
+.panel h3{margin:0 0 8px;font-size:14.5px}
+.panel.pro{border-top:3px solid var(--ok)}
+.panel.con{border-top:3px solid var(--bad)}
+.panel.fit{border-top:3px solid var(--accent)}
+.tag{display:inline-block;font-size:10.5px;line-height:1.4;padding:1px 6px;border-radius:4px;border:1px solid transparent;vertical-align:1px;white-space:nowrap}
+.tag.a{background:#e8f5ec;color:#166534;border-color:#c7e8d2}
+.tag.c{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.u{background:#f1f2f4;color:#4b5563;border-color:#dcdfe5}
+.tag.local{background:#e8eefc;color:#1e40af;border-color:#c9d6f7}
+.tag.cloud{background:#f3e8ff;color:#6b21a8;border-color:#e0c9f5}
+.tag.dev{background:#e6f4f1;color:#0b5f59;border-color:#bfe3dc}
+.tag.high{background:#fdecea;color:#a3261f;border-color:#f3c9c4}
+.tag.mid{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.low{background:#eef0f3;color:#4b5563;border-color:#dcdfe5}
+.tag.cur{background:var(--accent);color:#fff;border-color:var(--accent)}
+.legend-box{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);margin:8px 0 0}
+.legend-box span{display:inline-flex;align-items:center;gap:5px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.fact-col{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfcfd}
+.fact-col h3{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:14px;flex-wrap:wrap}
+.fact-col ul{padding-left:18px;margin:0}
+.fact-col li{font-size:13.2px;margin:7px 0}
+.src{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.step{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fcfcfd}
+.step .n{font-family:var(--mono);font-size:10px;color:var(--accent-ink)}
+.step .t{font-size:13.5px;font-weight:600;margin:3px 0 2px}
+.step .d{font-size:11.5px;color:var(--muted);line-height:1.45}
+.step .tag{margin-top:6px}
+.pipe-note{font-size:11.5px;color:var(--muted);margin:0 0 6px}
+.boundary{display:grid;grid-template-columns:1.35fr .9fr;gap:12px;margin:14px 0}
+.zone{border:1px dashed var(--line-strong);border-radius:10px;padding:12px 14px;background:#fbfcfd}
+.zone h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.zone ul{margin:0;padding-left:16px}
+.zone li{font-size:12.5px}
+.zone.cloud{background:#faf7fd;border-color:#dcc9f0}
+.zone.device{background:#f7fbfa;border-color:#c7e3dd}
+.flow{grid-column:1/-1;font-size:12px;color:var(--muted);text-align:center;border-top:1px dashed var(--line);padding-top:8px}
+details{border:1px solid var(--line);border-radius:9px;padding:0 12px;background:#fcfcfd;margin:8px 0}
+summary{cursor:pointer;padding:9px 0;font-size:13.5px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+";font-family:var(--mono);color:var(--accent-ink);width:14px;flex:0 0 auto}
+details[open] summary:before{content:"−"}
+details .body{padding:0 0 11px 22px;font-size:13.3px;color:#3b424d}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:10px 0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:#fafbfc;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num{font-family:var(--mono);white-space:nowrap}
+.tbl tr.current td{background:var(--accent-soft)}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.spec{border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:#fcfcfd}
+.spec .k{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.spec .v{font-size:14px;font-weight:600;margin-top:3px}
+.spec .n{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.calc{border:1px solid var(--line-strong);border-radius:12px;padding:16px;background:#fcfcfd;margin:14px 0}
+.calc-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+button.ghost{font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer}
+button.ghost:hover{border-color:var(--accent);color:var(--accent-ink)}
+button.ghost[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.calc-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.control{margin:0 0 12px}
+.control label{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.control output{font-family:var(--mono);color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{width:100%;font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;color:var(--ink)}
+input[type=number]:focus-visible,input[type=range]:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check-inline{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0}
+.check-inline input{accent-color:var(--accent)}
+.result{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.big{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.big small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.metric{border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.metric .k{font-size:10.5px;color:var(--muted)}
+.metric .v{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:1px}
+.bar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:#eef0f3;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:0;transition:width .2s}
+.bar .asr{background:var(--accent)}
+.bar .llm{background:#8b5cf6}
+.bar .other{background:#f59e0b}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted)}
+.legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:currentColor}
+.legend .asr{color:var(--accent)}
+.legend .llm{color:#8b5cf6}
+.legend .other{color:#f59e0b}
+.fine{font-size:11.5px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+.mode-switch{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.path-summary{font-size:13.5px;background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 8px 8px 0;margin:8px 0 12px}
+.path-table tr{transition:opacity .15s}
+.path-table td:first-child{white-space:nowrap}
+.path-table tr.is-dim td{opacity:.42}
+.path-table tr.is-on td{background:var(--accent-soft)}
+.check{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fcfcfd;margin-top:12px}
+.check-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.check-head .count{font-family:var(--mono);font-size:12px;color:var(--accent-ink)}
+.progress{flex:1;height:7px;background:#e9ecf0;border-radius:99px;overflow:hidden;min-width:100px}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.check ul{list-style:none;padding:0;margin:6px 0 0}
+.check li{border-top:1px solid var(--line);padding:7px 0}
+.check li:first-child{border-top:0}
+.check label{display:flex;gap:8px;align-items:flex-start;font-size:13.2px;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--accent)}
+.sources{list-style:none;padding:0;margin:8px 0}
+.sources li{border-top:1px solid var(--line);padding:8px 0;font-size:13px}
+.sources li:first-child{border-top:0}
+.sources .u{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.sources a.u{border-bottom:0;text-decoration:none}
+.sources a.u:hover{text-decoration:underline}
+.sources .why{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.foot{border-top:1px solid var(--line);background:#fff;padding:22px 0 30px;color:var(--muted);font-size:12px}
+.foot p{margin:4px 0}
+.model-select{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.model-select label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.model-select input{accent-color:var(--accent)}
+.model-select label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.model-card{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0 0}
+.model-card .m{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fcfcfd}
+.model-card .k{font-size:10.5px;color:var(--muted)}
+.model-card .v{font-family:var(--mono);font-size:14px;font-weight:600;margin-top:2px}
+@media (max-width:940px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:18px}
+  .shell > main{min-width:0}
+  .toc{position:static;order:-1;overflow-x:auto;padding-bottom:6px;min-width:0;max-width:100%}
+  .toc nav{min-width:0}
+  .toc nav{flex-direction:row;gap:6px;overflow-x:auto;padding-bottom:2px}
+  .toc a{white-space:nowrap;border:1px solid var(--line);border-left-width:1px;border-radius:999px;padding:5px 10px}
+  .toc-title,.toc-note{display:none}
+  .pipe{grid-template-columns:1fr 1fr}
+  .facts{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr 1fr}
+  .model-card{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .verdict{grid-template-columns:1fr 1fr}
+  .calc-grid{grid-template-columns:1fr}
+  .boundary{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .verdict{grid-template-columns:1fr}
+  .pipe{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr}
+  .model-card{grid-template-columns:1fr}
+  .card{padding:20px 18px}
+  .hero{padding:28px 0 24px}
+}
+@media print{
+  body{background:#fff}
+  .hero{background:#fff;color:#000;border-bottom:1px solid #ccc}
+  .hero h1,.lede,.chip,.v .t,.v .n,.hero-foot{color:#000}
+  .chip,.v{background:#f4f4f4;border-color:#ccc}
+  .toc,.readbar,.skip,.presets,.check-head button,.mode-switch,.model-select{display:none}
+  .shell{display:block;padding:0}
+  .card{break-inside:avoid;border:1px solid #ddd}
+  details{border:0;padding:0}
+  a{color:#000;text-decoration:underline}
+}
+</style>
+<style>:root{--accent:#15803d;--accent-soft:#e8f5ec;--accent-ink:#14532d}</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="readbar" aria-hidden="true"><i id="readbar"></i></div>
+<header class="hero">
+  <div class="wrap">
+    <div class="series">AI 语音输入工具 · 独立分析 04 / 04</div>
+    <h1>voiceType</h1>
+    <p class="lede">Option+Command 说话，Qwen3-ASR 在本机转写，Ollama 在本机删口头禅、补标点，再用 CGEvent 把整理后的文字打进光标。没有账号、没有 API Key、没有云端。</p>
+    <div class="chips"><span class="chip"><b>平台</b> · macOS 14+</span><span class="chip"><b>形态</b> · 菜单栏工具</span><span class="chip"><b>识别</b> · Qwen3-ASR 0.6B</span><span class="chip"><b>整理</b> · 本地 Ollama</span><span class="chip"><b>许可</b> · MIT</span></div>
+    <div class="verdict"><div class="v"><div class="l">定位</div><div class="t">全本地“成稿”听写</div><div class="n">识别 + 整理都在本机</div></div><div class="v"><div class="l">默认识别</div><div class="t">Qwen3-ASR 0.6B</div><div class="n">7.57% CER / 574 ms</div></div><div class="v"><div class="l">整理</div><div class="t">Ollama qwen3.5:9b</div><div class="n">可关，关掉更省内存</div></div><div class="v"><div class="l">成本</div><div class="t">¥0 API + 电费</div><div class="n">真正的成本是内存与安装</div></div></div>
+    <p class="hero-foot">证据等级 A：仓库、README、MIT 许可和基准数据均可核对。真实体验取决于你的 Mac、麦克风与口述习惯。</p>
+  </div>
+</header>
+<div class="shell wrap">
+  <aside class="toc" aria-label="目录">
+    <p class="toc-title">目录</p>
+    <nav>
+      <a href="#verdict" class="active">结论先行</a>
+      <a href="#facts">事实边界</a>
+      <a href="#pipeline">它怎么工作</a>
+      <a href="#cost">成本：没有 API 账单，但有电费和内存</a>
+      <a href="#privacy">隐私：这是四个里最干净的</a>
+      <a href="#specs">关键规格与模型选择</a>
+      <a href="#proscons">优势与局限</a>
+      <a href="#fit">适合谁，不适合谁</a>
+      <a href="#risks">风险与验证清单</a>
+      <a href="#alternatives">放在同类方案里看</a>
+      <a href="#decision">采用建议</a>
+      <a href="#sources">来源与口径</a>
+    </nav>
+    <p class="toc-note">这份简报与仓库基本一致；但“免费”要拆成电费、内存和首次下载，“全本地”要排除首次下载模型。</p>
+  </aside>
+  <main id="main">
+
+<section id="verdict" class="card">
+  <div class="sec-head"><span class="sec-num">01</span><div><h2>结论先行</h2><p class="sub">它不是“转写工具”，而是“把口述整理成能直接发出去的句子”。</p></div></div>
+  <div class="callout"><strong>一句话判断：</strong>如果你在 macOS 上、在意隐私、愿意装 Ollama 并接受约 1.5–3 GB 内存占用，voiceType 是这四个工具里“数据边界最干净”的一个：识别、整理、上屏都在本机。代价是热键固定、没有流式识别、安装要绕 Gatekeeper。</div>
+<div class="two">
+  <div class="panel fit"><h3>它适合</h3><ul><li>隐私敏感：会议、客户、内部资料不想离开 Mac。</li><li>经常离线：飞机、内网、弱网环境仍要输入。</li><li>中文口述为主：邮件、笔记、文档、聊天。</li><li>能接受本地模型：愿意占内存、接受 0.5–1 秒延迟。</li><li>愿意手工安装：能处理自签名/未公证 App。</li></ul></div>
+  <div class="panel con"><h3>它不适合</h3><ul><li>要开箱即用、已公证、无 Gatekeeper 警告。</li><li>需要流式识别：边说边出字。</li><li>需要多语言会议、长音频、说话人分离。</li><li>内存紧张（8GB 且同时开很多应用）。</li><li>需要商用支持、SLA、统一部署。</li></ul></div>
+</div>
+<div class="note"><strong>采用建议：</strong>先用默认 0.6B + 整理模式跑一周；如果内存吃紧，把整理切成“插入原文”或换 0.6B；如果你经常说术语/人名，再试 1.7B。</div>
+
+</section>
+
+<section id="facts" class="card">
+  <div class="sec-head"><span class="sec-num">02</span><div><h2>事实边界</h2><p class="sub">简报与仓库基本一致；需要补充的是三个“边界条件”。</p></div></div>
+  <div class="note" style="margin-bottom:10px"><strong>简报核对结果：</strong>“macOS 14+”“全流程本机”“静默后台输入”“中文 CER 7.57%”“35 秒语音约 0.57 秒”“不消耗 API 额度”都能在 README 中找到对应描述。它们成立，但有三个边界：首次要联网下载模型；整理依赖本机 Ollama；热键固定且没有流式识别。</div><div class="facts"><div class="fact-col"><h3>已核实 <span class="tag a">A</span></h3><ul><li>仓库 <code>yinshiqi2012-ops/voicetype</code>，MIT，Swift，v0.2.0，创建 2026-10-18，最近推送 2026-10-19，1★。<span class="src">GitHub API，2026-11-01</span></li><li>链路：AVAudioEngine 16 kHz 单声道 WAV → transcribe.cpp（ggml/Metal）Qwen3-ASR → Ollama qwen3.5:9b → CGEvent 注入。<span class="src">README</span></li><li>默认 Qwen3-ASR 0.6B：中文 CER 7.57%，35 秒语音 574 ms，权重 850 MB。<span class="src">README / fleurs-zh 945 条，M5 Pro</span></li><li>1.7B：CER 7.14%，977 ms，2.2 GB；Whisper small：23.06%，401 ms，480 MB。<span class="src">README</span></li><li>常驻内存：0.6B 约 1.5 GB；1.7B 约 3.1 GB；Ollama 约 1.4 GB。<span class="src">README，M5 Pro / 48GB</span></li><li>三项权限：麦克风、输入监控、辅助功能；授权后必须重启应用。<span class="src">README</span></li><li>事实校验：整理后数字/时间与原文不一致时，丢弃整理结果、用原文；注入失败退化为剪贴板。<span class="src">README</span></li><li>隐私：语音、识别、整理都不离开本机；唯一网络访问是首次下载模型；录音留档不自动清理。<span class="src">README</span></li><li>限制：热键固定 Option+Command、主要面向中文、无流式识别、自签名未公证、依赖 Ollama。<span class="src">README</span></li></ul></div><div class="fact-col"><h3>简报口径 · 基本一致 <span class="tag c">C</span></h3><ul><li>macOS 14+ → README 安装要求一致。</li><li>全流程本机离线 → 日常使用成立；首次下载模型除外。</li><li>静默后台输入、不抢焦点 → README 明确“不抢焦点、不进 Dock”。</li><li>7.57% CER / 35 秒 0.57 秒 → 对应 0.6B 默认配置。</li><li>不消耗 API 额度 → 没有云端 API；但有电费与内存成本。</li></ul></div><div class="fact-col"><h3>未知 <span class="tag u">U</span></h3><ul><li>Intel Mac 支持：README 未明确；基准是 Apple Silicon（M5 Pro），依赖 Metal。</li><li>老机型上的真实延迟、内存峰值与发热。</li><li>二进制是否经过独立安全审计（MIT 只代表可审计，不代表已审计）。</li><li>录音留档能否关闭；长期使用后的磁盘占用。</li><li>安全输入框中的具体失败表现（是否只退化剪贴板）。</li><li>项目长期维护：仓库很新，社区很小。</li></ul></div></div>
+<div class="legend-box">
+  <span><span class="tag a">A</span> 一手仓库/官方文档/可复现数据</span>
+  <span><span class="tag c">C</span> 简报口径，基本一致</span>
+  <span><span class="tag u">U</span> 未知/未核实</span>
+</div>
+
+</section>
+
+<section id="pipeline" class="card">
+  <div class="sec-head"><span class="sec-num">03</span><div><h2>它怎么工作</h2><p class="sub">四步，全部在本机；两道兜底避免“改错事实”和“没插进去”。</p></div></div>
+  <div class="pipe"><div class="step"><div class="n">01</div><div class="t">热键</div><div class="d">Option+Command（固定，不可改）</div><span class="tag dev">本机</span></div><div class="step"><div class="n">02</div><div class="t">录音</div><div class="d">AVAudioEngine 16 kHz 单声道 WAV</div><span class="tag local">本机</span></div><div class="step"><div class="n">03</div><div class="t">识别</div><div class="d">transcribe.cpp + Qwen3-ASR</div><span class="tag local">本机</span></div><div class="step"><div class="n">04</div><div class="t">整理</div><div class="d">Ollama qwen3.5:9b（可关）</div><span class="tag local">本机</span></div><div class="step"><div class="n">05</div><div class="t">上屏</div><div class="d">CGEvent 注入 / 剪贴板兜底</div><span class="tag dev">本机</span></div></div>
+<div class="boundary">
+  <div class="zone device"><h4>你的设备</h4><ul><li>麦克风与录音</li><li>Qwen3-ASR 推理</li><li>Ollama 整理</li><li>CGEvent / 剪贴板</li><li>录音留档</li></ul></div>
+  <div class="zone cloud"><h4>云端 / 外部</h4><ul><li>首次下载模型权重（Hugging Face / hf-mirror）</li><li>日常使用：无</li></ul></div>
+  <div class="flow">日常使用不产生云端请求；只有首次下载模型需要网络。</div>
+</div><details><summary>为什么用 CGEvent 而不是剪贴板</summary><div class="body"><p>剪贴板方案会覆盖你原来的剪贴板，还要处理恢复与权限；CGEvent 直接投递 Unicode 键盘事件，等价于真实键入，不切应用、不碰剪贴板。代价是某些安全输入框会静默丢弃事件，所以项目保留了剪贴板兜底。</p></div></details><details><summary>事实校验为什么重要</summary><div class="body"><p>口语整理最容易犯的错不是“没删口头禅”，而是“把三点改成两点”“把人名改错”。voiceType 在整理后比较数字、时间等事实；一旦对不上，就丢弃整理结果、用原文。这个取舍比“更顺滑”更重要。</p></div></details><details><summary>为什么没有流式识别</summary><div class="body"><p>流式需要边录边解码、处理分段与上下文，复杂度和资源占用都更高。voiceType 选择“说完再识别”，换来更简单的链路和更稳定的注入；代价是说完要等 0.5–1 秒。</p></div></details>
+</section>
+
+<section id="cost" class="card">
+  <div class="sec-head"><span class="sec-num">04</span><div><h2>成本：没有 API 账单，但有电费和内存</h2><p class="sub">“免费”是真的，但不是零成本；把电费与内存占用摊开看。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">配置</th><th scope="col">常驻内存</th><th scope="col">磁盘</th><th scope="col">现金成本</th></tr></thead><tbody><tr><td>0.6B + 整理</td><td>约 2.9 GB（含 Ollama）</td><td>850 MB + 模型</td><td>¥0 API + 电费</td></tr><tr><td>0.6B + 仅原文</td><td>约 1.5 GB</td><td>850 MB</td><td>¥0 API + 电费</td></tr><tr><td>1.7B + 整理</td><td>约 4.5 GB（含 Ollama）</td><td>2.2 GB + 模型</td><td>¥0 API + 电费</td></tr></tbody></table></div>
+<div class="calc">
+  <div class="calc-top">
+    <div class="presets"><button type="button" class="ghost" data-preset="light">轻度</button><button type="button" class="ghost" data-preset="daily">日常</button><button type="button" class="ghost" data-preset="heavy">重度</button></div>
+    
+  </div>
+  <div class="calc-grid">
+    <div class="calc-controls"><div class="control"><label for="c-uses">每日使用次数<output id="c-uses-out" for="c-uses">40 次</output></label><input type="range" id="c-uses" min="5" max="150" step="5" value="40"></div><div class="control"><label for="c-sec">每次口述时长<output id="c-sec-out" for="c-sec">15 秒</output></label><input type="range" id="c-sec" min="5" max="60" step="1" value="15"></div><div class="control"><label for="c-hours">每日推理/常驻小时<output id="c-hours-out" for="c-hours">2 小时</output></label><input type="range" id="c-hours" min="0" max="12" step="1" value="2"></div><div class="control"><label for="c-watts">增量功耗<output id="c-watts-out" for="c-watts">8 W</output></label><input type="range" id="c-watts" min="1" max="40" step="1" value="8"></div><div class="control"><label for="c-kwh">电价<span>元 / kWh</span></label><input type="number" id="c-kwh" min="0" step="0.01" value="0.6" inputmode="decimal"></div></div>
+    <div class="result" aria-live="polite">
+      <div class="big"><span id="c-total">—</span><small>每月估算</small></div>
+      <div class="metrics">
+        <div class="metric"><div class="k">每次</div><div class="v" id="c-per">—</div></div>
+        <div class="metric"><div class="k">识别</div><div class="v" id="c-asr">—</div></div>
+        <div class="metric"><div class="k">整理 / 模型</div><div class="v" id="c-llm">—</div></div>
+        <div class="metric"><div class="k">订阅 / 电费</div><div class="v" id="c-other">—</div></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i class="asr" id="c-asr-bar"></i><i class="llm" id="c-llm-bar"></i><i class="other" id="c-other-bar"></i></div>
+      <div class="legend"><span class="asr">识别</span><span class="llm">整理</span><span class="other">订阅 / 电费</span></div>
+    </div>
+  </div>
+  <p class="fine" id="c-note">按每日 2 小时、增量功耗 8 W、电价 0.6 元/kWh 粗估。不是电表实测；不含整机待机、硬件折旧与内存机会成本。</p>
+</div>
+<div class="note"><strong>真正的成本：</strong>不是 token，而是内存。0.6B + Ollama 常驻约 2.9 GB；1.7B + Ollama 约 4.5 GB。8 GB Mac 能用，但和浏览器/IDE 抢内存时会明显。把整理切成“插入原文”可以直接省掉 Ollama 的约 1.4 GB。</div>
+<div class="note"><strong>一次性成本：</strong>首次下载模型 850 MB（0.6B）或 2.2 GB（1.7B）；安装包本身约 6.5 MB（v0.2.0 zip）。</div>
+
+</section>
+
+<section id="privacy" class="card">
+  <div class="sec-head"><span class="sec-num">05</span><div><h2>隐私：这是四个里最干净的</h2><p class="sub">点击三种状态，表格会高亮该状态下最需要关注的数据行。</p></div></div>
+  
+<div class="mode-switch" role="group" aria-label="使用状态">
+  <button type="button" class="ghost" data-mode="daily">日常全本地</button>
+  <button type="button" class="ghost" data-mode="first-run">首次下载模型</button>
+  <button type="button" class="ghost" data-mode="archive">录音留档</button>
+</div>
+<p class="path-summary" id="path-summary" aria-live="polite">选择一种状态查看数据边界。</p>
+<div class="tbl-wrap"><table class="tbl path-table"><thead><tr><th scope="col">数据</th><th scope="col">是否离开设备</th><th scope="col">去向 / 说明</th><th scope="col">触发条件</th></tr></thead><tbody><tr data-modes="daily first-run archive"><td>原始录音</td><td>不出设备</td><td>本机 Recordings 目录</td><td>每次录音</td></tr><tr data-modes="daily first-run archive"><td>ASR 转写</td><td>不出设备</td><td>本机内存</td><td>识别时</td></tr><tr data-modes="daily first-run archive"><td>整理请求</td><td>不出设备</td><td>127.0.0.1:11434（Ollama）</td><td>整理开启时</td></tr><tr data-modes="first-run"><td>模型权重下载</td><td>会访问网络</td><td>Hugging Face / hf-mirror</td><td>首次运行或切换模型</td></tr><tr data-modes="daily first-run archive"><td>使用统计</td><td>不出设备</td><td>本机 usage.json</td><td>输出后</td></tr><tr data-modes="daily first-run archive"><td>录音归档</td><td>不出设备，但会保留</td><td>本机 Recordings，不自动清理</td><td>始终</td></tr></tbody></table></div>
+<div class="two">
+  <div class="panel pro"><h3>做得好的地方</h3><ul><li>语音、识别结果、整理请求都不离开本机；整理发往 127.0.0.1。</li><li>唯一网络访问是首次下载模型；之后断网可用。</li><li>没有账号、API Key、第三方 SDK、遥测。</li><li>MIT 许可，代码可审计、可自行构建。</li><li>事实校验 + 剪贴板兜底，减少“改错”和“丢字”。</li></ul></div>
+  <div class="panel con"><h3>仍需注意</h3><ul><li>录音留档在 <code>~/Library/Application Support/voicetype/Recordings/</code>，不会自动清理。</li><li>自签名、未公证；首次安装要手动去隔离属性。</li><li>辅助功能权限很大；注入事件可被安全输入框丢弃。</li><li>模型下载走第三方（Hugging Face / hf-mirror），首次仍需信任下载源。</li></ul></div>
+</div>
+
+</section>
+
+<section id="specs" class="card">
+  <div class="sec-head"><span class="sec-num">06</span><div><h2>关键规格与模型选择</h2><p class="sub">切换模型看下面的卡片；完整对比表在下面。</p></div></div>
+  
+<div class="model-select" role="group" aria-label="识别模型">
+  <label><input type="radio" name="model" value="0.6b" checked> Qwen3-ASR 0.6B（默认）</label>
+  <label><input type="radio" name="model" value="1.7b"> Qwen3-ASR 1.7B</label>
+  <label><input type="radio" name="model" value="whisper-small"> Whisper small</label>
+</div>
+<p class="fine">当前：<strong id="m-name">Qwen3-ASR 0.6B</strong></p>
+<div class="model-card">
+  <div class="m"><div class="k">中文 CER</div><div class="v" id="m-cer">7.57%</div></div>
+  <div class="m"><div class="k">35 秒语音</div><div class="v" id="m-lat">574 ms</div></div>
+  <div class="m"><div class="k">权重</div><div class="v" id="m-disk">850 MB</div></div>
+  <div class="m"><div class="k">常驻内存</div><div class="v" id="m-ram">约 1.5 GB</div></div>
+  <div class="m"><div class="k">建议</div><div class="v" id="m-rec" style="font-size:12px">日常默认</div></div>
+</div>
+<div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">模型</th><th scope="col">中文 CER</th><th scope="col">35 秒耗时</th><th scope="col">权重</th><th scope="col">说明</th></tr></thead><tbody><tr><td>Qwen3-ASR 1.7B</td><td>7.14%</td><td>977 ms</td><td>2.2 GB</td><td>最准，也最吃内存</td></tr><tr class="current"><td>Qwen3-ASR 0.6B</td><td>7.57%</td><td>574 ms</td><td>850 MB</td><td>默认；与 1.7B 只差 0.4 个百分点</td></tr><tr><td>Whisper large-v3</td><td>7.98%</td><td>—</td><td>3.1 GB</td><td>多语言更均衡</td></tr><tr><td>Breeze-ASR-25</td><td>8.10%</td><td>1481 ms</td><td>1.5 GB</td><td>台湾华语语料友好</td></tr><tr><td>Whisper large-v3-turbo</td><td>8.50%</td><td>—</td><td>1.6 GB</td><td>—</td></tr><tr><td>Fun-ASR-Nano</td><td>8.59%</td><td>—</td><td>—</td><td>—</td></tr><tr><td>SenseVoice-Small</td><td>10.12%</td><td>130 ms</td><td>470 MB</td><td>最快，精度掉一档</td></tr><tr><td>Whisper small</td><td>23.06%</td><td>401 ms</td><td>480 MB</td><td>旧默认，错误率约 3 倍</td></tr></tbody></table></div>
+<div class="note"><strong>基准口径：</strong>fleurs-zh 945 条语料，M5 Pro，字符错误率（CER，越低越好）。这不是你的口音、麦克风、房间的实测结果；用自己的 10 条录音对比更可靠。</div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>项目</th><th>规格</th><th>备注</th></tr></thead><tbody>
+<tr><td>系统</td><td>macOS 14+</td><td>README 安装要求</td></tr>
+<tr><td>语言</td><td>Swift 6</td><td>菜单栏 App</td></tr>
+<tr><td>热键</td><td>Option+Command</td><td>固定，不可配置</td></tr>
+<tr><td>识别</td><td>Qwen3-ASR 0.6B / 1.7B / Whisper small</td><td>切换后热加载</td></tr>
+<tr><td>整理</td><td>Ollama qwen3.5:9b</td><td>off / clean / summary</td></tr>
+<tr><td>上屏</td><td>CGEvent Unicode</td><td>失败退化为剪贴板</td></tr>
+<tr><td>流式</td><td>不支持</td><td>说完再识别</td></tr>
+<tr><td>许可</td><td>MIT</td><td>可审计/可构建</td></tr>
+<tr><td>签名</td><td>自签名 “Voicetype Dev”</td><td>未公证</td></tr>
+</tbody></table></div>
+
+</section>
+
+<section id="proscons" class="card">
+  <div class="sec-head"><span class="sec-num">07</span><div><h2>优势与局限</h2><p class="sub">优势是“数据边界”和“事实校验”；局限是“安装门槛”和“热键固定”。</p></div></div>
+  
+<div class="two">
+  <div class="panel pro"><h3>优势</h3><ul><li>真全本地：语音、转写、整理都不出设备。 <span class="tag a">文档</span></li><li>MIT 开源，可审计、可自行构建。 <span class="tag a">LICENSE</span></li><li>中文 CER 7.57%，默认 0.6B 在精度/内存间平衡好。 <span class="tag a">基准</span></li><li>事实校验兜底：数字/时间对不上就退回原文。 <span class="tag a">文档</span></li><li>注入失败退化为剪贴板，不会“既没插进去又没后路”。 <span class="tag a">文档</span></li><li>不抢焦点、不进 Dock；后台静默输入。 <span class="tag a">文档</span></li><li>成本只有电费；没有 API Key/账号/订阅。 <span class="tag a">文档</span></li></ul></div>
+  <div class="panel con"><h3>局限</h3><ul><li>热键固定 Option+Command，可能和窗口切换等快捷键冲突。 <span class="tag a">文档</span></li><li>主要面向中文；中英混说 + 不规则数字串是已知弱项。 <span class="tag a">文档</span></li><li>没有流式识别，说完要等 0.5–1 秒。 <span class="tag a">文档</span></li><li>自签名未公证，安装要绕 Gatekeeper。 <span class="tag a">文档</span></li><li>依赖 Ollama；整理常驻约 1.4 GB 内存。 <span class="tag a">文档</span></li><li>录音留档不自动清理，需要手动管理。 <span class="tag a">文档</span></li><li>社区很小（1★），维护风险高；Intel 支持未明确。 <span class="tag a">文档</span></li></ul></div>
+</div>
+
+</section>
+
+<section id="fit" class="card">
+  <div class="sec-head"><span class="sec-num">08</span><div><h2>适合谁，不适合谁</h2><p class="sub">它是“隐私优先”的答案，不是“最省事”的答案。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>适合</h3><ul><li><strong>隐私敏感的专业人士：</strong>律师、医生、研究员、财务，内容不能上云。</li><li><strong>经常离线的人：</strong>飞机、内网、弱网环境。</li><li><strong>中文口述为主：</strong>写邮件、笔记、文档、聊天。</li><li><strong>愿意折腾：</strong>能处理 Gatekeeper、权限、Ollama。</li><li><strong>内存够用：</strong>16 GB 及以上更舒服；8 GB 可用但紧张。</li></ul></div>
+  <div class="panel con"><h3>不适合</h3><ul><li><strong>要开箱即用：</strong>不想看 Gatekeeper/权限设置。</li><li><strong>需要流式：</strong>边说边出字。</li><li><strong>多语言会议/长音频：</strong>不是它的目标。</li><li><strong>低内存设备：</strong>0.6B+Ollama 约 2.9 GB，容易和别的 App 抢内存。</li><li><strong>需要正式支持：</strong>没有企业版、SLA、发票。</li></ul></div>
+</div>
+<div class="note"><strong>试用判据：</strong>用它写 10 段真实内容，统计“改字数”和“事实错误”。如果事实校验经常触发，说明整理模型不适合你的口述风格；先切“插入原文”或换 1.7B。</div>
+
+</section>
+
+<section id="risks" class="card">
+  <div class="sec-head"><span class="sec-num">09</span><div><h2>风险与验证清单</h2><p class="sub">风险主要来自“安装/权限/维护”，不是数据外传。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">风险</th><th scope="col">等级</th><th scope="col">说明</th></tr></thead><tbody><tr><td>未公证/自签名</td><td><span class="tag mid">中高</span></td><td>安装需手动去隔离属性；组织设备可能被策略拦截。</td></tr><tr><td>热键冲突</td><td><span class="tag mid">中</span></td><td>Option+Command 在部分应用有含义，且当前不可改。</td></tr><tr><td>内存压力</td><td><span class="tag mid">中</span></td><td>0.6B+Ollama 约 2.9 GB；1.7B+Ollama 约 4.5 GB。</td></tr><tr><td>录音归档隐私</td><td><span class="tag mid">中</span></td><td>录音留在本机且不自动清理；共享 Mac 要注意。</td></tr><tr><td>社区/维护</td><td><span class="tag mid">中高</span></td><td>仓库很新、1★；长期更新不确定。</td></tr><tr><td>Intel 兼容未知</td><td><span class="tag mid">中</span></td><td>README 未明确；基准为 Apple Silicon + Metal。</td></tr><tr><td>模型下载失败</td><td><span class="tag low">低</span></td><td>首次下载 850 MB/2.2 GB；网络问题会卡住。</td></tr></tbody></table></div>
+<div class="check" id="checklist">
+  <div class="check-head">
+    <span class="count" id="ck-count" aria-live="polite">0/10</span>
+    <div class="progress" aria-hidden="true"><i id="ck-bar"></i></div>
+    <button type="button" class="ghost" id="ck-reset">重置</button>
+  </div>
+  <ul><li><label><input type="checkbox"> <span>确认 macOS 14+ 与芯片架构；Intel 用户先小范围测试。</span></label></li><li><label><input type="checkbox"> <span>下载后记录版本/哈希；检查 zip 来源。</span></label></li><li><label><input type="checkbox"> <span>用 <code>codesign -dv --verbose=4</code> / <code>spctl -a -vv</code> 查看签名（预期自签名）。</span></label></li><li><label><input type="checkbox"> <span>授权麦克风、输入监控、辅助功能，然后重启应用。</span></label></li><li><label><input type="checkbox"> <span>断网测试识别与整理；确认日常使用无云端请求。</span></label></li><li><label><input type="checkbox"> <span>用 Little Snitch 确认只有首次下载模型时联网。</span></label></li><li><label><input type="checkbox"> <span>检查 Recordings 目录，制定清理策略。</span></label></li><li><label><input type="checkbox"> <span>在密码框/安全输入框测试注入失败时的剪贴板兜底。</span></label></li><li><label><input type="checkbox"> <span>用 10 条真实口述对比 0.6B 与 1.7B 的 CER/修改量。</span></label></li><li><label><input type="checkbox"> <span>用 <code>ollama ps</code> 观察常驻内存；必要时切“插入原文”。</span></label></li></ul>
+  <p class="fine">勾选状态只保存在本机浏览器，不会上传。</p>
+</div>
+<div class="note"><strong>最重要的一条：</strong>先确认你的 Mac 芯片与内存。voiceType 的数据边界很干净，但“本地”意味着资源要你自己承担。</div>
+
+</section>
+
+<section id="alternatives" class="card">
+  <div class="sec-head"><span class="sec-num">10</span><div><h2>放在同类方案里看</h2><p class="sub">它是唯一“识别 + 整理 + 上屏”全在本机的；代价是生态最小。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">工具</th><th scope="col">平台</th><th scope="col">识别</th><th scope="col">整理</th><th scope="col">数据边界</th><th scope="col">成本</th><th scope="col">证据</th></tr></thead><tbody><tr><td>轻声输入</td><td>macOS</td><td>本地 Qwen 量化 ASR</td><td>DeepSeek 云端</td><td>音频本地；文本/上下文云端</td><td>约 ¥10/月</td><td>C</td></tr><tr><td>OSGKeyboard</td><td>iOS 26+ / macOS 15+</td><td>Apple 端侧 / Qwen3 MLX</td><td>BYOK 或托管</td><td>端侧优先；云端可选</td><td>免费 + 可选积分</td><td>A</td></tr><tr><td>Saydra</td><td>Windows 10/11</td><td>本地 SenseVoice</td><td>云端 LLM</td><td>音频本地；文本+窗口上下文云端</td><td>免费 + API</td><td>A</td></tr><tr class="current"><td>voiceType</td><td>macOS 14+</td><td>本地 Qwen3-ASR</td><td>本地 Ollama</td><td>全本地</td><td>免费 + 电费</td><td>A</td></tr><tr><td>Apple 听写</td><td>macOS / iOS</td><td>系统</td><td>无/系统</td><td>视版本与设置</td><td>免费</td><td>A</td></tr></tbody></table></div>
+<div class="note"><strong>结论：</strong>如果你能接受安装门槛，voiceType 是这四个里隐私最强、证据也够硬的一个；如果你要“屏幕上下文”或“零配置”，它不是。</div>
+
+</section>
+
+<section id="decision" class="card">
+  <div class="sec-head"><span class="sec-num">11</span><div><h2>采用建议</h2><p class="sub">先 0.6B + 整理，再按内存和准确率调。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>推荐路径</h3><ul><li><strong>第 1 天：</strong>装 v0.2.0，授权三项权限并重启；先用 0.6B + clean。</li><li><strong>第 2–3 天：</strong>用 10 条真实口述对比原文/整理；记录事实校验触发次数。</li><li><strong>第 1 周：</strong>如果术语/人名错得多，切 1.7B；如果内存紧张，切“插入原文”。</li><li><strong>长期：</strong>定期清理 Recordings；关注仓库更新与签名变化。</li></ul></div>
+  <div class="panel con"><h3>不建议的做法</h3><ul><li>在共享 Mac 上留着录音不清理。</li><li>不看签名/来源，直接绕过 Gatekeeper。</li><li>8 GB 内存还同时开 1.7B + Ollama + 大型 IDE。</li><li>把它当会议转写/多语言工具。</li></ul></div>
+</div>
+<div class="callout"><strong>底线建议：</strong>voiceType 适合“把隐私放在第一位、愿意承担本地资源成本”的人。它不是最省事的，但它是这四个里数据边界最清楚的。</div>
+
+</section>
+
+<section id="sources" class="card">
+  <div class="sec-head"><span class="sec-num">12</span><div><h2>来源与口径</h2><p class="sub">仓库、README、LICENSE 为主；性能数据来自作者基准。</p></div></div>
+  
+<ul class="sources">
+  <li><strong>GitHub: yinshiqi2012-ops/voicetype</strong><a class="u" href="https://github.com/yinshiqi2012-ops/voicetype" target="_blank" rel="noopener noreferrer">https://github.com/yinshiqi2012-ops/voicetype</a><span class="why">README、LICENSE、GitHub API；2026-11-01 读取。</span></li>
+  <li><strong>Release v0.2.0</strong><a class="u" href="https://github.com/yinshiqi2012-ops/voicetype/releases/latest" target="_blank" rel="noopener noreferrer">https://github.com/yinshiqi2012-ops/voicetype/releases/latest</a><span class="why">voicetype-0.2.0-macos.zip，约 6.5 MB；模型首次运行另行下载。</span></li>
+  <li><strong>基准</strong><span class="u">README 中的 fleurs-zh 945 条语料、M5 Pro 实测</span><span class="why">CER 与耗时为作者口径；不是独立第三方评测。</span></li>
+  <li><strong>方法说明</strong>：本报告未运行该软件；平台、链路、隐私、限制来自 README，真实体验需自行验证。<span class="why">不构成采购、法律或安全建议。</span></li>
+</ul>
+<div class="note"><strong>检索日期：</strong>2026-11-01。版本 v0.2.0；后续版本可能改变模型、权限或安装方式。</div>
+
+</section>
+  </main>
+</div>
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>AI 语音输入工具 · 独立分析</strong> · 2026-11-01 · 共 4 份</p>
+    <p>同系列：<a href="qingsheng-macos-report.html">轻声输入</a> · <a href="osgkeyboard-ios-report.html">OSGKeyboard</a> · <a href="saydra-windows-report.html">Saydra</a></p>
+    <p>本报告基于公开资料与用户简报，逐项标注证据等级；不构成采购、法律或安全建议。产品价格、功能与许可可能变化，采用前请以官方页面为准。</p>
+  </div>
+</footer>
+<script>
+(() => {
+  "use strict";
+  const cfg = {"slug": "voicetype", "calc": {"kind": "electric", "defaultMode": "", "presets": {"light": {"uses": 10, "sec": 10, "hours": 1}, "daily": {"uses": 40, "sec": 15, "hours": 2}, "heavy": {"uses": 100, "sec": 20, "hours": 4}}}, "privacy": {"default": "daily", "summaries": {"daily": "日常使用：音频、转写、整理请求都在本机；不访问网络。", "first-run": "首次运行：只访问 Hugging Face / hf-mirror 下载模型权重（850 MB 或 2.2 GB）。", "archive": "录音留档：WAV 保存在本机 Recordings 目录，不会自动清理；需你手动删除。"}}, "models": {"0.6b": {"name": "Qwen3-ASR 0.6B", "cer": "7.57%", "lat": "574 ms", "disk": "850 MB", "ram": "约 1.5 GB", "rec": "日常默认"}, "1.7b": {"name": "Qwen3-ASR 1.7B", "cer": "7.14%", "lat": "977 ms", "disk": "2.2 GB", "ram": "约 3.1 GB", "rec": "术语/人名多"}, "whisper-small": {"name": "Whisper small", "cer": "23.06%", "lat": "401 ms", "disk": "480 MB", "ram": "—", "rec": "不推荐"}}};
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmt = (n) => {
+    if (!isFinite(n)) return "—";
+    if (n === 0) return "¥0";
+    if (n < 0.001) return "<¥0.001";
+    if (n < 1) return "¥" + n.toFixed(3);
+    if (n < 100) return "¥" + n.toFixed(2);
+    return "¥" + Math.round(n).toLocaleString("zh-CN");
+  };
+
+  const readbar = $("#readbar");
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = max > 0 ? Math.min(1, h.scrollTop / max) : 0;
+    if (readbar) readbar.style.width = (p * 100).toFixed(1) + "%";
+  };
+  addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  const links = $$(".toc a");
+  const secs = links.map(a => document.getElementById(a.hash.slice(1))).filter(Boolean);
+  if ("IntersectionObserver" in window && secs.length) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        links.forEach(a => a.classList.toggle("active", a.hash === "#" + e.target.id));
+      });
+    }, {rootMargin:"-12% 0px -72% 0px", threshold:0});
+    secs.forEach(s => io.observe(s));
+  }
+
+  addEventListener("beforeprint", () => $$("details").forEach(d => d.open = true));
+
+  let updateCalc = () => {};
+  const calc = cfg.calc;
+  if (calc) {
+    const get = (id) => {
+      const el = document.getElementById("c-" + id);
+      if (!el) return null;
+      const n = parseFloat(el.value);
+      return isFinite(n) ? n : 0;
+    };
+    const setVal = (id, v) => {
+      const el = document.getElementById("c-" + id);
+      if (el) el.value = v;
+    };
+    const syncOut = (id) => {
+      const el = document.getElementById("c-" + id + "-out");
+      const src = document.getElementById("c-" + id);
+      if (el && src) el.textContent = src.value;
+    };
+    const setBar = (id, pct) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = Math.max(0, Math.min(100, pct)).toFixed(1) + "%";
+    };
+    const mode = () => document.body.dataset.calcMode || calc.defaultMode || "";
+
+    updateCalc = () => {
+      const uses = get("uses") ?? 0;
+      const sec = get("sec") ?? 0;
+      const ctx = get("ctx") ?? 0;
+      const inPrice = get("inPrice") ?? 0;
+      const outPrice = get("outPrice") ?? 0;
+      const sub = get("sub") ?? 0;
+      const watts = get("watts") ?? 0;
+      const hours = get("hours") ?? 0;
+      const kwh = get("kwh") ?? 0;
+      const asrPrice = get("asrPrice") ?? 0;
+      const cloudAsr = $("#c-cloudasr")?.checked || false;
+      const m = mode();
+
+      let asr = 0, llm = 0, other = sub, total = 0, per = 0;
+      const kind = calc.kind || "tokens";
+      const hosted = kind === "hosted" || m === "hosted";
+      const hostedUnknown = hosted && sub <= 0;
+
+      if (m === "device") {
+        total = 0; per = 0; llm = 0; asr = 0; other = 0;
+      } else if (kind === "electric") {
+        other = watts * hours * 30 / 1000 * kwh;
+        total = other;
+        per = uses > 0 ? total / (uses * 30) : 0;
+      } else if (kind === "hosted" || m === "hosted") {
+        total = sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        asr = 0; llm = 0; other = sub;
+      } else {
+        const chars = sec * (calc.charsPerSec || 4) + Math.max(0, ctx);
+        const inTok = chars * (calc.tokenFactor || 1.2);
+        const outTok = inTok * (calc.outputRatio || 0.3);
+        const llmPer = inTok * inPrice / 1e6 + outTok * outPrice / 1e6;
+        llm = llmPer * uses * 30;
+        asr = (cloudAsr && asrPrice > 0) ? uses * 30 * sec / 60 * asrPrice : 0;
+        total = llm + asr + sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        other = sub;
+      }
+
+      setText("c-total", hostedUnknown ? "待填" : fmt(total));
+      setText("c-per", hostedUnknown ? "—" : ((per > 0 ? fmt(per) : "¥0") + " / 次"));
+      let asrLabel = "—";
+      if (asr > 0) asrLabel = fmt(asr);
+      else if (kind === "tokens") {
+        if (m === "hosted") asrLabel = "含在积分内";
+        else if (cloudAsr) asrLabel = "云端 · ¥0";
+        else asrLabel = "本地 · ¥0";
+      }
+      setText("c-asr", hostedUnknown ? "含在积分内" : asrLabel);
+      setText("c-llm", hostedUnknown ? "—" : (llm > 0 ? fmt(llm) : "—"));
+      setText("c-other", hostedUnknown ? "待填" : (other > 0 ? fmt(other) : "—"));
+
+      const base = total > 0 ? total : 1;
+      setBar("c-asr-bar", asr / base * 100);
+      setBar("c-llm-bar", llm / base * 100);
+      setBar("c-other-bar", other / base * 100);
+
+      const note = $("#c-note");
+      if (note) {
+        if (kind === "electric") {
+          note.textContent = "按每日 " + hours + " 小时、增量功耗 " + watts + " W、电价 " + kwh + " 元/kWh 粗估；不含硬件折旧与待机整机功耗。";
+        } else if (hosted) {
+          note.textContent = hostedUnknown ? "托管积分单价未公开；填入每月费用后才会给出估算。积分套餐以 App Store 内购页为准。" : "按你填写的每月托管费用估算；积分单价与套餐以 App Store 内购页为准，本报告未核实。";
+        } else if (m === "device") {
+          note.textContent = "端侧路径不调用云端模型，现金成本为 ¥0；仍需关注设备存储、内存与耗电。";
+        } else {
+          note.textContent = "按每日 " + uses + " 次、每次 " + sec + " 秒、上下文 " + Math.max(0, ctx) + " 字、token 系数 " + (calc.tokenFactor || 1.2) + "、输出/输入比 " + (calc.outputRatio || 0.3) + " 估算；单价为假设值，可改。";
+        }
+      }
+      ["uses","sec","ctx","inPrice","outPrice","sub","watts","hours","kwh","asrPrice"].forEach(syncOut);
+    };
+
+    $$(".calc input").forEach(el => el.addEventListener("input", updateCalc));
+    const ca = $("#c-cloudasr");
+    if (ca) {
+      const applyCa = () => {
+        $$(".calc-asr").forEach(el => { el.hidden = !ca.checked; });
+        updateCalc();
+      };
+      ca.addEventListener("change", applyCa);
+      applyCa();
+    }
+
+    $$("[data-preset]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = calc.presets?.[btn.dataset.preset];
+        if (!p) return;
+        Object.entries(p).forEach(([k,v]) => setVal(k, v));
+        updateCalc();
+      });
+    });
+
+    const pathBtns = $$("[data-path]");
+    if (pathBtns.length) {
+      const applyPath = (p) => {
+        document.body.dataset.calcMode = p;
+        pathBtns.forEach(b => b.setAttribute("aria-pressed", b.dataset.path === p ? "true" : "false"));
+        $$(".calc-token").forEach(el => { el.hidden = p !== "byok"; });
+        $$(".calc-hosted").forEach(el => { el.hidden = p !== "hosted"; });
+        const label = $("#c-mode-label");
+        if (label) label.textContent = p === "device" ? "端侧无润色" : (p === "byok" ? "自备服务商（BYOK）" : "托管积分");
+        updateCalc();
+      };
+      pathBtns.forEach(b => b.addEventListener("click", () => applyPath(b.dataset.path)));
+      const initial = pathBtns.find(b => b.getAttribute("aria-pressed") === "true")?.dataset.path || pathBtns[0].dataset.path;
+      applyPath(initial);
+    }
+
+    updateCalc();
+  }
+
+  const pcfg = cfg.privacy;
+  if (pcfg) {
+    const buttons = $$("[data-mode]");
+    const rows = $$(".path-table tbody tr");
+    const summary = $("#path-summary");
+    const applyMode = (mode) => {
+      buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode ? "true" : "false"));
+      rows.forEach(tr => {
+        const modes = (tr.dataset.modes || "").split(/\s+/);
+        const on = modes.includes(mode);
+        tr.classList.toggle("is-on", on);
+        tr.classList.toggle("is-dim", !on);
+      });
+      if (summary && pcfg.summaries?.[mode]) summary.textContent = pcfg.summaries[mode];
+      if (pcfg.context && pcfg.context[mode] !== undefined) {
+        const el = document.getElementById("c-ctx");
+        if (el) { el.value = pcfg.context[mode]; updateCalc(); }
+      }
+    };
+    buttons.forEach(b => b.addEventListener("click", () => applyMode(b.dataset.mode)));
+    const initial = pcfg.default || buttons[0]?.dataset.mode;
+    if (initial) applyMode(initial);
+  }
+
+  const models = cfg.models;
+  if (models) {
+    const radios = $$('input[name="model"]');
+    const applyModel = () => {
+      const v = radios.find(r => r.checked)?.value;
+      const d = models[v];
+      if (!d) return;
+      Object.entries(d).forEach(([k,v]) => setText("m-" + k, v));
+    };
+    radios.forEach(r => r.addEventListener("change", applyModel));
+    applyModel();
+  }
+
+  const ck = $("#checklist");
+  if (ck) {
+    const boxes = $$('input[type="checkbox"]', ck);
+    const key = "voice-report:" + cfg.slug;
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) { saved = []; }
+    boxes.forEach((b, i) => { if (saved[i]) b.checked = true; });
+    const updateCheck = () => {
+      const done = boxes.filter(b => b.checked).length;
+      setText("ck-count", done + "/" + boxes.length);
+      const bar = $("#ck-bar");
+      if (bar) bar.style.width = (boxes.length ? done / boxes.length * 100 : 0) + "%";
+      try { localStorage.setItem(key, JSON.stringify(boxes.map(b => b.checked))); } catch (e) {}
+    };
+    boxes.forEach(b => b.addEventListener("change", updateCheck));
+    const reset = $("#ck-reset");
+    if (reset) reset.addEventListener("click", () => { boxes.forEach(b => b.checked = false); updateCheck(); });
+    updateCheck();
+  }
+})();
+</script>
+</body>
+</html>

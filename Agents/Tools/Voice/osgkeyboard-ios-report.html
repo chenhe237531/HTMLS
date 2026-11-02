@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="OSGKeyboard · AI 语音输入工具 · 独立分析 02 / 04：能力、成本、隐私、风险与验证清单。">
+<title>OSGKeyboard · iOS / macOS 语音输入分析报告</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#14171c; --muted:#5c6470;
+  --line:#e3e6eb; --line-strong:#cbd1da;
+  --accent:#0f766e; --accent-soft:#e6f4f1; --accent-ink:#0b5f59;
+  --ok:#166534; --ok-soft:#e8f5ec; --bad:#a3261f; --bad-soft:#fdecea;
+  --warn:#8a4b00; --warn-soft:#fff4e0; --info:#1e40af; --info-soft:#e8eefc;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid rgba(0,0,0,.14)}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.86em;background:#eef1f5;padding:.12em .38em;border-radius:4px}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.01em}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:20px}
+li{margin:5px 0}
+strong{font-weight:650}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;color:#000;padding:10px 14px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:12px;top:12px}
+.readbar{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60;pointer-events:none}
+.readbar i{display:block;height:100%;width:0;background:var(--accent)}
+.hero{background:linear-gradient(180deg,#0d1219 0%,#141b26 100%);color:#e8edf5;padding:34px 0 30px;border-bottom:1px solid #0a0e14}
+.series{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#8fa0b8}
+.hero h1{font-size:clamp(28px,4vw,42px);margin:10px 0 8px;color:#fff;letter-spacing:-.02em}
+.lede{max-width:880px;color:#b6c2d4;font-size:16px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#d6dfec}
+.chip b{color:#fff;font-weight:600}
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:22px}
+.v{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px}
+.v .l{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8fa0b8}
+.v .t{font-size:14.5px;font-weight:600;color:#fff;margin-top:5px}
+.v .n{font-size:12px;color:#a9b6c8;margin-top:3px;line-height:1.5}
+.hero-foot{font-size:12px;color:#8fa0b8;margin:16px 0 0}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);gap:32px;align-items:start;padding-top:28px;padding-bottom:72px}
+.toc{position:sticky;top:16px;font-size:13px}
+.toc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+.toc nav{display:flex;flex-direction:column;gap:1px}
+.toc a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;font-size:13px;border-bottom:0}
+.toc a:hover{background:#eef1f5;color:var(--ink);text-decoration:none}
+.toc a.active{background:var(--accent-soft);color:var(--accent-ink);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin:14px 10px 0;font-size:11.5px;color:var(--muted);line-height:1.55}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin:0 0 18px;scroll-margin-top:18px}
+.sec-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.sec-num{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--accent-ink);background:var(--accent-soft);border:1px solid rgba(0,0,0,.04);border-radius:6px;padding:3px 6px;margin-top:2px}
+.sec-head h2{font-size:21px;margin:0}
+.sub{color:var(--muted);font-size:13.5px;margin:2px 0 0}
+h3{font-size:15.5px;margin:20px 0 8px}
+h4{font-size:13.5px;margin:14px 0 6px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0 16px}
+.callout strong{color:var(--accent-ink)}
+.alert{border:1px solid #f0c9a0;background:#fff7ec;border-radius:10px;padding:14px 16px;margin:14px 0}
+.alert h3{margin:0 0 6px;font-size:15px;color:#8a4b00}
+.alert ol,.alert ul{margin:6px 0 0}
+.note{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note strong{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fcfcfd}
+.panel h3{margin:0 0 8px;font-size:14.5px}
+.panel.pro{border-top:3px solid var(--ok)}
+.panel.con{border-top:3px solid var(--bad)}
+.panel.fit{border-top:3px solid var(--accent)}
+.tag{display:inline-block;font-size:10.5px;line-height:1.4;padding:1px 6px;border-radius:4px;border:1px solid transparent;vertical-align:1px;white-space:nowrap}
+.tag.a{background:#e8f5ec;color:#166534;border-color:#c7e8d2}
+.tag.c{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.u{background:#f1f2f4;color:#4b5563;border-color:#dcdfe5}
+.tag.local{background:#e8eefc;color:#1e40af;border-color:#c9d6f7}
+.tag.cloud{background:#f3e8ff;color:#6b21a8;border-color:#e0c9f5}
+.tag.dev{background:#e6f4f1;color:#0b5f59;border-color:#bfe3dc}
+.tag.high{background:#fdecea;color:#a3261f;border-color:#f3c9c4}
+.tag.mid{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.low{background:#eef0f3;color:#4b5563;border-color:#dcdfe5}
+.tag.cur{background:var(--accent);color:#fff;border-color:var(--accent)}
+.legend-box{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);margin:8px 0 0}
+.legend-box span{display:inline-flex;align-items:center;gap:5px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.fact-col{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfcfd}
+.fact-col h3{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:14px;flex-wrap:wrap}
+.fact-col ul{padding-left:18px;margin:0}
+.fact-col li{font-size:13.2px;margin:7px 0}
+.src{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.step{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fcfcfd}
+.step .n{font-family:var(--mono);font-size:10px;color:var(--accent-ink)}
+.step .t{font-size:13.5px;font-weight:600;margin:3px 0 2px}
+.step .d{font-size:11.5px;color:var(--muted);line-height:1.45}
+.step .tag{margin-top:6px}
+.pipe-note{font-size:11.5px;color:var(--muted);margin:0 0 6px}
+.boundary{display:grid;grid-template-columns:1.35fr .9fr;gap:12px;margin:14px 0}
+.zone{border:1px dashed var(--line-strong);border-radius:10px;padding:12px 14px;background:#fbfcfd}
+.zone h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.zone ul{margin:0;padding-left:16px}
+.zone li{font-size:12.5px}
+.zone.cloud{background:#faf7fd;border-color:#dcc9f0}
+.zone.device{background:#f7fbfa;border-color:#c7e3dd}
+.flow{grid-column:1/-1;font-size:12px;color:var(--muted);text-align:center;border-top:1px dashed var(--line);padding-top:8px}
+details{border:1px solid var(--line);border-radius:9px;padding:0 12px;background:#fcfcfd;margin:8px 0}
+summary{cursor:pointer;padding:9px 0;font-size:13.5px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+";font-family:var(--mono);color:var(--accent-ink);width:14px;flex:0 0 auto}
+details[open] summary:before{content:"−"}
+details .body{padding:0 0 11px 22px;font-size:13.3px;color:#3b424d}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:10px 0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:#fafbfc;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num{font-family:var(--mono);white-space:nowrap}
+.tbl tr.current td{background:var(--accent-soft)}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.spec{border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:#fcfcfd}
+.spec .k{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.spec .v{font-size:14px;font-weight:600;margin-top:3px}
+.spec .n{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.calc{border:1px solid var(--line-strong);border-radius:12px;padding:16px;background:#fcfcfd;margin:14px 0}
+.calc-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+button.ghost{font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer}
+button.ghost:hover{border-color:var(--accent);color:var(--accent-ink)}
+button.ghost[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.calc-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.control{margin:0 0 12px}
+.control label{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.control output{font-family:var(--mono);color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{width:100%;font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;color:var(--ink)}
+input[type=number]:focus-visible,input[type=range]:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check-inline{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0}
+.check-inline input{accent-color:var(--accent)}
+.result{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.big{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.big small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.metric{border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.metric .k{font-size:10.5px;color:var(--muted)}
+.metric .v{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:1px}
+.bar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:#eef0f3;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:0;transition:width .2s}
+.bar .asr{background:var(--accent)}
+.bar .llm{background:#8b5cf6}
+.bar .other{background:#f59e0b}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted)}
+.legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:currentColor}
+.legend .asr{color:var(--accent)}
+.legend .llm{color:#8b5cf6}
+.legend .other{color:#f59e0b}
+.fine{font-size:11.5px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+.mode-switch{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.path-summary{font-size:13.5px;background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 8px 8px 0;margin:8px 0 12px}
+.path-table tr{transition:opacity .15s}
+.path-table td:first-child{white-space:nowrap}
+.path-table tr.is-dim td{opacity:.42}
+.path-table tr.is-on td{background:var(--accent-soft)}
+.check{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fcfcfd;margin-top:12px}
+.check-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.check-head .count{font-family:var(--mono);font-size:12px;color:var(--accent-ink)}
+.progress{flex:1;height:7px;background:#e9ecf0;border-radius:99px;overflow:hidden;min-width:100px}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.check ul{list-style:none;padding:0;margin:6px 0 0}
+.check li{border-top:1px solid var(--line);padding:7px 0}
+.check li:first-child{border-top:0}
+.check label{display:flex;gap:8px;align-items:flex-start;font-size:13.2px;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--accent)}
+.sources{list-style:none;padding:0;margin:8px 0}
+.sources li{border-top:1px solid var(--line);padding:8px 0;font-size:13px}
+.sources li:first-child{border-top:0}
+.sources .u{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.sources a.u{border-bottom:0;text-decoration:none}
+.sources a.u:hover{text-decoration:underline}
+.sources .why{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.foot{border-top:1px solid var(--line);background:#fff;padding:22px 0 30px;color:var(--muted);font-size:12px}
+.foot p{margin:4px 0}
+.model-select{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.model-select label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.model-select input{accent-color:var(--accent)}
+.model-select label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.model-card{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0 0}
+.model-card .m{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fcfcfd}
+.model-card .k{font-size:10.5px;color:var(--muted)}
+.model-card .v{font-family:var(--mono);font-size:14px;font-weight:600;margin-top:2px}
+@media (max-width:940px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:18px}
+  .shell > main{min-width:0}
+  .toc{position:static;order:-1;overflow-x:auto;padding-bottom:6px;min-width:0;max-width:100%}
+  .toc nav{min-width:0}
+  .toc nav{flex-direction:row;gap:6px;overflow-x:auto;padding-bottom:2px}
+  .toc a{white-space:nowrap;border:1px solid var(--line);border-left-width:1px;border-radius:999px;padding:5px 10px}
+  .toc-title,.toc-note{display:none}
+  .pipe{grid-template-columns:1fr 1fr}
+  .facts{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr 1fr}
+  .model-card{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .verdict{grid-template-columns:1fr 1fr}
+  .calc-grid{grid-template-columns:1fr}
+  .boundary{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .verdict{grid-template-columns:1fr}
+  .pipe{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr}
+  .model-card{grid-template-columns:1fr}
+  .card{padding:20px 18px}
+  .hero{padding:28px 0 24px}
+}
+@media print{
+  body{background:#fff}
+  .hero{background:#fff;color:#000;border-bottom:1px solid #ccc}
+  .hero h1,.lede,.chip,.v .t,.v .n,.hero-foot{color:#000}
+  .chip,.v{background:#f4f4f4;border-color:#ccc}
+  .toc,.readbar,.skip,.presets,.check-head button,.mode-switch,.model-select{display:none}
+  .shell{display:block;padding:0}
+  .card{break-inside:avoid;border:1px solid #ddd}
+  details{border:0;padding:0}
+  a{color:#000;text-decoration:underline}
+}
+</style>
+<style>:root{--accent:#1d4ed8;--accent-soft:#e8eefc;--accent-ink:#1e3a8a}</style>
+</head>
+<body data-calc-mode="device">
+<a class="skip" href="#main">跳到正文</a>
+<div class="readbar" aria-hidden="true"><i id="readbar"></i></div>
+<header class="hero">
+  <div class="wrap">
+    <div class="series">AI 语音输入工具 · 独立分析 02 / 04</div>
+    <h1>OSGKeyboard</h1>
+    <p class="lede">把听写、AI 润色、中文打字和剪贴板技能塞进一个 iOS 自定义键盘。端侧优先、BYOK 可选、托管积分可选；但它是“源码可见”，不是开源。</p>
+    <div class="chips"><span class="chip"><b>平台</b> · iOS / iPadOS 26+</span><span class="chip"><b>形态</b> · 自定义键盘 + Mac 全局听写</span><span class="chip"><b>默认识别</b> · Apple 端侧</span><span class="chip"><b>许可</b> · Source Available</span><span class="chip"><b>证据</b> · A · 一手仓库</span></div>
+    <div class="verdict"><div class="v"><div class="l">定位</div><div class="t">键盘形态的 AI 输入层</div><div class="n">听写、润色、打字、剪贴板技能同屏</div></div><div class="v"><div class="l">默认识别</div><div class="t">Apple 端侧</div><div class="n">iOS 26 SpeechAnalyzer</div></div><div class="v"><div class="l">云端</div><div class="t">BYOK 或托管积分</div><div class="n">自备 Key 直达服务商</div></div><div class="v"><div class="l">硬约束</div><div class="t">非开源 + iOS 26+</div><div class="n">商用/再分发需授权</div></div></div>
+    <p class="hero-foot">证据等级 A：核心能力、平台、许可和工程细节都能在公开仓库/README/LICENSE 中核对。价格与真实体验仍需自行验证。</p>
+  </div>
+</header>
+<div class="shell wrap">
+  <aside class="toc" aria-label="目录">
+    <p class="toc-title">目录</p>
+    <nav>
+      <a href="#verdict" class="active">结论先行</a>
+      <a href="#facts">事实边界与三个纠偏</a>
+      <a href="#pipeline">它怎么工作</a>
+      <a href="#cost">成本：软件路径免费，托管路径付费</a>
+      <a href="#privacy">隐私：端侧优先，但不是全本地</a>
+      <a href="#specs">关键规格</a>
+      <a href="#proscons">优势与局限</a>
+      <a href="#fit">适合谁，不适合谁</a>
+      <a href="#risks">风险与验证清单</a>
+      <a href="#alternatives">放在同类方案里看</a>
+      <a href="#decision">采用建议</a>
+      <a href="#sources">来源与口径</a>
+    </nav>
+    <p class="toc-note">先看“三个纠偏”：免费不等于全免费，源码可见不等于开源，键盘平替不等于系统级替换。</p>
+  </aside>
+  <main id="main">
+
+<section id="verdict" class="card">
+  <div class="sec-head"><span class="sec-num">01</span><div><h2>结论先行</h2><p class="sub">它不是“另一个语音输入 App”，而是把输入法当成 AI 入口。</p></div></div>
+  <div class="callout"><strong>一句话判断：</strong>如果你用 iPhone/iPad、系统在 iOS 26+，并且想要“键盘里直接听写 + 润色 + 中文打字 + 剪贴板处理”，OSGKeyboard 是目前功能最完整的一类方案。端侧路径值得先用；但“开源”“完全免费”这两个说法都不准确，商用/二次分发会被许可挡住。</div>
+<div class="two">
+  <div class="panel fit"><h3>它适合</h3><ul><li>iPhone/iPad 重度输入者：微信、邮件、文档、搜索都在键盘里完成。</li><li>想要“说完就能发”的人：听写、润色、翻译、剪贴板技能在同一个界面。</li><li>接受 BYOK 的人：愿意自己填 DeepSeek/其他服务商的 Key。</li><li>需要中文打字兜底的人：全拼、双拼、模糊音、英文补全都在。</li></ul></div>
+  <div class="panel con"><h3>它不适合</h3><ul><li>要求开源合规、可自由分发/二开/商用。</li><li>系统低于 iOS 26，或主要用 Android/Windows。</li><li>不愿开启键盘“完全访问”，也不愿配置 API Key。</li><li>需要完全免费且没有任何内购/积分。</li><li>需要企业统一部署、SLA、发票与长期支持。</li></ul></div>
+</div>
+<div class="note"><strong>采用建议：</strong>先用“端侧听写”跑一周，确认键盘稳定性与中文打字是否替代你的主输入法；再决定是否开 BYOK 润色。不要一上来就买积分。</div>
+
+</section>
+
+<section id="facts" class="card">
+  <div class="sec-head"><span class="sec-num">02</span><div><h2>事实边界与三个纠偏</h2><p class="sub">这个项目的一手信息很完整，但简报里有三处需要改口径。</p></div></div>
+  <div class="alert"><h3>先纠正三处常见说法</h3><ol><li><strong>“完全免费”不准确。</strong>端侧听写与 BYOK 路径没有订阅费；但 iOS/iPadOS 的“OSG 托管积分”是付费能力，App 本体是否收费、积分单价多少，仓库没有给出，需看 App Store 内购页。</li><li><strong>“开源”不准确。</strong>仓库使用 <em>OSGKeyboard Source Available License 1.0</em>，LICENSE 原文明确写着 “This is NOT an open-source license.”，只允许个人、非商业的本地学习/评估/修改，禁止再分发、公开衍生与商业使用。</li><li><strong>“输入法平替”要限定。</strong>它是第三方自定义键盘，不是系统级替换；需要手动添加键盘、开启“完全访问”，并受键盘扩展的内存与生命周期限制。</li></ol></div><div class="facts"><div class="fact-col"><h3>已核实 <span class="tag a">A</span></h3><ul><li>仓库 <code>hkgood/OSGKeyboard</code>，Swift，21★ / 6 forks，创建于 2026-06-17，最近推送 2026-10-29。<span class="src">GitHub API，2026-11-01</span></li><li>版本 2.1.6 / build 131（以 <code>project.yml</code> 为准）；iOS/iPadOS 26+，macOS 15+。<span class="src">README / project.yml</span></li><li>iOS 本地识别用 Apple <code>SpeechAnalyzer</code> + <code>DictationTranscriber</code>；macOS 本地用 Qwen3 MLX，Apple 语音回退。<span class="src">README / project.yml</span></li><li>支持 BYOK 云端 ASR/LLM，凭证存 Keychain；托管积分经 <code>account.osglab.com</code>。<span class="src">README</span></li><li>剪贴板历史默认关闭，最多 15 条纯文本，仅存本机 App Group。<span class="src">README</span></li><li>语音历史最多 300 条；设置、词库、历史、统计可选 iCloud 同步。<span class="src">README</span></li><li>键盘扩展在 40 MiB / 48 MiB 阈值主动释放引擎；接入 MetricKit 记录本机诊断。<span class="src">README</span></li><li>LICENSE 明确禁止商业使用、再分发、公开衍生作品。<span class="src">LICENSE</span></li></ul></div><div class="fact-col"><h3>简报口径 · 需修正 <span class="tag c">C</span></h3><ul><li>“完全免费” → 端侧/BYOK 无订阅；托管积分付费，价格未核实。</li><li>“开源” → 源码可见，非 OSI 开源许可。</li><li>“iPhone 原生输入法平替” → 第三方键盘扩展，需手动启用与完全访问。</li><li>“Apple 本地 ASR + DeepSeek 润色” → 路径可行；文本会发给 DeepSeek。</li></ul></div><div class="fact-col"><h3>未知 <span class="tag u">U</span></h3><ul><li>App Store 本体价格、积分包单价、赠送额度是否长期有效。</li><li>真实设备上的识别准确率、延迟、键盘被系统回收的频率。</li><li>托管服务的数据保留期限、日志范围、跨境传输细节。</li><li>9 种润色风格在 BYOK 下是否全部可用。</li><li>长期维护与商业授权价格。</li></ul></div></div>
+<div class="legend-box">
+  <span><span class="tag a">A</span> 一手仓库/官方文档</span>
+  <span><span class="tag c">C</span> 简报口径，需修正</span>
+  <span><span class="tag u">U</span> 未知/未核实</span>
+</div>
+
+</section>
+
+<section id="pipeline" class="card">
+  <div class="sec-head"><span class="sec-num">03</span><div><h2>它怎么工作</h2><p class="sub">关键设计是“主 App 采音识别，键盘扩展只收结果”，避免把账号令牌暴露给键盘。</p></div></div>
+  <div class="pipe"><div class="step"><div class="n">01</div><div class="t">键盘触发</div><div class="d">输入框内轻点麦克风 / 长按问 AI</div><span class="tag dev">设备端</span></div><div class="step"><div class="n">02</div><div class="t">主 App 采音</div><div class="d">Flow 会话，App Group 传轻量命令</div><span class="tag dev">设备端</span></div><div class="step"><div class="n">03</div><div class="t">端侧识别</div><div class="d">Apple SpeechAnalyzer + DictationTranscriber</div><span class="tag local">本机</span></div><div class="step"><div class="n">04</div><div class="t">可选 AI</div><div class="d">BYOK 直达 / 托管短时 grant</div><span class="tag cloud">云端</span></div><div class="step"><div class="n">05</div><div class="t">回填文本</div><div class="d">预览后插入/替换，一次撤销</div><span class="tag dev">设备端</span></div></div>
+<div class="boundary">
+  <div class="zone device"><h4>你的设备</h4><ul><li>键盘扩展（输入界面）</li><li>主 App（采音/识别/设置）</li><li>App Group + Keychain</li><li>中文/英文打字引擎</li><li>剪贴板历史（默认关）</li></ul></div>
+  <div class="zone cloud"><h4>云端 / 外部</h4><ul><li>BYOK 服务商（ASR/LLM）</li><li>account.osglab.com（托管积分）</li><li>iCloud（可选同步）</li></ul></div>
+  <div class="flow">默认路径只走设备；只有你明确选择云端识别、润色、AI 或托管积分时，相关文本/音频才出设备。</div>
+</div><details><summary>为什么键盘扩展不直接拿账号令牌</summary><div class="body"><p>键盘扩展是第三方键盘的一部分，权限与攻击面都比主 App 大。README 说托管服务只给键盘扩展短时、按 scope 限权的 grant，主 App 账号令牌不下发。这是一个正确的隔离方向；但具体实现仍需代码审计才能确认。</p></div></details><details><summary>为什么键盘扩展会“被回收”</summary><div class="body"><p>iOS 给键盘扩展的内存预算远小于普通 App。项目在 40 MiB / 48 MiB 主动释放中文引擎、英文词库和在飞任务，并接入 MetricKit 记录内存回收。这说明“功能多”与“键盘稳定”之间有真实取舍：低内存设备上，重功能可能被系统优先牺牲。</p></div></details><details><summary>端侧、BYOK、托管三条路线的区别</summary><div class="body"><p><strong>端侧：</strong>Apple 本地听写，不联网，不用 Key，AI 润色不可用或需另行触发。<strong>BYOK：</strong>音频仍端侧识别，转写文本直达你选的服务商，Key 存 Keychain。<strong>托管：</strong>用 OSG 的积分换语音/AI 服务，省去配置，但数据经 OSG 服务，且需要付费。</p></div></details>
+</section>
+
+<section id="cost" class="card">
+  <div class="sec-head"><span class="sec-num">04</span><div><h2>成本：软件路径免费，托管路径付费</h2><p class="sub">先用路径选择器看三种模型；所有单价都是假设值，积分价格未核实。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">路径</th><th scope="col">识别</th><th scope="col">整理</th><th scope="col">现金成本</th></tr></thead><tbody><tr><td>端侧（无润色）</td><td>Apple 端侧</td><td>无</td><td>¥0</td></tr><tr><td>端侧 + BYOK 润色</td><td>Apple 端侧</td><td>自备 LLM</td><td>约 ¥1 – 6 / 月（按量）</td></tr><tr><td>托管积分</td><td>端侧或云端</td><td>OSG 托管</td><td>以 App Store 内购页为准</td></tr></tbody></table></div>
+<div class="calc">
+  <div class="calc-top">
+    <div class="presets"><button type="button" class="ghost" data-preset="light">轻度</button><button type="button" class="ghost" data-preset="daily">日常</button><button type="button" class="ghost" data-preset="heavy">重度</button></div>
+    <div class="mode-switch" role="group" aria-label="服务路径" style="margin:0"><button type="button" class="ghost" data-path="device" aria-pressed="true">端侧无润色</button><button type="button" class="ghost" data-path="byok">BYOK 润色</button><button type="button" class="ghost" data-path="hosted">托管积分</button></div>
+  </div>
+  <div class="calc-grid">
+    <div class="calc-controls"><div class="control"><label for="c-uses">每日使用次数<output id="c-uses-out" for="c-uses">30 次</output></label><input type="range" id="c-uses" min="5" max="150" step="5" value="30"></div><div class="control"><label for="c-sec">每次口述时长<output id="c-sec-out" for="c-sec">15 秒</output></label><input type="range" id="c-sec" min="5" max="60" step="1" value="15"></div><div class="calc-token"><div class="control"><label for="c-ctx">发给模型的上下文<output id="c-ctx-out" for="c-ctx">200 字</output></label><input type="range" id="c-ctx" min="0" max="1000" step="50" value="200"></div></div><div class="calc-token"><div class="control"><label for="c-inPrice">输入 token 单价<span>元 / 百万 token</span></label><input type="number" id="c-inPrice" min="0" step="0.1" value="2" inputmode="decimal"></div></div><div class="calc-token"><div class="control"><label for="c-outPrice">输出 token 单价<span>元 / 百万 token</span></label><input type="number" id="c-outPrice" min="0" step="0.1" value="8" inputmode="decimal"></div></div><div class="calc-hosted" hidden><div class="control"><label for="c-sub">每月托管费用<span>元 / 月</span></label><input type="number" id="c-sub" min="0" step="1" value="0" inputmode="decimal"></div></div></div>
+    <div class="result" aria-live="polite">
+      <div class="big"><span id="c-total">—</span><small>每月估算</small></div>
+      <div class="metrics">
+        <div class="metric"><div class="k">每次</div><div class="v" id="c-per">—</div></div>
+        <div class="metric"><div class="k">识别</div><div class="v" id="c-asr">—</div></div>
+        <div class="metric"><div class="k">整理 / 模型</div><div class="v" id="c-llm">—</div></div>
+        <div class="metric"><div class="k">订阅 / 电费</div><div class="v" id="c-other">—</div></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i class="asr" id="c-asr-bar"></i><i class="llm" id="c-llm-bar"></i><i class="other" id="c-other-bar"></i></div>
+      <div class="legend"><span class="asr">识别</span><span class="llm">整理</span><span class="other">订阅 / 电费</span></div>
+    </div>
+  </div>
+  <p class="fine" id="c-note">端侧路径现金成本为 ¥0；BYOK 只算文本 token；托管按你填写的月费估算。积分单价与套餐未在仓库中给出。</p>
+</div>
+<div class="note"><strong>“免费”的正确说法：</strong>端侧听写和 BYOK 路径不需要订阅，也不强制买积分；但 App 本体是否收费、托管积分多少钱，需要看 App Store 内购页。把“能免费用”说成“完全免费”会误导预算。</div>
+<div class="note"><strong>BYOK 的真实成本：</strong>只发生在“润色”这一步。Apple 端侧识别不收费；DeepSeek 等 LLM 按 token 计费，日常使用通常是个位数人民币/月。具体取决于你开不开润色、上下文多长。如果你把 ASR 也配成云端，还要另算 ASR 费用；本计算器只估文本 token。</div>
+
+</section>
+
+<section id="privacy" class="card">
+  <div class="sec-head"><span class="sec-num">05</span><div><h2>隐私：端侧优先，但不是全本地</h2><p class="sub">点击三种服务路径，表格会高亮该路径下最需要关注的数据行。</p></div></div>
+  
+<div class="mode-switch" role="group" aria-label="服务路径">
+  <button type="button" class="ghost" data-mode="device">端侧</button>
+  <button type="button" class="ghost" data-mode="byok">BYOK</button>
+  <button type="button" class="ghost" data-mode="hosted">托管积分</button>
+</div>
+<p class="path-summary" id="path-summary" aria-live="polite">选择一种路径查看数据边界。</p>
+<div class="tbl-wrap"><table class="tbl path-table"><thead><tr><th scope="col">数据</th><th scope="col">端侧</th><th scope="col">BYOK</th><th scope="col">托管</th><th scope="col">说明</th></tr></thead><tbody><tr data-modes="device byok hosted"><td>原始录音</td><td>不出设备</td><td>默认不出设备；云端 ASR 时会</td><td>可能出设备</td><td>仅在云端 ASR/托管时上传</td></tr><tr data-modes="device byok hosted"><td>ASR 转写</td><td>不出设备</td><td>发给所选服务商</td><td>经 OSG 服务</td><td>润色/AI 需要文本</td></tr><tr data-modes="device byok hosted"><td>输入框上下文</td><td>不出设备</td><td>发给所选服务商</td><td>经 OSG 服务</td><td>用于让润色贴合当前输入</td></tr><tr data-modes="device byok hosted"><td>剪贴板历史</td><td>本机（默认关）</td><td>本机（默认关）</td><td>本机（默认关）</td><td>开启后最多 15 条，仅 App Group</td></tr><tr data-modes="device byok hosted"><td>日常键入内容</td><td>不上传</td><td>不上传</td><td>不上传</td><td>密码框不学习（README）</td></tr><tr data-modes="device byok hosted"><td>词典 / 历史 / 统计</td><td>本机，可选 iCloud</td><td>本机，可选 iCloud</td><td>本机，可选 iCloud</td><td>同步范围可按类型选择</td></tr><tr data-modes="byok"><td>API Key</td><td>不需要</td><td>Keychain</td><td>不需要</td><td>仅 BYOK 路径</td></tr><tr data-modes="hosted"><td>账号令牌</td><td>不需要</td><td>不需要</td><td>主 App 私有 Keychain</td><td>不下发给键盘扩展</td></tr></tbody></table></div>
+<div class="two">
+  <div class="panel pro"><h3>做得好的地方</h3><ul><li>默认端侧识别，原始录音不上传；云端是显式选择。</li><li>BYOK 请求直达服务商，不经 OSG 中转（README 口径）。</li><li>API Key 存 Keychain；托管 grant 短时、限权，不下发主账号令牌。</li><li>剪贴板历史默认关闭、最多 15 条、仅本机。</li><li>不集成第三方广告/追踪 SDK；产品分析不采集输入内容。</li></ul></div>
+  <div class="panel con"><h3>仍需警惕</h3><ul><li>“完全访问”是键盘工作的前提，权限叙事容易被用户忽略。</li><li>BYOK 润色会把输入框上下文发给第三方；服务商保留策略不由 OSG 控制。</li><li>托管路径经 <code>account.osglab.com</code>，具体日志/保留期限需读隐私政策。</li><li>iCloud 同步是可选，但开启后数据进入苹果云；敏感词库/历史要按需关闭。</li></ul></div>
+</div>
+
+</section>
+
+<section id="specs" class="card">
+  <div class="sec-head"><span class="sec-num">06</span><div><h2>关键规格</h2><p class="sub">以下都能在 README / project.yml / LICENSE 中核对。</p></div></div>
+  <div class="specs"><div class="spec"><div class="k">平台</div><div class="v">iOS / iPadOS 26+</div><div class="n">macOS 15+</div></div><div class="spec"><div class="k">语言 / 构建</div><div class="v">Swift 6</div><div class="n">Xcode 26+ / XcodeGen</div></div><div class="spec"><div class="k">iOS 本地 ASR</div><div class="v">Apple SpeechAnalyzer</div><div class="n">DictationTranscriber</div></div><div class="spec"><div class="k">macOS 本地 ASR</div><div class="v">Qwen3 MLX</div><div class="n">Apple 语音回退</div></div><div class="spec"><div class="k">中文打字</div><div class="v">全拼 / 5 种双拼</div><div class="n">模糊音、简拼、滑动选词</div></div><div class="spec"><div class="k">英文打字</div><div class="v">约 4 万词离线词表</div><div class="n">补全、纠错、下一词</div></div><div class="spec"><div class="k">AI 润色</div><div class="v">9 种内置风格</div><div class="n">自定义、两档强度、翻译</div></div><div class="spec"><div class="k">剪贴板</div><div class="v">默认关 / 最多 15 条</div><div class="n">仅本机 App Group</div></div><div class="spec"><div class="k">历史</div><div class="v">最多 300 条</div><div class="n">可按天删除</div></div><div class="spec"><div class="k">内存策略</div><div class="v">40 / 48 MiB 阈值</div><div class="n">主动释放引擎与管道</div></div><div class="spec"><div class="k">许可</div><div class="v">Source Available 1.0</div><div class="n">非开源；商用需授权</div></div><div class="spec"><div class="k">仓库热度</div><div class="v">21★ / 6 forks</div><div class="n">2026-11-01</div></div></div>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>能力</th><th>iOS / iPadOS 26+</th><th>macOS 15+</th></tr></thead><tbody>
+<tr><td>系统键盘 / 全局热键</td><td>自定义键盘</td><td>按住 Option</td></tr>
+<tr><td>端侧语音识别</td><td>Apple SpeechAnalyzer</td><td>Qwen3 MLX + Apple 回退</td></tr>
+<tr><td>中文全拼 / 双拼 / 模糊音</td><td>支持</td><td>—</td></tr>
+<tr><td>英文补全 / 纠错 / 下一词</td><td>支持</td><td>—</td></tr>
+<tr><td>AI 润色与翻译</td><td>支持</td><td>支持</td></tr>
+<tr><td>统一助手与语音问答</td><td>支持</td><td>—</td></tr>
+<tr><td>剪贴板历史与技能</td><td>支持</td><td>—</td></tr>
+<tr><td>原生待办 / 日程写入</td><td>支持</td><td>—</td></tr>
+<tr><td>账号与托管积分</td><td>可选</td><td>—</td></tr>
+</tbody></table></div>
+<div class="note"><strong>macOS 的坑：</strong>公开下载的 DMG 仍是历史版本 1.1；仓库里的 macOS target 已到 2.2，但要用 Xcode 26 自行构建。想“下载即用最新版”的 Mac 用户要注意这一点。</div>
+
+</section>
+
+<section id="proscons" class="card">
+  <div class="sec-head"><span class="sec-num">07</span><div><h2>优势与局限</h2><p class="sub">工程质量是加分项；许可与平台门槛是硬约束。</p></div></div>
+  
+<div class="two">
+  <div class="panel pro"><h3>优势</h3><ul><li>键盘内完成听写、润色、中文打字、剪贴板技能，切换成本低。 <span class="tag a">文档</span></li><li>端侧优先，默认不上传录音；云端是显式选择。 <span class="tag a">文档</span></li><li>BYOK 路径透明，Keychain 存凭证，请求直达服务商。 <span class="tag a">文档</span></li><li>中文打字能力强：全拼、5 种双拼、模糊音、英文补全。 <span class="tag a">文档</span></li><li>剪贴板技能与原生 EventKit 写入，减少跨 App 操作。 <span class="tag a">文档</span></li><li>工程细节扎实：内存阈值、MetricKit、App Group/Keychain CI 校验。 <span class="tag a">文档</span></li></ul></div>
+  <div class="panel con"><h3>局限</h3><ul><li>iOS 26+ 门槛很高，老设备/旧系统直接排除。 <span class="tag a">文档</span></li><li>源码可见但非开源：不能自由分发、公开衍生或商用。 <span class="tag a">LICENSE</span></li><li>键盘扩展内存受限，功能多反而更容易被系统回收。 <span class="tag a">文档</span></li><li>托管积分是付费能力，价格与套餐未在仓库中公开。 <span class="tag c">待核实</span></li><li>功能面很宽，设置、权限、服务商配置的学习成本不低。 <span class="tag u">推断</span></li><li>macOS 公开 DMG 落后，最新源码需自行构建。 <span class="tag a">文档</span></li></ul></div>
+</div>
+
+</section>
+
+<section id="fit" class="card">
+  <div class="sec-head"><span class="sec-num">08</span><div><h2>适合谁，不适合谁</h2><p class="sub">它的核心价值是“少切 App”，不是“识别最准”。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>适合</h3><ul><li><strong>iPhone 重度输入者：</strong>每天大量微信、邮件、文档、搜索，切键盘很烦。</li><li><strong>想要键盘内 AI：</strong>说完直接润色/翻译/总结，不想复制到聊天窗口。</li><li><strong>接受 BYOK：</strong>有 DeepSeek 或其他服务商 Key，愿意自己管理。</li><li><strong>iOS 26+ 设备：</strong>能用到 Apple 最新的端侧听写能力。</li><li><strong>需要中文打字兜底：</strong>语音不方便时仍要全拼/双拼。</li></ul></div>
+  <div class="panel con"><h3>不适合</h3><ul><li><strong>开源合规要求：</strong>需要 OSI 许可、自由分发、商用或二次开发。</li><li><strong>旧系统：</strong>iOS 25 及以下无法使用。</li><li><strong>不想配 Key：</strong>只想要“装完就能用”的纯端侧体验。</li><li><strong>完全免费预期：</strong>不想碰任何内购/积分。</li><li><strong>企业统一部署：</strong>许可限制 + 无企业支持。</li><li><strong>追求极致稳定：</strong>键盘扩展被回收的风险始终存在。</li></ul></div>
+</div>
+<div class="note"><strong>一个务实的判断：</strong>先用端侧路径替代系统听写一周。如果键盘稳定性、中文候选、语音识别都过关，再考虑 BYOK 润色；否则功能再多也不值得。</div>
+
+</section>
+
+<section id="risks" class="card">
+  <div class="sec-head"><span class="sec-num">09</span><div><h2>风险与验证清单</h2><p class="sub">许可风险是“确定性风险”，不是“可能风险”。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">风险</th><th scope="col">等级</th><th scope="col">说明</th></tr></thead><tbody><tr><td>许可限制商用/再分发</td><td><span class="tag high">高</span></td><td>LICENSE 明确禁止商业使用、再分发、公开衍生；团队使用前必须读原文。</td></tr><tr><td>键盘“完全访问”权限</td><td><span class="tag mid">中高</span></td><td>键盘要共享设置、读服务配置、访问剪贴板；权限面大于普通 App。</td></tr><tr><td>云端文本外传</td><td><span class="tag mid">中</span></td><td>BYOK 润色会把转写与输入框上下文发给第三方。</td></tr><tr><td>托管积分锁定/调价</td><td><span class="tag mid">中</span></td><td>积分价格、赠送额度、服务条款都可能变化。</td></tr><tr><td>键盘扩展被回收</td><td><span class="tag mid">中</span></td><td>低内存设备上重功能可能被系统优先牺牲。</td></tr><tr><td>iOS 26 独占</td><td><span class="tag mid">中</span></td><td>系统门槛高，设备生命周期短。</td></tr><tr><td>小团队维护</td><td><span class="tag mid">中</span></td><td>功能面很宽，长期维护成本高。</td></tr></tbody></table></div>
+<div class="check" id="checklist">
+  <div class="check-head">
+    <span class="count" id="ck-count" aria-live="polite">0/10</span>
+    <div class="progress" aria-hidden="true"><i id="ck-bar"></i></div>
+    <button type="button" class="ghost" id="ck-reset">重置</button>
+  </div>
+  <ul><li><label><input type="checkbox"> <span>读 LICENSE 原文，确认个人/商用/再分发边界。</span></label></li><li><label><input type="checkbox"> <span>确认设备系统为 iOS/iPadOS 26+（或 macOS 15+）。</span></label></li><li><label><input type="checkbox"> <span>先用端侧路径，不配置任何云端 Key。</span></label></li><li><label><input type="checkbox"> <span>用 Little Snitch/网关观察 BYOK 请求是否直达服务商。</span></label></li><li><label><input type="checkbox"> <span>确认 API Key 在 Keychain，且未通过 iCloud 明文同步。</span></label></li><li><label><input type="checkbox"> <span>确认剪贴板历史默认关闭；需要时再开。</span></label></li><li><label><input type="checkbox"> <span>在密码框/安全输入框测试键盘行为。</span></label></li><li><label><input type="checkbox"> <span>连续使用 30 分钟，观察键盘是否被系统回收/重新加载。</span></label></li><li><label><input type="checkbox"> <span>对比 Apple 端侧识别与 BYOK 润色的实际修改量。</span></label></li><li><label><input type="checkbox"> <span>查 App Store 内购页的积分价格，再决定是否用托管。</span></label></li></ul>
+  <p class="fine">勾选状态只保存在本机浏览器，不会上传。</p>
+</div>
+<div class="note"><strong>最重要的一条：</strong>如果你打算把它的代码或改版放进公司产品/内部工具，先找版权方拿商业授权；LICENSE 不允许“先用后补”。</div>
+
+</section>
+
+<section id="alternatives" class="card">
+  <div class="sec-head"><span class="sec-num">10</span><div><h2>放在同类方案里看</h2><p class="sub">它是唯一把“键盘”做成 AI 输入层的；也是许可最受限的。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">工具</th><th scope="col">平台</th><th scope="col">识别</th><th scope="col">整理</th><th scope="col">数据边界</th><th scope="col">成本</th><th scope="col">证据</th></tr></thead><tbody><tr><td>轻声输入</td><td>macOS</td><td>本地 Qwen 量化 ASR</td><td>DeepSeek 云端</td><td>音频本地；文本/上下文云端</td><td>约 ¥10/月</td><td>C</td></tr><tr class="current"><td>OSGKeyboard</td><td>iOS 26+ / macOS 15+</td><td>Apple 端侧 / Qwen3 MLX</td><td>BYOK 或托管</td><td>端侧优先；云端可选</td><td>免费 + 可选积分</td><td>A</td></tr><tr><td>Saydra</td><td>Windows 10/11</td><td>本地 SenseVoice</td><td>云端 LLM</td><td>音频本地；文本+窗口上下文云端</td><td>免费 + API</td><td>A</td></tr><tr><td>voiceType</td><td>macOS 14+</td><td>本地 Qwen3-ASR</td><td>本地 Ollama</td><td>全本地</td><td>免费 + 电费</td><td>A</td></tr><tr><td>Apple 听写</td><td>macOS / iOS</td><td>系统</td><td>无/系统</td><td>视版本与设置</td><td>免费</td><td>A</td></tr></tbody></table></div>
+<div class="note"><strong>结论：</strong>如果你要的是“iPhone 上少切 App”，OSGKeyboard 最完整；如果你要“开源/可商用”，它直接出局；如果你要“全本地零云端”，voiceType 更纯粹。</div>
+
+</section>
+
+<section id="decision" class="card">
+  <div class="sec-head"><span class="sec-num">11</span><div><h2>采用建议</h2><p class="sub">先端侧、后 BYOK、最后才考虑托管。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>推荐路径</h3><ul><li><strong>第 1 周：</strong>只用端侧听写，替代系统听写；观察键盘稳定性与中文候选。</li><li><strong>第 2 周：</strong>开 BYOK，只配一个 LLM（如 DeepSeek），对比润色前后修改量。</li><li><strong>第 3 周：</strong>如果确实省时间，再评估托管积分；否则保持端侧+BYOK。</li><li><strong>团队使用：</strong>先拿商业授权，再谈部署。</li></ul></div>
+  <div class="panel con"><h3>不建议的做法</h3><ul><li>一上来买积分，结果发现键盘被系统频繁回收。</li><li>把公司代码/客户资料粘进剪贴板，再让键盘技能处理。</li><li>把“源码可见”当成“可以随便改一改发给同事”。</li><li>在 iOS 25 设备上折腾安装，浪费时间。</li></ul></div>
+</div>
+<div class="callout"><strong>底线建议：</strong>把 OSGKeyboard 当“个人效率工具”没问题；把它当“可自由分发的开源组件”会踩许可红线。</div>
+
+</section>
+
+<section id="sources" class="card">
+  <div class="sec-head"><span class="sec-num">12</span><div><h2>来源与口径</h2><p class="sub">一手仓库信息为主；价格与体验未核实。</p></div></div>
+  
+<ul class="sources">
+  <li><strong>GitHub: hkgood/OSGKeyboard</strong><a class="u" href="https://github.com/hkgood/OSGKeyboard" target="_blank" rel="noopener noreferrer">https://github.com/hkgood/OSGKeyboard</a><span class="why">README、LICENSE、project.yml、GitHub API；2026-11-01 读取。</span></li>
+  <li><strong>OSGKeyboard Source Available License 1.0</strong><a class="u" href="https://github.com/hkgood/OSGKeyboard/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">https://github.com/hkgood/OSGKeyboard/blob/main/LICENSE</a><span class="why">原文明确 “This is NOT an open-source license.”；禁止商业使用、再分发、公开衍生。</span></li>
+  <li><strong>App Store / TestFlight 链接</strong><a class="u" href="https://apps.apple.com/cn/app/osgkeyboard/id6781553267" target="_blank" rel="noopener noreferrer">https://apps.apple.com/cn/app/osgkeyboard/id6781553267</a><span class="why">README 提供；本报告未核实价格、内购积分单价与地区可用性。</span></li>
+  <li><strong>方法说明</strong>：本报告未运行该 App；平台能力、许可、工程细节来自公开文档，真实体验（延迟、准确率、键盘回收）需自行验证。<span class="why">不构成采购、法律或安全建议。</span></li>
+</ul>
+<div class="note"><strong>检索日期：</strong>2026-11-01。仓库版本以 <code>project.yml</code> 为准；App Store 版本可能不同。</div>
+
+</section>
+  </main>
+</div>
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>AI 语音输入工具 · 独立分析</strong> · 2026-11-01 · 共 4 份</p>
+    <p>同系列：<a href="qingsheng-macos-report.html">轻声输入</a> · <a href="saydra-windows-report.html">Saydra</a> · <a href="voicetype-macos-report.html">voiceType</a></p>
+    <p>本报告基于公开资料与用户简报，逐项标注证据等级；不构成采购、法律或安全建议。产品价格、功能与许可可能变化，采用前请以官方页面为准。</p>
+  </div>
+</footer>
+<script>
+(() => {
+  "use strict";
+  const cfg = {"slug": "osgkeyboard", "calc": {"kind": "tokens", "defaultMode": "device", "charsPerSec": 4, "tokenFactor": 1.2, "outputRatio": 0.3, "presets": {"light": {"uses": 10, "sec": 10, "ctx": 100}, "daily": {"uses": 30, "sec": 15, "ctx": 200}, "heavy": {"uses": 100, "sec": 20, "ctx": 400}}}, "privacy": {"default": "device", "summaries": {"device": "录音与文本不出设备；AI 润色/托管能力不使用，适合只想把听写做稳的人。", "byok": "默认端侧识别；若把 ASR 也配置为云端，音频会离开设备。转写与输入框上下文直达你配置的服务商，凭证存 Keychain。", "hosted": "语音/AI 走 OSG 托管服务；首次启用前应明确同意数据离开设备，具体保留策略看隐私政策。"}}};
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmt = (n) => {
+    if (!isFinite(n)) return "—";
+    if (n === 0) return "¥0";
+    if (n < 0.001) return "<¥0.001";
+    if (n < 1) return "¥" + n.toFixed(3);
+    if (n < 100) return "¥" + n.toFixed(2);
+    return "¥" + Math.round(n).toLocaleString("zh-CN");
+  };
+
+  const readbar = $("#readbar");
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = max > 0 ? Math.min(1, h.scrollTop / max) : 0;
+    if (readbar) readbar.style.width = (p * 100).toFixed(1) + "%";
+  };
+  addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  const links = $$(".toc a");
+  const secs = links.map(a => document.getElementById(a.hash.slice(1))).filter(Boolean);
+  if ("IntersectionObserver" in window && secs.length) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        links.forEach(a => a.classList.toggle("active", a.hash === "#" + e.target.id));
+      });
+    }, {rootMargin:"-12% 0px -72% 0px", threshold:0});
+    secs.forEach(s => io.observe(s));
+  }
+
+  addEventListener("beforeprint", () => $$("details").forEach(d => d.open = true));
+
+  let updateCalc = () => {};
+  const calc = cfg.calc;
+  if (calc) {
+    const get = (id) => {
+      const el = document.getElementById("c-" + id);
+      if (!el) return null;
+      const n = parseFloat(el.value);
+      return isFinite(n) ? n : 0;
+    };
+    const setVal = (id, v) => {
+      const el = document.getElementById("c-" + id);
+      if (el) el.value = v;
+    };
+    const syncOut = (id) => {
+      const el = document.getElementById("c-" + id + "-out");
+      const src = document.getElementById("c-" + id);
+      if (el && src) el.textContent = src.value;
+    };
+    const setBar = (id, pct) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = Math.max(0, Math.min(100, pct)).toFixed(1) + "%";
+    };
+    const mode = () => document.body.dataset.calcMode || calc.defaultMode || "";
+
+    updateCalc = () => {
+      const uses = get("uses") ?? 0;
+      const sec = get("sec") ?? 0;
+      const ctx = get("ctx") ?? 0;
+      const inPrice = get("inPrice") ?? 0;
+      const outPrice = get("outPrice") ?? 0;
+      const sub = get("sub") ?? 0;
+      const watts = get("watts") ?? 0;
+      const hours = get("hours") ?? 0;
+      const kwh = get("kwh") ?? 0;
+      const asrPrice = get("asrPrice") ?? 0;
+      const cloudAsr = $("#c-cloudasr")?.checked || false;
+      const m = mode();
+
+      let asr = 0, llm = 0, other = sub, total = 0, per = 0;
+      const kind = calc.kind || "tokens";
+      const hosted = kind === "hosted" || m === "hosted";
+      const hostedUnknown = hosted && sub <= 0;
+
+      if (m === "device") {
+        total = 0; per = 0; llm = 0; asr = 0; other = 0;
+      } else if (kind === "electric") {
+        other = watts * hours * 30 / 1000 * kwh;
+        total = other;
+        per = uses > 0 ? total / (uses * 30) : 0;
+      } else if (kind === "hosted" || m === "hosted") {
+        total = sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        asr = 0; llm = 0; other = sub;
+      } else {
+        const chars = sec * (calc.charsPerSec || 4) + Math.max(0, ctx);
+        const inTok = chars * (calc.tokenFactor || 1.2);
+        const outTok = inTok * (calc.outputRatio || 0.3);
+        const llmPer = inTok * inPrice / 1e6 + outTok * outPrice / 1e6;
+        llm = llmPer * uses * 30;
+        asr = (cloudAsr && asrPrice > 0) ? uses * 30 * sec / 60 * asrPrice : 0;
+        total = llm + asr + sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        other = sub;
+      }
+
+      setText("c-total", hostedUnknown ? "待填" : fmt(total));
+      setText("c-per", hostedUnknown ? "—" : ((per > 0 ? fmt(per) : "¥0") + " / 次"));
+      let asrLabel = "—";
+      if (asr > 0) asrLabel = fmt(asr);
+      else if (kind === "tokens") {
+        if (m === "hosted") asrLabel = "含在积分内";
+        else if (cloudAsr) asrLabel = "云端 · ¥0";
+        else asrLabel = "本地 · ¥0";
+      }
+      setText("c-asr", hostedUnknown ? "含在积分内" : asrLabel);
+      setText("c-llm", hostedUnknown ? "—" : (llm > 0 ? fmt(llm) : "—"));
+      setText("c-other", hostedUnknown ? "待填" : (other > 0 ? fmt(other) : "—"));
+
+      const base = total > 0 ? total : 1;
+      setBar("c-asr-bar", asr / base * 100);
+      setBar("c-llm-bar", llm / base * 100);
+      setBar("c-other-bar", other / base * 100);
+
+      const note = $("#c-note");
+      if (note) {
+        if (kind === "electric") {
+          note.textContent = "按每日 " + hours + " 小时、增量功耗 " + watts + " W、电价 " + kwh + " 元/kWh 粗估；不含硬件折旧与待机整机功耗。";
+        } else if (hosted) {
+          note.textContent = hostedUnknown ? "托管积分单价未公开；填入每月费用后才会给出估算。积分套餐以 App Store 内购页为准。" : "按你填写的每月托管费用估算；积分单价与套餐以 App Store 内购页为准，本报告未核实。";
+        } else if (m === "device") {
+          note.textContent = "端侧路径不调用云端模型，现金成本为 ¥0；仍需关注设备存储、内存与耗电。";
+        } else {
+          note.textContent = "按每日 " + uses + " 次、每次 " + sec + " 秒、上下文 " + Math.max(0, ctx) + " 字、token 系数 " + (calc.tokenFactor || 1.2) + "、输出/输入比 " + (calc.outputRatio || 0.3) + " 估算；单价为假设值，可改。";
+        }
+      }
+      ["uses","sec","ctx","inPrice","outPrice","sub","watts","hours","kwh","asrPrice"].forEach(syncOut);
+    };
+
+    $$(".calc input").forEach(el => el.addEventListener("input", updateCalc));
+    const ca = $("#c-cloudasr");
+    if (ca) {
+      const applyCa = () => {
+        $$(".calc-asr").forEach(el => { el.hidden = !ca.checked; });
+        updateCalc();
+      };
+      ca.addEventListener("change", applyCa);
+      applyCa();
+    }
+
+    $$("[data-preset]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = calc.presets?.[btn.dataset.preset];
+        if (!p) return;
+        Object.entries(p).forEach(([k,v]) => setVal(k, v));
+        updateCalc();
+      });
+    });
+
+    const pathBtns = $$("[data-path]");
+    if (pathBtns.length) {
+      const applyPath = (p) => {
+        document.body.dataset.calcMode = p;
+        pathBtns.forEach(b => b.setAttribute("aria-pressed", b.dataset.path === p ? "true" : "false"));
+        $$(".calc-token").forEach(el => { el.hidden = p !== "byok"; });
+        $$(".calc-hosted").forEach(el => { el.hidden = p !== "hosted"; });
+        const label = $("#c-mode-label");
+        if (label) label.textContent = p === "device" ? "端侧无润色" : (p === "byok" ? "自备服务商（BYOK）" : "托管积分");
+        updateCalc();
+      };
+      pathBtns.forEach(b => b.addEventListener("click", () => applyPath(b.dataset.path)));
+      const initial = pathBtns.find(b => b.getAttribute("aria-pressed") === "true")?.dataset.path || pathBtns[0].dataset.path;
+      applyPath(initial);
+    }
+
+    updateCalc();
+  }
+
+  const pcfg = cfg.privacy;
+  if (pcfg) {
+    const buttons = $$("[data-mode]");
+    const rows = $$(".path-table tbody tr");
+    const summary = $("#path-summary");
+    const applyMode = (mode) => {
+      buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode ? "true" : "false"));
+      rows.forEach(tr => {
+        const modes = (tr.dataset.modes || "").split(/\s+/);
+        const on = modes.includes(mode);
+        tr.classList.toggle("is-on", on);
+        tr.classList.toggle("is-dim", !on);
+      });
+      if (summary && pcfg.summaries?.[mode]) summary.textContent = pcfg.summaries[mode];
+      if (pcfg.context && pcfg.context[mode] !== undefined) {
+        const el = document.getElementById("c-ctx");
+        if (el) { el.value = pcfg.context[mode]; updateCalc(); }
+      }
+    };
+    buttons.forEach(b => b.addEventListener("click", () => applyMode(b.dataset.mode)));
+    const initial = pcfg.default || buttons[0]?.dataset.mode;
+    if (initial) applyMode(initial);
+  }
+
+  const models = cfg.models;
+  if (models) {
+    const radios = $$('input[name="model"]');
+    const applyModel = () => {
+      const v = radios.find(r => r.checked)?.value;
+      const d = models[v];
+      if (!d) return;
+      Object.entries(d).forEach(([k,v]) => setText("m-" + k, v));
+    };
+    radios.forEach(r => r.addEventListener("change", applyModel));
+    applyModel();
+  }
+
+  const ck = $("#checklist");
+  if (ck) {
+    const boxes = $$('input[type="checkbox"]', ck);
+    const key = "voice-report:" + cfg.slug;
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) { saved = []; }
+    boxes.forEach((b, i) => { if (saved[i]) b.checked = true; });
+    const updateCheck = () => {
+      const done = boxes.filter(b => b.checked).length;
+      setText("ck-count", done + "/" + boxes.length);
+      const bar = $("#ck-bar");
+      if (bar) bar.style.width = (boxes.length ? done / boxes.length * 100 : 0) + "%";
+      try { localStorage.setItem(key, JSON.stringify(boxes.map(b => b.checked))); } catch (e) {}
+    };
+    boxes.forEach(b => b.addEventListener("change", updateCheck));
+    const reset = $("#ck-reset");
+    if (reset) reset.addEventListener("click", () => { boxes.forEach(b => b.checked = false); updateCheck(); });
+    updateCheck();
+  }
+})();
+</script>
+</body>
+</html>
