@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%238a3f24'/%3E%3Cpath d='M4 6h8M4 9h6' stroke='%23fff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="PraisonAI 五层 Agent 栈、AgentFlow、Managed Agents、100+ 模型支持、上手与边界分析；含所给链接为 fork 的核验。">
+<title>PraisonAI · 24/7 Agent 团队与五层栈拆解（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#8a3f24;--accent-soft:#f6e8e1;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
+.metric{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:12px 14px}
+.metric b{display:block;font-size:22px;line-height:1.25;letter-spacing:-.01em}
+.metric span{font-size:11.5px;color:var(--muted)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="./index.html">← 工具调研</a>
+<span class="crumb">Tools / PraisonAI</span>
+<span class="date">2026-11-02 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>Agent 框架 / 多 Agent 编排</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>PraisonAI<br><em>五层栈把 Agent 从脚本变成团队</em></h1>
+<p class="lede">它把 Prompt、Context、Harness、Loop、Graph 五层包进一个 Python 框架，再用 YAML、可视化 Flow、Claw 面板和托管 sandbox 把「一个 Agent」扩成「一支团队」。真正值得评估的不是「100+ 模型」，而是这些层是否都能被你看见、刹住、复现。</p>
+<div class="pills">
+<span class="pill"><b>MIT</b></span>
+<span class="pill">Python</span>
+<span class="pill"><b>9,315</b> star（上游）</span>
+<span class="pill">v4.7.22</span>
+<span class="pill">100+ LLM 声明</span>
+<span class="pill">macOS / Windows / Linux</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>想用 Python/YAML 快速搭多 Agent 工作流，而不是从零写编排</li>
+<li>需要 memory、RAG、handoff、guardrails、预算与循环上限</li>
+<li>愿意把工具放到 Docker/E2B 等托管 sandbox 里执行</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>只需要一个单文件脚本或一次性 Agent，框架抽象是负担</li>
+<li>要求长期稳定 API、极小依赖或严格离线</li>
+<li>不愿接受框架层对 prompt、循环与部署的接管</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么</a></li>
+<li><a href="#s02">02 · 它解决的具体问题</a></li>
+<li><a href="#s03">03 · 运作方式</a></li>
+<li><a href="#s04">04 · 上手</a></li>
+<li><a href="#s05">05 · 日常流程</a></li>
+<li><a href="#s06">06 · 强项</a></li>
+<li><a href="#s07">07 · 边界与代价</a></li>
+<li><a href="#s08">08 · 安全与权限</a></li>
+<li><a href="#s09">09 · 和谁比</a></li>
+<li><a href="#s10">10 · 结论</a></li>
+<li><a href="#s11">11 · 核验与来源</a></li>
+</ol><div class="toc-note">你给的链接 <code>keenableai/PraisonAI</code> 是 fork；官方上游是 <code>MervinPraison/PraisonAI</code>。本文事实以上游 README 与 v4.7.22 Release 为准。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
+<p class="sub">一个 Python Agent 框架 + CLI + 可视化/托管生态，不是单一编码 Agent。</p>
+
+<p>官方定位是「Hire a 24/7 AI Workforce」：从单个 Agent 到一整支组织，5 行代码起步，内建 memory、RAG 与 100+ LLM 支持。它真正交付的不是某个模型，而是把「怎么让 Agent 干活、怎么检查、在哪运行」拆成可配置的五层。</p>
+
+<div class="metrics">
+  <div class="metric"><b>9,315</b><span>GitHub star（上游）</span></div>
+  <div class="metric"><b>1,500</b><span>fork</span></div>
+  <div class="metric"><b>123</b><span>open issues</span></div>
+  <div class="metric"><b>v4.7.22</b><span>最新 Release · 2026-10-30</span></div>
+</div>
+
+<div class="callout warn"><span class="t">先纠正链接</span><p>你给的 <a href="https://github.com/keenableai/PraisonAI" target="_blank" rel="noopener noreferrer">keenableai/PraisonAI</a> 是一个 fork（0 star，创建于 2026-10-05，GitHub 标记为 fork）。官方上游是 <a href="https://github.com/MervinPraison/PraisonAI" target="_blank" rel="noopener noreferrer">MervinPraison/PraisonAI</a>（9,315 star，MIT，Python）。如果团队实际用的是这个 fork，应以 fork 的提交与依赖为准；本文能力描述取自上游。</p></div>
+
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│ ⬡ MANAGED AGENTS — 在哪运行？                            │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 5 · GRAPH — 谁先跑、谁检查谁？                      │ │
+│ │ ┌─────────────────────────────────────────────────┐ │ │
+│ │ │ 4 · LOOP — 什么时候停？                         │ │ │
+│ │ │ ┌─────────────────────────────────────────────┐ │ │ │
+│ │ │ │ 3 · HARNESS — 能行动、能被检查吗？          │ │ │ │
+│ │ │ │ ┌─────────────────────────────────────────┐ │ │ │ │
+│ │ │ │ │ 2 · CONTEXT — 窗口里放对了吗？          │ │ │ │ │
+│ │ │ │ │ ┌─────────────────────────────────────┐ │ │ │ │ │
+│ │ │ │ │ │ 1 · PROMPT — 我说清楚了吗？          │ │ │ │ │ │
+│ │ │ │ │ └─────────────────────────────────────┘ │ │ │ │ │
+│ │ │ │ └─────────────────────────────────────────┘ │ │ │ │
+│ │ │ └─────────────────────────────────────────────┘ │ │ │
+│ │ └─────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘</code></pre>
+
+<p>产品面不只一个库：核心 SDK <code>praisonaiagents</code>、CLI <code>praisonai</code>、Claw 消息/管理面板、Flow 可视化构建器（基于 Langflow）、PraisonAI UI、JavaScript SDK，以及带桌面安装包的发行版。</p>
+</section>
+
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>它解决的具体问题</h2></div>
+<p class="sub">多 Agent 的难点通常不在「启动」，而在「可控地收尾」。</p>
+
+<ul>
+  <li><b>样板代码：</b>prompt、上下文、工具分发、循环、重试、预算，每个项目重写一遍。</li>
+  <li><b>交接：</b>子 Agent 拿到多少历史、哪些工具、什么时候把控制权交回，靠手工约定。</li>
+  <li><b>记忆与知识：</b>短期/长期 memory、RAG、检索策略、压缩，通常要另拼一套。</li>
+  <li><b>循环失控：</b>模型反复调用同一工具、在 A→B→A 之间震荡，账单和延迟一起涨。</li>
+  <li><b>部署位置：</b>工具在本机跑，代码执行却可能需要容器或云 sandbox。</li>
+  <li><b>可视化与运营：</b>非工程同学想改流程、看会话、接消息平台，需要另一层 UI。</li>
+</ul>
+<div class="callout"><span class="t">它的核心主张</span><p>把「Agent 的行为」拆成五层，每一层用参数和检查点约束；出问题时能定位到「prompt 没说清 / 上下文不对 / 工具越权 / 循环没停 / 图排错」中的一层。</p></div>
+</section>
+
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
+<p class="sub">五层栈 + AgentFlow + Managed Agents；核心是「每层都有显式刹车」。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>层</th><th>回答的问题</th><th>PraisonAI 的入口</th></tr></thead>
+<tbody>
+<tr><td><b>1 · Prompt</b></td><td>我说清楚了吗？</td><td><code>instructions=</code>、role/goal/backstory、output、templates</td></tr>
+<tr><td><b>2 · Context</b></td><td>窗口里放对了吗？</td><td><code>memory=</code>、<code>knowledge=</code>、<code>context="summarize"</code>、handoff <code>ContextPolicy</code></td></tr>
+<tr><td><b>3 · Harness</b></td><td>能行动、能被检查吗？</td><td><code>tools=</code>、<code>MCP()</code>、<code>guardrails=</code>、<code>approval=</code>、hooks、sandbox</td></tr>
+<tr><td><b>4 · Loop</b></td><td>什么时候停？</td><td><code>ExecutionConfig(max_iter, max_budget, on_budget_exceeded)</code>、reflection、autonomy、doom-loop 检测</td></tr>
+<tr><td><b>5 · Graph</b></td><td>谁先跑、谁检查谁？</td><td><code>AgentFlow</code>、<code>route()</code>、<code>parallel()</code>、<code>loop()</code>、<code>repeat()</code></td></tr>
+<tr><td><b>⬡ Managed</b></td><td>到底在哪运行？</td><td><code>tools_run_on=</code> 或 <code>run_on=</code>；Docker/E2B/Modal/Daytona/Fly.io 等</td></tr>
+</tbody></table></div>
+
+<h3>Loop 层：把「停」写进配置</h3>
+<pre><code>from praisonaiagents import Agent, ExecutionConfig
+
+agent = Agent(
+    instructions="Fix the failing tests.",
+    execution=ExecutionConfig(
+        max_iter=30,
+        max_budget=0.50,
+        on_budget_exceeded="stop",
+    ),
+    autonomy=True,
+)
+result = agent.run_autonomous("Refactor the auth module", max_iterations=5)
+print(result.completion_reason)
+# goal | no_tool_calls | max_iterations | timeout |
+# doom_loop | needs_help | error</code></pre>
+<p>README 说明 doom-loop 检测默认开启：重复的相同工具调用、A→B→A→B 振荡会被识别；输出持续变化的轮询不会被误判。这比「只设一个最大轮数」更接近可运营的刹车。</p>
+
+<h3>Graph 层：把拓扑变成可版本化产物</h3>
+<pre><code>from praisonaiagents import AgentFlow
+from praisonaiagents.workflows import route, parallel, repeat
+
+flow = AgentFlow(steps=[
+    classifier,
+    route({"bug": [bug_agent], "feature": [feature_agent], "default": [triage]}),
+    parallel([reviewer, tester]),
+    repeat(editor, until=lambda ctx: "approved" in ctx.previous_result.lower(),
+           max_iterations=3),
+])
+flow.run("Ticket #123: login fails on Safari")</code></pre>
+<p>同一张图也能用 YAML 写，不写 Python。这对「让非工程同学改流程」很关键，但也意味着流程的行为分散在 YAML、Python 与可视化工具三处，需要明确单一事实源。</p>
+
+<h3>Managed 层：想清楚「只搬工具」还是「搬整个 Agent」</h3>
+<ul>
+  <li><code>tools_run_on="docker"</code>：只把 shell、文件、代码工具搬走；模型调用与循环仍在本机，自己的自定义工具也仍在本地。</li>
+  <li><code>run_on="anthropic"</code> 或 <code>run_on="docker"</code>：把模型调用、循环、工具整体搬走；不是所有运行时都能托管 Agent loop。</li>
+  <li><code>praisonai managed ps</code> / <code>stop --all</code> 管 sandbox；<code>auto_shutdown</code>、<code>idle_timeout_s</code>、环境快照减少冷启动。</li>
+  <li>支持列表在 README 中包括 Docker、E2B、Modal、Daytona、Fly.io、Tenki、Sandlock、SSH、Novita、subprocess；具体能力与计费以各供应商为准。</li>
+</ul>
+<div class="note"><b>关键差别：</b>「工具在容器里」不等于「Agent 在容器里」。前者只隔离执行面，后者才改变数据与模型调用的位置。选错会造成「以为代码没出本机，其实 prompt 和仓库内容已经出网」。</div>
+
+<h3>生态层：CLI、Flow、Claw、UI</h3>
+<ul>
+  <li><b>CLI：</b><code>praisonai</code> 提供 auto、interactive、chat、research、planning、workflow、memory、knowledge、session、tools、mcp、schedule 等子命令。</li>
+  <li><b>Claw：</b><code>pip install "praisonai[claw]"</code>，默认 <code>localhost:8082</code>，内置 Chat、Agents、Memory、Knowledge、Channels、Guardrails、Cron 等 13 个页面，可接 Telegram/Discord/Slack/WhatsApp。</li>
+  <li><b>Flow：</b><code>pip install "praisonai[flow]"</code>，默认 <code>localhost:7861</code>，用 Langflow 的 Agent / Agent Team 组件拖拽编排。</li>
+  <li><b>100+ LLM：</b>README 声称 100+，示例表列出 24 个 provider；「100+」是模型覆盖声明，不等于每个模型都同质量。</li>
+</ul>
+</section>
+
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
+<p class="sub">先用核心 SDK 跑一个 Agent，再决定要不要上 CLI、YAML 和面板。</p>
+
+<pre><code>pip install praisonaiagents
+export OPENAI_API_KEY="your-api-key"
+
+python - &lt;&lt;'PY'
+from praisonaiagents import Agent
+
+agent = Agent(instructions="You are a senior data analyst.")
+agent.start("Analyze the top 3 tech trends of 2026 and format as a markdown table.")
+PY</code></pre>
+
+<p>需要 CLI 与可视化时：</p>
+<pre><code>pip install praisonai
+praisonai --help
+
+# 可视化流程（Langflow，localhost:7861）
+pip install "praisonai[flow]"
+praisonai flow
+
+# 消息平台 / 管理面板（localhost:8082）
+pip install "praisonai[claw]"
+praisonai claw</code></pre>
+
+<p>YAML 方式不写 Python：</p>
+<pre><code>framework: praisonai
+topic: "Write a blog post about AI"
+
+agents:
+  researcher:
+    role: Research Analyst
+    goal: Research AI trends and gather information
+    instructions: "Find accurate information about AI trends"
+
+  writer:
+    role: Content Writer
+    goal: Write engaging blog posts
+    instructions: "Write clear, engaging content based on research"</code></pre>
+<pre><code>praisonai agents.yaml</code></pre>
+
+<p>v4.7.22 还提供 macOS（Apple silicon / Intel）、Windows x64、Linux x64 桌面安装包。安装包体积约 1.5–2.3 MB，属于启动器/壳层；模型与工具仍要另行配置，不要把它当成「装完就能离线跑」。<span class="tag infer">推断</span></p>
+</section>
+
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>日常流程</h2></div>
+<p class="sub">从单 Agent 到团队，按「可回退」的顺序加层。</p>
+
+<ol class="steps">
+  <li><b>单 Agent：</b>先把 instructions 与输出格式跑顺，确认模型能完成单个任务。</li>
+  <li><b>加工具与审批：</b>只给必要工具；高风险工具开 <code>approval=True</code>，先看它请求什么。</li>
+  <li><b>加 handoff：</b>把子 Agent 的上下文与工具做交集，不要让每个子 Agent 继承整段 transcript。</li>
+  <li><b>加循环刹车：</b>设置 <code>max_iter</code>、<code>max_budget</code>、<code>on_budget_exceeded</code>，记录 <code>completion_reason</code>。</li>
+  <li><b>加 AgentFlow：</b>把 route/parallel/repeat 写成可版本化的图；YAML 与 Python 二选一作为事实源。</li>
+  <li><b>加 sandbox：</b>先只搬工具（<code>tools_run_on</code>），确认文件与网络行为；再评估是否搬整个 Agent。</li>
+  <li><b>加运营层：</b>用 Claw 看会话与频道，用 telemetry/日志做成本与失败分析。</li>
+</ol>
+<div class="callout good"><span class="t">推荐的最小生产配置</span><p>固定版本 + 固定模型路由 + 明确预算 + 审批高风险工具 + doom-loop 检测 + 失败日志。先把这六件事做实，再谈「24/7 自治」。</p></div>
+</section>
+
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>强项</h2></div>
+<p class="sub">它强在「覆盖完整」，不是「每一层都最深」。</p>
+
+<div class="panel pos"><ul>
+  <li><b>五层栈齐全：</b>从 prompt 到 graph 再到 managed runtime，少见地把「在哪运行」也纳入框架。</li>
+  <li><b>显式刹车：</b>max_iter、max_budget、completion_reason、doom-loop 检测，比只给一个 while 循环更适合运营。</li>
+  <li><b>交接与上下文：</b>handoff + ContextPolicy，子 Agent 只拿需要的上下文与工具交集。</li>
+  <li><b>工作流表达：</b>route / parallel / loop / repeat 覆盖常见拓扑；Python 与 YAML 双入口。</li>
+  <li><b>生态入口多：</b>CLI、Claw 面板、Flow 可视化、UI、桌面安装包、JS SDK。</li>
+  <li><b>协议与集成：</b>MCP 多传输、A2A、外部 Claude Code/Gemini CLI/Codex、100+ 模型声明。</li>
+  <li><b>许可证宽松：</b>MIT；v4.7.22 在 2026-10-30 发布，仍在活跃迭代。</li>
+</ul></div>
+
+<p>README 把「Elon Musk highlighted」放在显眼位置。<span class="tag fact">事实</span> 这确实是一个公开转发；<span class="tag infer">推断</span> 它不构成技术验证，选型仍应看你的任务与回归测试。</p>
+</section>
+
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>边界与代价</h2></div>
+<p class="sub">功能面越宽，默认行为、依赖与升级风险越需要你自己兜底。</p>
+
+<div class="panel neg"><ul>
+  <li><b>广度换深度：</b>25 个特性、100+ 模型声明、多个运行时；每一层的深度与稳定性并不等价，文档也可能滞后于代码。</li>
+  <li><b>Python 优先：</b>JS SDK 在 README 中出现，但功能对等性未验证；跨语言团队要额外评估。</li>
+  <li><b>抽象泄漏：</b>框架接管 prompt、循环、上下文压缩与工具分发；出问题时必须理解五层，否则只能猜。</li>
+  <li><b>依赖面大：</b>RAG、向量库、MCP、消息平台、sandbox SDK 都可能进入依赖树；锁定版本与最小安装很重要。</li>
+  <li><b>托管运行时的成本与合规：</b>E2B/Modal/Daytona 等按用量计费；代码、仓库与工具输出会离开本机。</li>
+  <li><b>营销与事实的边界：</b>「24/7」「self-improving」「100+ LLM」是产品主张；没有统一 benchmark，不能直接外推到你的任务。</li>
+  <li><b>迭代节奏：</b>123 个 open issues、频繁 release；生产使用应固定 minor/patch 并保留回滚。</li>
+  <li><b>fork 混淆：</b>你给的链接是 fork，star/issue/发布节奏与上游不同；内部选型要统一来源。</li>
+</ul></div>
+<div class="note"><b>「24/7」不是默认能力：</b>它需要调度器、常驻进程、凭据轮换、预算/告警与失败重试。框架给你积木，不替你把运维做完。</div>
+</section>
+
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>安全与权限</h2></div>
+<p class="sub">把「审批、沙箱、凭据、预算」分开看，任何一项都不能替代另一项。</p>
+
+<dl class="kv">
+  <dt>审批</dt><dd><code>approval=True</code> 可在高风险工具执行前要求人工放行；不是所有工具/路径都自动覆盖，需逐个确认。</dd>
+  <dt>护栏</dt><dd>输入/输出 guardrails 能挡明显违规，但不是安全边界；prompt injection 仍可能绕过语义检查。</dd>
+  <dt>策略</dt><dd>Policy Engine 用声明式规则约束 Agent 行为；规则本身要评审与测试。</dd>
+  <dt>沙箱</dt><dd><code>tools_run_on</code> 只搬 shell/文件/代码工具；自定义工具仍在本机；<code>run_on</code> 才整体搬走。</dd>
+  <dt>凭据</dt><dd>环境变量/密钥可能被工具读取；给 Agent 单独的、最小权限的 key，并设置预算上限。</dd>
+  <dt>外部面</dt><dd>MCP server、外部 CLI Agent、消息平台都会扩大信任边界；每个连接都要单独评估。</dd>
+  <dt>数据</dt><dd>托管 runtime 会接触仓库与工具输出；先确认数据驻留、保留期与供应商条款。</dd>
+</dl>
+<div class="callout bad"><span class="t">最容易被忽略</span><p>「工具在 Docker 里」只隔离了执行环境；模型调用、prompt、检索到的私有文档仍可能在本机之外。把 <code>tools_run_on</code> 当成「数据不出本机」是错的。</p></div>
+</section>
+
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>和谁比</h2></div>
+<p class="sub">都以「多 Agent」为卖点，但抽象层级与交付物不同。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>方案</th><th>抽象层级</th><th>最强场景</th><th>主要代价</th></tr></thead>
+<tbody>
+<tr><td><b>PraisonAI</b></td><td>框架 + 五层栈 + 托管运行时</td><td>Python/YAML 快速搭多 Agent，含面板与 sandbox</td><td>抽象多、依赖面大、需自己运维</td></tr>
+<tr><td><b>CrewAI</b></td><td>角色/团队抽象</td><td>用 role/goal/backstory 组织协作</td><td>复杂图与运行时需另拼</td></tr>
+<tr><td><b>LangGraph</b></td><td>低层图与状态机</td><td>需要精确控制节点、状态与中断</td><td>代码量更大，偏工程</td></tr>
+<tr><td><b>AutoGen / AG2</b></td><td>对话式多 Agent</td><td>研究型协作、群聊式编排</td><td>生产运行时与治理要自建</td></tr>
+<tr><td><b>OpenAI Agents SDK</b></td><td>轻量 handoff + guardrails</td><td>贴近 OpenAI 生态的 Agent 流水线</td><td>跨厂商与托管运行时较弱</td></tr>
+<tr><td><b>oh-my-pi</b></td><td>终端编码 Agent</td><td>在真实仓库里读写、LSP/DAP、子 Agent</td><td>不是通用 Agent 框架</td></tr>
+<tr><td><b>Dify / n8n</b></td><td>可视化工作流</td><td>非工程同学编排与运营</td><td>代码级控制与复杂 Agent 循环较弱</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>先用 <code>praisonaiagents</code> 跑一个单 Agent，确认模型与工具；再加 handoff、ExecutionConfig 与 AgentFlow。等你确实需要「非工程同学改流程」或「代码在沙箱里跑」时，再引入 Flow / Claw / Managed Agents。固定版本、最小安装、预算与审批先于「自治」。</p></div>
+<p>它适合想把 Agent 当「团队基础设施」而不是「一次性脚本」的人；如果你只需要一个能改代码的终端 Agent，oh-my-pi 这类工具更直接。PraisonAI 的价值在编排与治理层，不在替代编码 Agent。</p>
+</section>
+
+<section id="s11">
+<div class="sec-head"><span class="sec-no">11</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 上游仓库：<a href="https://github.com/MervinPraison/PraisonAI" target="_blank" rel="noopener noreferrer">MervinPraison/PraisonAI</a>；MIT；Python；9,315 star、1,500 fork、123 open issues（2026-11-02 GitHub API）。</li>
+  <li><span class="tag fact">事实</span> 你给的链接：<a href="https://github.com/keenableai/PraisonAI" target="_blank" rel="noopener noreferrer">keenableai/PraisonAI</a>；GitHub 标记 fork，0 star，创建于 2026-10-05。</li>
+  <li><span class="tag fact">事实</span> 最新 Release：<a href="https://github.com/MervinPraison/PraisonAI/releases/tag/v4.7.22" target="_blank" rel="noopener noreferrer">v4.7.22</a>（2026-10-30）；提供 macOS/Windows/Linux 安装包。</li>
+  <li><span class="tag fact">事实</span> <a href="https://github.com/MervinPraison/PraisonAI/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：五层栈、AgentFlow、handoffs、ExecutionConfig/completion_reason、doom-loop 检测、Managed Agents、Claw、Flow、100+ LLM 声明。</li>
+  <li><span class="tag fact">事实</span> 文档入口：<a href="https://docs.praison.ai" target="_blank" rel="noopener noreferrer">docs.praison.ai</a>；MCP、AgentFlow、doom-loop、handoffs、sandbox、telemetry 等页面。</li>
+  <li><span class="tag infer">推断</span> 「24/7」需要调度、常驻进程、预算与告警共同成立；框架本身不保证服务可用性。</li>
+  <li><span class="tag infer">推断</span> 本文的「适合/不适合」基于公开能力与运维代价，不构成基准测试或采购结论。</li>
+</ul>
+</section>
+<footer><span>PraisonAI · 分析于 2026-11-02</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>
+(function(){
+  var p=document.getElementById("progress");
+  if(!p) return;
+  function update(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    p.style.width=(max>0?Math.min(100,Math.max(0,h.scrollTop/max*100)):0)+"%";
+  }
+  addEventListener("scroll",update,{passive:true});
+  update();
+})();
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  if(!links.length) return;
+  var sections=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  if(!('IntersectionObserver' in window)) return;
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var i=sections.indexOf(e.target);
+      if(i<0) return;
+      links.forEach(function(a,j){a.setAttribute('aria-current',j===i?'true':'false');});
+    });
+  },{rootMargin:'-15% 0px -70% 0px'});
+  sections.forEach(function(s){if(s)io.observe(s);});
+})();
+</script>
+</body>
+</html>

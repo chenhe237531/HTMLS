@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%231f6449'/%3E%3Cpath d='M4 6h8M4 9h6' stroke='%23fff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="CLI-Anything 的 7 阶段 CLI 生成流水线、CLI-Hub、SKILL.md、18 个应用案例、边界与安全分析。">
+<title>CLI-Anything · 把软件变成 Agent-native CLI（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#1f6449;--accent-soft:#e4efe9;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
+.metric{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:12px 14px}
+.metric b{display:block;font-size:22px;line-height:1.25;letter-spacing:-.01em}
+.metric span{font-size:11.5px;color:var(--muted)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="./index.html">← 工具调研</a>
+<span class="crumb">Tools / CLI-Anything</span>
+<span class="date">2026-11-02 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>Agent-native CLI / 工具生成</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>CLI-Anything<br><em>给每个软件生成一层 Agent 能读的 CLI</em></h1>
+<p class="lede">它不是又一个 GUI Agent，而是把「读源码/接口 → 设计命令 → 生成 Click CLI + REPL + JSON + 测试 + SKILL.md」做成 7 阶段流水线。听起来像万能钥匙，实际成败取决于目标软件有没有可调的 backend/API，以及你愿不愿意维护生成出来的代码。</p>
+<div class="pills">
+<span class="pill"><b>Apache-2.0</b></span>
+<span class="pill">Python ≥ 3.10</span>
+<span class="pill"><b>58,070</b> star</span>
+<span class="pill">v0.4.0</span>
+<span class="pill">18 个应用案例</span>
+<span class="pill">2,461 tests（徽章）</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>目标软件有源码或稳定 API，需要把 GUI 能力变成可批量调用的 CLI</li>
+<li>想让 Agent 用结构化命令而不是截图/点击来操作真实软件</li>
+<li>愿意审查生成的代码、测试与权限范围，并承担维护</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>闭源、无 API、只能靠人工点击或授权弹窗的软件</li>
+<li>要求零维护、开箱即用、长期稳定不变的自动化</li>
+<li>把生成的 CLI 当成安全沙箱，或直接跑在敏感主机上</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么</a></li>
+<li><a href="#s02">02 · 它解决的具体问题</a></li>
+<li><a href="#s03">03 · 运作方式</a></li>
+<li><a href="#s04">04 · 上手</a></li>
+<li><a href="#s05">05 · 日常流程</a></li>
+<li><a href="#s06">06 · 强项</a></li>
+<li><a href="#s07">07 · 边界与代价</a></li>
+<li><a href="#s08">08 · 安全与权限</a></li>
+<li><a href="#s09">09 · 和谁比</a></li>
+<li><a href="#s10">10 · 结论</a></li>
+<li><a href="#s11">11 · 核验与来源</a></li>
+</ol><div class="toc-note">「GUI 转 CLI」不是把像素映射成命令；它分析源码与 GUI 动作，调用软件的真实 backend。没有源码/API 的软件，效果会大打折扣。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
+<p class="sub">HKUDS 的 CLI 生成器 + CLI-Hub 分发层 + 面向 Agent 的 SKILL.md。</p>
+
+<p>官方口号是「Making ALL Software Agent-Native」。它把「把专业软件变成 Agent 可调用工具」拆成一条自动流水线：分析目标代码库，设计命令组与状态模型，生成基于 Click 的 CLI（带 REPL、JSON 输出、undo/redo），再生成测试、文档与 SKILL.md。</p>
+
+<div class="metrics">
+  <div class="metric"><b>58,070</b><span>GitHub star</span></div>
+  <div class="metric"><b>5,221</b><span>fork</span></div>
+  <div class="metric"><b>236</b><span>open issues</span></div>
+  <div class="metric"><b>v0.4.0</b><span>2026-06-25</span></div>
+</div>
+
+<p>它不是一个运行时框架，也不是模型；产出物是<b>每个软件一个 Python 包</b>：<code>cli-anything-gimp</code>、<code>cli-anything-blender</code>、<code>cli-anything-libreoffice</code> 等。CLI-Hub 负责发现、安装、更新与 matrix 编排。</p>
+
+<div class="grid2">
+  <div class="panel pos"><h3>它负责</h3><ul>
+    <li>从源码/仓库分析出可自动化的能力</li>
+    <li>生成命令组、状态、JSON 输出与 REPL</li>
+    <li>生成单元/E2E 测试与 SKILL.md</li>
+    <li>通过 CLI-Hub 分发、安装、更新</li>
+    <li>为 Claude Code、Codex、Cursor 等提供调用入口</li>
+  </ul></div>
+  <div class="panel neg"><h3>它不负责</h3><ul>
+    <li>给闭源软件凭空造 API</li>
+    <li>保证生成代码的生产质量</li>
+    <li>提供安全沙箱或权限隔离</li>
+    <li>替代你对上游软件/许可证的合规判断</li>
+    <li>保证「所有软件」都能同等自动化</li>
+  </ul></div>
+</div>
+
+<div class="callout warn"><span class="t">先纠正一个常见误解</span><p>「把 GUI 程序转换成命令行」并不是录屏或像素点击。README 的流程是<b>分析源码与 GUI 动作，映射到底层 API/命令</b>，生成直接调用真实 backend 的 CLI。对没有可编程接口的软件，它只能做到有限封装，甚至做不了。</p></div>
+</section>
+
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>它解决的具体问题</h2></div>
+<p class="sub">Agent 会用终端，但大多数专业软件只给了人用的 GUI。</p>
+
+<ul>
+  <li><b>GUI 自动化脆弱：</b>截图、坐标点击、等待弹窗，界面一变就坏；token 与延迟也高。</li>
+  <li><b>API 缺口：</b>很多桌面软件有完整 backend，却没有稳定 CLI/API 给 Agent 用。</li>
+  <li><b>能力被砍：</b>为了「让 Agent 能用」，团队常重写一个简化版，丢掉 90% 专业功能。</li>
+  <li><b>集成成本：</b>每个软件单独写包装、测试、文档，重复劳动。</li>
+  <li><b>结构化输出：</b>Agent 需要 JSON，而 GUI 只给人看。</li>
+  <li><b>可复现性：</b>点击流程难以版本化、回放、写测试；命令可以。</li>
+</ul>
+<div class="callout"><span class="t">它的核心主张</span><p>把「软件能力」变成「命令 + 状态 + JSON + 测试 + 技能说明」，让 Agent 通过终端调用真实软件，而不是通过屏幕猜。</p></div>
+</section>
+
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
+<p class="sub">7 阶段流水线 + SKILL.md 生成 + CLI-Hub 分发。</p>
+
+<pre><code>Analyze → Design → Implement → Plan Tests → Write Tests
+   → Document → Publish
+                 ↘ Phase 6.5: SKILL.md
+   ↺ Refine（gap analysis，可多次增量执行）</code></pre>
+
+<div class="table-wrap"><table>
+<thead><tr><th>阶段</th><th>产出</th><th>关键点</th></tr></thead>
+<tbody>
+<tr><td><b>1 Analyze</b></td><td>源码/仓库能力地图</td><td>扫描代码、GUI 动作、API/命令、状态与文件格式</td></tr>
+<tr><td><b>2 Design</b></td><td>命令组、状态模型、输出格式</td><td>把能力组织成可组合命令，而不是 1:1 包装每个按钮</td></tr>
+<tr><td><b>3 Implement</b></td><td>Click CLI + REPL + JSON + undo/redo</td><td>直接调用真实 backend，保留专业能力</td></tr>
+<tr><td><b>4 Plan Tests</b></td><td>TEST.md</td><td>单元 + E2E 测试计划，含真实文件/软件</td></tr>
+<tr><td><b>5 Write Tests</b></td><td>测试套件</td><td>子进程验证安装后的命令</td></tr>
+<tr><td><b>6 Document</b></td><td>README + 结果</td><td>命令组、示例、错误处理</td></tr>
+<tr><td><b>6.5 SKILL.md</b></td><td>Agent 技能定义</td><td>YAML frontmatter、命令组、JSON/错误用法</td></tr>
+<tr><td><b>7 Publish</b></td><td>可安装包</td><td><code>setup.py</code>、PATH 上的 <code>cli-anything-*</code></td></tr>
+</tbody></table></div>
+
+<h3>生成物长什么样</h3>
+<ul>
+  <li><b>命令：</b><code>cli-anything-gimp project new --width 1920 --height 1080 -o poster.json</code>；<code>--json</code> 给 Agent，默认给人读。</li>
+  <li><b>状态：</b>持久项目状态、REPL、undo/redo；复杂软件不是「一条命令一次执行」。</li>
+  <li><b>预览/轨迹：</b>FreeCAD/Blender 等创意软件支持 preview、live preview、trajectory，把命令与视觉状态对应起来。</li>
+  <li><b>技能：</b>每个 harness 带 <code>SKILL.md</code>，Agent 可先读技能再调用；CLI-Hub 还提供 meta-skill 让 Agent 自己发现/安装。</li>
+</ul>
+
+<h3>CLI-Hub 与矩阵</h3>
+<ul>
+  <li><code>cli-hub list/search/info/install/update/uninstall/launch</code> 管理已发布的 harness 与公共 CLI。</li>
+  <li>v0.4.0 引入 <code>cli-hub matrix</code>：把多个 CLI 组成的任务流做成一次安装、能力预检与断点续装。</li>
+  <li>支持 pip/npm/brew/系统工具等多种安装源；具体包仍要装上游软件（GIMP、Blender、LibreOffice 等）。</li>
+</ul>
+</section>
+
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
+<p class="sub">先逛 Hub 装现成的，再决定是否为缺失的软件生成新 harness。</p>
+
+<h3>A. 使用已有 CLI</h3>
+<pre><code>pip install cli-anything-hub
+
+cli-hub list
+cli-hub search image
+cli-hub info gimp
+cli-hub install gimp
+cli-hub launch gimp</code></pre>
+<p>装完后也可以直接走 PATH：</p>
+<pre><code>cd gimp/agent-harness
+pip install -e .
+cli-anything-gimp --help
+cli-anything-gimp</code></pre>
+
+<h3>B. 让 Agent 生成新 CLI</h3>
+<p>以 Claude Code 为例：</p>
+<pre><code>/plugin marketplace add HKUDS/CLI-Anything
+/plugin install cli-anything
+
+/cli-anything ./gimp
+/cli-anything https://github.com/blender/blender
+
+# 定向补齐能力
+/cli-anything:refine ./gimp "batch processing and filters"</code></pre>
+<p>也提供 OpenCode、Pi、Cursor、Codex、OpenClaw、Hermes、Reasonix、Qodercli、GitHub Copilot CLI 的插件或 skill 安装方式；不同平台的命令名略有差异。</p>
+
+<div class="note"><b>前置条件：</b>Python 3.10+、目标软件或源码、一个支持的编码 Agent。很多 harness 需要本机已安装上游应用；例如 GIMP/Blender/LibreOffice 的 CLI 不是自带渲染引擎。</div>
+</section>
+
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>日常流程</h2></div>
+<p class="sub">「先发现，后生成，再精修」比一上来就 /cli-anything 更稳。</p>
+
+<ol class="steps">
+  <li><b>先查 Hub：</b>已有 harness 优先，省掉生成与测试；确认版本、上游依赖与维护状态。</li>
+  <li><b>装上游软件：</b>很多 CLI 只是控制层，真实渲染/转换由 GIMP、Blender、LibreOffice 等完成。</li>
+  <li><b>生成缺失 harness：</b>给 Agent 源码路径或仓库，跑完 7 阶段；先看它设计的命令组是否覆盖关键能力。</li>
+  <li><b>跑测试：</b>单测之外，用真实文件做 E2E；检查 JSON 输出、错误码、退出码与幂等性。</li>
+  <li><b>定向 refine：</b>哪里缺命令就补哪里，不要一次要求「全部功能」；每次增量验证。</li>
+  <li><b>交给 Agent：</b>让它读 <code>SKILL.md</code>，用 <code>--json</code> 调用；把权限与工作目录限制在项目内。</li>
+  <li><b>版本化：</b>把生成的 harness 与测试纳入仓库；上游软件升级后重新跑 validate。</li>
+</ol>
+</section>
+
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>强项</h2></div>
+<p class="sub">它把「为每个软件写包装」从一次性工程变成了可重复流程。</p>
+
+<div class="panel pos"><ul>
+  <li><b>真实 backend：</b>不是 toy 重写，直接调用 GIMP/Blender/LibreOffice 等真实软件的能力。</li>
+  <li><b>结构化：</b>默认人类可读、<code>--json</code> 给 Agent；命令组 + 状态 + REPL + undo/redo。</li>
+  <li><b>覆盖案例多：</b>README 展示 18 个应用、2,461 个测试（徽章口径），含 FreeCAD、Blender、Draw.io、VideoCaptioner、Slay the Spire II 等。</li>
+  <li><b>面向 Agent 生态：</b>Claude Code、Codex、Cursor、OpenCode、Pi、OpenClaw、Hermes 等都有入口。</li>
+  <li><b>分发层：</b>CLI-Hub 让发现/安装/更新/矩阵编排有统一入口。</li>
+  <li><b>可复现：</b>7 阶段与 SKILL.md 生成把「怎么包装」文档化；refine 可增量补齐。</li>
+  <li><b>许可证宽松：</b>Apache-2.0；技术报告公开在 arXiv。</li>
+</ul></div>
+</section>
+
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>边界与代价</h2></div>
+<p class="sub">星标很高，但「所有软件」是愿景，不是当前覆盖率。</p>
+
+<div class="panel neg"><ul>
+  <li><b>依赖源码/API：</b>闭源、无稳定 backend、强交互/授权弹窗的软件，生成质量会明显下降，甚至不可行。</li>
+  <li><b>质量不均：</b>18 个案例是经过挑选与打磨的；社区提交的 harness 覆盖度、测试与错误处理差异很大。</li>
+  <li><b>上游依赖：</b>很多 CLI 需要安装专业软件与插件；CI/容器里部署并不轻。</li>
+  <li><b>测试口径：</b>「2,461 tests」是 README 徽章；不同 harness 的测试深度不同，不能等同于生产验证。</li>
+  <li><b>维护成本：</b>生成不是一次性的；上游软件、API、许可证变化都要回归。</li>
+  <li><b>发布节奏：</b>最新 Release v0.4.0 在 2026-06-25，最后一次 push 2026-09-22；58k star 与发布频率并不同步，选型要看具体 harness。</li>
+  <li><b>宣传与边界：</b>「ALL Software」是愿景；商业化/许可受限软件是否允许自动化，需要单独确认。</li>
+  <li><b>不是沙箱：</b>生成的 CLI 能真实写文件、调网络、操作软件；权限隔离要自己加。</li>
+</ul></div>
+<div class="note"><b>最容易被高估的地方：</b>把「能生成 CLI」当成「生成出来就能生产用」。命令组设计、错误处理、并发/锁、回滚、权限与测试，仍要逐项验收。</div>
+</section>
+
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>安全与权限</h2></div>
+<p class="sub">它把 Agent 的权限直接接到真实软件的 backend，信任边界更大。</p>
+
+<dl class="kv">
+  <dt>执行面</dt><dd>生成的 CLI 可读写项目文件、调用本机软件、访问网络；能力越完整，误操作面越大。</dd>
+  <dt>凭据</dt><dd>部分 harness 需要 token（Zoom、Sketch、Exa 等）；v0.4.0 做了 owner-only 权限、token 文件路径限制与 path traversal 修复。</dd>
+  <dt>解析</dt><dd>对 XML/SVG/ODF/MLT/MusicXML/CSL 等不可信输入，v0.4.0 改用 <code>defusedxml</code>；这是必要但不充分。</dd>
+  <dt>上游软件</dt><dd>CLI 调用的是真实 GIMP/Blender/LibreOffice；上游的宏、脚本、插件与文件解析漏洞仍会影响你。</dd>
+  <dt>Agent 技能</dt><dd>SKILL.md 与 CLI-Hub 安装链是供应链的一部分；固定版本、校验来源，不要盲目自动安装。</dd>
+  <dt>沙箱</dt><dd>项目本身不提供强隔离；在容器/低权限账号/只读挂载里跑，给最小目录与网络权限。</dd>
+  <dt>合规</dt><dd>商业软件、云服务、内容平台的自动化条款可能限制批量操作；先确认许可证与 ToS。</dd>
+</dl>
+<div class="callout bad"><span class="t">最容易被忽略</span><p>一个「生成出来的 CLI」仍然是你机器上的可执行程序，带着你的账号与文件权限。它不会因为「是 Agent 生成的」就自动安全。</p></div>
+</section>
+
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>和谁比</h2></div>
+<p class="sub">都能让 Agent 操作软件，但控制点与可靠性不同。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>方案</th><th>控制点</th><th>最强场景</th><th>主要代价</th></tr></thead>
+<tbody>
+<tr><td><b>CLI-Anything</b></td><td>生成 CLI，直接调真实 backend</td><td>有源码/API 的专业软件批量自动化</td><td>需生成/测试/维护；依赖上游</td></tr>
+<tr><td><b>MCP Server</b></td><td>厂商或社区提供的工具协议</td><td>已有稳定 API 的服务/工具</td><td>需要有人写 server；覆盖有限</td></tr>
+<tr><td><b>Computer Use / 浏览器 Agent</b></td><td>截图 + 鼠标键盘 / DOM</td><td>没有 API 的 GUI、一次性任务</td><td>脆弱、慢、token 高、难测试</td></tr>
+<tr><td><b>RPA</b></td><td>录制好的点击/流程</td><td>固定界面、固定步骤</td><td>界面一变就坏，难泛化</td></tr>
+<tr><td><b>手写脚本</b></td><td>直接调 API/SDK</td><td>少量核心软件、长期维护</td><td>每个软件重复开发</td></tr>
+<tr><td><b>Dify / n8n</b></td><td>可视化工作流节点</td><td>非工程同学编排服务</td><td>桌面软件能力弱</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>先在 CLI-Hub 里找现成 harness；没有再用 <code>/cli-anything</code> 生成。选一个非关键、可回滚的任务跑通 7 阶段，重点验收命令组、JSON、错误码、E2E 与权限。确认稳定后再接 Agent；把生成代码与测试纳入仓库，固定上游版本。</p></div>
+<p>它最适合「有源码/API、但缺 CLI」的专业软件，尤其是创意、办公、工程与数据工具。对闭源、强交互或高频变化的软件，GUI Agent 或人工流程可能反而更省事。把它当加速器，不要当万能钥匙。</p>
+</section>
+
+<section id="s11">
+<div class="sec-head"><span class="sec-no">11</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/HKUDS/CLI-Anything" target="_blank" rel="noopener noreferrer">HKUDS/CLI-Anything</a>；Apache-2.0；Python；58,070 star、5,221 fork、236 open issues（2026-11-02 GitHub API）。</li>
+  <li><span class="tag fact">事实</span> 最新 Release：<a href="https://github.com/HKUDS/CLI-Anything/releases/tag/v0.4.0" target="_blank" rel="noopener noreferrer">v0.4.0</a>（2026-06-25）；新增 30 个 CLI、CLI-Matrix、17 个修复、4 项安全加固。</li>
+  <li><span class="tag fact">事实</span> <a href="https://github.com/HKUDS/CLI-Anything/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：7 阶段流水线、18 个应用、2,461 tests 徽章、CLI-Hub、SKILL.md、预览/轨迹、支持的 Agent 平台。</li>
+  <li><span class="tag fact">事实</span> 官网/目录：<a href="https://clianything.cc/" target="_blank" rel="noopener noreferrer">clianything.cc</a>；<a href="https://hkuds.github.io/CLI-Anything/" target="_blank" rel="noopener noreferrer">CLI-Hub</a>。</li>
+  <li><span class="tag fact">事实</span> 技术报告：<a href="https://arxiv.org/abs/2606.03854" target="_blank" rel="noopener noreferrer">arXiv:2606.03854</a>（README 链接）。</li>
+  <li><span class="tag infer">推断</span> 「ALL Software」是愿景；没有源码/API 的软件不在同等覆盖范围内。</li>
+  <li><span class="tag infer">推断</span> 星标与测试数量不能替代你自己的任务验收；生成代码需按生产代码审查。</li>
+</ul>
+</section>
+<footer><span>CLI-Anything · 分析于 2026-11-02</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>
+(function(){
+  var p=document.getElementById("progress");
+  if(!p) return;
+  function update(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    p.style.width=(max>0?Math.min(100,Math.max(0,h.scrollTop/max*100)):0)+"%";
+  }
+  addEventListener("scroll",update,{passive:true});
+  update();
+})();
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  if(!links.length) return;
+  var sections=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  if(!('IntersectionObserver' in window)) return;
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var i=sections.indexOf(e.target);
+      if(i<0) return;
+      links.forEach(function(a,j){a.setAttribute('aria-current',j===i?'true':'false');});
+    });
+  },{rootMargin:'-15% 0px -70% 0px'});
+  sections.forEach(function(s){if(s)io.observe(s);});
+})();
+</script>
+</body>
+</html>

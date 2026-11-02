@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>本地 LLM 硬件路线 · Mac Studio vs 双 Jetson Thor T5000</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<style>
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checks li{display:flex;gap:10px;align-items:flex-start;font-size:13.8px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checks input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono)}
+.badge.measured{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.badge.public{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.badge.unknown{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.badge.estimate{color:var(--muted);background:var(--paper-2)}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">本地 LLM 硬件</div>
+      <div class="brand-sub">Mac vs Thor · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>速览与结论</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>配置与核验</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>决定体验的变量</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>对比矩阵</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>成本与功耗</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>场景与决策</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>被忽略的瓶颈</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>选购清单</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>争议与风险</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>来源与口径</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    两条路线 · 同一模型<br>
+    原文数据 + 规格核验<br>
+    核验 2026-10-31 · 离线
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Hardware Analysis<span class="dot"></span>2026-10-31</p>
+    <h1>本地 LLM 的<em>两条路</em></h1>
+    <p class="lede">一台 128GB/256GB 的 Mac Studio，还是两台 NVIDIA Jetson Thor T5000 组成的算力舱？表面是跑分，实质是「单人创作」与「持续交付」两种工作负载的选择。</p>
+    <div class="meta-row">
+      <span class="pill">原文立场 <b>个人玩家实测 + 推演</b></span>
+      <span class="pill">对照 <b>Mac Studio vs 双 Thor</b></span>
+      <span class="pill">关键变量 <b>容量 / 带宽 / 并发 / 散热</b></span>
+      <span class="pill">不构成购买建议</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">2<span>条</span></div><div class="l">路线：统一内存 vs 边缘集群</div></div>
+      <div class="kpi"><div class="n">256<span>GB</span></div><div class="l">两侧对外的总内存量级</div></div>
+      <div class="kpi"><div class="n">2070<span> TOPS</span></div><div class="l">单台 Thor 的 FP4 算力量级</div></div>
+      <div class="kpi"><div class="n">70–100<span> tok/s</span></div><div class="l">原文给出的单路生成速度</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">速览与结论</h2></div>
+    <p class="lead-in">这不是「谁更强」，而是「谁更适合你的负载」。原文的结论是：当本地 AI 从“偶尔跑一下”变成“持续交付”，硬件需求从「能装下模型」转向「能稳定地同时服务多个任务」。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">Mac Studio 路线</h4><p class="small" style="margin:0">统一内存、低功耗、安静、生态成熟。适合单人写作、编码、图像与日常对话。</p></div>
+      <div class="card"><h4 style="margin-top:0">双 Thor 路线</h4><p class="small" style="margin:0">算力与并发更强、可长时间满载。适合多 Agent、长上下文、团队共享。</p></div>
+      <div class="card"><h4 style="margin-top:0">真正的分水岭</h4><p class="small" style="margin:0">不是 tok/s，而是<b>并发、TTFT、长上下文与持续稳定性</b>。单人体验和多任务吞吐是两种指标。</p></div>
+    </div>
+
+    <div class="callout good">
+      <span class="t">一句话结论</span>
+      个人创作者优先 Mac Studio；小型团队 / 重度 Agent 工作流优先双 Thor（或同类算力舱）。介于两者之间的人，先问「你需要同时服务几个任务」，而不是「谁跑分高」。
+    </div>
+
+    <div class="callout warn">
+      <span class="t">读之前：原文数据的边界</span>
+      文中型号与数字（M5 Ultra、DeepSeek V4.1 Flash 1017、1M 上下文、8 并发等）部分无法从公开产品页直接核验。本报告把「原文数据」「公开规格」「推断」分开标注，避免把一张概念图当成评测结论。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">配置与核验</h2></div>
+    <p>先把原文的配置拆开，再判断哪些是实测、哪些是规格、哪些只是设想。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>项目</th><th>原文数据</th><th>状态</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>Mac Studio 内存</td><td>128GB（自费 3.8 万元）；对比图写 256GB</td><td><span class="badge measured">作者实测/报价</span></td><td>不同内存档位价格差异大，需按当期官网核对</td></tr>
+          <tr><td>Mac 型号</td><td>M5 Ultra</td><td><span class="badge unknown">待核验</span></td><td>原文标注；公开产品线世代以 Apple 当期页面为准，概念图不能当规格</td></tr>
+          <tr><td>Mac 量化</td><td>MLX 混合 2/3-bit</td><td><span class="badge measured">作者方案</span></td><td>低比特量化能省内存，但会带来质量与速度取舍</td></tr>
+          <tr><td>Mac 性能</td><td>70–97 tok/s；总吞吐 88.3 tok/s</td><td><span class="badge measured">作者数据</span></td><td>取决于模型、量化、prompt 长度与批处理，不能直接横比</td></tr>
+          <tr><td>Thor 配置</td><td>双机，各 128GB；合计 256GB</td><td><span class="badge public">规格量级</span></td><td>两台设备的内存不自动等于单机 256GB 可用；模型需分片或分别服务</td></tr>
+          <tr><td>Thor 算力</td><td>单台 2070 TOPS；273GB/s 带宽</td><td><span class="badge public">公开规格</span></td><td>与 Jetson AGX Thor 系列公开参数同量级；TOPS 是峰值，不等于实际吞吐</td></tr>
+          <tr><td>Thor 量化</td><td>NVFP4</td><td><span class="badge public">平台能力</span></td><td>需要模型与推理引擎同时支持；并非所有模型都能直接吃到</td></tr>
+          <tr><td>Thor 性能</td><td>稳定 70–90，峰值 100+ tok/s；总吞吐约 200 tok/s</td><td><span class="badge measured">作者数据</span></td><td>与并发数、上下文长度强相关</td></tr>
+          <tr><td>长上下文</td><td>1M 上下文；32K Prefill</td><td><span class="badge unknown">待核验</span></td><td>“支持”与“在目标速度下可用”是两件事；KV cache 会吃内存</td></tr>
+          <tr><td>并发</td><td>最高 8 并发</td><td><span class="badge unknown">待核验</span></td><td>取决于引擎与显存；并发越高，单路 tok/s 通常越低</td></tr>
+          <tr><td>TTFT</td><td>0.36 秒</td><td><span class="badge measured">作者数据</span></td><td>首字延迟受 prefill 长度、批大小与缓存命中影响</td></tr>
+          <tr><td>模型名</td><td>DeepSeek V4.1 Flash 1017（MoE）</td><td><span class="badge unknown">待核验</span></td><td>该命名无法与公开模型直接对应；按作者的本地构建理解</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">三个必须分开的概念</span>
+      <b>峰值算力</b>（TOPS/TFLOPS）决定理论上限；<b>内存带宽</b>决定单路生成速度；<b>并发与调度</b>决定总吞吐。三者不能互相替代。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">决定体验的六个变量</h2></div>
+    <p>同样叫“跑本地大模型”，单人对话和多人 Agent 工作流看的根本不是同一组指标。</p>
+
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">1 · 容量：能不能装下</h4><p class="small" style="margin:0">模型权重 + KV cache + 运行时开销。低比特量化能省容量，但会牺牲质量；长上下文会让 KV cache 迅速膨胀。</p></div>
+      <div class="card"><h4 style="margin-top:0">2 · 带宽：单路快不快</h4><p class="small" style="margin:0">自回归解码通常受内存带宽限制。Mac 的统一内存带宽是它的核心优势；Thor 的单机带宽是公开规格，但双机不会自动合并带宽。</p></div>
+      <div class="card"><h4 style="margin-top:0">3 · 算力：prefill 与批处理</h4><p class="small" style="margin:0">TOPS/TFLOPS 更影响长 prompt 的 prefill、批处理与多模态；对单路逐 token 解码的帮助没有想象中大。</p></div>
+      <div class="card"><h4 style="margin-top:0">4 · 并发：总吞吐</h4><p class="small" style="margin:0">单人只看 TTFT 与 tok/s；团队看并发下的总吞吐与尾延迟。并发上去，单路速度通常下降。</p></div>
+      <div class="card"><h4 style="margin-top:0">5 · 软件：能不能跑好</h4><p class="small" style="margin:0">MLX 与 CUDA/Jetson 的量化、算子、推理引擎成熟度不同。同一个模型，换框架可能差一倍。</p></div>
+      <div class="card"><h4 style="margin-top:0">6 · 持续运行：能不能一直跑</h4><p class="small" style="margin:0">功耗、散热、噪音、稳定性决定它能不能当“生产力”，而不是周末玩具。</p></div>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">原文最容易被误读的一句</span>
+      “总吞吐 200 tok/s”不是“每条都 200 tok/s”。它通常意味着多路并发下的合计吞吐；单路速度仍由带宽与模型决定。
+    </div>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">对比矩阵</h2></div>
+    <p>按“你的负载”而不是“绝对性能”来读这张表。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>Mac Studio（统一内存）</th><th>双 Thor T5000（算力舱）</th><th>更适合</th></tr></thead>
+        <tbody>
+          <tr><td>内存容量</td><td>单机 128–256GB 量级，统一寻址</td><td>双机合计 256GB，但需分片/分布式</td><td>单机大模型：Mac 更简单；更大总量：Thor 集群</td></tr>
+          <tr><td>内存带宽</td><td>统一内存高带宽，单路解码占优</td><td>单机 273GB/s 量级；双机不聚合带宽</td><td>单路速度：Mac；算力密度：Thor</td></tr>
+          <tr><td>峰值算力</td><td>GPU 规模有限</td><td>单台 2070 TOPS 量级，双台更高</td><td>长 prompt、批处理、多模态：Thor</td></tr>
+          <tr><td>单路生成</td><td>原文 70–97 tok/s</td><td>原文 70–90，峰值 100+ tok/s</td><td>接近；取决于模型与量化</td></tr>
+          <tr><td>并发吞吐</td><td>更适合 1–2 路</td><td>原文约 200 tok/s 总吞吐、最高 8 并发</td><td>多 Agent / 团队：Thor</td></tr>
+          <tr><td>长上下文</td><td>受统一内存与 KV cache 限制</td><td>原文称 1M 上下文、32K prefill</td><td>百万字文档：Thor（需核验实际速度）</td></tr>
+          <tr><td>功耗 / 噪音</td><td>低功耗、安静、一体机</td><td>双机、满载散热，功耗更高</td><td>书房/卧室：Mac</td></tr>
+          <tr><td>软件生态</td><td>MLX / llama.cpp / Ollama 成熟</td><td>CUDA / TensorRT / Jetson 栈，需适配</td><td>开箱即用：Mac；深度优化：Thor</td></tr>
+          <tr><td>运维复杂度</td><td>一台机器，低</td><td>两台设备、集群与散热，高</td><td>个人：Mac；有运维能力：Thor</td></tr>
+          <tr><td>价格</td><td>原文 3.8 万元（128GB）</td><td>原文未给；按两台 Thor 估算更高</td><td>预算敏感：Mac</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">不要只看“谁赢”</span>
+      在你的真实任务上，如果 90% 时间是单人 4K–32K 上下文，Mac 的简单与安静可能比多出来的峰值算力更值钱；如果每天有 4–8 个 Agent 并发跑长任务，双 Thor 的吞吐与稳定性才会体现。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">成本与功耗</h2></div>
+    <p>用三年总拥有成本（TCO）粗算：硬件 + 电费。Thor 价格原文未给，默认值是估算，请自行替换。</p>
+
+    <div class="calc">
+      <div class="calc-row">
+        <label>Mac 硬件（元）<input id="macCost" type="number" min="0" step="1000" value="38000"></label>
+        <label>Mac 功耗（W）<input id="macW" type="number" min="0" step="10" value="150"></label>
+        <label>每天小时<input id="hours" type="number" min="0" max="24" step="1" value="8"></label>
+      </div>
+      <div class="calc-row">
+        <label>双 Thor 硬件（元，估算）<input id="thorCost" type="number" min="0" step="1000" value="70000"></label>
+        <label>双 Thor 功耗（W）<input id="thorW" type="number" min="0" step="10" value="260"></label>
+        <label>电价（元/kWh）<input id="rate" type="number" min="0" step="0.1" value="0.6"></label>
+      </div>
+      <div class="calc-row">
+        <label>使用年限<input id="years" type="number" min="1" max="10" step="1" value="3"></label>
+        <label></label><label></label>
+      </div>
+      <div class="calc-out" aria-live="polite">
+        <div class="calc-box"><div class="k">Mac 三年 TCO</div><div class="v" id="macTco">¥39,986</div></div>
+        <div class="calc-box"><div class="k">双 Thor 三年 TCO</div><div class="v" id="thorTco">¥73,422</div></div>
+        <div class="calc-box"><div class="k">差额</div><div class="v" id="diff">¥33,436</div></div>
+        <div class="calc-box"><div class="k">Mac 电费占比</div><div class="v" id="macShare">4.9%</div></div>
+      </div>
+    </div>
+    <p class="small">公式：电费 = 功耗(W) ÷ 1000 × 每天小时 × 365 × 年限 × 电价。默认 Thor 硬件价为估算，不代表实际报价；未计网络、存储、UPS、折旧与运维人力。</p>
+  </section>
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">场景与决策</h2></div>
+
+    <div class="split">
+      <div class="card">
+        <h4 style="margin-top:0">选 Mac Studio</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>单人使用：写作、编码、图像、日常问答</li>
+          <li>上下文大多在 4K–32K，偶尔更长</li>
+          <li>需要安静、低功耗、开箱即用</li>
+          <li>不想维护集群与驱动</li>
+          <li>预算优先，且能接受低比特量化的质量取舍</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">选双 Thor 算力舱</h4>
+        <ul class="small" style="margin:0;padding-left:1.2em">
+          <li>小型团队共享，或 4–8 个 Agent 并发</li>
+          <li>长上下文、长文档、持续批处理</li>
+          <li>需要长时间满载运行与稳定散热</li>
+          <li>有人能维护 CUDA/Jetson 栈与集群</li>
+          <li>更看重总吞吐与尾延迟，而不是单机安静</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>按工作负载选</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>你的典型一天</th><th>优先</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>一个人写代码 / 写作，偶尔问模型</td><td>Mac Studio</td><td>单路体验、安静、功耗低，软件成熟</td></tr>
+          <tr><td>同时开 3–5 个 Agent 跑不同任务</td><td>双 Thor</td><td>并发与总吞吐更重要</td></tr>
+          <tr><td>每天处理几十万字文档</td><td>双 Thor（先验证）</td><td>长上下文需要容量与 prefill 算力，但 1M 是否“可用”要实测</td></tr>
+          <tr><td>做本地模型实验、频繁换量化</td><td>双 Thor / PC GPU</td><td>CUDA 生态与算力更灵活；Mac 胜在省心</td></tr>
+          <tr><td>放在卧室 / 书房，怕吵</td><td>Mac Studio</td><td>噪音与功耗是硬约束</td></tr>
+          <tr><td>给团队做共享推理服务</td><td>双 Thor / 服务器</td><td>需要并发、监控与持续运行</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">第三条路</span>
+      不要忽略「单台 Thor + Mac」或「Mac + 云 API」的混合方案：本地负责隐私与常驻小模型，重任务按需上云或交给一台算力舱。很多个人/小团队的实际最优解不是二选一。
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">被忽略的瓶颈</h2></div>
+
+    <div class="grid g2">
+      <div class="card"><h4 style="margin-top:0">带宽 vs 算力</h4><p class="small" style="margin:0">逐 token 解码吃带宽，长 prompt 的 prefill 吃算力。只堆 TOPS 不一定让聊天更快；只堆带宽也不一定扛得住并发。</p></div>
+      <div class="card"><h4 style="margin-top:0">KV cache 会吃掉容量</h4><p class="small" style="margin:0">上下文越长、并发越多，KV cache 越大。百万上下文不是“免费”的，需要算清每路的内存占用。</p></div>
+      <div class="card"><h4 style="margin-top:0">双机不是双倍</h4><p class="small" style="margin:0">两台设备做模型分片会引入跨机通信开销；单路速度不一定提升，更多是容量与并发收益。</p></div>
+      <div class="card"><h4 style="margin-top:0">量化质量</h4><p class="small" style="margin:0">2/3-bit 与 NVFP4 都能省内存，但对代码、数学、长文连贯性的影响要用自己的任务测。</p></div>
+      <div class="card"><h4 style="margin-top:0">软件成熟度</h4><p class="small" style="margin:0">同一模型在不同引擎上的吞吐差异，可能大于两台硬件的差距。</p></div>
+      <div class="card"><h4 style="margin-top:0">散热与降频</h4><p class="small" style="margin:0">短跑分不等于长稳。连续几小时满载后的频率、噪音与稳定性才是生产力指标。</p></div>
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">选购清单</h2></div>
+    <p>下单前把这几项写成数字，再决定买哪边。</p>
+
+    <ul class="checks">
+      <li><input type="checkbox" id="c1"><label for="c1">目标模型在目标量化下的实际内存占用（含 KV cache）是多少？</label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">你的 90% 请求上下文多长？最长的那 10% 有多长？</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">峰值并发是几个？每个并发的可接受单路 tok/s 与 TTFT 是多少？</label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">你需要的是单路快，还是总吞吐高？两者冲突时选哪个？</label></li>
+      <li><input type="checkbox" id="c5"><label for="c5">机器放在哪里？噪音、功耗、散热的上限是多少？</label></li>
+      <li><input type="checkbox" id="c6"><label for="c6">你能否维护驱动、推理引擎、集群与监控？</label></li>
+      <li><input type="checkbox" id="c7"><label for="c7">三年 TCO（硬件 + 电费 + 运维）是否在预算内？</label></li>
+      <li><input type="checkbox" id="c8"><label for="c8">是否先用云 API 或单台设备验证工作流，再决定扩容？</label></li>
+    </ul>
+  </section>
+
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">争议与风险</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>争议点</th><th>为什么要谨慎</th><th>怎么验证</th></tr></thead>
+        <tbody>
+          <tr><td>型号是否量产</td><td>M5 Ultra / T5000 等命名可能来自概念图或特定 SKU</td><td>以厂商当期产品页、开发套件规格为准</td></tr>
+          <tr><td>模型名与版本</td><td>“DeepSeek V4.1 Flash 1017”无法直接对应公开版本</td><td>确认模型卡、量化脚本与推理引擎版本</td></tr>
+          <tr><td>1M 上下文</td><td>“支持”不等于“在可用速度下支持”</td><td>用目标长度做 prefill + 生成实测，记录 TTFT 与内存</td></tr>
+          <tr><td>8 并发</td><td>并发数会拉低单路速度，尾延迟可能不可接受</td><td>测 P50/P95 延迟与总吞吐，而不只看峰值</td></tr>
+          <tr><td>双机扩展</td><td>跨机分片不是线性加速</td><td>对比单机 vs 双机的单路与总吞吐</td></tr>
+          <tr><td>跑分口径</td><td>prompt 长度、batch、量化、采样参数都会改变结果</td><td>公开完整配置，最好提供可复现脚本</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">最重要的提醒</span>
+      不要用别人的 tok/s 直接推导你的体验。模型、量化、上下文、并发、引擎版本，任何一个不同，结论都可能反转。
+    </div>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">来源与口径</h2></div>
+    <div class="note"><b>口径：</b>原文数据来自用户提供的一组分析帖（2026-10），其中型号、模型名与性能数字未全部经过独立验证；本报告把原文数据、公开规格与推断分开标注。未做统一 benchmark，购买前请用目标模型实测。</div>
+    <ol class="sources">
+      <li><a href="https://www.apple.com/mac-studio/" target="_blank" rel="noopener noreferrer">Apple Mac Studio</a><span class="src-note">内存档位、芯片世代与官方价格以当期页面为准。</span></li>
+      <li><a href="https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/" target="_blank" rel="noopener noreferrer">NVIDIA Jetson Thor</a><span class="src-note">Thor 系列的算力、内存与带宽规格以官方页面为准。</span></li>
+      <li><a href="https://github.com/ml-explore/mlx" target="_blank" rel="noopener noreferrer">MLX</a><span class="src-note">Apple 芯片上的机器学习框架，原文 Mac 侧使用。</span></li>
+      <li><a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener noreferrer">llama.cpp</a><span class="src-note">本地量化推理的常见基线，可用于自建对比。</span></li>
+      <li>用户提供的分析帖（2026-10）：Mac Studio 128GB、双 Thor T5000、70–100 tok/s、1M 上下文、8 并发、TTFT 0.36s 等数字。</li>
+    </ol>
+    <p class="fine">本报告为独立分析，与 Apple、NVIDIA 无隶属关系。报告文本采用 CC BY 4.0；所引用产品名称、商标与规格归其各自权利人。</p>
+  </section>
+
+  <footer>
+    <span>本地 LLM 硬件路线 · 2026-10-31 · 单文件离线版</span>
+    <span>先算负载，再选硬件</span>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" type="button" id="topBtn" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - docEl.clientHeight;
+    var ratio = max > 0 ? docEl.scrollTop / max : 0;
+    progress.style.width = (ratio * 100).toFixed(2) + "%";
+    topBtn.classList.toggle("show", docEl.scrollTop > 600);
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var macCost = document.getElementById("macCost");
+  var macW = document.getElementById("macW");
+  var thorCost = document.getElementById("thorCost");
+  var thorW = document.getElementById("thorW");
+  var hours = document.getElementById("hours");
+  var rate = document.getElementById("rate");
+  var years = document.getElementById("years");
+  var macTco = document.getElementById("macTco");
+  var thorTco = document.getElementById("thorTco");
+  var diff = document.getElementById("diff");
+  var macShare = document.getElementById("macShare");
+
+  function num(el) { var n = Number(el.value); return isFinite(n) && n >= 0 ? n : 0; }
+  function money(n) { return "¥" + Math.round(n).toLocaleString("zh-CN"); }
+
+  function calc() {
+    var hwMac = num(macCost), wMac = num(macW);
+    var hwThor = num(thorCost), wThor = num(thorW);
+    var h = Math.min(24, num(hours)), r = num(rate), y = Math.max(1, num(years));
+    var eMac = wMac / 1000 * h * 365 * y * r;
+    var eThor = wThor / 1000 * h * 365 * y * r;
+    var tMac = hwMac + eMac;
+    var tThor = hwThor + eThor;
+    macTco.textContent = money(tMac);
+    thorTco.textContent = money(tThor);
+    diff.textContent = money(Math.abs(tThor - tMac));
+    macShare.textContent = (tMac > 0 ? (eMac / tMac * 100).toFixed(1) : "0.0") + "%";
+  }
+
+  [macCost, macW, thorCost, thorW, hours, rate, years].forEach(function (el) {
+    el.addEventListener("input", calc);
+  });
+  calc();
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>

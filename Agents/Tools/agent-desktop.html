@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Vercel Labs agent-desktop 拆解：用操作系统无障碍树替代截图识别的桌面 computer-use，含 ref 语义、平台能力、接入方式、复现步骤、安全边界与选型。">
+<title>agent-desktop 拆解 · 不靠截图的桌面 Computer Use</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05), 0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:
+    radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),
+    radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+
+.topbar{
+  position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;
+  padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);
+  background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px;
+}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+
+.wrap{max-width:920px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+h4{font-size:13.5px;margin:18px 0 4px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+.panel ul{margin:6px 0 0;padding-left:1.2em;font-size:14px;color:var(--ink-2)}
+.panel li{margin:4px 0}
+
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+
+table{width:100%;border-collapse:collapse;font-size:13.2px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;margin:0 0 14px}
+td b{font-weight:650}
+
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.steps li{counter-increment:s;position:relative;padding:12px 16px 12px 46px;background:var(--surface);border:1px solid var(--line);border-radius:11px;font-size:13.8px;color:var(--ink-2);line-height:1.72}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:11px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid #cfd9f3;color:var(--accent);font-family:var(--mono);font-size:11px;display:grid;place-items:center;line-height:1}
+.steps li b{color:var(--ink)}
+
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:920px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+
+@media (max-width:640px){
+  .topbar{flex-wrap:wrap;gap:8px 14px}
+  .topbar .crumb{order:3;flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs{display:none}body{background:#fff}.kpi,.panel,.figure{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../../README.md">← 仓库索引</a>
+  <span class="crumb">Tools / agent-desktop · 2026-11-01</span>
+  <nav class="pager"><a href="#why">为什么不用截图</a><a href="#use">上手</a><a href="#limits">边界</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>Vercel Labs · Rust</div>
+  <h1>agent-desktop<br><em>让 Agent 读 UI，而不是猜像素</em></h1>
+  <p class="lede">传统 computer-use 是“截屏 → 视觉模型 → 猜坐标点击”。agent-desktop 换了一条路：直接读操作系统的无障碍树，拿到每个按钮、输入框的结构化标识，像调 API 一样操作桌面软件。</p>
+
+  <div class="meta-row">
+    <span class="pill">Apache-2.0</span>
+    <span class="pill">Rust · macOS / Windows / Linux</span>
+    <span class="pill">v1.0.2 · 2026-10-30</span>
+    <span class="pill">60 个命令</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">7.3K<span>stars</span></div><div class="l">2026-11-01 抓取</div></div>
+    <div class="kpi"><div class="n">535<span>forks</span></div><div class="l">社区活跃度参考</div></div>
+    <div class="kpi"><div class="n">56<span>可执行命令</span></div><div class="l">另 4 个等 daemon</div></div>
+    <div class="kpi"><div class="n">0<span>截图依赖</span></div><div class="l">核心循环不需要像素</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>它是什么</h2>
+    <p class="sub">一个 CLI + C 库，不是桌面客户端，也不是模型。它只做一件事：把“看屏幕、点按钮”变成结构化的读与写。</p>
+
+    <p>Agent 的工作循环被压缩成三步：<b>snapshot → 对 ref 执行动作 → 再 snapshot 验证</b>。每一步都返回一个 JSON 信封（<code>ok</code> + <code>data</code> 或 <code>error</code>），错误里带机器可读的 <code>code</code>、<code>disposition</code> 和 <code>suggestion</code>，agent 可以据此判断“能不能安全重试”。</p>
+
+    <pre><code><span class="c"># 1. 观察：只取可交互元素，每个带 ref</span>
+agent-desktop snapshot --app Finder -i
+
+<span class="c"># 2. 动作：ref 是快照限定的，裸 @e8 会被拒绝</span>
+agent-desktop click @s8f3k2p9:e8
+
+<span class="c"># 3. 再观察，确认 UI 真的变了</span>
+agent-desktop snapshot --app Finder -i</code></pre>
+
+    <p>返回值长这样（已截断）：</p>
+    <pre><code>{
+  <span class="s">"version"</span>: <span class="s">"2.5"</span>,
+  <span class="s">"ok"</span>: true,
+  <span class="s">"command"</span>: <span class="s">"snapshot"</span>,
+  <span class="s">"data"</span>: {
+    <span class="s">"app"</span>: <span class="s">"Finder"</span>,
+    <span class="s">"snapshot_id"</span>: <span class="s">"s8f3k2p9"</span>,
+    <span class="s">"ref_count"</span>: 59,
+    <span class="s">"complete"</span>: true,
+    <span class="s">"tree"</span>: {
+      <span class="s">"role"</span>: <span class="s">"window"</span>,
+      <span class="s">"children"</span>: [
+        { <span class="s">"role"</span>: <span class="s">"treeitem"</span>, <span class="s">"name"</span>: <span class="s">"Documents"</span>,
+          <span class="s">"ref_id"</span>: <span class="s">"@s8f3k2p9:e8"</span>, <span class="s">"available_actions"</span>: [<span class="s">"Click"</span>] }
+      ]
+    }
+  }
+}</code></pre>
+  </section>
+
+  <section id="why">
+    <h2><span class="no">02</span>为什么不用截图</h2>
+    <p class="sub">两种方案解决的是同一个问题，但失败模式完全不同。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>维度</th><th>截屏 + 视觉模型</th><th>无障碍树 + ref</th></tr></thead>
+        <tbody>
+          <tr><td><b>定位依据</b></td><td>像素坐标；分辨率、缩放、主题一变就漂</td><td>语义节点与角色；坐标只用于边界，不用于命中</td></tr>
+          <tr><td><b>一次动作的成本</b></td><td>一张图 + 视觉推理</td><td>一次树遍历 + JSON 解析（不需要模型）</td></tr>
+          <tr><td><b>失败可诊断性</b></td><td>“点空了”，很难说清为什么</td><td><code>STALE_REF</code> / <code>AMBIGUOUS_TARGET</code>，带候选窗口和建议</td></tr>
+          <tr><td><b>可重试性</b></td><td>重试可能重复点击错误位置</td><td>错误带 <code>disposition.retry</code>，明确是否安全重试</td></tr>
+          <tr><td><b>盲区</b></td><td>自绘 UI、游戏、远程桌面也能“看”</td><td>完全自绘 / 无无障碍信息的界面读不到</td></tr>
+          <tr><td><b>隐私</b></td><td>整屏像素进入模型上下文</td><td>只传结构化字段；但字段本身也可能含敏感内容</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">关键设计：ref 属于快照</span>
+      <p><code>@s8f3k2p9:e8</code> 里的 <code>s8f3k2p9</code> 是快照 ID。UI 变了，旧 ref 会返回 <code>STALE_REF</code>，而不是“悄悄点到同一位置的新元素”。这是它比坐标点击安全的核心原因——宁可失败，也不误操作。</p>
+    </div>
+  </section>
+
+  <section id="arch">
+    <h2><span class="no">03</span>实现结构</h2>
+    <p class="sub">Rust 写核心与三个平台适配器；同一套语义，不同平台各自映射。</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 780 330" role="img" aria-label="agent-desktop 架构示意图">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/></marker></defs>
+
+        <rect x="24" y="16" width="300" height="52" rx="9" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="40" y="37" font-size="12" fill="#17181b">Agent（Claude Code / Codex / 自建）</text>
+        <text x="40" y="54" font-size="10.5" fill="#6f7279">通过 CLI 或 FFI 调用，循环留在 agent 里</text>
+
+        <line x1="174" y1="68" x2="174" y2="88" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="24" y="88" width="300" height="56" rx="9" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="40" y="109" font-size="12" fill="#17181b">agent-desktop CLI（Rust）</text>
+        <text x="40" y="126" font-size="10.5" fill="#6f7279">60 命令 · JSON 信封 · session / trace</text>
+
+        <line x1="174" y1="144" x2="174" y2="164" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="24" y="164" width="300" height="56" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="40" y="185" font-size="12" fill="#17181b">core（平台无关语义）</text>
+        <text x="40" y="202" font-size="10.5" fill="#6f7279">role / state / name 证据 · ref 分配 · 错误码</text>
+
+        <line x1="324" y1="192" x2="424" y2="192" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="424" y="96" width="150" height="46" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="438" y="115" font-size="11.5" fill="#17181b">macOS</text>
+        <text x="438" y="131" font-size="10" fill="#6f7279">Accessibility API</text>
+
+        <rect x="590" y="96" width="160" height="46" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="604" y="115" font-size="11.5" fill="#17181b">Windows</text>
+        <text x="604" y="131" font-size="10" fill="#6f7279">UI Automation</text>
+
+        <rect x="424" y="152" width="150" height="46" rx="8" fill="#efece4" stroke="#e3ded3"/>
+        <text x="438" y="171" font-size="11.5" fill="#17181b">Linux</text>
+        <text x="438" y="187" font-size="10" fill="#6f7279">AT-SPI</text>
+
+        <rect x="590" y="152" width="160" height="46" rx="8" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="604" y="171" font-size="11.5" fill="#17181b">C ABI（FFI）</text>
+        <text x="604" y="187" font-size="10" fill="#6f7279">Python / Go / Swift / Node</text>
+
+        <rect x="424" y="222" width="326" height="52" rx="8" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="438" y="242" font-size="11.5" fill="#17181b">JSON 信封 + 错误语义</text>
+        <text x="438" y="259" font-size="10" fill="#6f7279">code · disposition.retry · suggestion · exit code</text>
+
+        <text x="24" y="252" font-size="11" fill="#6f7279">默认 headless：</text>
+        <text x="24" y="269" font-size="11" fill="#6f7279">ref 动作走无障碍 API，</text>
+        <text x="24" y="286" font-size="11" fill="#6f7279">不移动指针、不抢焦点。</text>
+        <text x="24" y="309" font-size="11" fill="#9a5712">--headed 才允许物理输入。</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>平台差异被收在适配器里，core 只认统一的 role / state / name 词表。这也是它能同时做 CLI、FFI 和跨平台的原因。</p>
+
+    <h3>四个值得注意的工程细节</h3>
+    <ul class="check">
+      <li><b>证据三态</b>：每个属性是 <code>Known</code> / <code>Absent</code> / <code>Unknown</code>，不把“读失败”当成“没有”。</li>
+      <li><b>渐进遍历</b>：<code>snapshot --skeleton</code> 先给浅层，再用 <code>--root @ref</code> 钻进某个区域，密集应用（Slack）不用一次拉整棵树。</li>
+      <li><b>Web 包装层跳过</b>：Chromium / Electron 会套很多无名容器，跳过它们只省“逻辑深度”，避免树被撑爆。</li>
+      <li><b>命令宿主</b>：macOS 上快照复用一个私有 host，保留原生对象，避免“同一 identifier 的行被删除后静默解析到另一行”。</li>
+    </ul>
+  </section>
+
+  <section id="platforms">
+    <h2><span class="no">04</span>三个平台，能力不一样</h2>
+    <p class="sub">官方能力表里，Linux 的窗口管理与通知支持明显更窄；跨平台部署前先看这张表。</p>
+
+    <div class="tabs" role="tablist" aria-label="平台能力">
+      <button class="tab" role="tab" id="tab-mac" aria-controls="panel-mac" aria-selected="true">macOS</button>
+      <button class="tab" role="tab" id="tab-win" aria-controls="panel-win" aria-selected="false">Windows</button>
+      <button class="tab" role="tab" id="tab-lin" aria-controls="panel-lin" aria-selected="false">Linux</button>
+    </div>
+
+    <div class="panel" id="panel-mac" role="tabpanel" aria-labelledby="tab-mac">
+      <ul>
+        <li>无障碍树、点击/输入、鼠标、截图、剪贴板、窗口管理、通知全部支持</li>
+        <li>需要授予 <b>Accessibility 权限</b>：<code>agent-desktop permissions --guide</code></li>
+        <li>系统菜单栏类 surface（<code>open-system-surface</code>）标记为 Planned</li>
+        <li><code>TMPDIR</code> 必须归当前用户所有且权限 <code>0700</code>（系统默认目录满足）</li>
+      </ul>
+    </div>
+    <div class="panel" id="panel-win" role="tabpanel" aria-labelledby="tab-win" hidden>
+      <ul>
+        <li>无障碍树、点击/输入、鼠标、截图、剪贴板、窗口管理、通知全部支持</li>
+        <li>与终端同完整性级别的应用<b>无需授权</b>；提权应用另说</li>
+        <li>PowerShell 里所有 ref 必须加引号：裸 <code>@token</code> 是 splatting 运算符</li>
+        <li>系统托盘 / Action Center 等 surface 支持</li>
+      </ul>
+    </div>
+    <div class="panel" id="panel-lin" role="tabpanel" aria-labelledby="tab-lin" hidden>
+      <ul>
+        <li>无障碍树、点击/输入走 <b>AT-SPI</b>，需要 <code>at-spi2-core</code> 和图形会话</li>
+        <li>鼠标输入需要 X11 + <code>--headed</code>；Wayland 截图走 portal</li>
+        <li>剪贴板在 Wayland 下需要 <code>wl-clipboard</code></li>
+        <li>应用/窗口管理只覆盖启动、列举与 X11 窗口控制；通知限 GNOME Shell</li>
+      </ul>
+    </div>
+
+    <div class="callout warn" style="margin-top:16px">
+      <span class="t">部署前先跑一句</span>
+      <p><code>agent-desktop skills get platform</code> 会按当前二进制打印完整能力表。别照 README 的通用表做产品承诺——各发行版、桌面环境和 Wayland/X11 的差异很大。</p>
+    </div>
+  </section>
+
+  <section id="use">
+    <h2><span class="no">05</span>怎么接进现有 agent</h2>
+    <p class="sub">它不绑定某个 agent 框架：CLI、skill、FFI 三条路，按你的宿主选。</p>
+
+    <h3>路线 A：CLI + skill（最快）</h3>
+    <pre><code>npm install -g agent-desktop
+agent-desktop version
+
+<span class="c"># macOS 授权</span>
+agent-desktop permissions --guide
+
+<span class="c"># 让 agent 自己学怎么用（文档内嵌在二进制里，版本匹配）</span>
+agent-desktop skills get desktop
+agent-desktop skills get platform
+
+<span class="c"># 装成 skills.sh 技能</span>
+npx skills add https://github.com/vercel-labs/agent-desktop --skill agent-desktop</code></pre>
+    <p>或在 <code>AGENTS.md</code> 里写一句：让 agent 首次使用前先读 <code>skills get desktop</code> 和 <code>skills get platform</code>。</p>
+
+    <h3>路线 B：FFI（高频调用）</h3>
+    <p>每次 CLI 调用都有进程启动成本；高频场景用 C ABI 在进程内调用：</p>
+    <pre><code><span class="k">import</span> ctypes
+lib = ctypes.CDLL(<span class="s">"./lib/libagent_desktop_ffi.dylib"</span>)
+lib.ad_adapter_create.restype = ctypes.c_void_p
+lib.ad_adapter_destroy.argtypes = [ctypes.c_void_p]
+<span class="k">assert</span> lib.ad_init(6) == 0   <span class="c"># ABI 大版本要匹配</span>
+adapter = lib.ad_adapter_create()
+lib.ad_adapter_destroy(adapter)</code></pre>
+
+    <h3>路线 C：包一层 MCP（需要自己做）</h3>
+    <p>仓库 topics 里有 <code>mcp</code>，但当前 README 与 60 个命令里<b>没有 MCP server 条目</b>。如果你的 agent 只吃 MCP，需要自己把 <code>snapshot</code> / <code>click</code> / <code>type</code> 包成几个工具；这层很薄，但要自己处理 ref 过期与重试语义。</p>
+
+    <div class="callout">
+      <span class="t">接入时的最小契约</span>
+      <ul>
+        <li>把 <code>snapshot</code> 的 <code>data.tree</code> 直接给模型，别转成自然语言描述</li>
+        <li>只对 <code>available_actions</code> 里有的动作下手</li>
+        <li>收到 <code>STALE_REF</code> / <code>AMBIGUOUS_TARGET</code> 就重新 snapshot，不要猜</li>
+        <li><code>error.disposition.retry === "safe"</code> 才自动重试</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="repro">
+    <h2><span class="no">06</span>十分钟跑通</h2>
+    <ol class="steps">
+      <li><b>装</b>：<code>npm install -g agent-desktop</code>；npm 被禁用 install script 时，启动器会提示手动链接原生二进制的命令。</li>
+      <li><b>授权</b>：macOS 跑 <code>permissions --guide</code>；Linux 装 <code>at-spi2-core</code>；Windows 同完整性级别通常免授权。</li>
+      <li><b>列应用</b>：<code>agent-desktop list-apps</code>，确认名字。</li>
+      <li><b>快照</b>：<code>snapshot --app Finder -i</code>，看 <code>ref_count</code> 和 <code>complete</code>。</li>
+      <li><b>动作</b>：<code>click @snapshot:eN</code>，再 snapshot 验证变化。</li>
+      <li><b>密集应用</b>：先 <code>--skeleton</code>，再 <code>--root @ref</code> 钻进去。</li>
+      <li><b>收尾</b>：<code>session</code> / <code>trace</code> 查看本次调用链；敏感内容别留在日志里。</li>
+    </ol>
+
+    <div class="callout warn">
+      <span class="t">常见失败与处理</span>
+      <ul>
+        <li><code>INVALID_ARGS</code>：用了裸 <code>@e8</code>；改成快照限定 ref。</li>
+        <li><code>AMBIGUOUS_TARGET</code>：多个窗口匹配；用 <code>--window-id</code> 指定。</li>
+        <li><code>STALE_REF</code>：UI 变了；重新 snapshot，别重试旧 ref。</li>
+        <li>动作没生效：检查是不是 headless；物理输入需要 <code>--headed</code>。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="security">
+    <h2><span class="no">07</span>安全与隐私：权限就是全部权限</h2>
+    <p class="sub">无障碍权限在操作系统层面等于“可以读取并操作几乎所有界面”。这不是普通 CLI 的权限模型。</p>
+
+    <ul class="check">
+      <li><b>最小暴露面</b>：只授予需要操作的应用；不要在存放生产凭据的机器上放开。</li>
+      <li><b>快照可能含隐私</b>：树里的文本、剪贴板、截图、命令输出都可能含敏感内容；不要把快照贴进公开 issue 或日志。</li>
+      <li><b>默认 headless 是安全特性</b>：ref 动作不改焦点、不动指针；只有 <code>--headed</code> 才做物理输入。</li>
+      <li><b>可选 JEV helper 会调模型</b>：它把屏幕描述发给配置的模型服务，和原生 CLI 是两回事；不用就别装。</li>
+      <li><b>隔离运行</b>：把 agent 放进独立用户 / 虚拟机 / 专用桌面会话，出问题时可整体销毁。</li>
+      <li><b>审计</b>：用 <code>trace</code> 记录动作序列；对“点击、输入、剪贴板”单独打点。</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="t">一句话</span>
+      <p>它能点“删除”、能读剪贴板里的密码、能在聊天窗口里替你发消息。把它当成“有手的远程同事”，而不是“一个截图工具”。</p>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2><span class="no">08</span>边界与判断</h2>
+
+    <h3>六个已知限制</h3>
+    <ul class="check">
+      <li><b>读不到完全自绘的界面</b>：游戏、Canvas 应用、部分远程桌面没有无障碍语义，还是得回退到截图。</li>
+      <li><b>树的质量取决于应用</b>：同一套 API，Slack 和某个老 ERP 暴露的信息量可能差一个量级。</li>
+      <li><b>Linux 能力不完整</b>：窗口管理与通知覆盖窄，Wayland 下还要额外依赖。</li>
+      <li><b>四个命令暂不可用</b>：<code>key-down</code> / <code>key-up</code> / <code>mouse-down</code> / <code>mouse-up</code> 在 daemon 能释放按键前拒绝执行。</li>
+      <li><b>没有现成 MCP server</b>：只吃 MCP 的宿主需要自己包一层。</li>
+      <li><b>基准是合成的</b>：仓库里的 locator benchmark 用合成 Chromium/Electron 树，官方明确不声称绝对原生调用数；真实应用表现要自己测。</li>
+    </ul>
+
+    <h3>什么时候选它</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>场景</th><th>建议</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>操作原生桌面应用（Finder、Excel、设置）</td><td><b>首选</b></td><td>语义明确、动作可验证、无需视觉模型</td></tr>
+          <tr><td>Electron / Chromium 应用</td><td><b>可用</b></td><td>有无障碍树，但注意包装层与深度预算</td></tr>
+          <tr><td>网页自动化</td><td>用 agent-browser</td><td>浏览器协议比桌面树更直接，同lab 的另一个项目</td></tr>
+          <tr><td>游戏 / 自绘 UI</td><td>回退截图方案</td><td>没有可用语义节点</td></tr>
+          <tr><td>无头服务器批处理</td><td>不适合</td><td>需要图形会话与无障碍服务</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">我的判断</span>
+      <p>它最大的价值不是“又一个 computer use”，而是把桌面操作变成了<b>可断言、可重试、可审计</b>的接口。对做 agent 工程的人来说，ref 快照与错误语义这两点比“能不能点到”更值得抄。代价是它把可靠性押在应用的无障碍实现上——这既是优势，也是最现实的限制。</p>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">09</span>来源</h2>
+    <ul class="sources">
+      <li>仓库与 README：<a href="https://github.com/vercel-labs/agent-desktop" rel="noreferrer">github.com/vercel-labs/agent-desktop</a></li>
+      <li>发布记录：<a href="https://github.com/vercel-labs/agent-desktop/releases" rel="noreferrer">Releases</a>（v1.0.0 2026-10-27/28，v1.0.2 2026-10-30）</li>
+      <li>概念词表：<a href="https://github.com/vercel-labs/agent-desktop/blob/main/CONCEPTS.md" rel="noreferrer">CONCEPTS.md</a>（快照、ref、证据三态、Web 包装层）</li>
+      <li>FAQ：<a href="https://github.com/vercel-labs/agent-desktop/blob/main/docs/faq.md" rel="noreferrer">docs/faq.md</a></li>
+      <li>基准：<a href="https://github.com/vercel-labs/agent-desktop/tree/main/benchmarks/locator-resolution" rel="noreferrer">benchmarks/locator-resolution</a>（合成树，非绝对原生调用数）</li>
+      <li>npm：<a href="https://www.npmjs.com/package/agent-desktop" rel="noreferrer">agent-desktop</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">检索与核对于 2026-11-01。Star 数与发布信息为当日快照，会变化。文中“我的判断”部分为分析，不是官方说法。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Tools · agent-desktop 拆解 · 2026-11-01 · <a href="../../README.md">仓库索引</a></div>
+  <span>本页为独立分析，与 Vercel 无隶属关系；命令与能力以仓库 README 与二进制内嵌文档为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

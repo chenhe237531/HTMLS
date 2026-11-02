@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%2324518a'/%3E%3Cpath d='M4 6h8M4 9h6' stroke='%23fff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="oh-my-pi 的架构、原生 LSP/DAP、子 Agent、advisor、多 provider 路由与 OMP Studio 社区桌面壳核验。">
+<title>oh-my-pi / OMP Studio · 终端 Agent 与 IDE 级 Harness 拆解（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 16px}
+.metric{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:12px 14px}
+.metric b{display:block;font-size:22px;line-height:1.25;letter-spacing:-.01em}
+.metric span{font-size:11.5px;color:var(--muted)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="./index.html">← 工具调研</a>
+<span class="crumb">Tools / oh-my-pi · OMP Studio</span>
+<span class="date">2026-11-02 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>终端编码 Agent / Harness</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>oh-my-pi / OMP Studio<br><em>把 IDE 的能力塞进终端 Agent</em></h1>
+<p class="lede">官方 oh-my-pi 是一个终端编码 Agent，真正的卖点不是聊天，而是把 LSP、DAP、原生 grep/glob、子 Agent、advisor 与多 provider 路由做成 harness。OMP Studio 不是官方产品，而是多个社区桌面壳共用的名字；两者要分开评估。</p>
+<div class="pills">
+<span class="pill"><b>MIT</b></span>
+<span class="pill">TypeScript + Rust</span>
+<span class="pill"><b>37,470</b> star</span>
+<span class="pill">v18.15.0</span>
+<span class="pill">60+ provider</span>
+<span class="pill">macOS / Linux / Windows</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>以终端为主、希望 Agent 能直接做 LSP 重命名、DAP 调试与结构化编辑</li>
+<li>需要多 provider / 订阅混搭、子 Agent 并行、第二模型审查</li>
+<li>愿意接受高频升级、较大二进制与项目级扩展信任</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>只想要一个稳定、轻量、长期不变的 CLI</li>
+<li>不愿让项目内的扩展、hooks、MCP 配置自动进入信任边界</li>
+<li>把「OMP Studio」当成官方桌面客户端来采购</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么</a></li>
+<li><a href="#s02">02 · 它解决的具体问题</a></li>
+<li><a href="#s03">03 · 运作方式</a></li>
+<li><a href="#s04">04 · 上手</a></li>
+<li><a href="#s05">05 · 日常流程</a></li>
+<li><a href="#s06">06 · 强项</a></li>
+<li><a href="#s07">07 · 边界与代价</a></li>
+<li><a href="#s08">08 · 安全与权限</a></li>
+<li><a href="#s09">09 · OMP Studio 与 GUI 生态</a></li>
+<li><a href="#s10">10 · 结论</a></li>
+<li><a href="#s11">11 · 核验与来源</a></li>
+</ol><div class="toc-note">你给的链接是官方 <code>can1357/oh-my-pi</code>；OMP Studio 是社区项目，GitHub 上至少有两个同名仓库，官方仓库没有名为 OMP Studio 的一等产品。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
+<p class="sub">Pi 的重型分支：终端编码 Agent + 原生工具 + IDE 协议 + 多入口 SDK。</p>
+
+<p>oh-my-pi（命令 <code>omp</code>）是 <a href="https://github.com/badlogic/pi-mono" target="_blank" rel="noopener noreferrer">Pi</a> 的分支，由 Stencil Labs 维护，定位是「a coding agent with the IDE wired in」。它不是通用 Agent 框架，而是把「在真实仓库里读写、搜索、重构、调试、审查、提交」做成一整套 harness。</p>
+
+<div class="metrics">
+  <div class="metric"><b>37,470</b><span>GitHub star</span></div>
+  <div class="metric"><b>4,216</b><span>fork</span></div>
+  <div class="metric"><b>4,437</b><span>open issues</span></div>
+  <div class="metric"><b>v18.15.0</b><span>2026-11-01</span></div>
+</div>
+
+<p>README 给出的硬指标：<b>60+ provider</b>、<b>31 个内置工具</b>、<b>14 个 LSP 操作</b>、<b>28 个 DAP 操作</b>、约 <b>8 万行 Rust core</b>。它同时提供 TUI、单次执行、Node SDK、RPC、ACP 四种入口。</p>
+
+<div class="callout warn"><span class="t">OMP Studio 不是官方产品</span><p>官方仓库里没有名为 OMP Studio 的一等桌面应用。官方提供的是 TUI、Agent Hub（<code>Alt+A</code>）、本地统计包 <code>@oh-my-pi/omp-stats</code> 与 collab 浏览器观看。<b>OMP Studio</b> 是社区桌面壳的名字，目前至少有两个不同仓库：DawnJson/omp-studio 与 dylanmccavitt/omp-studio。详见第 09 节。</p></div>
+
+<div class="grid2">
+  <div class="panel pos"><h3>它负责</h3><ul>
+    <li>在仓库里读、搜、改、重构、跑命令</li>
+    <li>LSP 诊断/重命名与 DAP 断点调试</li>
+    <li>子 Agent 并行、结果聚合、第二模型审查</li>
+    <li>多 provider/订阅路由、记忆、技能、MCP</li>
+  </ul></div>
+  <div class="panel neg"><h3>它不负责</h3><ul>
+    <li>替你做产品决策或保证合并安全</li>
+    <li>提供官方 GUI（社区 Studio 另计）</li>
+    <li>默认给你一个安全沙箱</li>
+    <li>保证第三方 benchmark 在你的仓库复现</li>
+  </ul></div>
+</div>
+</section>
+
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>它解决的具体问题</h2></div>
+<p class="sub">它赌的是「harness 决定模型发挥」，而不是「换更大的模型」。</p>
+
+<ul>
+  <li><b>编辑格式拖累模型：</b>str_replace 一类格式容易让模型在空白、上下文、stale file 上反复失败；omp 用 hashline（内容哈希锚点）减少重试。</li>
+  <li><b>工具延迟：</b>很多 Agent 每次 grep/glob 都 fork-exec 系统二进制；omp 把 ripgrep、glob、find、shell 内建进进程。</li>
+  <li><b>缺少 IDE 上下文：</b>普通 Agent 看不见类型错误、重命名影响面、调试器栈帧；omp 把 LSP/DAP 接进工具面。</li>
+  <li><b>子 Agent 协调：</b>并行任务需要隔离 worktree、结构化返回、可中断/复活；omp 的 task/Agent Hub 针对这个。</li>
+  <li><b>模型锁定：</b>不同任务适合不同模型；omp 用 9 个角色与 fallback chain 路由。</li>
+  <li><b>上下文与记忆：</b>会话压缩、持久记忆、技能沉淀，避免每次从零开始。</li>
+</ul>
+<div class="callout"><span class="t">它的核心主张</span><p>模型能力不是唯一变量；读、搜、改、验证的工具质量与提示适配，会把同一个模型的表现拉开数倍。README 的数字是厂商自测，方向值得看，绝对值要自己复现。</p></div>
+</section>
+
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
+<p class="sub">TypeScript 外壳 + Rust 原生层 + 多入口协议；重活在进程内完成。</p>
+
+<h3>原生层</h3>
+<ul>
+  <li><b>六个 Rust crate：</b><code>pi-natives</code>、<code>pi-shell</code>、<code>pi-ast</code>、<code>pi-iso</code>、<code>pi-voice</code>、<code>pi-walker</code>；通过 N-API addon 暴露给 TypeScript。</li>
+  <li><b>内建工具：</b>grep/glob/find、bash（内建数十个 coreutils/常用工具；README 不同段落写 58 与 46 两个口径）、AST、语法高亮、PTY、桌面控制、图片解码、token 计数。</li>
+  <li><b>平台：</b>macOS / Linux / Windows，x64 与 arm64；x64 带 AVX2 与 baseline 双二进制；Alpine/musl 需要 <code>libstdc++</code>/<code>libgcc</code>。</li>
+</ul>
+
+<h3>模型路由</h3>
+<ul>
+  <li><b>9 个角色：</b><code>default</code>、<code>smol</code>、<code>slow</code>、<code>plan</code>、<code>commit</code>、<code>vision</code>、<code>task</code>、<code>advisor</code>、<code>tiny</code>；按意图把请求分给不同模型。</li>
+  <li><b>60+ provider：</b>前沿 API、coding plan 订阅、本地 Ollama/LM Studio/vLLM、以及自定义 OpenAI-compatible provider。</li>
+  <li><b>可靠性：</b>fallback chains、path-scoped 模型集合、按 provider 轮换 API key、按凭证退避。</li>
+</ul>
+
+<h3>工具与编辑</h3>
+<ul>
+  <li><b>read/write/edit：</b>一个路径接口覆盖文件、目录、压缩包、SQLite、PDF、notebook、URL、<code>ssh://</code> 与内部 scheme。</li>
+  <li><b>hashline：</b>模型指向内容哈希锚点而不是重抄整行；stale anchor 会在写盘前被拒绝。</li>
+  <li><b>AST：</b><code>ast_grep</code> 查询、<code>ast_edit</code> 预览后确认；覆盖 50+ tree-sitter 语法。</li>
+  <li><b>eval：</b>持久 Python/JS cell，能从 cell 内回调 Agent 工具；适合数据处理与图表。</li>
+  <li><b>LSP/DAP：</b>诊断、导航、符号、重命名、code action；lldb/dlv/debugpy 断点、步进、栈、变量。</li>
+  <li><b>浏览器/桌面：</b>headless Chromium 或接管现有 Chrome；桌面窗口、截图、原生输入、AX 树、剪贴板。</li>
+</ul>
+
+<h3>子 Agent 与审查</h3>
+<ol class="steps">
+  <li><b>task 扇出：</b>把任务拆给多个 worker，每个 worker 有独立工具面，必要时在隔离 worktree 中运行。</li>
+  <li><b>Agent Hub：</b><code>Alt+A</code> 查看每个子 Agent 的活动、用量、实时 transcript；可发消息、暂停、复活、终止。</li>
+  <li><b>advisor：</b>第二模型读取主 Agent 每一轮，以内联 note 形式提出 concern 或 blocker；不抢主 Agent 的控制权。</li>
+  <li><b>review：</b><code>/review</code> 用并行 reviewer 子 Agent 扫分支/提交/未提交改动，按 P0–P3 排序并给结论。</li>
+  <li><b>collab：</b><code>/collab</code> 生成链接/二维码，队友可只读观看或加入同一会话；帧在客户端加密。</li>
+</ol>
+
+<h3>入口与互操作</h3>
+<ul>
+  <li><b>TUI：</b><code>omp</code>；单次：<code>omp -p</code>；SDK：<code>@oh-my-pi/pi-coding-agent</code>；RPC：<code>omp --mode rpc</code>；编辑器：<code>omp acp</code>（Zed 等）。</li>
+  <li><b>规则迁移：</b>读取 <code>.claude</code>、<code>.cursor</code>、<code>.windsurf</code>、<code>.gemini</code>、<code>.codex</code>、<code>.cline</code>、<code>.github/copilot</code>、<code>.vscode</code> 的已有规则/技能/MCP。</li>
+  <li><b>内部 scheme：</b><code>pr://</code>、<code>issue://</code>、<code>agent://</code>、<code>skill://</code>、<code>ssh://</code> 等 16 种，统一走 FS 形状的工具。</li>
+</ul>
+
+<div class="note"><b>厂商自测数字：</b>README 称 Grok Code Fast 1 在编辑格式修正后从 6.7% 提升到 68.3%，Gemini 3 Flash +5pp，Grok 4 Fast 输出 token 减少 61%，MiniMax pass rate 2.1×。这些是 Stencil Labs 的 harness 对比，不是独立复现；选型时应拿自己的仓库跑回归。</div>
+</section>
+
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
+<p class="sub">安装很快，真正的工作量在模型登录、provider 选择和项目信任配置。</p>
+
+<pre><code># macOS / Linux
+curl -fsSL https://omp.sh/install | sh
+
+# Homebrew
+brew install can1357/tap/omp
+
+# Bun（推荐）
+bun install -g @oh-my-pi/pi-coding-agent
+
+# Windows PowerShell
+irm https://omp.sh/install.ps1 | iex
+
+# Nix
+nix run github:can1357/oh-my-pi</code></pre>
+
+<p>首次使用：</p>
+<ol class="steps">
+  <li><code>omp --version</code> 确认安装；<code>omp setup</code> 走登录/模型选择。</li>
+  <li><code>/login</code> 接 OAuth 或 API key；<code>/model</code> 指定 default，<code>Ctrl+P</code> 轮换当前角色的模型。</li>
+  <li>在目标仓库里运行 <code>omp</code>；先只用 <code>read</code>/<code>grep</code>/<code>edit</code> 做小改动。</li>
+  <li>需要子 Agent 时用 <code>task</code>，用 <code>Alt+A</code> 观察；需要第二意见时配 advisor。</li>
+  <li>接入编辑器时运行 <code>omp acp</code>，在 Zed 等客户端里把它当 ACP Agent。</li>
+</ol>
+
+<p>从源码开发：</p>
+<pre><code>git clone https://github.com/can1357/oh-my-pi
+cd oh-my-pi
+bun setup
+bun dev
+
+# 改 Rust crate / packages/natives 后
+bun run build:native</code></pre>
+<p>源码构建需要 Bun 与 Rust 工具链；Nix 用户可以用 <code>nix develop</code> 拿到固定版本。</p>
+</section>
+
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>日常流程</h2></div>
+<p class="sub">把 omp 当成「有 IDE 能力的终端同事」，而不是聊天窗口。</p>
+
+<ol class="steps">
+  <li><b>先读再改：</b>让它用 <code>read</code>/<code>grep</code>/<code>lsp</code> 建立上下文，避免一上来大范围重写。</li>
+  <li><b>小步编辑：</b>hashline 指向锚点；每次改动后跑测试/诊断，坏锚点会在写盘前被拒。</li>
+  <li><b>需要重构时：</b>走 LSP rename/workspace edit，让 re-export、barrel、别名一起更新。</li>
+  <li><b>需要调试时：</b>让它 attach lldb/dlv/debugpy，而不是到处加 print。</li>
+  <li><b>拆并行任务：</b>用 <code>task</code> 扇出到独立 worktree；在 Agent Hub 里看谁卡住、谁花了多少。</li>
+  <li><b>审查与提交：</b><code>/review</code> 先扫 P0–P3；<code>omp commit</code> 拆原子提交并生成消息。</li>
+  <li><b>沉淀：</b><code>retain</code>/<code>learn</code>/<code>recall</code> 把仓库事实与可复用经验留给下次会话。</li>
+</ol>
+
+<div class="callout good"><span class="t">最小工作流</span><p><code>omp</code> → 读三个相关文件 → hashline 改一处 → 跑测试 → <code>/review</code> 看 diff → 提交。先把这个循环跑顺，再开子 Agent 和 advisor。</p></div>
+</section>
+
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>强项</h2></div>
+<p class="sub">它把「终端 Agent」的上限抬到了接近 IDE 的水平。</p>
+
+<div class="panel pos"><ul>
+  <li><b>原生工具链：</b>grep/glob/find/shell 在进程内，减少 fork-exec 与跨平台差异；Windows 不需要 WSL。</li>
+  <li><b>IDE 级操作：</b>LSP 重命名/诊断/符号 + DAP 调试，是多数终端 Agent 缺失的能力。</li>
+  <li><b>编辑可靠性：</b>hashline 用内容锚点降低 stale file 与空白噪声造成的失败。</li>
+  <li><b>子 Agent 可观察：</b>Agent Hub 能看 transcript、用量、暂停/复活，不是「黑盒扇出」。</li>
+  <li><b>第二模型审查：</b>advisor 独立上下文、独立模型，能指出主 Agent 的验收偏差。</li>
+  <li><b>provider 广度：</b>60+ provider、9 个角色、fallback、路径级模型集合。</li>
+  <li><b>多入口：</b>TUI、SDK、RPC、ACP，既能人用也能嵌进编辑器/宿主程序。</li>
+  <li><b>协议与迁移：</b>读取已有规则、16 种内部 scheme、PR/issue 当路径读。</li>
+  <li><b>MIT + 高频迭代：</b>v18.15.0 在 2026-11-01 发布，社区非常活跃。</li>
+</ul></div>
+</section>
+
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>边界与代价</h2></div>
+<p class="sub">能力面越大，升级、磁盘、信任与 triage 成本越高。</p>
+
+<div class="panel neg"><ul>
+  <li><b>体积：</b>v18.15.0 的单个平台二进制约 215–277 MB；安装、更新、备份都更重。</li>
+  <li><b>复杂度：</b>60+ provider、9 个角色、扩展/hook/MCP/技能/记忆，配置面很宽；新手容易被选项淹没。</li>
+  <li><b>迭代速度：</b>release 频繁、4,437 个 open issues；接口与行为可能快速变化，生产使用要固定版本并读 changelog。</li>
+  <li><b>厂商自测：</b>benchmark 数字来自 Stencil Labs 的 harness 对比，不是第三方复现；换仓库可能不成立。</li>
+  <li><b>项目信任：</b>打开仓库会加载项目设置、扩展、hooks、工具、命令、技能、规则与 MCP；这不是「只读一个文件」。</li>
+  <li><b>无官方 GUI：</b>社区 OMP Studio 质量/维护状态不一，不能按官方 SLA 采购。</li>
+  <li><b>平台差异：</b>Windows 优先但仍有平台细节；Alpine/musl 需要额外系统库。</li>
+  <li><b>模型质量不均：</b>provider 列表长不等于每个模型都能把工具调用/编辑格式跑好。</li>
+</ul></div>
+<div class="note"><b>高 issue 数不必然等于质量差：</b>对一个每天多次 release 的热门项目，4,000+ open issues 更像 triage 压力；但它确实意味着你要自己判断哪些问题会影响你的工作流。</div>
+</section>
+
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>安全与权限</h2></div>
+<p class="sub">omp 的默认模型是「信任项目」，不是「默认沙箱」。</p>
+
+<dl class="kv">
+  <dt>项目输入</dt><dd>设置、扩展、hooks、tools、commands、skills、rules、项目 MCP 会随仓库加载。对不可信仓库要收紧。</dd>
+  <dt>收紧开关</dt><dd><code>--no-extensions</code> 跳过环境扩展；<code>--trusted-extension /abs/file.ts</code> 白名单；<code>--no-tools</code> 关内置工具（项目工具模块仍是独立发现面）；<code>--config overlay.yml</code> 可关闭项目 MCP。</dd>
+  <dt>执行面</dt><dd>bash、eval、browser、computer、github、generate_image 等能触达真实文件、网络、桌面与账号；破坏性操作有审批，但不是全面沙箱。</dd>
+  <dt>编辑器</dt><dd>ACP 模式下写入走 <code>session/request_permission</code>；这是编辑器层的人工闸门，不替代仓库级隔离。</dd>
+  <dt>隔离</dt><dd>子 Agent 可用 worktree/overlay 隔离文件；这解决并发覆盖，不等于凭据/网络隔离。</dd>
+  <dt>第三方 Studio</dt><dd>社区 Studio 运行官方 omp 并共享 <code>~/.omp</code>；安装前要审查其代码、签名与更新渠道。</dd>
+  <dt>凭据</dt><dd>provider key、GitHub token、浏览器登录态都可能被工具间接使用；给最小权限、按项目分 key。</dd>
+</dl>
+<div class="callout bad"><span class="t">最容易忽略</span><p><code>--no-tools</code> 并不会自动禁用项目里的工具模块；<code>--no-extensions</code> 也不等于「不读项目配置」。在陌生仓库里，先看 <code>--help</code> 与项目文件，再用白名单启动。</p></div>
+</section>
+
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>OMP Studio 与 GUI 生态</h2></div>
+<p class="sub">官方给的是 TUI/Agent Hub/统计/collab；「Studio」是社区壳的名字。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>项目</th><th>定位</th><th>与 omp 的关系</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><b>官方 omp</b></td><td>终端 Agent + SDK/RPC/ACP</td><td>TUI、Agent Hub、advisor、collab、<code>omp-stats</code></td><td>v18.15.0；主仓库</td></tr>
+<tr><td><b>DawnJson/omp-studio</b></td><td>Windows/macOS/Linux 桌面</td><td>每个任务在 PTY 里跑官方 omp，渲染 TSP；共享 <code>~/.omp</code> 登录/设置/会话</td><td>MIT；10 star；2026-10-25 创建；安装包未签名</td></tr>
+<tr><td><b>dylanmccavitt/omp-studio</b></td><td>Electron 桌面 cockpit</td><td>通过 <code>omp --mode rpc</code> 驱动；仪表盘、实时聊天、子 Agent drill-in、会话/技能/MCP/GitHub/Linear</td><td>MIT；14 star；2026-06 创建；自我标注 pre-1.0、UI/格式不稳定</td></tr>
+<tr><td><b>其他同名项目</b></td><td>OMP Desktop / OMP Studio / OmpCode 等</td><td>多为社区 GUI/PTY 包装</td><td>维护状态与完成度差异大，需逐个核验</td></tr>
+</tbody></table></div>
+
+<p>把你描述里的能力拆开看：</p>
+<ul>
+  <li><b>「实时监控子 Agent 对话与花费」：</b>官方 Agent Hub 提供子 Agent transcript/活动/用量；<code>omp-stats</code> 是本地使用统计面板；社区 Studio 把这些做成仪表盘。</li>
+  <li><b>「防死循环审查」：</b>官方文档没有把这个作为一等功能。omp 有的是 advisor（第二模型逐轮审查）与 time-traveling stream rules（匹配到规则时中断并注入提醒）；「doom-loop detection」是 PraisonAI 的明确特性。</li>
+  <li><b>「多模型混搭调度」：</b>这是官方 omp 的能力：9 个角色、60+ provider、fallback chain、路径级模型集合；Studio 只是把配置暴露出来。</li>
+</ul>
+<div class="callout warn"><span class="t">选型建议</span><p>先用官方 omp 的 TUI + Agent Hub 两周；确实需要 GUI 时再试社区 Studio。优先选仍在维护、与当前 omp 版本兼容、安装包有签名/校验的仓库；不要因为名字叫「Studio」就假定它是官方。</p></div>
+</section>
+
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>如果你以终端为主、需要 LSP/DAP/结构化编辑，omp 是目前工具面最完整的一类 harness。先用 <code>--no-extensions</code> 或 <code>--trusted-extension</code> 在陌生仓库里试；固定版本、读 changelog；子 Agent 与 advisor 等基础编辑循环稳定后再开。GUI 需求单独评估社区 Studio，不要混为一谈。</p></div>
+<p>它适合「愿意把 Agent 当开发工具链一部分」的人；如果你只想要一个轻量聊天式编码助手，omp 的能力面和升级节奏可能过重。</p>
+</section>
+
+<section id="s11">
+<div class="sec-head"><span class="sec-no">11</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 官方仓库：<a href="https://github.com/can1357/oh-my-pi" target="_blank" rel="noopener noreferrer">can1357/oh-my-pi</a>；MIT；TypeScript/Rust/Bun；37,470 star、4,216 fork、4,437 open issues（2026-11-02 GitHub API）。</li>
+  <li><span class="tag fact">事实</span> 最新 Release：<a href="https://github.com/can1357/oh-my-pi/releases/tag/v18.15.0" target="_blank" rel="noopener noreferrer">v18.15.0</a>（2026-11-01）；单平台二进制约 215–277 MB。</li>
+  <li><span class="tag fact">事实</span> <a href="https://github.com/can1357/oh-my-pi/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：60+ provider、31 tools、14 LSP ops、28 DAP ops、~80k Rust、Agent Hub、advisor、collab、ACP/RPC/SDK、项目信任开关、厂商 benchmark 数字。</li>
+  <li><span class="tag fact">事实</span> 官方站点：<a href="https://omp.sh" target="_blank" rel="noopener noreferrer">omp.sh</a>；<a href="https://omp.sh/docs/tools" target="_blank" rel="noopener noreferrer">工具参考</a>、<a href="https://omp.sh/docs/providers" target="_blank" rel="noopener noreferrer">provider 参考</a>、<a href="https://omp.sh/docs/sdk" target="_blank" rel="noopener noreferrer">SDK</a>。</li>
+  <li><span class="tag fact">事实</span> 社区 Studio：<a href="https://github.com/DawnJson/omp-studio" target="_blank" rel="noopener noreferrer">DawnJson/omp-studio</a>（MIT，10 star）与 <a href="https://github.com/dylanmccavitt/omp-studio" target="_blank" rel="noopener noreferrer">dylanmccavitt/omp-studio</a>（MIT，14 star）；官方 discussion #17124 记录了 DawnJson 的介绍。</li>
+  <li><span class="tag infer">推断</span> 「OMP Studio 是官方图形工作台」不成立；官方没有同名一等产品，社区项目各自实现。</li>
+  <li><span class="tag infer">推断</span> 「防死循环审查」不是 omp README 的术语；对应能力更接近 advisor + stream rules，doom-loop detection 属于 PraisonAI。</li>
+  <li><span class="tag infer">推断</span> 本文的适合/不适合基于公开能力与信任模型，不构成安全审计或基准测试。</li>
+</ul>
+</section>
+<footer><span>oh-my-pi / OMP Studio · 分析于 2026-11-02</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>
+(function(){
+  var p=document.getElementById("progress");
+  if(!p) return;
+  function update(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    p.style.width=(max>0?Math.min(100,Math.max(0,h.scrollTop/max*100)):0)+"%";
+  }
+  addEventListener("scroll",update,{passive:true});
+  update();
+})();
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  if(!links.length) return;
+  var sections=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  if(!('IntersectionObserver' in window)) return;
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var i=sections.indexOf(e.target);
+      if(i<0) return;
+      links.forEach(function(a,j){a.setAttribute('aria-current',j===i?'true':'false');});
+    });
+  },{rootMargin:'-15% 0px -70% 0px'});
+  sections.forEach(function(s){if(s)io.observe(s);});
+})();
+</script>
+</body>
+</html>

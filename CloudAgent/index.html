@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agent37 分析 · 低成本 Agent 沙箱与 Freemium 单位经济</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+</head>
+<style>
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checks li{display:flex;gap:10px;align-items:flex-start;font-size:13.8px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checks input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono)}
+.badge.verified{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.badge.claim{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.badge.infer{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.badge.bad{color:#b3261e;border-color:#efc9c5;background:#fbeceb}
+.clean{list-style:none;padding-left:0}
+.clean li{margin:7px 0}
+@media (max-width:640px){
+  .tools-table{min-width:0;table-layout:fixed}
+  .tools-table th:first-child,.tools-table td:first-child{width:45%}
+  .tools-table th:nth-child(2),.tools-table td:nth-child(2){width:55%;white-space:normal;word-break:break-word}
+  .tools-table th:last-child,.tools-table td:last-child{display:none}
+}
+</style>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">Agent37 分析</div>
+      <div class="brand-sub">Cloud Agent · 2026-10</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>速览</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>商业模式</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>定价与单位经济</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>技术路径</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>成本对比的可比性</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>适用场景</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>风险与限制</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>竞争格局</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>本地 vs 云端</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>决策清单</span></a></li>
+      <li><a href="#s11"><span class="no">11</span><span>同赛道工具</span></a></li>
+      <li><a href="#s12"><span class="no">12</span><span>来源与口径</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    YC F26 · 纽约<br>
+    平均 $0.37/沙箱/月<br>
+    核验 2026-10-31 · 离线
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Company Analysis<span class="dot"></span>2026-10-31</p>
+    <h1>Agent37：把<em>沙箱</em>做成白菜价</h1>
+    <p class="lede">一家 YC F26 的纽约初创公司，从「给 OpenClaw 套壳」转型为「给所有 Agent 卖廉价沙箱」。它的故事不是技术炫技，而是单位经济：把每个沙箱的月成本压到几毛钱，才敢让 90% 用户免费用。</p>
+    <div class="meta-row">
+      <span class="pill">公司 <b>Agent37（YC F26）</b></span>
+      <span class="pill">定位 <b>Agent 沙箱 / 托管 Harness</b></span>
+      <span class="pill">平均 <b>$0.37 / 沙箱 / 月</b></span>
+      <span class="pill">免费用户 <b>&gt; 90%</b></span>
+      <span class="pill">技术 <b>gVisor + 快照恢复</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">$0.37</div><div class="l">客户平均每沙箱月支出（公司口径）</div></div>
+      <div class="kpi"><div class="n">$0.05–0.10</div><div class="l">每个免费用户的月基础设施成本（公司称）</div></div>
+      <div class="kpi"><div class="n">90<span>%+</span></div><div class="l">新注册中的免费用户占比（公司称）</div></div>
+      <div class="kpi"><div class="n">94<span>%</span></div><div class="l">声称比多数沙箱厂商便宜</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">速览</h2></div>
+    <p class="lead-in">Agent37 卖的不是模型，也不是 Agent 产品，而是「每个客户一个独立、持久、便宜的 Linux 沙箱」。你可以托管 Hermes、OpenClaw、Claude Code、Codex、OpenCode、Pi 等 harness，也可以带自己的镜像。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><h4 style="margin-top:0">它解决什么</h4><p class="small" style="margin:0">Agent 需要一台「常开的私有电脑」：有文件、有浏览器、有工具、能被消息唤醒，闲置时几乎不花钱。</p></div>
+      <div class="card"><h4 style="margin-top:0">它怎么收钱</h4><p class="small" style="margin:0">预付费余额，按分钟计费：运行收 vCPU/内存，保留收磁盘；无订阅、无座位费。</p></div>
+      <div class="card"><h4 style="margin-top:0">为什么值得看</h4><p class="small" style="margin:0">它把「免费增值」跑在了一个传统上很贵的品类上，单位经济是整件事的核心。</p></div>
+    </div>
+
+    <div class="callout">
+      <span class="t">关键区分</span>
+      <b>$0.37/月</b>不是「一个一直开着的沙箱」，而是平均客户在「约 7% 时间醒着（57 小时/月）、用完删除沙箱」下的账单估算。2 vCPU / 4 GB 一直开着是 <b>$4.76/月</b>；闲置只保留磁盘约 <b>$0.36/月</b>。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">商业模式：从套壳到卖水</h2></div>
+    <p>创始人 Vishnu 在 HN 上写得很直白：2026 年 2 月开始做 OpenClaw 套壳，后来发现真正贵的是「安全运行环境」，于是转向沙箱。这是典型的「卖水人」路径：当淘金者都在做 Agent，给淘金者提供水电。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>要素</th><th>公开信息</th><th>性质</th></tr></thead>
+        <tbody>
+          <tr><td>公司阶段</td><td>YC F26；纽约；创始人 Vishnu Kool</td><td><span class="badge verified">公开</span></td></tr>
+          <tr><td>起点</td><td>2026-02 做 OpenClaw 套壳，bootstrapped</td><td><span class="badge claim">创始人自述</span></td></tr>
+          <tr><td>转型</td><td>发现沙箱是 Agent 产品最贵、最麻烦的部分</td><td><span class="badge claim">创始人自述</span></td></tr>
+          <tr><td>免费策略</td><td>&gt;90% 新注册是免费用户；免费用户月成本 $0.05–0.10</td><td><span class="badge claim">公司口径</span></td></tr>
+          <tr><td>平均收入</td><td>客户平均 $0.37/沙箱/月</td><td><span class="badge claim">公司口径</span></td></tr>
+          <tr><td>定价结构</td><td>预付费 + 按分钟；无订阅/座位费</td><td><span class="badge verified">官网</span></td></tr>
+          <tr><td>客户</td><td>官网称服务 200+ 公司（名单未逐一核验）</td><td><span class="badge claim">公司口径</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Freemium 的算术</h3>
+    <p>免费用户不是「白送」，而是「获客成本」。按公司口径，一个免费用户每月只花 $0.05–0.10；只要 10% 的用户转付费、且付费用户贡献足够覆盖其余 90%，模型就成立。</p>
+
+    <div class="callout warn">
+      <span class="t">但这里有一个未公开的变量</span>
+      文章与官网都没有给出<b>付费转化率</b>与<b>付费 ARPU</b>。$0.37 是「客户平均支出」，不是「付费用户平均支出」；免费用户会把平均值拉低。没有这两个数，无法判断是否真正盈利。
+    </div>
+  </section>
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">定价与单位经济</h2></div>
+    <p>Agent37 的定价非常「基础设施」：没有套餐，只有单价与预付费余额。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>资源</th><th>单价</th><th>计费方式</th></tr></thead>
+        <tbody>
+          <tr><td>vCPU</td><td>$0.0011 / vCPU·小时</td><td>沙箱运行时按分钟计</td></tr>
+          <tr><td>内存</td><td>$0.00096 / GB·小时</td><td>沙箱运行时按分钟计</td></tr>
+          <tr><td>磁盘</td><td>$0.00012 / GB·小时</td><td>从创建到删除，睡眠也计费</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>场景</th><th>配置</th><th>月成本</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>平均客户</td><td>2 vCPU / 4 GB / 4 GB 磁盘</td><td><b>$0.37</b></td><td>按 7% 醒着（约 57 小时），删除后不计磁盘</td></tr>
+          <tr><td>一直开</td><td>同上</td><td><b>$4.76</b></td><td>730 小时全开；适合常驻 Agent</td></tr>
+          <tr><td>闲置保留</td><td>同上，睡眠</td><td><b>$0.36</b></td><td>只算 4 GB 磁盘；计算停止</td></tr>
+          <tr><td>免费用户</td><td>公司口径</td><td><b>$0.05–0.10</b></td><td>基础设施成本，不是对外价格</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">$0.37 的真相</span>
+      「平均每沙箱每月 $0.37」成立的前提是：大多数 Agent 只短暂醒着，且客户会删除不用的沙箱。它不是「每用户每月 $0.37 随便用」的定价。
+    </div>
+
+    <h3>Freemium 估算器</h3>
+    <p>用免费用户数、免费成本、转化率与付费 ARPU 粗算是否覆盖成本。默认值为假设，请替换成你认为合理的数字。</p>
+    <div class="calc">
+      <div class="calc-row">
+        <label>免费用户数<input id="aFree" type="number" min="0" step="1000" value="10000"></label>
+        <label>每个免费用户月成本（$）<input id="aFreeCost" type="number" min="0" step="0.01" value="0.08"></label>
+        <label>付费转化率（%）<input id="aConv" type="number" min="0" max="100" step="0.5" value="10"></label>
+      </div>
+      <div class="calc-row">
+        <label>付费用户 ARPU（$/月）<input id="aArpu" type="number" min="0" step="0.5" value="5"></label>
+        <label>付费用户边际成本（$/月）<input id="aPaidCost" type="number" min="0" step="0.1" value="0.5"></label>
+        <label></label>
+      </div>
+      <div class="calc-out" aria-live="polite">
+        <div class="calc-box"><div class="k">付费用户数</div><div class="v" id="aPaid">1,000</div></div>
+        <div class="calc-box"><div class="k">月成本</div><div class="v" id="aCost">$1,300</div></div>
+        <div class="calc-box"><div class="k">月收入</div><div class="v" id="aRev">$5,000</div></div>
+        <div class="calc-box"><div class="k">毛贡献</div><div class="v" id="aProfit">$3,700</div></div>
+      </div>
+    </div>
+    <p class="small" id="aBreak">盈亏平衡转化率约 1.7%。低于这个数，免费池越大亏得越多。</p>
+  </section>
+
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">技术路径：便宜从哪来</h2></div>
+    <p>原文猜测是 Firecracker/Wasm；从创始人的公开说明看，更准确的关键词是 <b>gVisor + 内存快照/恢复 + 共享宿主资源 + 自动睡眠</b>。隔离方案的系统性比较见 <a href="../Agents/agent-sandbox/index.html">Agent 沙箱白皮书</a>。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>手段</th><th>怎么省钱</th><th>代价</th></tr></thead>
+        <tbody>
+          <tr><td>gVisor 沙箱</td><td>用户态内核隔离，比完整 VM 轻；共享宿主资源，不按 VM 预留整块内存</td><td>不支持 Docker-in-Docker、Android 模拟器等重负载；隔离边界与 VM 不同</td></tr>
+          <tr><td>共享宿主内存</td><td>不为一每个沙箱预留完整 VM 内存，利用 Agent 的空闲时段</td><td>宿主忙时，持续高 CPU 可能被限制（noisy neighbor）</td></tr>
+          <tr><td>内存快照恢复</td><td>睡眠时保存内存检查点，唤醒时恢复，避免冷启动</td><td>厂商称恢复中位数 176ms，未做独立复现</td></tr>
+          <tr><td>自动睡眠</td><td>没请求就停计算，只留磁盘；唤醒再计费</td><td>首次唤醒有延迟；长连接/后台任务需保持醒着</td></tr>
+          <tr><td>按分钟计费</td><td>把「等待模型返回」的时间从计算里剔除</td><td>需要精确的计费与生命周期管理</td></tr>
+          <tr><td>完整 VM 选项</td><td>需要 Docker/自有内核时用 VM，价格更高</td><td>不再是 $0.37 那一档</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">核心洞察</span>
+      Agent 的负载是「突发 CPU + 长时间等待」：初始化、工具调用时吃 CPU，等模型/网络时几乎空闲。按「常开服务器」卖会浪费，按「唤醒时段」卖才便宜。
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">成本对比的可比性</h2></div>
+    <p>官网给出 31 家厂商的对比，并声称比多数便宜 94%。这些数字有用，但要看清假设。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>对比假设</th><th>对结论的影响</th></tr></thead>
+        <tbody>
+          <tr><td>同一形状：2 vCPU / 4 GB / 4 GB 磁盘</td><td>不同厂商的 vCPU 语义不同（共享/独享、突发/持续）</td></tr>
+          <tr><td>7% 醒着（约 57 小时/月）</td><td>常开场景下 Agent37 是 $4.76，不是 $0.37</td></tr>
+          <tr><td>按满 CPU 计费</td><td>按活跃 CPU 计费的厂商会被高估</td></tr>
+          <tr><td>不含模型 token、搜索、集成</td><td>Agent 的真实总成本还包括模型调用</td></tr>
+          <tr><td>不含税费、套餐费、部分对手存储</td><td>跨国/企业采购的实际账单更高</td></tr>
+          <tr><td>共享宿主 vs 独享 VM</td><td>隔离级别与性能稳定性不同，价格不能直接横比</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">结论</span>
+      「便宜 94%」在它定义的形状与负载下成立；换成常开、重 CPU、需要 Docker 或强隔离，差距会缩小，甚至可能不适用。
+    </div>
+  </section>
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">适用场景</h2></div>
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">适合</h4>
+        <ul class="clean">
+          <li><b>个人常驻 Agent：</b>邮件、日历、消息、浏览器任务，短时唤醒、长时间空闲。</li>
+          <li><b>多租户 SaaS：</b>每个客户一个沙箱，白标交付，按用量转售。</li>
+          <li><b>编码 Agent 评测/CI：</b>短时任务，跑完即删，按分钟便宜。</li>
+          <li><b>原型与 Demo：</b>预装 harness，几分钟起一个可交互环境。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">不适合</h4>
+        <ul class="clean">
+          <li><b>GPU 训练/推理：</b>不是 GPU 平台，模型调用需另接 API。</li>
+          <li><b>Docker-in-Docker / Android 模拟器：</b>标准 gVisor 沙箱不支持，需完整 VM。</li>
+          <li><b>持续高 CPU：</b>共享宿主，忙时可能被限速。</li>
+          <li><b>强合规独享主机：</b>需要独立宿主机、专有网络与审计时，应选 VM/专用云。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="t">一句话判断</span>
+      如果你的 Agent 大部分时间在「等」，Agent37 的成本结构非常合适；如果它大部分时间在「算」，低价优势会被持续 CPU 与隔离成本吃掉。
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">风险与限制</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>风险</th><th>具体表现</th><th>严重度</th></tr></thead>
+        <tbody>
+          <tr><td>隔离边界</td><td>gVisor 是用户态内核，隔离模型与完整 VM 不同；多租户敏感数据需自行评估</td><td><span class="badge bad">高</span></td></tr>
+          <tr><td>共享宿主</td><td>内存/CPU 超卖，邻居繁忙时持续负载可能被限制</td><td><span class="badge claim">中</span></td></tr>
+          <tr><td>免费滥用</td><td>免费额度可能被用于挖矿、扫描、代理；公司称成本 $0.05–0.10，但滥用会破坏这个数</td><td><span class="badge claim">中</span></td></tr>
+          <tr><td>低价可持续性</td><td>依赖「多数沙箱多数时间睡眠」；客户习惯常开后，ARPU 上升但毛利变薄</td><td><span class="badge claim">中</span></td></tr>
+          <tr><td>厂商锁定</td><td>快照、镜像、生命周期 API 的迁移成本；早期产品接口可能变化</td><td><span class="badge infer">中</span></td></tr>
+          <tr><td>宣称未独立验证</td><td>176ms 恢复、94% 低价、200+ 客户均为公司口径</td><td><span class="badge claim">中</span></td></tr>
+          <tr><td>大厂捆绑竞争</td><td>Cloudflare/Vercel/Modal 把沙箱作为生态附件，价格可被补贴</td><td><span class="badge infer">中</span></td></tr>
+          <tr><td>早期公司风险</td><td>YC 早期、团队小；持续经营与融资节奏不确定</td><td><span class="badge infer">中</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">最需要验证的三件事</span>
+      独立复现唤醒延迟与持续 CPU 表现；确认 gVisor 沙箱的租户隔离与数据留存策略；拿到真实付费转化率与付费 ARPU。
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">竞争格局</h2></div>
+    <p>Agent 沙箱不是空白市场：既有专门的 Sandbox-as-a-Service，也有云厂商的捆绑能力。Agent37 的差异点是「预装 harness + 极低空闲成本 + 白标」。</p>
+    <p class="small">下表为本文基于公开定位的判断，不是厂商排名或性能评测。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>玩家</th><th>定位</th><th>相对 Agent37</th></tr></thead>
+        <tbody>
+          <tr><td><b>Agent37</b></td><td>Agent 沙箱 + 预装 harness + 白标</td><td>最便宜的空闲成本；隔离与重负载能力较弱</td></tr>
+          <tr><td>E2B</td><td>开发者沙箱 SDK，代码执行</td><td>生态成熟、文档好；单价更高，偏短时执行</td></tr>
+          <tr><td>Daytona</td><td>开发环境/沙箱，快速启动</td><td>偏开发工作流；企业能力更强</td></tr>
+          <tr><td>Modal</td><td>Serverless CPU/GPU，Python 优先</td><td>算力强、GPU 可用；不是「常驻个人电脑」形态</td></tr>
+          <tr><td>Cloudflare Sandbox</td><td>边缘容器/沙箱，与 Workers 捆绑</td><td>分发与网络优势；生态绑定强</td></tr>
+          <tr><td>Vercel Sandbox</td><td>前端/开发工作流沙箱</td><td>与部署平台集成；场景更窄</td></tr>
+          <tr><td>Blaxel</td><td>Agent 基础设施，长时运行</td><td>更偏平台化；价格与形态不同</td></tr>
+          <tr><td>Fly Machines</td><td>全球 microVM</td><td>更接近通用 VM；需自行搭 Agent 层</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="small">注：除 Agent37 外，不在此表列具体价格，因为各家的计费口径（按秒/按分钟、活跃 CPU、存储、出口流量）差异很大，直接横比会误导。</p>
+  </section>
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">本地 vs 云端：不是同一层</h2></div>
+    <p>本地大模型硬件和云端 Agent 沙箱解决的是不同问题：前者买「推理算力」，后者买「运行环境」。两者可以叠加，不必二选一。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>维度</th><th>本地 LLM 硬件</th><th>Agent37 类云沙箱</th></tr></thead>
+        <tbody>
+          <tr><td>一次性投入</td><td>高（整机/显卡）</td><td>无；预付费按用量</td></tr>
+          <tr><td>月成本</td><td>电费 + 折旧 + 运维</td><td>$0.37 平均；常开 $4.76（不含模型调用）</td></tr>
+          <tr><td>数据位置</td><td>本机，可控</td><td>厂商共享宿主，需评估合规</td></tr>
+          <tr><td>延迟</td><td>局域网低延迟</td><td>取决于区域与唤醒</td></tr>
+          <tr><td>运维</td><td>驱动、散热、升级</td><td>厂商负责</td></tr>
+          <tr><td>适合</td><td>高频推理、隐私敏感、离线</td><td>突发任务、多租户、免运维</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">组合方式</span>
+      本地跑模型 + 云端跑沙箱：敏感数据留在本地，工具执行与浏览器放云端；或反过来，云端模型 + 本地沙箱。关键是分清「算力」与「环境」两笔账。
+    </div>
+    <p class="small">本地硬件的 TCO 对比见 <a href="../LocalLLM/index.html">LocalLLM 报告</a>。</p>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">决策清单</h2></div>
+    <ul class="checks" id="checklist">
+      <li><input type="checkbox" id="c1"><label for="c1">我估算过 Agent 每月真正「醒着」多少小时（不是 730 小时）。</label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">我不需要 Docker-in-Docker、Android 模拟器或自定义内核；否则选完整 VM。</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">我接受 gVisor 的隔离模型，并确认数据分级与留存要求。</label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">我验证过唤醒延迟（公司称中位数 176ms）对我的交互是否可接受。</label></li>
+      <li><input type="checkbox" id="c5"><label for="c5">我知道出口只允许公网，不能访问宿主或私有网络；需要内网时另想办法。</label></li>
+      <li><input type="checkbox" id="c6"><label for="c6">我算过「一直开」的价格：$4.76/月，而不是 $0.37。</label></li>
+      <li><input type="checkbox" id="c7"><label for="c7">我有退出方案：镜像、快照、数据导出与迁移成本可接受。</label></li>
+      <li><input type="checkbox" id="c8"><label for="c8">若做白标/转售，我读过条款，确认允许且了解计费与支持责任。</label></li>
+    </ul>
+    <p class="small" id="checkNote" aria-live="polite">勾选后显示完成度。清单用于自检，不构成采购建议。</p>
+  </section>
+
+  <section id="s11" aria-labelledby="h11">
+    <div class="sec-head"><span class="sec-no">11</span><h2 id="h11">附录：同赛道工具</h2></div>
+    <p>本仓库 <a href="../Agents/Tools/index.html">Agents/Tools</a> 已收录下列工具的单篇调研；这里只做交叉索引，不重复背书。它们多数是「Agent 工作台/编排器」，Agent37 是底层沙箱。</p>
+
+    <div class="table-wrap">
+      <table class="tools-table">
+        <thead><tr><th>工具</th><th>定位</th><th>单篇</th></tr></thead>
+        <tbody>
+          <tr><td><a href="../Agents/Tools/t3code.html">T3 Code</a></td><td>多 Agent 编码工作台</td><td><a href="../Agents/Tools/t3code.html">t3code</a></td></tr>
+          <tr><td><a href="../Agents/Tools/cmux.html">cmux</a></td><td>多 Agent 终端/会话管理</td><td><a href="../Agents/Tools/cmux.html">cmux</a></td></tr>
+          <tr><td><a href="../Agents/Tools/herdr.html">herdr</a></td><td>Agent 运行/编排</td><td><a href="../Agents/Tools/herdr.html">herdr</a></td></tr>
+          <tr><td><a href="../Agents/Tools/paseo.html">Paseo</a></td><td>Agent 工作台/客户端</td><td><a href="../Agents/Tools/paseo.html">paseo</a></td></tr>
+          <tr><td><a href="../Agents/Tools/agent-orchestrator.html">Agent Orchestrator</a></td><td>多 Agent 编排</td><td><a href="../Agents/Tools/agent-orchestrator.html">agent-orchestrator</a></td></tr>
+          <tr><td><a href="../Agents/Tools/corespeed-tie.html">CoreSpeed Tie</a></td><td>CLI 拉起 Agent</td><td><a href="../Agents/Tools/corespeed-tie.html">corespeed-tie</a></td></tr>
+          <tr><td><a href="../Agents/Tools/mainplane.html">Mainplane</a></td><td>云端 Agent 运行/编排</td><td><a href="../Agents/Tools/mainplane.html">mainplane</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s12" aria-labelledby="h12">
+    <div class="sec-head"><span class="sec-no">12</span><h2 id="h12">来源与口径</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>证据等级</th><th>含义</th><th>本文中的例子</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge verified">公开可核验</span></td><td>官网/文档可直接看到</td><td>单价、计费方式、预装 harness、出口策略</td></tr>
+          <tr><td><span class="badge claim">公司/创始人口径</span></td><td>单方声明，未独立审计</td><td>$0.37 平均、94% 更便宜、176ms、200+ 客户、免费成本</td></tr>
+          <tr><td><span class="badge infer">本文推断</span></td><td>基于公开信息的分析</td><td>盈亏平衡、竞争影响、适用边界</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>主要来源</h3>
+    <ul class="clean">
+      <li>Agent37 官网与云产品页：<a href="https://agent37.com" target="_blank" rel="noopener">agent37.com</a> · <a href="https://agent37.com/cloud" target="_blank" rel="noopener">agent37.com/cloud</a> · <a href="https://agent37.com/docs" target="_blank" rel="noopener">agent37.com/docs</a>（访问于 2026-10-31）</li>
+      <li>Y Combinator 公司页：<a href="https://www.ycombinator.com/companies/agent37" target="_blank" rel="noopener">ycombinator.com/companies/agent37</a></li>
+      <li>Hacker News 发布讨论（163 points / 135 comments）及创始人 Vishnu 的公开回复；未保留稳定单条链接。</li>
+      <li>本仓库：<a href="../LocalLLM/index.html">LocalLLM 硬件 TCO 报告</a>（用于本地 vs 云端对照）。</li>
+    </ul>
+
+    <div class="callout bad">
+      <span class="t">免责声明</span>
+      本文是产品与商业分析，不构成投资建议、采购承诺或安全认证。价格、功能与公司数据可能变化；涉及合规与隔离的决策，请以厂商合同与独立测试为准。
+    </div>
+  </section>
+
+  <footer>
+    <p>Agent37 分析 · 2026-10-31 · 单文件离线报告</p>
+    <p class="small">所有价格单位为美元；$0.37 为平均客户口径，不是无限用量套餐。公司声明与本文推断已分别标注。</p>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" id="topBtn" aria-label="回到顶部">↑</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+    if (progress) { progress.style.width = pct.toFixed(2) + "%"; }
+    if (topBtn) { topBtn.classList.toggle("show", window.scrollY > 600); }
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  if (topBtn) {
+    topBtn.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  function money(n) {
+    var sign = n < 0 ? "-" : "";
+    var v = Math.abs(n);
+    if (v > 0 && v < 0.01) { return sign + "$" + v.toFixed(4); }
+    return sign + "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  var freeEl = document.getElementById("aFree");
+  var freeCostEl = document.getElementById("aFreeCost");
+  var convEl = document.getElementById("aConv");
+  var arpuEl = document.getElementById("aArpu");
+  var paidCostEl = document.getElementById("aPaidCost");
+  var outPaid = document.getElementById("aPaid");
+  var outCost = document.getElementById("aCost");
+  var outRev = document.getElementById("aRev");
+  var outProfit = document.getElementById("aProfit");
+  var breakEl = document.getElementById("aBreak");
+
+  function calc() {
+    var free = Math.max(0, Number(freeEl.value) || 0);
+    var freeCost = Math.max(0, Number(freeCostEl.value) || 0);
+    var conv = Math.min(100, Math.max(0, Number(convEl.value) || 0)) / 100;
+    var arpu = Math.max(0, Number(arpuEl.value) || 0);
+    var paidCost = Math.max(0, Number(paidCostEl.value) || 0);
+
+    var paid = free * conv;
+    var remainingFree = free * (1 - conv);
+    var cost = remainingFree * freeCost + paid * paidCost;
+    var rev = paid * arpu;
+    var profit = rev - cost;
+
+    outPaid.textContent = Math.round(paid).toLocaleString("en-US");
+    outCost.textContent = money(cost);
+    outRev.textContent = money(rev);
+    outProfit.textContent = money(profit);
+    outProfit.style.color = profit >= 0 ? "var(--green)" : "var(--red, #b3261e)";
+
+    var margin = arpu - paidCost;
+    if (margin <= 0) {
+      breakEl.textContent = "付费用户边际贡献不为正：无论转化率多高，免费池都无法被覆盖。";
+    } else if (free === 0) {
+      breakEl.textContent = "免费用户为 0：没有获客池，也就没有这笔账。";
+    } else {
+      var needed = (free * freeCost) / (margin + freeCost);
+      var bec = (needed / free) * 100;
+      breakEl.textContent = "盈亏平衡转化率约 " + bec.toFixed(1) + "%（需约 " +
+        Math.ceil(needed).toLocaleString("en-US") + " 个付费用户覆盖免费池）。";
+    }
+  }
+
+  [freeEl, freeCostEl, convEl, arpuEl, paidCostEl].forEach(function (el) {
+    el.addEventListener("input", calc);
+  });
+  calc();
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  var note = document.getElementById("checkNote");
+  function check() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    note.textContent = "已完成 " + n + " / " + boxes.length + " 项。" +
+      (n === boxes.length ? " 可以进入试用与压测。" : " 未完成项需要在试用前确认。");
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", check); });
+  check();
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
