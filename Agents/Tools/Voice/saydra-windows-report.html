@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Saydra · AI 语音输入工具 · 独立分析 03 / 04：能力、成本、隐私、风险与验证清单。">
+<title>Saydra · Windows 语音输入分析报告</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#14171c; --muted:#5c6470;
+  --line:#e3e6eb; --line-strong:#cbd1da;
+  --accent:#0f766e; --accent-soft:#e6f4f1; --accent-ink:#0b5f59;
+  --ok:#166534; --ok-soft:#e8f5ec; --bad:#a3261f; --bad-soft:#fdecea;
+  --warn:#8a4b00; --warn-soft:#fff4e0; --info:#1e40af; --info-soft:#e8eefc;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid rgba(0,0,0,.14)}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.86em;background:#eef1f5;padding:.12em .38em;border-radius:4px}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.01em}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:20px}
+li{margin:5px 0}
+strong{font-weight:650}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;color:#000;padding:10px 14px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:12px;top:12px}
+.readbar{position:fixed;top:0;left:0;right:0;height:3px;background:transparent;z-index:60;pointer-events:none}
+.readbar i{display:block;height:100%;width:0;background:var(--accent)}
+.hero{background:linear-gradient(180deg,#0d1219 0%,#141b26 100%);color:#e8edf5;padding:34px 0 30px;border-bottom:1px solid #0a0e14}
+.series{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#8fa0b8}
+.hero h1{font-size:clamp(28px,4vw,42px);margin:10px 0 8px;color:#fff;letter-spacing:-.02em}
+.lede{max-width:880px;color:#b6c2d4;font-size:16px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#d6dfec}
+.chip b{color:#fff;font-weight:600}
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:22px}
+.v{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px}
+.v .l{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8fa0b8}
+.v .t{font-size:14.5px;font-weight:600;color:#fff;margin-top:5px}
+.v .n{font-size:12px;color:#a9b6c8;margin-top:3px;line-height:1.5}
+.hero-foot{font-size:12px;color:#8fa0b8;margin:16px 0 0}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);gap:32px;align-items:start;padding-top:28px;padding-bottom:72px}
+.toc{position:sticky;top:16px;font-size:13px}
+.toc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+.toc nav{display:flex;flex-direction:column;gap:1px}
+.toc a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;font-size:13px;border-bottom:0}
+.toc a:hover{background:#eef1f5;color:var(--ink);text-decoration:none}
+.toc a.active{background:var(--accent-soft);color:var(--accent-ink);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin:14px 10px 0;font-size:11.5px;color:var(--muted);line-height:1.55}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin:0 0 18px;scroll-margin-top:18px}
+.sec-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.sec-num{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--accent-ink);background:var(--accent-soft);border:1px solid rgba(0,0,0,.04);border-radius:6px;padding:3px 6px;margin-top:2px}
+.sec-head h2{font-size:21px;margin:0}
+.sub{color:var(--muted);font-size:13.5px;margin:2px 0 0}
+h3{font-size:15.5px;margin:20px 0 8px}
+h4{font-size:13.5px;margin:14px 0 6px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 8px 8px 0;margin:12px 0 16px}
+.callout strong{color:var(--accent-ink)}
+.alert{border:1px solid #f0c9a0;background:#fff7ec;border-radius:10px;padding:14px 16px;margin:14px 0}
+.alert h3{margin:0 0 6px;font-size:15px;color:#8a4b00}
+.alert ol,.alert ul{margin:6px 0 0}
+.note{background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.note strong{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fcfcfd}
+.panel h3{margin:0 0 8px;font-size:14.5px}
+.panel.pro{border-top:3px solid var(--ok)}
+.panel.con{border-top:3px solid var(--bad)}
+.panel.fit{border-top:3px solid var(--accent)}
+.tag{display:inline-block;font-size:10.5px;line-height:1.4;padding:1px 6px;border-radius:4px;border:1px solid transparent;vertical-align:1px;white-space:nowrap}
+.tag.a{background:#e8f5ec;color:#166534;border-color:#c7e8d2}
+.tag.c{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.u{background:#f1f2f4;color:#4b5563;border-color:#dcdfe5}
+.tag.local{background:#e8eefc;color:#1e40af;border-color:#c9d6f7}
+.tag.cloud{background:#f3e8ff;color:#6b21a8;border-color:#e0c9f5}
+.tag.dev{background:#e6f4f1;color:#0b5f59;border-color:#bfe3dc}
+.tag.high{background:#fdecea;color:#a3261f;border-color:#f3c9c4}
+.tag.mid{background:#fff4e0;color:#8a4b00;border-color:#f0d6ae}
+.tag.low{background:#eef0f3;color:#4b5563;border-color:#dcdfe5}
+.tag.cur{background:var(--accent);color:#fff;border-color:var(--accent)}
+.legend-box{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--muted);margin:8px 0 0}
+.legend-box span{display:inline-flex;align-items:center;gap:5px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.fact-col{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fcfcfd}
+.fact-col h3{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:14px;flex-wrap:wrap}
+.fact-col ul{padding-left:18px;margin:0}
+.fact-col li{font-size:13.2px;margin:7px 0}
+.src{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.step{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fcfcfd}
+.step .n{font-family:var(--mono);font-size:10px;color:var(--accent-ink)}
+.step .t{font-size:13.5px;font-weight:600;margin:3px 0 2px}
+.step .d{font-size:11.5px;color:var(--muted);line-height:1.45}
+.step .tag{margin-top:6px}
+.pipe-note{font-size:11.5px;color:var(--muted);margin:0 0 6px}
+.boundary{display:grid;grid-template-columns:1.35fr .9fr;gap:12px;margin:14px 0}
+.zone{border:1px dashed var(--line-strong);border-radius:10px;padding:12px 14px;background:#fbfcfd}
+.zone h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.zone ul{margin:0;padding-left:16px}
+.zone li{font-size:12.5px}
+.zone.cloud{background:#faf7fd;border-color:#dcc9f0}
+.zone.device{background:#f7fbfa;border-color:#c7e3dd}
+.flow{grid-column:1/-1;font-size:12px;color:var(--muted);text-align:center;border-top:1px dashed var(--line);padding-top:8px}
+details{border:1px solid var(--line);border-radius:9px;padding:0 12px;background:#fcfcfd;margin:8px 0}
+summary{cursor:pointer;padding:9px 0;font-size:13.5px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"+";font-family:var(--mono);color:var(--accent-ink);width:14px;flex:0 0 auto}
+details[open] summary:before{content:"−"}
+details .body{padding:0 0 11px 22px;font-size:13.3px;color:#3b424d}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:10px 0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:#fafbfc;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num{font-family:var(--mono);white-space:nowrap}
+.tbl tr.current td{background:var(--accent-soft)}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.spec{border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:#fcfcfd}
+.spec .k{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.spec .v{font-size:14px;font-weight:600;margin-top:3px}
+.spec .n{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.calc{border:1px solid var(--line-strong);border-radius:12px;padding:16px;background:#fcfcfd;margin:14px 0}
+.calc-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+button.ghost{font:inherit;font-size:12px;padding:5px 10px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer}
+button.ghost:hover{border-color:var(--accent);color:var(--accent-ink)}
+button.ghost[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.calc-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.control{margin:0 0 12px}
+.control label{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.control output{font-family:var(--mono);color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{width:100%;font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line-strong);border-radius:7px;background:#fff;color:var(--ink)}
+input[type=number]:focus-visible,input[type=range]:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check-inline{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0}
+.check-inline input{accent-color:var(--accent)}
+.result{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.big{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.big small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.metric{border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.metric .k{font-size:10.5px;color:var(--muted)}
+.metric .v{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:1px}
+.bar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:#eef0f3;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:0;transition:width .2s}
+.bar .asr{background:var(--accent)}
+.bar .llm{background:#8b5cf6}
+.bar .other{background:#f59e0b}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted)}
+.legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:currentColor}
+.legend .asr{color:var(--accent)}
+.legend .llm{color:#8b5cf6}
+.legend .other{color:#f59e0b}
+.fine{font-size:11.5px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+.mode-switch{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.path-summary{font-size:13.5px;background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 8px 8px 0;margin:8px 0 12px}
+.path-table tr{transition:opacity .15s}
+.path-table td:first-child{white-space:nowrap}
+.path-table tr.is-dim td{opacity:.42}
+.path-table tr.is-on td{background:var(--accent-soft)}
+.check{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fcfcfd;margin-top:12px}
+.check-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.check-head .count{font-family:var(--mono);font-size:12px;color:var(--accent-ink)}
+.progress{flex:1;height:7px;background:#e9ecf0;border-radius:99px;overflow:hidden;min-width:100px}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.check ul{list-style:none;padding:0;margin:6px 0 0}
+.check li{border-top:1px solid var(--line);padding:7px 0}
+.check li:first-child{border-top:0}
+.check label{display:flex;gap:8px;align-items:flex-start;font-size:13.2px;cursor:pointer}
+.check input{margin-top:4px;accent-color:var(--accent)}
+.sources{list-style:none;padding:0;margin:8px 0}
+.sources li{border-top:1px solid var(--line);padding:8px 0;font-size:13px}
+.sources li:first-child{border-top:0}
+.sources .u{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.sources a.u{border-bottom:0;text-decoration:none}
+.sources a.u:hover{text-decoration:underline}
+.sources .why{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.foot{border-top:1px solid var(--line);background:#fff;padding:22px 0 30px;color:var(--muted);font-size:12px}
+.foot p{margin:4px 0}
+.model-select{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.model-select label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+.model-select input{accent-color:var(--accent)}
+.model-select label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.model-card{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0 0}
+.model-card .m{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fcfcfd}
+.model-card .k{font-size:10.5px;color:var(--muted)}
+.model-card .v{font-family:var(--mono);font-size:14px;font-weight:600;margin-top:2px}
+@media (max-width:940px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:18px}
+  .shell > main{min-width:0}
+  .toc{position:static;order:-1;overflow-x:auto;padding-bottom:6px;min-width:0;max-width:100%}
+  .toc nav{min-width:0}
+  .toc nav{flex-direction:row;gap:6px;overflow-x:auto;padding-bottom:2px}
+  .toc a{white-space:nowrap;border:1px solid var(--line);border-left-width:1px;border-radius:999px;padding:5px 10px}
+  .toc-title,.toc-note{display:none}
+  .pipe{grid-template-columns:1fr 1fr}
+  .facts{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr 1fr}
+  .model-card{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .verdict{grid-template-columns:1fr 1fr}
+  .calc-grid{grid-template-columns:1fr}
+  .boundary{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .verdict{grid-template-columns:1fr}
+  .pipe{grid-template-columns:1fr}
+  .specs{grid-template-columns:1fr}
+  .model-card{grid-template-columns:1fr}
+  .card{padding:20px 18px}
+  .hero{padding:28px 0 24px}
+}
+@media print{
+  body{background:#fff}
+  .hero{background:#fff;color:#000;border-bottom:1px solid #ccc}
+  .hero h1,.lede,.chip,.v .t,.v .n,.hero-foot{color:#000}
+  .chip,.v{background:#f4f4f4;border-color:#ccc}
+  .toc,.readbar,.skip,.presets,.check-head button,.mode-switch,.model-select{display:none}
+  .shell{display:block;padding:0}
+  .card{break-inside:avoid;border:1px solid #ddd}
+  details{border:0;padding:0}
+  a{color:#000;text-decoration:underline}
+}
+</style>
+<style>:root{--accent:#6d28d9;--accent-soft:#f3e8ff;--accent-ink:#4c1d95}</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="readbar" aria-hidden="true"><i id="readbar"></i></div>
+<header class="hero">
+  <div class="wrap">
+    <div class="series">AI 语音输入工具 · 独立分析 03 / 04</div>
+    <h1>Saydra</h1>
+    <p class="lede">按右 Alt 说话，松开后本地 SenseVoice 识别，再把文本交给自选 LLM 整理并粘贴到光标。软件免费开源；“完全断网”只对识别成立，整理仍需模型服务。</p>
+    <div class="chips"><span class="chip"><b>平台</b> · Windows 10/11 x64</span><span class="chip"><b>形态</b> · Electron 桌面工具</span><span class="chip"><b>识别</b> · 本地 SenseVoice</span><span class="chip"><b>整理</b> · 自选云端 LLM</span><span class="chip"><b>许可</b> · MIT</span></div>
+    <div class="verdict"><div class="v"><div class="l">定位</div><div class="t">Windows 轻量听写</div><div class="n">右 Alt 按住说，松开即粘贴</div></div><div class="v"><div class="l">识别</div><div class="t">本地 SenseVoice</div><div class="n">CPU 即可，模型约 230 MB</div></div><div class="v"><div class="l">整理</div><div class="t">自选云端 LLM</div><div class="n">Groq / DeepSeek / Qwen / Kimi…</div></div><div class="v"><div class="l">最大误区</div><div class="t">“完全断网”</div><div class="n">识别可离线，整理要联网</div></div></div>
+    <p class="hero-foot">证据等级 A：仓库、README、package.json 均可核对。价格随服务商变化，真实识别效果需自行测试。</p>
+  </div>
+</header>
+<div class="shell wrap">
+  <aside class="toc" aria-label="目录">
+    <p class="toc-title">目录</p>
+    <nav>
+      <a href="#verdict" class="active">结论先行</a>
+      <a href="#facts">事实边界与两个纠偏</a>
+      <a href="#pipeline">它怎么工作</a>
+      <a href="#cost">成本：软件免费，模型按量</a>
+      <a href="#privacy">隐私：录音不出门，文本出门</a>
+      <a href="#specs">关键规格</a>
+      <a href="#proscons">优势与局限</a>
+      <a href="#fit">适合谁，不适合谁</a>
+      <a href="#risks">风险与验证清单</a>
+      <a href="#alternatives">放在同类方案里看</a>
+      <a href="#decision">采用建议</a>
+      <a href="#sources">来源与口径</a>
+    </nav>
+    <p class="toc-note">两个口径修正：公开仓库的 Releases 是可核对下载渠道；“断网可用”只覆盖识别。</p>
+  </aside>
+  <main id="main">
+
+<section id="verdict" class="card">
+  <div class="sec-head"><span class="sec-num">01</span><div><h2>结论先行</h2><p class="sub">它是四个工具里“最像开发者自己会用的那个”：MIT、Electron、CPU 本地识别、右键说话。</p></div></div>
+  <div class="callout"><strong>一句话判断：</strong>如果你在 Windows 上，想要一个免费、开源、无需显卡、按住右 Alt 就能说话的听写工具，Saydra 很值得试。但它的“离线”只覆盖识别；整理会把转写、应用名、窗口标题和光标前 500 字发给你选的云端 LLM。</div>
+<div class="two">
+  <div class="panel fit"><h3>它适合</h3><ul><li>Windows 10/11 用户，想要比系统听写更懂口语的整理。</li><li>没有独显、内存 8GB 左右的普通笔记本/台式机。</li><li>接受 BYOK：Groq 免费额度或自己的 DeepSeek/Qwen/Kimi Key。</li><li>看重 MIT 许可：想读代码、改代码、自己构建。</li><li>需要翻译、改写选中文字、词典纠错等轻量进阶功能。</li></ul></div>
+  <div class="panel con"><h3>它不适合</h3><ul><li>要求“完全离线”：整理必须调用 AI 服务。</li><li>不能把窗口标题/光标前 500 字发给第三方。</li><li>需要代码签名、企业分发、正式支持。</li><li>主要用 macOS/Linux（README 只承诺 Windows）。</li><li>需要会议转写、说话人分离、长音频处理。</li></ul></div>
+</div>
+<div class="note"><strong>采用建议：</strong>先装、先用 Groq 免费额度跑一周；如果整理质量值回配置成本，再换成你常付费的服务商。全程用防火墙盯着出站请求。</div>
+
+</section>
+
+<section id="facts" class="card">
+  <div class="sec-head"><span class="sec-num">02</span><div><h2>事实边界与两个纠偏</h2><p class="sub">一手信息很完整；简报里的“发布地址”和“完全断网”需要补充口径。</p></div></div>
+  <div class="alert"><h3>先纠正两处常见说法</h3><ol><li><strong>发布包在 GitHub Releases（至少这是可核对的公开渠道）。</strong>公开仓库是 <code>PPory/saydra</code>（MIT，TypeScript/Electron，v0.2.17）。README 直接给出 Releases 下载与自动更新说明；如果你看到的是作者主页入口，最终仍应核对到这个仓库与版本。</li><li><strong>“可完全断网运行”只对识别成立。</strong>README 的首次引导要求连接一个 AI 服务来整理文字；转写、应用名、窗口标题、光标前 500 字都会发给你选的 LLM。除非能关闭整理，否则不是“完全断网”。</li></ol></div><div class="facts"><div class="fact-col"><h3>已核实 <span class="tag a">A</span></h3><ul><li>仓库 <code>PPory/saydra</code>，MIT，TypeScript/Electron，v0.2.17，28★ / 7 forks，创建 2026-10-16，最近推送 2026-10-24。<span class="src">GitHub API / package.json</span></li><li>右 Alt 开始/结束；右 Alt+右 Shift 翻译；右 Alt+Space 改写选中文字；Esc 取消。<span class="src">README</span></li><li>本地识别用 sherpa-onnx + SenseVoice（WSYue-ASR 版本，int8）；模型约 230 MB。<span class="src">README</span></li><li>安装后约 650 MB；待机约 450 MB；CPU 识别，10 秒语音在 Ryzen 7 4800H 上不到 1 秒。<span class="src">README</span></li><li>整理走 Groq（免费额度）或 DeepSeek/通义千问/Kimi/智谱/硅基流动/OpenAI/兼容接口。<span class="src">README</span></li><li>发送给 LLM 的上下文包括当前应用名、窗口标题、光标前最多 500 字。<span class="src">README</span></li><li>可选云端识别（硅基流动，免费）以节省约 300 MB 内存。<span class="src">README</span></li><li>历史、词典、设置只存本机；API Key 用 Windows DPAPI 加密。<span class="src">README</span></li><li>安装包未签名；首次运行会触发 SmartScreen；更新走 GitHub。<span class="src">README</span></li></ul></div><div class="fact-col"><h3>简报口径 · 需修正 <span class="tag c">C</span></h3><ul><li>“从作者辛禾 Xenho 主页找发布包” → 公开仓库 <code>PPory/saydra</code> 的 Releases 是可核对的下载渠道。</li><li>“可完全断网运行” → 识别可离线，整理依赖云端 LLM。</li><li>“Qwen 自动纠正口误” → Qwen 只是可选 LLM 之一，不是内置模型。</li><li>“Windows 桌面工具” → README 只承诺 Windows；package.json 已有 macOS 构建脚本，但未文档化。</li></ul></div><div class="fact-col"><h3>未知 <span class="tag u">U</span></h3><ul><li>是否能关闭整理、只用本地识别（README 未明确）。</li><li>Groq 免费额度的具体限制与稳定性。</li><li>硅基流动免费云端 ASR 的条款与额度。</li><li>嘈杂环境、口音、中英混说的真实准确率。</li><li>macOS 构建是否可用、是否会被支持。</li><li>长期维护与 issue 响应（作者明确说业余项目）。</li></ul></div></div>
+<div class="legend-box">
+  <span><span class="tag a">A</span> 一手仓库/官方文档</span>
+  <span><span class="tag c">C</span> 简报口径，需修正</span>
+  <span><span class="tag u">U</span> 未知/未核实</span>
+</div>
+
+</section>
+
+<section id="pipeline" class="card">
+  <div class="sec-head"><span class="sec-num">03</span><div><h2>它怎么工作</h2><p class="sub">链路很清楚：本地识别，云端整理，剪贴板粘贴。</p></div></div>
+  <div class="pipe"><div class="step"><div class="n">01</div><div class="t">触发</div><div class="d">右 Alt 开始/结束；Esc 取消</div><span class="tag dev">本机</span></div><div class="step"><div class="n">02</div><div class="t">本地识别</div><div class="d">sherpa-onnx + SenseVoice int8</div><span class="tag local">本机</span></div><div class="step"><div class="n">03</div><div class="t">取上下文</div><div class="d">应用名 + 窗口标题 + 光标前 500 字</div><span class="tag dev">本机</span></div><div class="step"><div class="n">04</div><div class="t">云端整理</div><div class="d">Groq / DeepSeek / Qwen / Kimi…</div><span class="tag cloud">云端</span></div><div class="step"><div class="n">05</div><div class="t">粘贴上屏</div><div class="d">临时借用剪贴板，粘完恢复</div><span class="tag dev">本机</span></div></div>
+<div class="boundary">
+  <div class="zone device"><h4>你的设备</h4><ul><li>麦克风与录音</li><li>SenseVoice 本地识别</li><li>历史 / 词典 / 设置</li><li>API Key（DPAPI）</li><li>剪贴板临时占用</li></ul></div>
+  <div class="zone cloud"><h4>云端 / 外部</h4><ul><li>所选 LLM（整理）</li><li>可选云端 ASR（硅基流动）</li><li>GitHub（更新检查）</li></ul></div>
+  <div class="flow">默认只把“文本 + 应用名/窗口标题 + 光标前 500 字”发出去；录音留在本机。</div>
+</div><details><summary>为什么它要读窗口标题和光标前 500 字</summary><div class="body"><p>整理模型需要知道“你在哪、前文是什么”，才能把口语改成贴合场景的书面语。比如在邮件里更正式，在聊天里更口语。这个上下文确实提升体验，但也意味着你不只是发了“这句话”，还发了“你在哪个应用、前面写了什么”。</p></div></details><details><summary>为什么用 SenseVoice 而不是更大的模型</summary><div class="body"><p>SenseVoice Small 体积小、CPU 快，适合常驻后台；代价是中文准确率不如 Qwen3-ASR 1.7B 这类模型。Saydra 的取舍是“识别够快够小，把重活交给云端 LLM 整理”。这也是它能在普通笔记本上跑的原因。</p></div></details><details><summary>为什么粘贴要借剪贴板</summary><div class="body"><p>Windows 上没有像 macOS <code>CGEvent</code> 那样统一的“直接键入 Unicode”路径；很多工具会用剪贴板 + Ctrl+V，再恢复原剪贴板。这个做法兼容性好，但会短暂覆盖剪贴板，且在某些安全输入场景会失败。</p></div></details>
+</section>
+
+<section id="cost" class="card">
+  <div class="sec-head"><span class="sec-num">04</span><div><h2>成本：软件免费，模型按量</h2><p class="sub">本地识别不花钱；整理可以选择 Groq 免费额度，或按 token 付费。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">场景</th><th scope="col">每日次数</th><th scope="col">每次秒数</th><th scope="col">上下文</th><th scope="col">整理月估算</th></tr></thead><tbody><tr><td>Groq 免费额度</td><td>40</td><td>15</td><td>约 500 字</td><td>¥0（受额度/网络限制）</td></tr><tr><td>DeepSeek 按量</td><td>40</td><td>15</td><td>约 500 字</td><td>约 ¥2 – 5</td></tr><tr><td>重度 + 长上下文</td><td>100</td><td>20</td><td>约 800 字</td><td>约 ¥6 – 15</td></tr><tr><td>云端 ASR（硅基流动）</td><td>—</td><td>—</td><td>—</td><td>按服务商政策，README 称免费</td></tr></tbody></table></div>
+<div class="calc">
+  <div class="calc-top">
+    <div class="presets"><button type="button" class="ghost" data-preset="light">轻度</button><button type="button" class="ghost" data-preset="daily">日常</button><button type="button" class="ghost" data-preset="heavy">重度</button></div>
+    
+  </div>
+  <div class="calc-grid">
+    <div class="calc-controls"><div class="control"><label for="c-uses">每日使用次数<output id="c-uses-out" for="c-uses">40 次</output></label><input type="range" id="c-uses" min="5" max="150" step="5" value="40"></div><div class="control"><label for="c-sec">每次口述时长<output id="c-sec-out" for="c-sec">15 秒</output></label><input type="range" id="c-sec" min="5" max="60" step="1" value="15"></div><div class="control"><label for="c-ctx">发给 LLM 的上下文<output id="c-ctx-out" for="c-ctx">500 字</output></label><input type="range" id="c-ctx" min="0" max="1500" step="50" value="500"></div><div class="control"><label for="c-inPrice">输入 token 单价<span>元 / 百万 token</span></label><input type="number" id="c-inPrice" min="0" step="0.1" value="2" inputmode="decimal"></div><div class="control"><label for="c-outPrice">输出 token 单价<span>元 / 百万 token</span></label><input type="number" id="c-outPrice" min="0" step="0.1" value="8" inputmode="decimal"></div><div class="check-inline"><input type="checkbox" id="c-cloudasr"><label for="c-cloudasr">使用云端 ASR（硅基流动，README 称免费）</label></div><div class="calc-asr" hidden><div class="control"><label for="c-asrPrice">云端 ASR 单价<span>元 / 分钟</span></label><input type="number" id="c-asrPrice" min="0" step="0.001" value="0" inputmode="decimal"></div></div></div>
+    <div class="result" aria-live="polite">
+      <div class="big"><span id="c-total">—</span><small>每月估算</small></div>
+      <div class="metrics">
+        <div class="metric"><div class="k">每次</div><div class="v" id="c-per">—</div></div>
+        <div class="metric"><div class="k">识别</div><div class="v" id="c-asr">—</div></div>
+        <div class="metric"><div class="k">整理 / 模型</div><div class="v" id="c-llm">—</div></div>
+        <div class="metric"><div class="k">订阅 / 电费</div><div class="v" id="c-other">—</div></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i class="asr" id="c-asr-bar"></i><i class="llm" id="c-llm-bar"></i><i class="other" id="c-other-bar"></i></div>
+      <div class="legend"><span class="asr">识别</span><span class="llm">整理</span><span class="other">订阅 / 电费</span></div>
+    </div>
+  </div>
+  <p class="fine" id="c-note">按每日 40 次、每次 15 秒、上下文 500 字估算。Groq 免费额度可把整理成本压到 ¥0；DeepSeek 等按量服务的单价请按官网填入。</p>
+</div>
+<div class="note"><strong>“免费”的边界：</strong>软件本身 MIT 免费；Groq 有免费额度，但受服务商政策、网络与速率限制；硅基流动的免费云端识别也不是永久承诺。真正稳定的方案要么接受按量付费，要么只用本地识别（如果它能关整理）。</div>
+<div class="note"><strong>没算进去的：</strong>Windows 电脑的电费、安装包 650 MB、模型 230 MB、以及你配置 API Key 的时间。</div>
+
+</section>
+
+<section id="privacy" class="card">
+  <div class="sec-head"><span class="sec-num">05</span><div><h2>隐私：录音不出门，文本出门</h2><p class="sub">点击三种模式，表格会高亮该模式下最需要关注的数据行。</p></div></div>
+  
+<div class="mode-switch" role="group" aria-label="识别/整理模式">
+  <button type="button" class="ghost" data-mode="local-cloud">本地识别 + 云端整理</button>
+  <button type="button" class="ghost" data-mode="cloud-cloud">云端识别 + 云端整理</button>
+  <button type="button" class="ghost" data-mode="local-only">仅本地识别（待核实）</button>
+</div>
+<p class="path-summary" id="path-summary" aria-live="polite">选择一种模式查看数据边界。</p>
+<div class="tbl-wrap"><table class="tbl path-table"><thead><tr><th scope="col">数据</th><th scope="col">是否离开设备</th><th scope="col">去向 / 说明</th><th scope="col">触发条件</th></tr></thead><tbody><tr data-modes="local-cloud cloud-cloud local-only"><td>原始录音</td><td>默认不出设备；云端 ASR 时会</td><td>本机 / 硅基流动 / Groq</td><td>选择云端识别或填了 Groq Key</td></tr><tr data-modes="local-cloud cloud-cloud"><td>ASR 转写</td><td>会离开设备</td><td>所选 LLM</td><td>整理开启时</td></tr><tr data-modes="local-cloud cloud-cloud"><td>应用名 / 窗口标题</td><td>会离开设备</td><td>所选 LLM</td><td>整理开启时</td></tr><tr data-modes="local-cloud cloud-cloud"><td>光标前 500 字</td><td>会离开设备</td><td>所选 LLM</td><td>整理开启时</td></tr><tr data-modes="local-cloud cloud-cloud local-only"><td>选中文字</td><td>会离开设备</td><td>所选 LLM</td><td>使用“改写选中文字”时</td></tr><tr data-modes="local-cloud cloud-cloud local-only"><td>历史 / 词典 / 设置</td><td>不出设备</td><td>本机</td><td>始终</td></tr><tr data-modes="local-cloud cloud-cloud local-only"><td>API Key</td><td>不出设备</td><td>Windows DPAPI</td><td>始终</td></tr></tbody></table></div>
+<div class="two">
+  <div class="panel pro"><h3>相对好的设计</h3><ul><li>默认本地识别，录音不外传（除非你选云端 ASR）。</li><li>API Key 用 Windows DPAPI 加密，不写明文配置。</li><li>没有账号、没有自建服务器、没有遥测。</li><li>自动更新可以关；出站目标数量可控。</li><li>源代码公开，可自己审计网络请求。</li></ul></div>
+  <div class="panel con"><h3>需要警惕的地方</h3><ul><li>整理会把窗口标题与光标前 500 字发给第三方，可能含敏感信息。</li><li>填了 Groq Key 时，每段录音还会同时发给 Groq 再听一遍（README 明确）。</li><li>安装包未签名，SmartScreen 警告是常态；要自己核对下载来源。</li><li>Electron 应用权限大，键盘钩子/剪贴板/窗口读取都在一个进程里。</li><li>“完全断网”不成立；飞机上/内网环境下整理会失败。</li></ul></div>
+</div>
+
+</section>
+
+<section id="specs" class="card">
+  <div class="sec-head"><span class="sec-num">06</span><div><h2>关键规格</h2><p class="sub">一台普通 Windows 笔记本就能跑；没有显卡要求。</p></div></div>
+  <div class="specs"><div class="spec"><div class="k">系统</div><div class="v">Windows 10 / 11</div><div class="n">64 位</div></div><div class="spec"><div class="k">运行时</div><div class="v">Electron 44 / Node 22+</div><div class="n">TypeScript / Preact</div></div><div class="spec"><div class="k">本地 ASR</div><div class="v">sherpa-onnx + SenseVoice</div><div class="n">WSYue-ASR int8</div></div><div class="spec"><div class="k">模型体积</div><div class="v">约 230 MB</div><div class="n">安装后约 650 MB</div></div><div class="spec"><div class="k">内存</div><div class="v">待机约 450 MB</div><div class="n">本地识别约多 300 MB</div></div><div class="spec"><div class="k">处理器</div><div class="v">CPU 即可</div><div class="n">无需显卡</div></div><div class="spec"><div class="k">速度</div><div class="v">10 秒语音 < 1 秒</div><div class="n">Ryzen 7 4800H，作者实测</div></div><div class="spec"><div class="k">LLM</div><div class="v">Groq / DeepSeek / Qwen…</div><div class="n">任意 OpenAI 兼容接口</div></div><div class="spec"><div class="k">上下文</div><div class="v">应用名 + 窗口标题</div><div class="n">光标前 ≤500 字</div></div><div class="spec"><div class="k">许可</div><div class="v">MIT</div><div class="n">可读、可改、可再分发</div></div><div class="spec"><div class="k">版本</div><div class="v">v0.2.17</div><div class="n">2026-10-24 推送</div></div><div class="spec"><div class="k">签名</div><div class="v">未签名</div><div class="n">SmartScreen 会警告</div></div></div>
+<div class="note"><strong>macOS 彩蛋：</strong><code>package.json</code> 里有 <code>dist:mac</code> 与 arm64 helper 的构建脚本，描述也写着 “Windows and macOS”；但 README 只文档化 Windows。把它当“未来可能支持”，不要当“现在可用”。</div>
+
+</section>
+
+<section id="proscons" class="card">
+  <div class="sec-head"><span class="sec-num">07</span><div><h2>优势与局限</h2><p class="sub">它的优势是“轻、免费、可改”；局限是“云端整理”和“业余维护”。</p></div></div>
+  
+<div class="two">
+  <div class="panel pro"><h3>优势</h3><ul><li>真本地 ASR，CPU 即可，硬件门槛低。 <span class="tag a">文档</span></li><li>MIT 许可，代码可审计、可修改、可再分发。 <span class="tag a">LICENSE</span></li><li>免费、无账号，Groq 免费额度可把成本压到 ¥0。 <span class="tag a">文档</span></li><li>快捷键直接：右 Alt、翻译、改写选中文字。 <span class="tag a">文档</span></li><li>把窗口标题与前 500 字作为上下文，整理更贴合场景。 <span class="tag a">文档</span></li><li>流式预览、词典、自动更新，完成度超出“玩具”。 <span class="tag a">文档</span></li></ul></div>
+  <div class="panel con"><h3>局限</h3><ul><li>整理依赖云端 LLM；“完全断网”不成立。 <span class="tag a">文档</span></li><li>会发送窗口标题与光标前 500 字，隐私敏感。 <span class="tag a">文档</span></li><li>Electron 包体/内存高于原生，待机 450 MB。 <span class="tag a">文档</span></li><li>安装包未签名，企业环境可能直接拦截。 <span class="tag a">文档</span></li><li>个人业余项目，issue/PR 不保证处理。 <span class="tag a">文档</span></li><li>只文档化 Windows；macOS 支持未承诺。 <span class="tag a">文档</span></li><li>SenseVoice 中文精度不如 Qwen3-ASR 1.7B，术语需词典。 <span class="tag u">推断</span></li></ul></div>
+</div>
+
+</section>
+
+<section id="fit" class="card">
+  <div class="sec-head"><span class="sec-num">08</span><div><h2>适合谁，不适合谁</h2><p class="sub">适合“普通 Windows 电脑 + 愿意配一个 Key”的人。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>适合</h3><ul><li><strong>Windows 日常写作者：</strong>邮件、文档、聊天、工单，想少打字。</li><li><strong>没有独显的笔记本：</strong>CPU 本地识别，8GB 内存可用。</li><li><strong>开发者/技术用户：</strong>MIT、可读代码、可自己改快捷键/提示词。</li><li><strong>预算敏感：</strong>Groq 免费额度或低价国产 LLM。</li><li><strong>需要翻译/改写：</strong>右 Alt+Shift、右 Alt+Space 直接可用。</li></ul></div>
+  <div class="panel con"><h3>不适合</h3><ul><li><strong>机密环境：</strong>不能把窗口标题/前文发给云端。</li><li><strong>必须离线：</strong>飞机、内网、隔离网环境整理会失败。</li><li><strong>企业部署：</strong>未签名 + 无支持 + 自动更新不可控。</li><li><strong>需要高准确率：</strong>术语/口音/中英混说多，需大量词典维护。</li><li><strong>macOS/Linux 主用：</strong>不是当前文档化平台。</li></ul></div>
+</div>
+<div class="note"><strong>试用判据：</strong>用一周时间，统计“整理后仍需手改的字数”。如果比系统听写少一半以上，值得保留；否则本地识别+手动改可能更省事。</div>
+
+</section>
+
+<section id="risks" class="card">
+  <div class="sec-head"><span class="sec-num">09</span><div><h2>风险与验证清单</h2><p class="sub">先确认“哪些文字会出门”，再确认“识别准不准”。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">风险</th><th scope="col">等级</th><th scope="col">说明</th></tr></thead><tbody><tr><td>窗口上下文外传</td><td><span class="tag high">高</span></td><td>应用名、窗口标题、光标前 500 字会发给 LLM，可能含客户名/项目名/私信。</td></tr><tr><td>未签名安装包</td><td><span class="tag mid">中高</span></td><td>SmartScreen 警告；企业终端可能直接拦截。</td></tr><tr><td>第三方 LLM 可用性</td><td><span class="tag mid">中</span></td><td>服务商限流、涨价、区域封锁都会影响整理。</td></tr><tr><td>Electron 自动更新</td><td><span class="tag mid">中</span></td><td>更新走 GitHub；需确认下载来源与完整性。</td></tr><tr><td>维护中断</td><td><span class="tag mid">中</span></td><td>个人业余项目，作者明确不保证 issue/PR。</td></tr><tr><td>云端 ASR 免费额度</td><td><span class="tag mid">中</span></td><td>硅基流动/Groq 的免费政策可能变化。</td></tr></tbody></table></div>
+<div class="check" id="checklist">
+  <div class="check-head">
+    <span class="count" id="ck-count" aria-live="polite">0/10</span>
+    <div class="progress" aria-hidden="true"><i id="ck-bar"></i></div>
+    <button type="button" class="ghost" id="ck-reset">重置</button>
+  </div>
+  <ul><li><label><input type="checkbox"> <span>从 GitHub Releases 下载，记录版本号与文件哈希。</span></label></li><li><label><input type="checkbox"> <span>检查安装包签名（预期无签名），确认来源。</span></label></li><li><label><input type="checkbox"> <span>用 Windows 防火墙/网络监控记录出站域名。</span></label></li><li><label><input type="checkbox"> <span>确认自动更新开关与更新来源。</span></label></li><li><label><input type="checkbox"> <span>在密码框、客户资料、合同页面测试是否仍读取窗口/前文。</span></label></li><li><label><input type="checkbox"> <span>关闭“流式输出”，观察请求次数是否减少。</span></label></li><li><label><input type="checkbox"> <span>检查历史/录音/词典的本地存储位置。</span></label></li><li><label><input type="checkbox"> <span>确认 API Key 由 DPAPI 加密，不在明文配置里。</span></label></li><li><label><input type="checkbox"> <span>断网测试：识别是否可用？整理失败如何提示？</span></label></li><li><label><input type="checkbox"> <span>用 10 条真实口述测试数字、人名、中英混说。</span></label></li></ul>
+  <p class="fine">勾选状态只保存在本机浏览器，不会上传。</p>
+</div>
+<div class="note"><strong>最重要的一条：</strong>如果你不能接受“窗口标题 + 光标前 500 字”发给第三方，就不要开整理；先确认它是否能只做本地识别。</div>
+
+</section>
+
+<section id="alternatives" class="card">
+  <div class="sec-head"><span class="sec-num">10</span><div><h2>放在同类方案里看</h2><p class="sub">它是 Windows 上证据最强、许可最宽松的一个。</p></div></div>
+  <div class="tbl-wrap"><table class="tbl "><thead><tr><th scope="col">工具</th><th scope="col">平台</th><th scope="col">识别</th><th scope="col">整理</th><th scope="col">数据边界</th><th scope="col">成本</th><th scope="col">证据</th></tr></thead><tbody><tr><td>轻声输入</td><td>macOS</td><td>本地 Qwen 量化 ASR</td><td>DeepSeek 云端</td><td>音频本地；文本/上下文云端</td><td>约 ¥10/月</td><td>C</td></tr><tr><td>OSGKeyboard</td><td>iOS 26+ / macOS 15+</td><td>Apple 端侧 / Qwen3 MLX</td><td>BYOK 或托管</td><td>端侧优先；云端可选</td><td>免费 + 可选积分</td><td>A</td></tr><tr class="current"><td>Saydra</td><td>Windows 10/11</td><td>本地 SenseVoice</td><td>云端 LLM</td><td>音频本地；文本+窗口上下文云端</td><td>免费 + API</td><td>A</td></tr><tr><td>voiceType</td><td>macOS 14+</td><td>本地 Qwen3-ASR</td><td>本地 Ollama</td><td>全本地</td><td>免费 + 电费</td><td>A</td></tr><tr><td>Apple 听写</td><td>macOS / iOS</td><td>系统</td><td>无/系统</td><td>视版本与设置</td><td>免费</td><td>A</td></tr></tbody></table></div>
+<div class="note"><strong>结论：</strong>Windows 上想要“免费 + 开源 + 本地识别”，Saydra 是这四个里最合适的一个；但它不是“全离线”，也不适合机密内容。</div>
+
+</section>
+
+<section id="decision" class="card">
+  <div class="sec-head"><span class="sec-num">11</span><div><h2>采用建议</h2><p class="sub">先 Groq，后付费；先关流式，再开上下文。</p></div></div>
+  
+<div class="two">
+  <div class="panel fit"><h3>推荐路径</h3><ul><li><strong>第 1 天：</strong>装 GitHub Releases 版，用 Groq 免费 Key，测试基本听写。</li><li><strong>第 2–3 天：</strong>关闭“流式输出”，观察延迟与请求次数；加 10 个常用词到词典。</li><li><strong>第 1 周：</strong>对比系统听写，统计修改字数；决定是否换 DeepSeek/Qwen。</li><li><strong>长期：</strong>如果在意隐私，确认能否关闭整理；不能就换全本地工具。</li></ul></div>
+  <div class="panel con"><h3>不建议的做法</h3><ul><li>在客户资料/合同页面开着整理说话。</li><li>把 Groq Key 填进共享电脑，或把配置目录同步到云盘。</li><li>忽略 SmartScreen 警告，从不核对下载来源。</li><li>把它当会议转写工具；它只适合短句输入。</li></ul></div>
+</div>
+<div class="callout"><strong>底线建议：</strong>把 Saydra 当“个人 Windows 听写工具”很合适；把它当“离线保密输入”会误解它的数据流。</div>
+
+</section>
+
+<section id="sources" class="card">
+  <div class="sec-head"><span class="sec-num">12</span><div><h2>来源与口径</h2><p class="sub">仓库、README、package.json 为主；价格与真实体验未核实。</p></div></div>
+  
+<ul class="sources">
+  <li><strong>GitHub: PPory/saydra</strong><a class="u" href="https://github.com/PPory/saydra" target="_blank" rel="noopener noreferrer">https://github.com/PPory/saydra</a><span class="why">README、package.json、GitHub API；2026-11-01 读取。</span></li>
+  <li><strong>Releases</strong><a class="u" href="https://github.com/PPory/saydra/releases/latest" target="_blank" rel="noopener noreferrer">https://github.com/PPory/saydra/releases/latest</a><span class="why">README 指定的正式下载与自动更新来源。</span></li>
+  <li><strong>sherpa-onnx / SenseVoice</strong><a class="u" href="https://github.com/k2-fsa/sherpa-onnx" target="_blank" rel="noopener noreferrer">https://github.com/k2-fsa/sherpa-onnx</a><span class="why">本地识别运行时；模型为 WSYue-ASR 的 SenseVoice int8 版本。</span></li>
+  <li><strong>方法说明</strong>：本报告未运行该软件；平台、功能、数据流来自 README，真实识别效果需自行测试。<span class="why">不构成采购、法律或安全建议。</span></li>
+</ul>
+<div class="note"><strong>检索日期：</strong>2026-11-01。版本 v0.2.17；后续版本可能改变数据流或平台支持。</div>
+
+</section>
+  </main>
+</div>
+<footer class="foot">
+  <div class="wrap">
+    <p><strong>AI 语音输入工具 · 独立分析</strong> · 2026-11-01 · 共 4 份</p>
+    <p>同系列：<a href="qingsheng-macos-report.html">轻声输入</a> · <a href="osgkeyboard-ios-report.html">OSGKeyboard</a> · <a href="voicetype-macos-report.html">voiceType</a></p>
+    <p>本报告基于公开资料与用户简报，逐项标注证据等级；不构成采购、法律或安全建议。产品价格、功能与许可可能变化，采用前请以官方页面为准。</p>
+  </div>
+</footer>
+<script>
+(() => {
+  "use strict";
+  const cfg = {"slug": "saydra", "calc": {"kind": "tokens", "defaultMode": "", "charsPerSec": 4, "tokenFactor": 1.2, "outputRatio": 0.3, "presets": {"light": {"uses": 10, "sec": 10, "ctx": 300}, "daily": {"uses": 40, "sec": 15, "ctx": 500}, "heavy": {"uses": 100, "sec": 20, "ctx": 800}}}, "privacy": {"default": "local-cloud", "summaries": {"local-cloud": "默认路径：录音留在本机，转写文本 + 应用名/窗口标题 + 光标前 500 字发给你选的 LLM。", "cloud-cloud": "把识别也搬到云端（如硅基流动）：省约 300 MB 内存，但录音也离开设备，隐私面最大。", "local-only": "如果能关闭整理，识别与文本都可留在本机；README 未明确提供该模式，需要实测确认。"}}};
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmt = (n) => {
+    if (!isFinite(n)) return "—";
+    if (n === 0) return "¥0";
+    if (n < 0.001) return "<¥0.001";
+    if (n < 1) return "¥" + n.toFixed(3);
+    if (n < 100) return "¥" + n.toFixed(2);
+    return "¥" + Math.round(n).toLocaleString("zh-CN");
+  };
+
+  const readbar = $("#readbar");
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = max > 0 ? Math.min(1, h.scrollTop / max) : 0;
+    if (readbar) readbar.style.width = (p * 100).toFixed(1) + "%";
+  };
+  addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  const links = $$(".toc a");
+  const secs = links.map(a => document.getElementById(a.hash.slice(1))).filter(Boolean);
+  if ("IntersectionObserver" in window && secs.length) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        links.forEach(a => a.classList.toggle("active", a.hash === "#" + e.target.id));
+      });
+    }, {rootMargin:"-12% 0px -72% 0px", threshold:0});
+    secs.forEach(s => io.observe(s));
+  }
+
+  addEventListener("beforeprint", () => $$("details").forEach(d => d.open = true));
+
+  let updateCalc = () => {};
+  const calc = cfg.calc;
+  if (calc) {
+    const get = (id) => {
+      const el = document.getElementById("c-" + id);
+      if (!el) return null;
+      const n = parseFloat(el.value);
+      return isFinite(n) ? n : 0;
+    };
+    const setVal = (id, v) => {
+      const el = document.getElementById("c-" + id);
+      if (el) el.value = v;
+    };
+    const syncOut = (id) => {
+      const el = document.getElementById("c-" + id + "-out");
+      const src = document.getElementById("c-" + id);
+      if (el && src) el.textContent = src.value;
+    };
+    const setBar = (id, pct) => {
+      const el = document.getElementById(id);
+      if (el) el.style.width = Math.max(0, Math.min(100, pct)).toFixed(1) + "%";
+    };
+    const mode = () => document.body.dataset.calcMode || calc.defaultMode || "";
+
+    updateCalc = () => {
+      const uses = get("uses") ?? 0;
+      const sec = get("sec") ?? 0;
+      const ctx = get("ctx") ?? 0;
+      const inPrice = get("inPrice") ?? 0;
+      const outPrice = get("outPrice") ?? 0;
+      const sub = get("sub") ?? 0;
+      const watts = get("watts") ?? 0;
+      const hours = get("hours") ?? 0;
+      const kwh = get("kwh") ?? 0;
+      const asrPrice = get("asrPrice") ?? 0;
+      const cloudAsr = $("#c-cloudasr")?.checked || false;
+      const m = mode();
+
+      let asr = 0, llm = 0, other = sub, total = 0, per = 0;
+      const kind = calc.kind || "tokens";
+      const hosted = kind === "hosted" || m === "hosted";
+      const hostedUnknown = hosted && sub <= 0;
+
+      if (m === "device") {
+        total = 0; per = 0; llm = 0; asr = 0; other = 0;
+      } else if (kind === "electric") {
+        other = watts * hours * 30 / 1000 * kwh;
+        total = other;
+        per = uses > 0 ? total / (uses * 30) : 0;
+      } else if (kind === "hosted" || m === "hosted") {
+        total = sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        asr = 0; llm = 0; other = sub;
+      } else {
+        const chars = sec * (calc.charsPerSec || 4) + Math.max(0, ctx);
+        const inTok = chars * (calc.tokenFactor || 1.2);
+        const outTok = inTok * (calc.outputRatio || 0.3);
+        const llmPer = inTok * inPrice / 1e6 + outTok * outPrice / 1e6;
+        llm = llmPer * uses * 30;
+        asr = (cloudAsr && asrPrice > 0) ? uses * 30 * sec / 60 * asrPrice : 0;
+        total = llm + asr + sub;
+        per = uses > 0 ? total / (uses * 30) : 0;
+        other = sub;
+      }
+
+      setText("c-total", hostedUnknown ? "待填" : fmt(total));
+      setText("c-per", hostedUnknown ? "—" : ((per > 0 ? fmt(per) : "¥0") + " / 次"));
+      let asrLabel = "—";
+      if (asr > 0) asrLabel = fmt(asr);
+      else if (kind === "tokens") {
+        if (m === "hosted") asrLabel = "含在积分内";
+        else if (cloudAsr) asrLabel = "云端 · ¥0";
+        else asrLabel = "本地 · ¥0";
+      }
+      setText("c-asr", hostedUnknown ? "含在积分内" : asrLabel);
+      setText("c-llm", hostedUnknown ? "—" : (llm > 0 ? fmt(llm) : "—"));
+      setText("c-other", hostedUnknown ? "待填" : (other > 0 ? fmt(other) : "—"));
+
+      const base = total > 0 ? total : 1;
+      setBar("c-asr-bar", asr / base * 100);
+      setBar("c-llm-bar", llm / base * 100);
+      setBar("c-other-bar", other / base * 100);
+
+      const note = $("#c-note");
+      if (note) {
+        if (kind === "electric") {
+          note.textContent = "按每日 " + hours + " 小时、增量功耗 " + watts + " W、电价 " + kwh + " 元/kWh 粗估；不含硬件折旧与待机整机功耗。";
+        } else if (hosted) {
+          note.textContent = hostedUnknown ? "托管积分单价未公开；填入每月费用后才会给出估算。积分套餐以 App Store 内购页为准。" : "按你填写的每月托管费用估算；积分单价与套餐以 App Store 内购页为准，本报告未核实。";
+        } else if (m === "device") {
+          note.textContent = "端侧路径不调用云端模型，现金成本为 ¥0；仍需关注设备存储、内存与耗电。";
+        } else {
+          note.textContent = "按每日 " + uses + " 次、每次 " + sec + " 秒、上下文 " + Math.max(0, ctx) + " 字、token 系数 " + (calc.tokenFactor || 1.2) + "、输出/输入比 " + (calc.outputRatio || 0.3) + " 估算；单价为假设值，可改。";
+        }
+      }
+      ["uses","sec","ctx","inPrice","outPrice","sub","watts","hours","kwh","asrPrice"].forEach(syncOut);
+    };
+
+    $$(".calc input").forEach(el => el.addEventListener("input", updateCalc));
+    const ca = $("#c-cloudasr");
+    if (ca) {
+      const applyCa = () => {
+        $$(".calc-asr").forEach(el => { el.hidden = !ca.checked; });
+        updateCalc();
+      };
+      ca.addEventListener("change", applyCa);
+      applyCa();
+    }
+
+    $$("[data-preset]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const p = calc.presets?.[btn.dataset.preset];
+        if (!p) return;
+        Object.entries(p).forEach(([k,v]) => setVal(k, v));
+        updateCalc();
+      });
+    });
+
+    const pathBtns = $$("[data-path]");
+    if (pathBtns.length) {
+      const applyPath = (p) => {
+        document.body.dataset.calcMode = p;
+        pathBtns.forEach(b => b.setAttribute("aria-pressed", b.dataset.path === p ? "true" : "false"));
+        $$(".calc-token").forEach(el => { el.hidden = p !== "byok"; });
+        $$(".calc-hosted").forEach(el => { el.hidden = p !== "hosted"; });
+        const label = $("#c-mode-label");
+        if (label) label.textContent = p === "device" ? "端侧无润色" : (p === "byok" ? "自备服务商（BYOK）" : "托管积分");
+        updateCalc();
+      };
+      pathBtns.forEach(b => b.addEventListener("click", () => applyPath(b.dataset.path)));
+      const initial = pathBtns.find(b => b.getAttribute("aria-pressed") === "true")?.dataset.path || pathBtns[0].dataset.path;
+      applyPath(initial);
+    }
+
+    updateCalc();
+  }
+
+  const pcfg = cfg.privacy;
+  if (pcfg) {
+    const buttons = $$("[data-mode]");
+    const rows = $$(".path-table tbody tr");
+    const summary = $("#path-summary");
+    const applyMode = (mode) => {
+      buttons.forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode ? "true" : "false"));
+      rows.forEach(tr => {
+        const modes = (tr.dataset.modes || "").split(/\s+/);
+        const on = modes.includes(mode);
+        tr.classList.toggle("is-on", on);
+        tr.classList.toggle("is-dim", !on);
+      });
+      if (summary && pcfg.summaries?.[mode]) summary.textContent = pcfg.summaries[mode];
+      if (pcfg.context && pcfg.context[mode] !== undefined) {
+        const el = document.getElementById("c-ctx");
+        if (el) { el.value = pcfg.context[mode]; updateCalc(); }
+      }
+    };
+    buttons.forEach(b => b.addEventListener("click", () => applyMode(b.dataset.mode)));
+    const initial = pcfg.default || buttons[0]?.dataset.mode;
+    if (initial) applyMode(initial);
+  }
+
+  const models = cfg.models;
+  if (models) {
+    const radios = $$('input[name="model"]');
+    const applyModel = () => {
+      const v = radios.find(r => r.checked)?.value;
+      const d = models[v];
+      if (!d) return;
+      Object.entries(d).forEach(([k,v]) => setText("m-" + k, v));
+    };
+    radios.forEach(r => r.addEventListener("change", applyModel));
+    applyModel();
+  }
+
+  const ck = $("#checklist");
+  if (ck) {
+    const boxes = $$('input[type="checkbox"]', ck);
+    const key = "voice-report:" + cfg.slug;
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) { saved = []; }
+    boxes.forEach((b, i) => { if (saved[i]) b.checked = true; });
+    const updateCheck = () => {
+      const done = boxes.filter(b => b.checked).length;
+      setText("ck-count", done + "/" + boxes.length);
+      const bar = $("#ck-bar");
+      if (bar) bar.style.width = (boxes.length ? done / boxes.length * 100 : 0) + "%";
+      try { localStorage.setItem(key, JSON.stringify(boxes.map(b => b.checked))); } catch (e) {}
+    };
+    boxes.forEach(b => b.addEventListener("change", updateCheck));
+    const reset = $("#ck-reset");
+    if (reset) reset.addEventListener("click", () => { boxes.forEach(b => b.checked = false); updateCheck(); });
+    updateCheck();
+  }
+})();
+</script>
+</body>
+</html>

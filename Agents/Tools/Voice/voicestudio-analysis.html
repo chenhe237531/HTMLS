@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoiceStudio 项目分析报告 · 本地优先的 AI 声音工作室</title>
+<meta name="description" content="对 debpalash/VoiceStudio 的架构、引擎体系、工程实践、竞争位置与风险的结构化分析报告。">
+<style>
+  :root{
+    --bg:#0c0c10;
+    --bg-2:#101016;
+    --panel:#15151c;
+    --panel-2:#1a1a23;
+    --line:#282833;
+    --line-soft:#1f1f28;
+    --txt:#e9e7ee;
+    --txt-2:#c6c2cf;
+    --muted:#9894a3;
+    --accent:#e0648c;
+    --accent-2:#f0a0b8;
+    --accent-soft:rgba(224,100,140,.10);
+    --ok:#69bd8c;
+    --warn:#dcae5a;
+    --bad:#d97a7a;
+    --info:#7ba7d8;
+    --radius:14px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:88px}
+  body{
+    margin:0;background:var(--bg);color:var(--txt);overflow-x:hidden;
+    font-family:var(--sans);font-size:16px;line-height:1.72;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(60rem 30rem at 78% -12%, rgba(224,100,140,.13), transparent 62%),
+      radial-gradient(40rem 24rem at 8% 4%, rgba(123,167,216,.07), transparent 60%);
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px;position:relative;z-index:1;min-width:0}
+  a{color:var(--accent-2);text-decoration:none;text-underline-offset:3px}
+  a:hover{text-decoration:underline}
+  a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+  code{font-family:var(--mono);font-size:.86em;background:#1c1c25;border:1px solid var(--line-soft);border-radius:5px;padding:.1em .38em;color:#dcd8e4}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#150a10;padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+  .skip:focus{left:0}
+
+  /* ---------- header ---------- */
+  header.site{
+    position:sticky;top:0;z-index:50;
+    background:rgba(12,12,16,.82);backdrop-filter:blur(14px) saturate(1.2);
+    border-bottom:1px solid var(--line);
+  }
+  .hdr{display:flex;align-items:center;gap:14px;height:62px;min-width:0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.01em;white-space:nowrap;flex:0 0 auto}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .brand small{color:var(--muted);font-weight:400;font-size:12px}
+  nav.topnav{margin-left:auto;min-width:0;flex:1 1 auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav.topnav::-webkit-scrollbar{display:none}
+  nav.topnav ul{display:flex;gap:2px;list-style:none;margin:0;padding:0}
+  nav.topnav a{
+    display:block;padding:7px 11px;border-radius:8px;color:var(--muted);
+    font-size:13.5px;white-space:nowrap;transition:color .15s,background .15s
+  }
+  nav.topnav a:hover{color:var(--txt);background:#1a1a22;text-decoration:none}
+  nav.topnav a.active{color:var(--txt);background:var(--accent-soft)}
+  #progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+
+  /* ---------- hero ---------- */
+  .hero{padding:78px 0 44px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;font-size:12.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:5px 13px;background:#12121a
+  }
+  .eyebrow b{color:var(--accent-2);font-weight:600;letter-spacing:.06em}
+  h1{
+    font-size:clamp(30px,6.4vw,68px);line-height:1.06;margin:22px 0 0;
+    letter-spacing:-.03em;font-weight:700;overflow-wrap:break-word
+  }
+  h1 .thin{color:var(--muted);font-weight:300}
+  .hero p.sub{font-size:clamp(16px,2vw,19px);color:var(--txt-2);max-width:62ch;margin:18px 0 0}
+  .hero .meta{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13.5px}
+  .hero .meta span{display:inline-flex;align-items:center;gap:7px}
+  .hero .meta span::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--line)}
+
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:34px 0 0}
+  .stat{background:linear-gradient(180deg,var(--panel),#12121a);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px}
+  .stat .k{font-family:var(--mono);font-size:clamp(21px,2.6vw,27px);letter-spacing:-.02em;color:#fff;font-variant-numeric:tabular-nums}
+  .stat .k em{font-style:normal;color:var(--accent);font-size:.62em;margin-left:2px}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+
+  /* ---------- sections ---------- */
+  main{padding-bottom:40px}
+  section{padding:52px 0 8px;border-top:1px solid var(--line-soft)}
+  section:first-of-type{border-top:none}
+  .sec-head{margin-bottom:26px}
+  .sec-head .num{
+    font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.16em;
+    display:block;margin-bottom:8px
+  }
+  h2{font-size:clamp(24px,3.2vw,32px);line-height:1.22;letter-spacing:-.02em;margin:0;font-weight:670}
+  .lede{color:var(--txt-2);max-width:74ch;margin:10px 0 0;font-size:15.6px}
+  h3{font-size:17.5px;letter-spacing:-.01em;margin:30px 0 10px;font-weight:640}
+  h4{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:24px 0 10px;font-weight:600}
+  p{margin:10px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:13.5px}
+
+  /* ---------- cards & grids ---------- */
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(228px,1fr))}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px}
+  .card h3{margin:0 0 6px;font-size:15.5px}
+  .card p{margin:0;font-size:13.8px;color:var(--txt-2);line-height:1.62}
+  .card .tagrow{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+  .card--flat{background:#111118}
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.8px;padding:3px 9px;border-radius:999px;
+    border:1px solid var(--line);color:var(--txt-2);background:#17171f;white-space:nowrap
+  }
+  .pill.ok{color:#bfe8d2;border-color:rgba(105,189,140,.35);background:rgba(105,189,140,.10)}
+  .pill.warn{color:#f0dcb0;border-color:rgba(220,174,90,.35);background:rgba(220,174,90,.10)}
+  .pill.bad{color:#f2c4c4;border-color:rgba(217,122,122,.38);background:rgba(217,122,122,.11)}
+  .pill.info{color:#c5dbf5;border-color:rgba(123,167,216,.35);background:rgba(123,167,216,.10)}
+  .pill.accent{color:#ffd3e2;border-color:rgba(224,100,140,.4);background:var(--accent-soft)}
+
+  /* ---------- callouts ---------- */
+  .note{
+    border:1px solid var(--line);border-left:3px solid var(--accent);
+    background:#12121a;border-radius:0 12px 12px 0;padding:14px 18px;margin:20px 0;font-size:14.4px;color:var(--txt-2)
+  }
+  .note b{color:var(--txt)}
+  .note.warn{border-left-color:var(--warn)}
+  .note.info{border-left-color:var(--info)}
+  blockquote{
+    margin:16px 0;padding:14px 18px;border-left:3px solid var(--line);
+    background:#101017;border-radius:0 12px 12px 0;color:var(--txt-2);font-size:14.2px
+  }
+  blockquote p{margin:0 0 8px}
+  blockquote cite{font-style:normal;color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+  blockquote p:last-child{margin-bottom:0}
+
+  /* ---------- tables ---------- */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);margin:18px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:620px}
+  caption{caption-side:top;text-align:left;padding:13px 16px 0;color:var(--muted);font-size:12.6px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{
+    background:#131319;color:var(--muted);font-weight:600;font-size:11.6px;
+    letter-spacing:.07em;text-transform:uppercase;position:sticky;top:0;white-space:nowrap
+  }
+  tbody tr:hover{background:#191921}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12.8px}
+  .eng-name{font-weight:600;color:#fff}
+  .eng-sub{display:block;color:var(--muted);font-size:12.2px;font-weight:400;margin-top:2px}
+
+  /* ---------- controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0 0}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{
+    font:inherit;font-size:13px;padding:6px 13px;border-radius:999px;cursor:pointer;
+    background:#16161e;border:1px solid var(--line);color:var(--txt-2);transition:.15s
+  }
+  .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:rgba(224,100,140,.45);color:#ffd3e2}
+  .chip:hover{border-color:#3a3a48}
+  .search{
+    flex:1 1 220px;min-width:180px;background:#13131a;border:1px solid var(--line);border-radius:10px;
+    color:var(--txt);padding:8px 12px;font:inherit;font-size:13.5px
+  }
+  .search::placeholder{color:#6d6979}
+  .count{color:var(--muted);font-size:12.8px;font-variant-numeric:tabular-nums;margin-left:auto}
+
+  /* ---------- charts ---------- */
+  .chart{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 12px;margin:18px 0}
+  .chart h3{margin:0 0 4px;font-size:14.5px}
+  .chart .sub{color:var(--muted);font-size:12.6px;margin:0 0 16px}
+  .bars{display:grid;gap:11px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 76px;gap:12px;align-items:center;font-size:13px}
+  .bar-label{color:var(--txt-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-track{display:block;background:#1c1c25;border-radius:5px;height:10px;overflow:hidden}
+  .bar-fill{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#b34c6c,var(--accent))}
+  .bar-fill.alt{background:linear-gradient(90deg,#3f5f86,#7ba7d8)}
+  .bar-val{text-align:right;font-family:var(--mono);font-size:12.2px;color:var(--muted);font-variant-numeric:tabular-nums}
+  @media (max-width:560px){
+    .bar-row{grid-template-columns:96px 1fr 60px;font-size:12.2px}
+  }
+  @media (max-width:520px){
+    .wrap{padding:0 16px}
+    .hero{padding:48px 0 32px}
+    .risk-item{padding:14px}
+    .card{padding:15px}
+  }
+
+  /* ---------- evidence details ---------- */
+  details.ev{
+    border:1px solid var(--line);background:#12121a;border-radius:10px;padding:0;margin:10px 0;overflow:hidden
+  }
+  details.ev > summary{
+    cursor:pointer;padding:10px 14px;font-size:13.2px;color:var(--txt-2);list-style:none;
+    display:flex;align-items:center;gap:9px
+  }
+  details.ev > summary::-webkit-details-marker{display:none}
+  details.ev > summary::before{content:"+";font-family:var(--mono);color:var(--accent);width:12px}
+  details.ev[open] > summary::before{content:"−"}
+  details.ev[open] > summary{border-bottom:1px solid var(--line-soft);color:var(--txt)}
+  details.ev .body{padding:12px 16px 14px;font-size:13.5px;color:var(--txt-2)}
+  details.ev .body ul{margin:6px 0;padding-left:20px}
+
+  /* ---------- diagram ---------- */
+  .diagram{display:flex;gap:0;margin:22px 0 8px;align-items:stretch}
+  .lane{flex:1 1 0;min-width:0}
+  .diagram > .lane:nth-child(3){flex:1.25 1 0}
+  .lane{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .lane h4{margin:0 0 10px;font-size:11.5px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+  .node{
+    background:#101017;border:1px solid var(--line-soft);border-radius:9px;padding:9px 11px;margin-bottom:8px;
+    font-size:12.6px;color:var(--txt-2);line-height:1.45
+  }
+  .node b{display:block;color:#fff;font-size:13px;font-weight:600;margin-bottom:1px}
+  .node:last-child{margin-bottom:0}
+  .arrow-col{flex:0 0 118px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:0 8px;color:var(--muted);font-size:11.4px;text-align:center;line-height:1.45}
+  .arrow-col svg{width:100%;max-width:78px;height:auto;opacity:.55}
+  @media (max-width:860px){
+    .diagram{flex-direction:column}
+    .diagram > .lane:nth-child(3){flex:1 1 auto}
+    .arrow-col{flex:0 0 auto;padding:10px 0}
+    .arrow-col svg{transform:rotate(90deg);max-width:44px}
+  }
+
+  /* ---------- risk ---------- */
+  .risk{display:grid;gap:10px;margin-top:16px}
+  .risk-item{
+    display:grid;grid-template-columns:82px 1fr;gap:16px;
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+    border-radius:12px;padding:15px 18px
+  }
+  .risk-item.high{border-left-color:var(--bad)}
+  .risk-item.mid{border-left-color:var(--warn)}
+  .risk-item.low{border-left-color:var(--info)}
+  .risk-item .lvl{font-size:11.6px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+  .risk-item.high .lvl{color:#efa6a6}
+  .risk-item.mid .lvl{color:#eccd8f}
+  .risk-item.low .lvl{color:#a8c6ea}
+  .risk-item h3{margin:0 0 5px;font-size:15px}
+  .risk-item p{margin:0 0 8px;font-size:13.7px;color:var(--txt-2)}
+  .risk-item .fix{font-size:13px;color:var(--muted)}
+  .risk-item .fix b{color:var(--txt-2);font-weight:600}
+  @media (max-width:600px){.risk-item{grid-template-columns:1fr;gap:6px}}
+
+  /* ---------- timeline / steps ---------- */
+  ol.steps{counter-reset:s;list-style:none;padding:0;margin:16px 0;display:grid;gap:0}
+  ol.steps li{
+    counter-increment:s;position:relative;padding:0 0 18px 42px;border-left:1px solid var(--line);margin-left:12px
+  }
+  ol.steps li:last-child{border-left-color:transparent;padding-bottom:0}
+  ol.steps li::before{
+    content:counter(s);position:absolute;left:-13px;top:-2px;width:25px;height:25px;border-radius:50%;
+    background:#16161e;border:1px solid var(--line);color:var(--accent);font-family:var(--mono);
+    font-size:12px;display:flex;align-items:center;justify-content:center
+  }
+  ol.steps b{display:block;color:#fff;font-size:14.6px;margin-bottom:2px}
+  ol.steps span{color:var(--txt-2);font-size:13.7px}
+
+  ul.clean{list-style:none;padding:0;margin:12px 0;display:grid;gap:9px}
+  ul.clean li{position:relative;padding-left:18px;font-size:14.2px;color:var(--txt-2)}
+  ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+  ul.clean li b{color:#fff;font-weight:600}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:780px){.two-col{grid-template-columns:1fr}}
+
+  /* ---------- footer ---------- */
+  footer.site{border-top:1px solid var(--line);margin-top:56px;padding:30px 0 60px;color:var(--muted);font-size:13px}
+  footer.site .row{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:space-between}
+  footer.site a{color:var(--txt-2)}
+
+  #toTop{
+    position:fixed;right:20px;bottom:20px;z-index:60;width:42px;height:42px;border-radius:50%;
+    background:#1b1b24;border:1px solid var(--line);color:var(--txt-2);cursor:pointer;
+    display:none;align-items:center;justify-content:center;font-size:16px
+  }
+  #toTop.show{display:flex}
+  #toTop:hover{border-color:var(--accent);color:#fff}
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition:none!important;animation:none!important}
+  }
+  @media print{
+    header.site,#toTop{display:none}
+    body{background:#fff;color:#111}
+    .card,.tbl-wrap,.chart,.lane,.risk-item{background:#fff;border-color:#ccc}
+    a{color:#8a2b48}
+    section{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="site">
+  <div class="wrap">
+    <div class="hdr">
+      <div class="brand"><span class="dot"></span>VoiceStudio <small>项目分析</small></div>
+      <nav class="topnav" aria-label="章节导航">
+        <ul>
+          <li><a href="#overview">概览</a></li>
+          <li><a href="#product">产品</a></li>
+          <li><a href="#engines">引擎</a></li>
+          <li><a href="#arch">架构</a></li>
+          <li><a href="#code">代码</a></li>
+          <li><a href="#practice">工程</a></li>
+          <li><a href="#security">安全</a></li>
+          <li><a href="#market">竞争</a></li>
+          <li><a href="#risk">风险</a></li>
+          <li><a href="#takeaway">启示</a></li>
+          <li><a href="#method">方法</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+  <div id="progress"></div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="eyebrow"><b>开源项目分析</b> · 数据快照 2026-11-02</span>
+    <h1>VoiceStudio<br><span class="thin">把 ElevenLabs 搬回你自己的电脑</span></h1>
+    <p class="sub">
+      一个用 Python + Electron 写的全本地声音工作室：克隆、配音、听写、有声书、批量渲染，
+      外加一个给 AI Agent 用的本地 MCP 服务。它上线 7 个月拿到近 10 万星，
+      而真正值得研究的是它怎么把一个"模型 demo"组织成一条能发布到 11 个平台的产品线。
+    </p>
+    <div class="meta">
+      <span>github.com/debpalash/VoiceStudio</span>
+      <span>AGPL-3.0 + 商业双许可</span>
+      <span>v0.5.7 · 2026-10-26</span>
+      <span>本报告逐文件核对了 3,447 个源文件</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">98,177</div><div class="l">GitHub Stars<br>（7 个月内）</div></div>
+      <div class="stat"><div class="k">10,909</div><div class="l">Forks · 128 位贡献者</div></div>
+      <div class="stat"><div class="k">63.2<em>万行</em></div><div class="l">实测代码量<br>（3,447 个文件）</div></div>
+      <div class="stat"><div class="k">4,851</div><div class="l">仓库文件<br>约 112 MB</div></div>
+      <div class="stat"><div class="k">31</div><div class="l">TTS + ASR 引擎<br>（19 + 12）</div></div>
+      <div class="stat"><div class="k">358</div><div class="l">HTTP/WS 接口<br>分布在 48 个 router</div></div>
+    </div>
+  </div>
+
+  <main id="main">
+
+  <!-- ================= 01 概览 ================= -->
+  <section id="overview">
+    <div class="sec-head">
+      <span class="num">01 / 概览</span>
+      <h2>三句话看懂这个项目</h2>
+      <p class="lede">先给结论，后面再用代码和文档逐条验证。</p>
+    </div>
+
+    <div class="grid g3">
+      <div class="card">
+        <h3>① 它不是 demo，是一条产品线</h3>
+        <p>桌面端（Electron + React 19）、浏览器端、iOS（SwiftUI）、Android（Compose）、Docker 镜像、
+        Snap/AppImage/Nix、Microsoft Store、F-Droid 仓库——同一版本号、同一发布 tag 一起出。</p>
+        <div class="tagrow"><span class="pill">11 个分发渠道</span><span class="pill">4 种客户端形态</span></div>
+      </div>
+      <div class="card">
+        <h3>② 增长来自"反定位"，不是功能堆叠</h3>
+        <p>对标 ElevenLabs，但把对方赚钱的东西全部删掉：没有账号、没有云端、没有 API key、没有托管服务。
+        换来的是"声音永远不离开你的机器"，以及 646 种语言的本地模型。</p>
+        <div class="tagrow"><span class="pill accent">counter-positioning</span><span class="pill">local-first</span></div>
+      </div>
+      <div class="card">
+        <h3>③ 护城河在集成层，不在模型</h3>
+        <p>模型来自上游（k2-fsa/OmniVoice 等）。真正难复制的是：31 个引擎的统一注册与能力探测、
+        串行 GPU 任务队列、跨平台打包与首次运行修复、以及一套会自我校验的文档体系。</p>
+        <div class="tagrow"><span class="pill">引擎抽象</span><span class="pill">任务编排</span><span class="pill">文档即测试</span></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>读法说明：</b>本报告中标注为数字、代码结构、文档原文的内容，均直接取自仓库当前 <code>main</code> 分支与 GitHub API；
+      标注为"判断/推断"的部分是我的分析，不冒充事实。
+    </div>
+  </section>
+
+  <!-- ================= 02 产品 ================= -->
+  <section id="product">
+    <div class="sec-head">
+      <span class="num">02 / 产品</span>
+      <h2>一条主链路，六种用法</h2>
+      <p class="lede">产品自述是"AI voice studio. On your device."。
+      仓库里的 <code>docs/features.yaml</code> 是功能清单的唯一权威来源，也被 CI 用来检查文档有没有漂移。</p>
+    </div>
+
+    <div class="grid g4">
+      <div class="card card--flat"><h3>声音克隆</h3><p>5–15 秒干净样本 → 新声音；支持 75 秒以内参考音频，超长按引擎策略自动截取"语音最多"的片段。</p></div>
+      <div class="card card--flat"><h3>声音设计</h3><p>用自然语言描述性别、年龄、音高、风格，映射成可复现的设计属性，而不是随机抽卡。</p></div>
+      <div class="card card--flat"><h3>视频配音</h3><p>下载/导入 → 人声分离 → 识别与说话人分离 → 字幕切分 → 翻译 → 时长拟合 → 重配音 → 混流出片。</p></div>
+      <div class="card card--flat"><h3>听写与转写</h3><p>全局热键悬浮窗、实时流式识别、回声消除，完成后进"转写库"可编辑、导出 SRT/VTT。</p></div>
+      <div class="card card--flat"><h3>有声书 / 故事</h3><p>导入 TXT/EPUB/PDF，分配角色音色，按章节渲染，导出 WAV/MP3/M4B。</p></div>
+      <div class="card card--flat"><h3>集成与自动化</h3><p>本地 REST API、OpenAI 兼容接口、MCP 服务、监听文件夹、批量队列。</p></div>
+    </div>
+
+    <h3>平台矩阵：能装的地方都做了安装包</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>来源：README「Platforms」表。状态标签是项目自评。</caption>
+        <thead><tr><th>平台</th><th>状态</th><th>产物</th><th>加速</th></tr></thead>
+        <tbody>
+          <tr><td>macOS（Apple Silicon）</td><td><span class="pill ok">Stable</span></td><td>.dmg</td><td>Metal (MPS)</td></tr>
+          <tr><td>Windows 10/11 x64</td><td><span class="pill ok">Stable</span></td><td>.exe</td><td>CUDA · ROCm（可选）· CPU</td></tr>
+          <tr><td>Linux x64</td><td><span class="pill ok">Stable</span></td><td>AppImage · .deb · Snap · Nix</td><td>CUDA · CPU</td></tr>
+          <tr><td>Docker</td><td><span class="pill ok">Stable</span></td><td>GHCR 镜像（CUDA / ROCm）</td><td>CUDA · ROCm</td></tr>
+          <tr><td>Android 10+</td><td><span class="pill warn">Preview</span></td><td>APK · Obtainium · 自建 F-Droid 仓库</td><td>端上离线推理</td></tr>
+          <tr><td>iPhone / iPad（iOS 17+）</td><td><span class="pill warn">Preview</span></td><td>.ipa（自签侧载）</td><td>端上离线推理</td></tr>
+          <tr><td>Windows on ARM</td><td><span class="pill info">Experimental</span></td><td>.exe</td><td>x64 后端 + 模拟层</td></tr>
+          <tr><td>Intel Mac</td><td><span class="pill bad">Limited</span></td><td>.dmg</td><td>仅 UI，需连远程后端</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note info">
+      <b>值得注意的产品决策：</b>手机端不是"遥控器"。<code>AGENTS.md</code> 明确规定
+      <em>"Phone first: once models are downloaded they work offline with no computer"</em>，
+      配对电脑只是"按任务选择更重的引擎"。这条约束同时解释了为什么手机代码里有完整的模型管理、TTS、ASR 和导出链路，
+      而不是一套精简的 API 客户端。
+    </div>
+  </section>
+
+  <!-- ================= 03 引擎 ================= -->
+  <section id="engines">
+    <div class="sec-head">
+      <span class="num">03 / 引擎</span>
+      <h2>31 个引擎，一套注册表</h2>
+      <p class="lede">这是整个项目最"工程"的部分：把 19 个 TTS 与 12 个 ASR 后端塞进同一个抽象，
+      每个引擎自己声明能力、硬件要求、许可证和不可用原因。下面的表可以筛选和搜索。</p>
+    </div>
+
+    <div class="controls">
+      <div class="chips" role="group" aria-label="按类型筛选">
+        <button class="chip" data-filter="all" aria-pressed="true">全部</button>
+        <button class="chip" data-filter="tts" aria-pressed="false">TTS（19）</button>
+        <button class="chip" data-filter="asr" aria-pressed="false">ASR（12）</button>
+      </div>
+      <input class="search" id="engSearch" type="search" placeholder="搜索引擎、平台或启用方式…" aria-label="搜索引擎">
+      <span class="count" id="engCount" aria-live="polite"></span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table id="engTable">
+        <caption>来源：docs/engines/README.md 与 docs/features.yaml。features.yaml 按 id 登记 19 个 TTS、10 个 ASR；
+          README 表格另列了 faster-whisper 的隔离变体与 whisper.cpp 两条独立路径，故此处为 19 + 12。</caption>
+        <thead>
+          <tr><th>引擎</th><th>类型</th><th>运行设备</th><th>克隆</th><th>如何启用</th></tr>
+        </thead>
+        <tbody>
+          <tr data-kind="tts"><td><span class="eng-name">VoiceStudio (OmniVoice)</span><span class="eng-sub">默认引擎</span></td><td>TTS</td><td>CUDA · MPS · CPU</td><td><span class="pill ok">支持</span></td><td>默认安装</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">VoxCPM2</span></td><td>TTS</td><td>CUDA · MPS · CPU</td><td><span class="pill ok">支持 + 音色设计</span></td><td><code>pip install "voxcpm&gt;=2.0.3"</code></td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">MOSS-TTS-Nano</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill ok">仅参考片段</span></td><td>克隆仓库 + <code>uv pip install -e .</code></td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">KittenTTS</span></td><td>TTS</td><td>CPU</td><td><span class="pill">8 个预设音色</span></td><td><code>pip install kittentts</code></td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">MLX-Audio</span><span class="eng-sub">Kokoro / CSM / Dia 等</span></td><td>TTS</td><td>Apple Silicon</td><td><span class="pill">视模型</span></td><td><code>pip install mlx-audio</code></td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">CosyVoice 3</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill ok">支持</span></td><td>克隆仓库 + requirements</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">GPT-SoVITS</span></td><td>TTS</td><td>外部服务</td><td><span class="pill ok">支持</span></td><td>自建 API server 后接入</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">Sherpa-ONNX</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill">不支持</span></td><td>安装包 + 模型目录</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">IndexTTS 2.5</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill ok">支持 + 情绪</span></td><td>一键 sidecar 安装</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">OmniVoice GGUF</span></td><td>TTS</td><td>CUDA · MPS · CPU</td><td><span class="pill ok">支持</span></td><td>桌面安装包内置原生二进制</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">Supertonic-3</span></td><td>TTS</td><td>CPU</td><td><span class="pill">7 个预设音色</span></td><td><code>uv sync --extra supertonic</code> + 接受许可证</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">MOSS-TTS-v1.5 (8B)</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill ok">支持</span></td><td>克隆仓库 + 环境变量</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">dots.tts (2B)</span></td><td>TTS</td><td>CUDA · CPU（Windows 走 audio.cpp）</td><td><span class="pill ok">支持</span></td><td>克隆仓库 + 环境变量</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">OmniVoice (subprocess)</span></td><td>TTS</td><td>CUDA · MPS · CPU</td><td><span class="pill ok">支持</span></td><td>MPS 上自动启用</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">PocketTTS (Kyutai)</span></td><td>TTS</td><td>CPU（非 Intel Mac）</td><td><span class="pill ok">支持</span></td><td><code>uv sync --extra pockettts</code> + 许可证</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">Confucius4-TTS</span></td><td>TTS</td><td>CUDA · CPU</td><td><span class="pill ok">支持</span></td><td>克隆仓库 + 环境变量</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">audio.cpp (Breeze-TTS-2)</span></td><td>TTS</td><td>CPU + Vulkan / Metal / CUDA / HIP</td><td><span class="pill ok">支持 + 设计</span></td><td>预编译二进制；权重为研究/非商用许可</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">audio.cpp (dots.tts SOAR)</span></td><td>TTS</td><td>同上（含 Windows）</td><td><span class="pill ok">支持</span></td><td>模型目录下载运行时 + 权重（Apache-2.0）</td></tr>
+          <tr data-kind="tts"><td><span class="eng-name">CosyVoice 3 GGUF</span></td><td>TTS</td><td>CPU + Vulkan</td><td><span class="pill ok">支持 + instruct</span></td><td>自建原生运行时 + 模型目录</td></tr>
+
+          <tr data-kind="asr"><td><span class="eng-name">WhisperX</span><span class="eng-sub">默认 ASR</span></td><td>ASR</td><td>CUDA · CPU</td><td>—</td><td>默认安装（词级时间戳 + 说话人分离）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Faster-Whisper</span></td><td>ASR</td><td>CUDA · CPU</td><td>—</td><td>默认安装</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Faster-Whisper (isolated)</span></td><td>ASR</td><td>CUDA · CPU</td><td>—</td><td>可选，无人值守批处理</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">MLX Whisper</span></td><td>ASR</td><td>Apple Silicon</td><td>—</td><td><code>pip install mlx-whisper</code>（Mac 默认）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">PyTorch Whisper</span></td><td>ASR</td><td>CUDA · MPS · CPU</td><td>—</td><td>默认安装（ROCm 主机）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">whisper.cpp</span></td><td>ASR</td><td>CPU · Vulkan · CUDA · Metal</td><td>—</td><td>自带 <code>whisper-cli</code> + GGML 模型</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Parakeet TDT (NeMo)</span></td><td>ASR</td><td>CUDA · CPU</td><td>—</td><td>独立 venv（不复用主环境）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Parakeet TDT v3 (MLX)</span></td><td>ASR</td><td>Apple Silicon</td><td>—</td><td>mac-ARM 源码安装默认</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Moonshine</span></td><td>ASR</td><td>CPU</td><td>—</td><td><code>pip install</code>（低功耗，无时间戳）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">FunASR (SenseVoice)</span></td><td>ASR</td><td>CUDA · CPU</td><td>—</td><td><code>pip install funasr</code>（50+ 语言）</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">Sherpa-ONNX 听写</span></td><td>ASR</td><td>CPU</td><td>—</td><td>精选模型下载，实时流式</td></tr>
+          <tr data-kind="asr"><td><span class="eng-name">OpenAI-compatible</span></td><td>ASR</td><td>网络端点</td><td>—</td><td>模型目录中配置（回环地址仍是本地）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>这套抽象做对了什么</h3>
+    <div class="two-col">
+      <div>
+        <ul class="clean">
+          <li><b>懒加载注册表。</b><code>services/tts_backend.py</code>（4,978 行）用 <code>_LAZY_REGISTRY</code> 做"名字 → 模块路径"的间接层，
+          只有真正被选中的引擎才会被 import。否则 19 个引擎的依赖树会让启动时间不可接受。</li>
+          <li><b>能力探测而不是试用。</b>每个引擎自己回答"能不能跑"：驱动、显存、模型是否已下载、许可证是否已接受。</li>
+          <li><b>不可用原因只进日志，不进 UI。</b>UI 只显示通用提示 + 文档链接，因为探测输出里可能带本机路径或凭据（见引擎文档开头的说明）。</li>
+        </ul>
+      </div>
+      <div>
+        <ul class="clean">
+          <li><b>显式降级。</b>文档反复强调"degrading visibly, never silently"：引擎不支持某能力时直接报错并给出替代选项，
+          而不是悄悄生成一种错误的语言。</li>
+          <li><b>隔离与回收。</b>重型引擎跑在子进程（sidecar）里，崩溃不会带走后端；
+          <code>engine_memory.py</code>、<code>engine_disk_usage.py</code> 负责显存/磁盘的回收与自查。</li>
+          <li><b>每个引擎一篇文档。</b>19 + 10 个引擎各自有「能干什么 / 要什么 / 怎么开 / 有什么坑」的页面，并被 CI 校验存在性。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <b>代价：</b>引擎越多，"组合矩阵"越难测。仓库里 862 个 Python 测试文件也覆盖不了 31 × 3（平台）× 3（设备）的组合，
+      所以大量质量保证其实押在"用户第一次跑通"这件事上。这是这类产品结构性的风险，不是这个项目独有的。
+    </div>
+  </section>
+
+  <!-- ================= 04 架构 ================= -->
+  <section id="arch">
+    <div class="sec-head">
+      <span class="num">04 / 架构</span>
+      <h2>一个本地后端，五种前端</h2>
+      <p class="lede">整体是"PHP 时代的经典结构"：后端是唯一真相源，前端都是薄客户端。
+      区别在于后端跑在你自己的机器上，还要负责下载模型、管理 GPU、修补平台差异。</p>
+    </div>
+
+    <div class="diagram">
+      <div class="lane">
+        <h4>客户端层</h4>
+        <div class="node"><b>Electron 桌面</b>main（生命周期 / 后端守护 / 更新）· preload（contextBridge）· renderer（React 19）</div>
+        <div class="node"><b>浏览器构建</b><code>vite.web.config.ts</code> → 由后端在 Docker 中托管</div>
+        <div class="node"><b>iOS</b>SwiftUI · 端上推理</div>
+        <div class="node"><b>Android</b>Compose · 端上推理</div>
+      </div>
+      <div class="arrow-col">
+        <svg viewBox="0 0 100 40" aria-hidden="true"><path d="M2 20h84" stroke="currentColor" stroke-width="2"/><path d="M80 14l10 6-10 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>loopback HTTP + WebSocket<br>SSE 事件 / <code>/health</code></span>
+      </div>
+      <div class="lane">
+        <h4>FastAPI 后端</h4>
+        <div class="node"><b>48 个 router · 358 个端点</b>生成、配音、听写、有声书、设置、系统诊断…</div>
+        <div class="node"><b>core（86 个模块）</b>配置、鉴权、CSRF、路径白名单、事件总线、任务队列、崩溃取证</div>
+        <div class="node"><b>services（117 个模块）</b>配音流水线、引擎注册表、GPU 网关、时长拟合、增量重配</div>
+        <div class="node"><b>16 个引擎适配器目录</b>统一 ABC + 懒加载 + 能力探测（14 个引擎 + 2 个共享组件）</div>
+      </div>
+      <div class="arrow-col">
+        <svg viewBox="0 0 100 40" aria-hidden="true"><path d="M2 20h84" stroke="currentColor" stroke-width="2"/><path d="M80 14l10 6-10 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>子进程 / IPC<br>串行 GPU 队列</span>
+      </div>
+      <div class="lane">
+        <h4>运行时资源</h4>
+        <div class="node"><b>SQLite + Alembic</b>18 个迁移版本；任务、事件、项目、声音档案</div>
+        <div class="node"><b>模型与缓存</b>HuggingFace 缓存 + 按需下载 + Xet 加速</div>
+        <div class="node"><b>原生二进制</b>OmniVoice sidecar · audio.cpp · whisper.cpp · ffmpeg · Demucs</div>
+        <div class="node"><b>外部（可选）</b>OpenAI 兼容 LLM（含本地 Ollama）· 远程 GPU · 用户自建云同步</div>
+      </div>
+    </div>
+
+    <h3>一次配音请求走了什么路</h3>
+    <ol class="steps">
+      <li><b>导入</b><span>本地文件、URL（yt-dlp）或手机传来的素材；先算内容哈希，命中缓存就直接复用。</span></li>
+      <li><b>分离与预处理</b><span>Demucs 拆人声/背景，场景检测、缩略图、静音裁剪；每一步都是可中断的子进程。</span></li>
+      <li><b>识别 + 说话人分离</b><span>ASR 后端产出词级时间戳，pyannote/FunASR 给出 speaker_id，再进入字幕切分。</span></li>
+      <li><b>字幕切分</b><span><code>subtitle_segmenter.py</code> 按 Netflix 规则（单行 ≤42 字符、≤17 CPS）重排句子，保留词级时间。</span></li>
+      <li><b>翻译</b><span>三阶 LLM 链：直译 → 自我批评 → 适配；术语表注入；没有 LLM 时优雅退回单次翻译。</span></li>
+      <li><b>时长拟合</b><span><code>fit_planner.py</code> 决定"加速音频还是放慢视频"，并把结果写进指纹，供下次增量重配复用。</span></li>
+      <li><b>合成 + 混流</b><span>逐段 TTS（内容寻址缓存），混音、字幕烧录/软字幕、多语言音轨，最后导出。</span></li>
+    </ol>
+
+    <h3>并发与状态：三个刻意的设计</h3>
+    <div class="grid g3">
+      <div class="card">
+        <h3>串行 GPU 队列</h3>
+        <p>所有吃 GPU/CPU/fd 的活（TTS、分离、ASR、ffmpeg 混流）进同一个串行 worker，带取消语义和"前面还有几个任务"的位置查询。</p>
+      </div>
+      <div class="card">
+        <h3>事件总线 + WS 推送</h3>
+        <p>任何会改变侧边栏数据的写操作 <code>emit(kind, payload)</code>，前端当作"该重新拉一次了"的信号，替代 45 秒轮询。</p>
+      </div>
+      <div class="card">
+        <h3>任务持久化 + 断线重放</h3>
+        <p>任务状态和事件写进 SQLite；重连时先按 <code>after_seq</code> 回放持久化的尾部，再挂到实时监听器上。</p>
+      </div>
+    </div>
+
+    <blockquote>
+      <p>“TTS inference, diarization, demucs, Whisper, ffmpeg muxing all contend for the same GPU/CPU/fd budget. Without a gate, a second dub request can OOM VRAM or trigger posix_spawn EAGAIN on macOS.”</p>
+      <cite>backend/core/job_queue.py · 文件头注释</cite>
+    </blockquote>
+
+    <h3>启动顺序：一份被反复打补丁的清单</h3>
+    <p><code>backend/main.py</code> 有 2,365 行，其中绝大部分不是业务逻辑，而是"必须在导入 torch 之前做完的事"。
+    这个文件本身就是一份平台兼容性事故史：</p>
+    <ul class="clean">
+      <li><b>先装崩溃取证，再导入模型库</b>——否则原生崩溃拿不到 traceback。</li>
+      <li><b>把 stdout/stderr 换成非阻塞包装</b>——读取端落后时不会卡死事件循环，<code>/health</code> 才不会假死。</li>
+      <li><b>Windows 专用补丁</b>：子进程不弹黑窗、asyncio 接受连接出错后重新 arm、MKL 的 Fortran 运行时控制台钩子。</li>
+      <li><b>父进程存活看门狗</b>——桌面端崩溃后，后端能靠 stdin EOF 判断自己成了孤儿并退出，避免僵尸进程占着 GPU。</li>
+    </ul>
+    <details class="ev">
+      <summary>看一段真实注释（说明这个团队怎么记录"为什么"）</summary>
+      <div class="body">
+        <blockquote>
+          <p>“The backend's stdout/stderr are pipes owned by the desktop shell that spawned it. If that shell exits while the backend survives (crash, relaunch, orphan), the pipes close — and the next write raises BrokenPipeError. transformers' tqdm weight-loading bar writes constantly, so an orphaned backend couldn't load the model at all.”</p>
+          <cite>backend/main.py</cite>
+        </blockquote>
+        <p class="small muted">全仓库 backend 的 Python 代码里共出现 1,584 处 <code>#NNNN</code> 形式的 issue 引用，涉及 423 个不同 issue；181 个文件至少引用一次。这是"每个补丁都能追到一个真实故障"的直接证据。</p>
+      </div>
+    </details>
+
+    <h3>桌面端如何启动 Python</h3>
+    <p>安装包不自带 Python 环境，而是内置官方 uv 二进制，首次运行时在用户目录创建受管环境
+    （<code>uv sync --frozen --no-dev --managed-python --python 3.11</code>）。这段逻辑在安装文档里被写得很细：
+    空闲空间预检（9 GiB / CPU 5 GiB）、按主机是否有 NVIDIA 驱动自动选 CPU 或 CUDA 版 PyTorch、
+    失败后"重试 / 干净重试"、以及只重建坏掉的那组 wheel。</p>
+    <div class="note">
+      <b>判断：</b>这是"交付一个 Python AI 应用"最难的 20%，项目投入了大量篇幅做恢复路径。
+      好处是安装包体积可控、依赖锁定严格；代价是首次启动有一段无法避免的多 GB 下载，以及一个必须长期维护的引导器。
+    </div>
+  </section>
+
+  <!-- ================= 05 代码 ================= -->
+  <section id="code">
+    <div class="sec-head">
+      <span class="num">05 / 代码</span>
+      <h2>63 万行是怎么分布的</h2>
+      <p class="lede">我直接拉取并逐行统计了仓库里的源码文件（1,309 个 <code>.py</code>、1,141 个 <code>.ts/.tsx</code>、
+      675 个 <code>.jsx/.js/.css</code>、322 个 <code>.kt/.swift</code>），下面是实测结果，不是估算。</p>
+    </div>
+
+    <div class="chart">
+      <h3>代码行数分布（实测，单位：行）</h3>
+      <p class="sub">共 3,447 个文件 / 632,279 行。测试代码单独用浅蓝色标注。</p>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-label">Electron 前端</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-val">277,389</span></div>
+        <div class="bar-row"><span class="bar-label">tests/（Python）</span><span class="bar-track"><span class="bar-fill alt" style="width:57.5%"></span></span><span class="bar-val">159,523</span></div>
+        <div class="bar-row"><span class="bar-label">backend 应用代码</span><span class="bar-track"><span class="bar-fill" style="width:46.9%"></span></span><span class="bar-val">130,098</span></div>
+        <div class="bar-row"><span class="bar-label">backend 测试</span><span class="bar-track"><span class="bar-fill alt" style="width:3.8%"></span></span><span class="bar-val">10,428</span></div>
+        <div class="bar-row"><span class="bar-label">移动端</span><span class="bar-track"><span class="bar-fill" style="width:14.2%"></span></span><span class="bar-val">39,344</span></div>
+        <div class="bar-row"><span class="bar-label">omnivoice 模型包</span><span class="bar-track"><span class="bar-fill" style="width:5.6%"></span></span><span class="bar-val">15,497</span></div>
+      </div>
+      <p class="small muted" style="margin:14px 0 4px">Electron 的 277,389 行里有 97,686 行是内联的 <code>*.test.*</code>；
+      把三处测试代码加起来约 26.8 万行，与 36.5 万行业务代码大致是 0.73 : 1。</p>
+    </div>
+
+    <div class="grid g2">
+      <div class="chart">
+        <h3>仓库文件按目录分布</h3>
+        <p class="sub">共 4,851 个受版本控制的文件。</p>
+        <div class="bars">
+          <div class="bar-row"><span class="bar-label">electron/</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-val">2,168</span></div>
+          <div class="bar-row"><span class="bar-label">tests/</span><span class="bar-track"><span class="bar-fill" style="width:40.9%"></span></span><span class="bar-val">887</span></div>
+          <div class="bar-row"><span class="bar-label">mobile/</span><span class="bar-track"><span class="bar-fill" style="width:26.6%"></span></span><span class="bar-val">576</span></div>
+          <div class="bar-row"><span class="bar-label">backend/</span><span class="bar-track"><span class="bar-fill" style="width:20.9%"></span></span><span class="bar-val">454</span></div>
+          <div class="bar-row"><span class="bar-label">docs/</span><span class="bar-track"><span class="bar-fill" style="width:11.7%"></span></span><span class="bar-val">253</span></div>
+          <div class="bar-row"><span class="bar-label">changelog.d/</span><span class="bar-track"><span class="bar-fill" style="width:9.5%"></span></span><span class="bar-val">206</span></div>
+          <div class="bar-row"><span class="bar-label">scripts/</span><span class="bar-track"><span class="bar-fill" style="width:4.2%"></span></span><span class="bar-val">90</span></div>
+          <div class="bar-row"><span class="bar-label">.github/</span><span class="bar-track"><span class="bar-fill" style="width:2.4%"></span></span><span class="bar-val">52</span></div>
+        </div>
+      </div>
+      <div class="chart">
+        <h3>Electron 内部构成</h3>
+        <p class="sub">277,389 行，前端是第二大"系统"。</p>
+        <div class="bars">
+          <div class="bar-row"><span class="bar-label">renderer/src</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-val">111,148</span></div>
+          <div class="bar-row"><span class="bar-label">shared/components</span><span class="bar-track"><span class="bar-fill" style="width:53.5%"></span></span><span class="bar-val">59,474</span></div>
+          <div class="bar-row"><span class="bar-label">main</span><span class="bar-track"><span class="bar-fill" style="width:26.2%"></span></span><span class="bar-val">29,149</span></div>
+          <div class="bar-row"><span class="bar-label">shared/test</span><span class="bar-track"><span class="bar-fill alt" style="width:23%"></span></span><span class="bar-val">25,568</span></div>
+          <div class="bar-row"><span class="bar-label">shared/utils</span><span class="bar-track"><span class="bar-fill" style="width:22.5%"></span></span><span class="bar-val">24,966</span></div>
+          <div class="bar-row"><span class="bar-label">shared/pages</span><span class="bar-track"><span class="bar-fill" style="width:6.8%"></span></span><span class="bar-val">7,601</span></div>
+          <div class="bar-row"><span class="bar-label">shared/api</span><span class="bar-track"><span class="bar-fill" style="width:5.3%"></span></span><span class="bar-val">5,844</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>那些"大到不正常"的文件</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>文件</th><th class="num">行数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>backend/services/tts_backend.py</code></td><td class="num">4,978</td><td>TTS 引擎注册表与统一门面</td></tr>
+          <tr><td><code>backend/api/routers/generation.py</code></td><td class="num">3,043</td><td>生成接口</td></tr>
+          <tr><td><code>backend/api/routers/dub_core.py</code></td><td class="num">2,881</td><td>配音主流程</td></tr>
+          <tr><td><code>backend/main.py</code></td><td class="num">2,365</td><td>启动顺序与平台补丁</td></tr>
+          <tr><td><code>backend/api/routers/dub_export.py</code></td><td class="num">2,318</td><td>字幕/音轨导出</td></tr>
+          <tr><td><code>backend/api/routers/dub_generate.py</code></td><td class="num">2,014</td><td>重配音与增量</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note warn">
+      <b>这里有个自相矛盾之处。</b><code>docs/ROADMAP.md</code> 把「No router file &gt; 300 lines」写成阶段退出门槛，
+      但现实的 router 是 2,000–3,000 行。文档的标准和代码的现状没有对齐——这在一个高速膨胀的项目里很常见，
+      但它确实说明：<b>规则写在文档里，不等于规则被执行。</b>
+    </div>
+
+    <h3>几个能说明文化的统计</h3>
+    <div class="grid g4">
+      <div class="card card--flat"><div class="k" style="font-family:var(--mono);font-size:24px;color:#fff">0</div><p style="margin-top:4px">1,309 个 Python 文件里的 <code>TODO/FIXME</code> 标记数量</p></div>
+      <div class="card card--flat"><div class="k" style="font-family:var(--mono);font-size:24px;color:#fff">1,584</div><p style="margin-top:4px">代码中 <code>#issue</code> 引用次数（423 个不同 issue）</p></div>
+      <div class="card card--flat"><div class="k" style="font-family:var(--mono);font-size:24px;color:#fff">862</div><p style="margin-top:4px">Python 测试文件；另有 432 个内联前端测试</p></div>
+      <div class="card card--flat"><div class="k" style="font-family:var(--mono);font-size:24px;color:#fff">22</div><p style="margin-top:4px">界面语言文件（en + 21 种），CI 校验键对齐</p></div>
+    </div>
+    <p class="small muted">零 TODO 不是没有欠账，而是团队把"欠账"强制放回 issue 列表：
+    <code>AGENTS.md</code> 里写着「Issues: absorb or decline — never defer to a future version」。
+    这条规则同时约束人和 AI——这个仓库是少见的"为 agent 写规范"的项目。</p>
+  </section>
+
+  <!-- ================= 06 工程 ================= -->
+  <section id="practice">
+    <div class="sec-head">
+      <span class="num">06 / 工程</span>
+      <h2>把规范写成可执行的检查</h2>
+      <p class="lede">这是我认为这个仓库最值得抄的部分：它不靠"自觉"，而是把几乎每条团队约定都变成了 CI 里会红的检查。</p>
+    </div>
+
+    <h3>28 条 GitHub Actions 流水线</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>按用途分类；完整列表见 <code>.github/workflows/</code>。</caption>
+        <thead><tr><th>类别</th><th>流水线</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td>主门禁</td><td><code>ci.yml</code> · <code>merge-queue-checks.yml</code></td><td>变更路径识别、外部 PR 审批、Python/Electron/构建/UI 冒烟、打包契约</td></tr>
+          <tr><td>发布</td><td><code>electron-build</code> · <code>electron-release</code> · <code>mobile-release</code> · <code>ios-testflight</code> · <code>android-play-internal</code> · <code>mac-app-store</code> · <code>microsoft-store</code> · <code>snap-store</code> · <code>android-repository</code></td><td>11 个渠道各自的签名、公证、商店提交</td></tr>
+          <tr><td>质量</td><td><code>evals.yml</code> · <code>install-smoke.yml</code> · <code>docs-drift.yml</code></td><td>输出质量评测、安装冒烟、文档与功能清单漂移检测</td></tr>
+          <tr><td>治理</td><td><code>cla.yml</code> · <code>cla-reminders</code> · <code>commit-identity.yml</code> · <code>security.yml</code> · <code>scam-guard.yml</code> · <code>virustotal.yml</code></td><td>贡献者协议、提交身份、密钥扫描、仿冒仓库监测、产物查毒</td></tr>
+          <tr><td>维护</td><td><code>cancel-closed-pr-runs</code> · <code>contributors-refresh</code> · <code>gallery-pin</code> · <code>cosyvoice-dependencies</code></td><td>清理跑批、刷新贡献者、锁定画廊版本</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>把"约定"变成测试</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h3>文档漂移</h3>
+        <p><code>docs/features.yaml</code> 是功能与引擎的唯一清单。每日任务把它和 README、各引擎文档、引擎注册表比对，
+        不一致就开/更新一个滚动 issue。这解决了"文档写着有、代码其实没有"这类慢性谎言。</p>
+      </div>
+      <div class="card">
+        <h3>多语言强制对齐</h3>
+        <p>所有面向用户的字符串必须同时存在于 22 个 locale 文件里，<code>tests/test_locale_parity.py</code> 与
+        <code>bun run locale:check</code> 双重把关。不允许"先上英文，以后再补"。</p>
+      </div>
+      <div class="card">
+        <h3>变更日志碎片</h3>
+        <p>每个 PR 往 <code>changelog.d/</code> 写一行碎片（实测 206 个文件），发布时脚本折叠进 CHANGELOG。
+        避免了几十个人同时改同一个 CHANGELOG 的合并地狱。</p>
+      </div>
+      <div class="card">
+        <h3>移动端契约</h3>
+        <p>iOS 与 Android 实现同一份 <code>mobile/contract/SPEC.md</code>：主题、API、文案都是生成而非手抄
+        （<code>export-mobile-tokens.ts</code>、<code>export_openapi.py</code>），
+        <code>test_mobile_contract.py</code> 在漂移时失败。一个功能"要么两端都上，要么都不上"。</p>
+      </div>
+      <div class="card">
+        <h3>提交身份与署名</h3>
+        <p><code>commit-identity</code> 检查 PR 里不许出现 agent 的 <code>Co-authored-by</code> 或"Generated with"，
+        也不许冒用他人身份；人类协作者可以保留。这是对"AI 生成代码该记在谁头上"的一个明确立场。</p>
+      </div>
+    </div>
+
+    <h3>测试的三个家，以及为什么</h3>
+    <p><code>docs/STRUCTURE.md</code> 解释得很清楚，这种拆分是刻意的（不是历史遗留）：</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>位置</th><th>运行方式</th><th>为什么单独</th></tr></thead>
+        <tbody>
+          <tr><td><code>tests/</code></td><td><code>pytest tests/</code></td><td>主集合；fixture 把数据目录重定向到临时目录，避免碰到开发者的真实数据</td></tr>
+          <tr><td><code>backend/tests/</code></td><td>独立 CI 步骤</td><td>验证后端"裸导入模式"；禁止在收集期伪造 <code>sys.modules</code>，因为它会污染合并运行</td></tr>
+          <tr><td><code>electron/src/**/*.test.tsx</code></td><td>Vitest + jsdom</td><td>UI 测试与实现同目录；打包/工作流冒烟另放 <code>electron/tests/</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>给 AI 写的工作守则</h3>
+    <p><code>AGENTS.md</code> + <code>CLAUDE.md</code> 是两份面向编码 agent 的"宪法"，覆盖合并协议、跨平台一致性、
+    token 用量、提交规范。几个具体的条款：</p>
+    <ul class="clean">
+      <li><b>合并协议（硬规则）：</b>不许无评审合并；Critical/P1 未读完不许合；过期分支要先 merge main 再判 CI；合并后必须盯 main 自己的跑批变绿。</li>
+      <li><b>平台一致性按"行为"判，不按"性能"判：</b>某个 OS 上用户能看到/用到的功能缺失 = 违规；某个优化在该平台物理上跑不了 = 不算违规。</li>
+      <li><b>本地优先是硬约束：</b>不许新增必需的联网调用；任何 HF 下载必须由"已安装"或"用户显式动作"触发；所有合成音频必须经过 <code>mark_synthetic</code> 这一个收口。</li>
+      <li><b>不要用 token 记账：</b>机械规则交给确定性测试（changelog 格式、locale 对齐、版本同步、硬编码 CJK 检查），不靠 agent 的努力。</li>
+    </ul>
+
+    <div class="note">
+      <b>判断：</b>这套东西的价值不在"规范写得好"，而在"违反规范会失败"。很多团队也有 CONTRIBUTING，
+      但规则和 CI 之间是断开的。这里每条规则都能指到一个具体的 workflow 或测试文件——这是可复制的组织技术。
+    </div>
+  </section>
+
+  <!-- ================= 07 安全 ================= -->
+  <section id="security">
+    <div class="sec-head">
+      <span class="num">07 / 安全与合规</span>
+      <h2>一个"默认无鉴权"的本地服务，怎么不变成灾难</h2>
+      <p class="lede">后端默认只监听回环地址、不要求任何凭据——这对本地工具是合理的。
+      真正的问题是：一旦用户把端口开放到局域网，声音克隆接口比聊天接口危险得多。</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>来源：docs/api-auth.md。三道闸门互相独立，全部默认关闭。</caption>
+        <thead><tr><th>闸门</th><th>开启方式</th><th>保护</th><th>适用</th></tr></thead>
+        <tbody>
+          <tr><td>分享 PIN</td><td>App 内"网络共享"开关</td><td>局域网访客，每会话随机 6 位、不落盘</td><td>非回环 HTTP</td></tr>
+          <tr><td>API Key</td><td><code>OMNIVOICE_API_KEY</code></td><td>直连客户端与会话引导</td><td>非回环 HTTP + WebSocket</td></tr>
+          <tr><td>信任网络</td><td><code>OMNIVOICE_TRUSTED_NETWORKS</code></td><td>豁免上面两道</td><td>仅"消费类"路由</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>文档把接口分成两类，这个划分很关键：</p>
+    <div class="two-col">
+      <div class="card">
+        <h3>消费类（consumption）</h3>
+        <p>TTS、听写、声音列表。PIN 或信任网络可以放行——即使被邻居误用，后果可控。</p>
+      </div>
+      <div class="card">
+        <h3>管理类（administration）</h3>
+        <p><code>/system/*</code>、<code>/api/settings/*</code> 属于 RCE 级。只允许回环访问或持有 API Key；
+        "宿主路径能力"即使有 key 也仅限桌面端。</p>
+      </div>
+    </div>
+
+    <h3>代码层面的防护</h3>
+    <ul class="clean">
+      <li><b>路径白名单：</b><code>core/path_security.py</code>、<code>path_authorization.py</code>；MCP 的文件读写有独立边界变量，符号链接先解析再校验。</li>
+      <li><b>CSRF 与来源校验：</b><code>core/csrf.py</code>、<code>browser_guard.py</code>、<code>trusted-renderer.ts</code>——防止任意网页打本地端口。</li>
+      <li><b>子进程约束：</b><code>contained_subprocess.py</code> 统一监管派生进程，Windows 下还要压掉控制台窗口。</li>
+      <li><b>密钥卫生：</b><code>.gitleaks.toml</code> + <code>security.yml</code>；HF token 用 Fernet + scrypt 加密后存 SQLite。</li>
+      <li><b>崩溃与日志脱敏：</b><code>core/scrub.py</code>、<code>failure.py</code> 对堆栈做清洗后再进日志/上报（分析默认关闭）。</li>
+    </ul>
+
+    <h3>合规：主动做了几件同行没做的事</h3>
+    <div class="grid g3">
+      <div class="card">
+        <h3>音频水印</h3>
+        <p>用 AudioSeal 在生成的语音里嵌不可听水印，16-bit 消息、CPU 上约 5 ms/段。
+        竞品对比表里这一项是"only us"。</p>
+      </div>
+      <div class="card">
+        <h3>三重许可分层</h3>
+        <p>应用 AGPL-3.0 + 商业例外；模型权重各自许可并逐个展示；内置的 omnivoice 模型保持上游 Apache-2.0。</p>
+      </div>
+      <div class="card">
+        <h3>Agent 合规预研</h3>
+        <p>电话外呼方向写明了 FCC 24-17、德州 SB 140、EU AI Act 第 50 条（2026-08-02 生效）的约束，
+        并给出"不可移除的披露前缀"等硬性护栏。</p>
+      </div>
+    </div>
+
+    <div class="note info">
+      <b>值得借鉴的一点：</b>它把"滥用风险"当成架构问题处理，而不是免责声明问题。
+      例如外呼功能被要求"架构上不具备批量拨号能力"、水印对外呼输出强制常开、声音档案必须带已核验的本人同意标记。
+      这比在 README 里写"请合法使用"要有分量得多。
+    </div>
+  </section>
+
+  <!-- ================= 08 竞争 ================= -->
+  <section id="market">
+    <div class="sec-head">
+      <span class="num">08 / 竞争位置</span>
+      <h2>它对标的不是开源项目，是 ElevenLabs</h2>
+      <p class="lede">仓库里有一份 1,437 行的竞品分析（<code>docs/competitive-analysis.md</code>），
+      自己给自己打分，也自己承认短板。这种"公开自我批评"的文档在开源项目里并不多见。</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>来源：docs/competitive-analysis.md（作者调研，2026-06 快照）。星数为当时的数字。</caption>
+        <thead><tr><th></th><th>VoiceStudio</th><th>voicebox</th><th>pyvideotrans</th><th>Patter</th></tr></thead>
+        <tbody>
+          <tr><td>定位</td><td>本地声音工作室</td><td>本地声音工作室（最直接对手）</td><td>桌面视频翻译/配音</td><td>自托管电话语音 Agent SDK</td></tr>
+          <tr><td>技术栈</td><td>Electron + React + FastAPI</td><td>Tauri + React + FastAPI</td><td>PySide6 + FFmpeg</td><td>Python + TS 双 SDK</td></tr>
+          <tr><td>许可</td><td>AGPL-3.0 + 商业例外</td><td>MIT</td><td>GPL-3.0</td><td>MIT</td></tr>
+          <tr><td>本地优先</td><td><span class="pill ok">默认且强制</span></td><td><span class="pill ok">是</span></td><td><span class="pill ok">是</span></td><td><span class="pill warn">可选遥测</span></td></tr>
+          <tr><td>语言覆盖</td><td><span class="pill ok">646（上游模型）</span></td><td>23</td><td>随引擎</td><td>随引擎</td></tr>
+          <tr><td>增量重配音</td><td><span class="pill ok">独有</span></td><td>无</td><td>无</td><td>无</td></tr>
+          <tr><td>音频水印</td><td><span class="pill ok">独有</span></td><td>无</td><td>无</td><td>无</td></tr>
+          <tr><td>时长拟合</td><td><span class="pill ok">已补齐</span></td><td>无</td><td><span class="pill ok">强项</span></td><td>无</td></tr>
+          <tr><td>翻译通道</td><td>LLM 三阶链 + 术语表</td><td>无</td><td><span class="pill ok">约 25 个通道</span></td><td>无</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>它自己承认的三个短板</h3>
+    <div class="grid g3">
+      <div class="card">
+        <h3>benchmark 是空的</h3>
+        <p><code>docs/benchmarks.md</code> 的表格至今写着「No verified rows yet — this table fills from maintainer runs and community submissions.」</p>
+      </div>
+      <div class="card">
+        <h3>流式延迟未验证</h3>
+        <p>对标 ElevenLabs Flash 的首字延迟，文档里只给了"实验性"标记和待办 spec，没有实测数字。</p>
+      </div>
+      <div class="card">
+        <h3>生态与 SDK 薄</h3>
+        <p>OpenAI 兼容接口有了，但没有官方 Python/JS SDK；对手 Patter 在这方面更完整。</p>
+      </div>
+    </div>
+
+    <blockquote>
+      <p>“The thesis is counter-positioning, not feature-cloning — we match the capabilities creators actually feel, and we win on 'your voice never leaves your machine.'”</p>
+      <cite>docs/specs/00-roadmap-elevenlabs-parity.md</cite>
+    </blockquote>
+  </section>
+
+  <!-- ================= 09 风险 ================= -->
+  <section id="risk">
+    <div class="sec-head">
+      <span class="num">09 / 优势与风险</span>
+      <h2>如果我要用它，我会担心什么</h2>
+      <p class="lede">星数说明关注度，不说明可靠性。下面按"对我决策的影响"排序，每条都给出证据和缓解建议。</p>
+    </div>
+
+    <div class="risk">
+      <div class="risk-item high">
+        <div class="lvl">高</div>
+        <div>
+          <h3>规模已经超过小团队的维护带宽</h3>
+          <p>63 万行、4,851 个文件、31 个引擎、11 个分发渠道、28 条流水线，而 <code>ROADMAP.md</code> 自述资源是
+          <em>“1 FTE + ad-hoc”</em>；核心团队只有 2 人。四个大型 router 各 2,000–3,000 行，
+          与自家"单文件不超 300 行"的退出门槛相矛盾。</p>
+          <p class="fix"><b>缓解：</b>接入前锁定一个版本、少开引擎；把你要用的那 2–3 条链路跑通即可，别把"31 个引擎都可用"当成承诺。</p>
+        </div>
+      </div>
+
+      <div class="risk-item high">
+        <div class="lvl">高</div>
+        <div>
+          <h3>性能与稳定性的公开证据不足</h3>
+          <p>benchmark 表为空；性能文档里的"measured"数字来自一台 16 GB M2 的样本；
+          <code>performance.md</code> 花了大量篇幅解释"为什么慢"，说明慢是常见反馈。首次启动还要下载数 GB 依赖。</p>
+          <p class="fix"><b>缓解：</b>先用 Docker 镜像在目标硬件上跑通一个真实长度的配音任务，记录首字延迟与总耗时，再决定是否上生产。</p>
+        </div>
+      </div>
+
+      <div class="risk-item mid">
+        <div class="lvl">中</div>
+        <div>
+          <h3>安装与运行时是最大的故障面</h3>
+          <p><code>docs/electron-runtime.md</code> 里"失败/重试/干净重试/复用 Tauri 环境/CPU 重装"的篇幅，
+          本身就说明修复路径有多复杂。Windows on ARM 走 x64 模拟、Intel Mac 只能连远程后端。</p>
+          <p class="fix"><b>缓解：</b>把"首次运行"当独立项目验收；给非技术用户准备一份截图级的排障单。</p>
+        </div>
+      </div>
+
+      <div class="risk-item mid">
+        <div class="lvl">中</div>
+        <div>
+          <h3>许可证是三层，商用要逐项确认</h3>
+          <p>应用 AGPL-3.0（可购买商业例外），但模型权重各有各的许可：audio.cpp 的 Breeze-TTS-2 权重是研究/非商用，
+          PocketTTS 与 Supertonic 需要先接受许可。把模型嵌进商业产品前必须逐个核对。</p>
+          <p class="fix"><b>缓解：</b>只用默认的 OmniVoice（上游 Apache-2.0）链路做商用验证，其余引擎当可选插件。</p>
+        </div>
+      </div>
+
+      <div class="risk-item mid">
+        <div class="lvl">中</div>
+        <div>
+          <h3>声音克隆的法律与伦理暴露</h3>
+          <p>项目做了水印和同意机制，但克隆能力本身仍是高滥用风险面。EU AI Act 第 50 条自 2026-08-02 起对生成音频提出
+          机器可读标记与告知义务，开源豁免并不覆盖这一条。</p>
+          <p class="fix"><b>缓解：</b>对外发布的内容保持水印开启；内部建立"谁有权克隆哪个声音"的书面记录。</p>
+        </div>
+      </div>
+
+      <div class="risk-item low">
+        <div class="lvl">低</div>
+        <div>
+          <h3>星数增长 ≠ 生产采用</h3>
+          <p>7 个月 9.8 万星、128 位贡献者，但 issue 只有 117 个未关闭、订阅者 340。
+          高星低讨论的组合通常意味着"很多人收藏、少数人深度使用"。</p>
+          <p class="fix"><b>缓解：</b>看 issue 的响应速度与 release 节奏（近两个月 5 个版本），而不是看星。</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>反过来，这四件事值得直接抄</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h3>1. 反定位比功能清单更有力</h3>
+        <p>把"没有什么"讲清楚（无账号、无云、无 key），比列举二十个功能更能让人记住。定位句在 README 第一屏就完成。</p>
+      </div>
+      <div class="card">
+        <h3>2. 文档即测试</h3>
+        <p>功能清单放进 YAML，被 CI 拿去核对 README 与各引擎文档。文档漂移从"人的自觉"变成"构建的失败"。</p>
+      </div>
+      <div class="card">
+        <h3>3. 引擎抽象的三件套</h3>
+        <p>懒加载注册表 + 能力探测 + 可见降级。这套模式可以原样搬到任何"多后端选一"的系统（模型、存储、数据库驱动）。</p>
+      </div>
+      <div class="card">
+        <h3>4. 把补丁的"为什么"写在代码里</h3>
+        <p>1,584 处 issue 引用、零 TODO。六个月后回来看，注释里有关联故障的现象、根因和触发条件——这是最便宜的知识留存。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 10 启示 ================= -->
+  <section id="takeaway">
+    <div class="sec-head">
+      <span class="num">10 / 启示</span>
+      <h2>不同角色该怎么用它</h2>
+      <p class="lede">同一个仓库，对三类读者的价值完全不同。</p>
+    </div>
+
+    <div class="grid g3">
+      <div class="card">
+        <h3>想用它做事的人</h3>
+        <ul class="clean" style="margin-top:8px">
+          <li>先跑 Docker 版，验证硬件与链路，再考虑桌面版。</li>
+          <li>只用默认 OmniVoice + WhisperX，稳定性最好、许可最干净。</li>
+          <li>批量任务走 API / 监听文件夹，不要靠 UI 点。</li>
+          <li>把 MCP 服务接进编码 agent，是它区别于其他 TTS 工具的地方。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>想做同类产品的人</h3>
+        <ul class="clean" style="margin-top:8px">
+          <li>抄它的分发工程，不要抄它的功能清单：11 个渠道 = 11 倍的维护成本。</li>
+          <li>抄它的"可见降级"策略：宁可报错，也不要静默产出错误结果。</li>
+          <li>抄它的 changelog 碎片 + CLA + 身份检查，这三样最便宜。</li>
+          <li>别抄它的单文件体量，那是增长快过重构的产物。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>评估技术选型的人</h3>
+        <ul class="clean" style="margin-top:8px">
+          <li>本地优先的真实成本 = 安装器 + 驱动矩阵 + 模型下载 + 恢复路径。</li>
+          <li>AGPL + 商业例外是可持续的双许可模型，但要先确认你不需要闭源分发。</li>
+          <li>模型许可和应用许可必须分开审，这是最容易踩的坑。</li>
+          <li>31 个引擎的"广度"会随上游模型迭代快速贬值，集成层才是资产。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>一句话总结：</b>VoiceStudio 的真正作品不是那个声音模型，而是一套"把研究模型变成可安装产品"的工程系统——
+      引擎注册表、串行 GPU 队列、跨平台引导器、以及一套会自己检查自己的文档。这套系统的可迁移性，远高于它包装的那个模型。
+    </div>
+  </section>
+
+  <!-- ================= 11 方法 ================= -->
+  <section id="method">
+    <div class="sec-head">
+      <span class="num">11 / 方法</span>
+      <h2>数据怎么来的</h2>
+      <p class="lede">为了让上面的数字可复核，这里说明采集方式与已知局限。</p>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h4>采集</h4>
+        <ul class="clean">
+          <li>仓库元数据（stars / forks / contributors / releases）来自 GitHub REST API，快照时间 2026-11-02。</li>
+          <li>文件清单来自 <code>git ls-tree -r HEAD</code>（<code>main</code> @ <code>1a29929</code>），共 4,851 个 blob。</li>
+          <li>代码行数为逐文件读取后计数（含空行与注释），覆盖 3,447 个文件；二进制、图片、锁文件不计。</li>
+          <li>接口数按 <code>@router.get/post/put/delete/patch/websocket</code> 装饰器统计，共 358 处。</li>
+        </ul>
+      </div>
+      <div>
+        <h4>已知局限</h4>
+        <ul class="clean">
+          <li>未统计 <code>electron/tests/</code>、<code>scripts/</code> 与 <code>.mjs</code> 工具脚本；仓库共 1,380 个 <code>.py</code>，本次覆盖 1,309 个。故 63.2 万行是下限。</li>
+          <li>未做 git 历史分析，贡献分布、迭代速度的判断来自 issue/release 元数据而非提交历史。</li>
+          <li>"646 种语言"是上游 OmniVoice 模型的宣称，未做逐语言验证。</li>
+          <li>所有"判断"段落是我的分析，可能与维护者的意图不同。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <caption>核心事实核对表</caption>
+        <thead><tr><th>项</th><th>值</th><th>来源</th></tr></thead>
+        <tbody>
+          <tr><td>当前版本</td><td>0.5.7（2026-10-26，31 个发布资产）</td><td>GitHub Releases</td></tr>
+          <tr><td>创建时间</td><td>2026-04-09</td><td>GitHub API</td></tr>
+          <tr><td>Stars / Forks / 订阅</td><td>98,177 / 10,909 / 340</td><td>GitHub API</td></tr>
+          <tr><td>贡献者</td><td>128</td><td>GitHub API 分页末页</td></tr>
+          <tr><td>语言构成（文件数）</td><td>Python 1,380 · TypeScript 680 · TSX 473 · Markdown 442 · JSX 411</td><td>git tree</td></tr>
+          <tr><td>测试</td><td>862 个 Python 测试文件 · 432 个前端测试文件 · 26.8 万行测试代码</td><td>逐文件统计</td></tr>
+          <tr><td>数据库迁移</td><td>18 个 Alembic 版本</td><td><code>backend/migrations/versions</code></td></tr>
+          <tr><td>文档</td><td>190 篇 Markdown · 253 个 docs 文件</td><td>git tree</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <strong style="color:var(--txt)">VoiceStudio 项目分析报告</strong><br>
+        基于 <code>debpalash/VoiceStudio</code> <code>main</code> 分支与 GitHub API，数据快照 2026-11-02。
+      </div>
+      <div>
+        <a href="https://github.com/debpalash/VoiceStudio">仓库</a> ·
+        <a href="https://voicestudio.sh">官网</a> ·
+        <a href="https://github.com/debpalash/VoiceStudio/tree/main/docs">文档</a><br>
+        单文件离线报告，无外部依赖。
+      </div>
+    </div>
+  </div>
+</footer>
+
+<button id="toTop" aria-label="回到顶部">↑</button>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- reading progress ---------- */
+  var bar = document.getElementById("progress");
+  function onScroll() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+    var top = document.getElementById("toTop");
+    if (h.scrollTop > 600) { top.classList.add("show"); } else { top.classList.remove("show"); }
+  }
+  document.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  document.getElementById("toTop").addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  /* ---------- scrollspy ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.topnav a"));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+
+  if ("IntersectionObserver" in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var id = "#" + e.target.id;
+        links.forEach(function (a) {
+          var on = a.getAttribute("href") === id;
+          a.classList.toggle("active", on);
+          if (on) {
+            a.setAttribute("aria-current", "true");
+            var nav = a.parentNode.parentNode;
+            var r = a.getBoundingClientRect(), nr = nav.parentNode.getBoundingClientRect();
+            if (r.left < nr.left || r.right > nr.right) { nav.scrollLeft += (r.left - nr.left - 60); }
+          } else {
+            a.removeAttribute("aria-current");
+          }
+        });
+      });
+    }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+    sections.forEach(function (s) { if (s) spy.observe(s); });
+  }
+
+  /* ---------- engine table filter ---------- */
+  var table = document.getElementById("engTable");
+  var rows = table ? Array.prototype.slice.call(table.querySelectorAll("tbody tr")) : [];
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip[data-filter]"));
+  var search = document.getElementById("engSearch");
+  var countEl = document.getElementById("engCount");
+  var container = table ? table.closest(".tbl-wrap") : null;
+  var emptyMsg = document.createElement("p");
+  emptyMsg.className = "small muted";
+  emptyMsg.style.cssText = "padding:16px;margin:0";
+  emptyMsg.textContent = "没有匹配的引擎，换个关键词试试。";
+
+  function apply() {
+    var kind = "all";
+    chips.forEach(function (c) { if (c.getAttribute("aria-pressed") === "true") kind = c.dataset.filter; });
+    var q = (search && search.value || "").trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (tr) {
+      var okKind = kind === "all" || tr.dataset.kind === kind;
+      var okText = !q || tr.textContent.toLowerCase().indexOf(q) !== -1;
+      var ok = okKind && okText;
+      tr.style.display = ok ? "" : "none";
+      if (ok) shown++;
+    });
+    if (countEl) countEl.textContent = "显示 " + shown + " / " + rows.length;
+    if (container) {
+      if (shown === 0) { if (!emptyMsg.parentNode) container.appendChild(emptyMsg); }
+      else if (emptyMsg.parentNode) { emptyMsg.parentNode.removeChild(emptyMsg); }
+    }
+  }
+
+  chips.forEach(function (c) {
+    c.addEventListener("click", function () {
+      chips.forEach(function (o) { o.setAttribute("aria-pressed", String(o === c)); });
+      apply();
+    });
+  });
+  if (search) search.addEventListener("input", apply);
+  apply();
+})();
+</script>
+</body>
+</html>
