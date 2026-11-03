@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Puter 分析报告：浏览器里的开源个人云，离生产还有多远</title>
+<meta name="description" content="基于 GitHub、官方文档与 docker-compose 的 Puter 独立分析：定位、分层架构、自托管真实成本、AI 网关边界与事实核查。">
+<style>
+:root{
+  --bg:#f4f4f0; --panel:#ffffff; --ink:#14171c; --muted:#5c636e;
+  --line:#dfe1e5; --line-strong:#c4c8cf; --accent:#1f4fff; --accent-soft:#e8edff;
+  --ok:#0c6b43; --ok-bg:#e4f3ea; --warn:#8a5300; --warn-bg:#fbf0d9;
+  --bad:#a3241c; --bad-bg:#fbe8e5; --hero:#0d1117; --hero-ink:#f4f6fa;
+  --radius:14px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none;text-underline-offset:2px}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.02em;font-weight:650;margin:0}
+p{margin:0 0 12px}
+ul,ol{margin:8px 0 0;padding-left:22px}
+li{margin:6px 0}
+strong{font-weight:650}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:focus-visible{outline:3px solid var(--focus,#ff8a00);outline-offset:3px;border-radius:4px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:60;background:rgba(244,244,240,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px}
+.brand{font:650 13px/1.2 var(--mono);letter-spacing:.02em;white-space:nowrap;color:var(--ink)}
+.brand span{color:var(--accent)}
+.nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+.nav::-webkit-scrollbar{display:none}
+.nav a{font-size:13px;color:var(--muted);padding:6px 9px;border-radius:999px;white-space:nowrap}
+.nav a:hover{background:var(--panel);color:var(--ink);text-decoration:none}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:12px;top:8px;background:var(--panel);padding:8px 12px;border-radius:8px;z-index:100}
+
+/* hero */
+.hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background:
+  radial-gradient(900px 380px at 15% -10%,rgba(80,120,255,.28),transparent 60%),
+  radial-gradient(700px 340px at 95% 0%,rgba(255,180,84,.10),transparent 60%);pointer-events:none}
+.hero .wrap{position:relative;padding-top:64px;padding-bottom:0}
+.eyebrow{font:650 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--hero-accent,#9fb4ff)}
+.hero h1{font-size:clamp(28px,7vw,60px);max-width:17em;margin:14px 0 18px;letter-spacing:-.035em}
+.standfirst{text-wrap:pretty;font-size:clamp(16px,1.8vw,19px);line-height:1.75;color:rgba(244,246,250,.76);max-width:62ch;margin:0 0 22px}
+.meta-row{display:flex;gap:10px 22px;flex-wrap:wrap;font:12.5px/1.5 var(--mono);color:rgba(244,246,250,.58);padding-bottom:30px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid rgba(255,255,255,.14)}
+.metric{padding:20px 18px 26px 0;border-right:1px solid rgba(255,255,255,.10)}
+.metric:last-child{border-right:0}
+.metric b{display:block;font:600 clamp(24px,3.4vw,36px)/1.1 var(--mono);letter-spacing:-.04em;color:#fff}
+.metric span{display:block;margin-top:6px;font-size:12px;color:rgba(244,246,250,.60)}
+
+/* sections */
+main{display:block}
+section{padding:54px 0;border-top:1px solid var(--line);scroll-margin-top:72px}
+main{scroll-margin-top:72px}
+section:first-of-type{border-top:0}
+.section-head{display:grid;grid-template-columns:54px 1fr;gap:18px;margin-bottom:28px}
+.section-num{font:650 12px/1.6 var(--mono);color:var(--accent);padding-top:6px;letter-spacing:.08em}
+h2{font-size:clamp(24px,3vw,34px);max-width:26ch}
+.lede{color:var(--muted);max-width:72ch;margin:10px 0 0;font-size:16.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}
+.risk-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.stat-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.qa{border-top:1px solid var(--line);margin-top:8px}
+.qa-row{display:grid;grid-template-columns:44px 230px 1fr;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.qa-num{font:650 12px/1.6 var(--mono);color:var(--accent);padding-top:3px;letter-spacing:.06em}
+.qa-row h3{font-size:15.5px}
+.qa-row p{font-size:14px;color:var(--muted);margin:0}
+@media (max-width:720px){.qa-row{grid-template-columns:36px 1fr;gap:10px}.qa-row p{grid-column:2}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 18px}
+.card h3{font-size:16.5px;margin-bottom:7px}
+.card p{font-size:14.5px;color:var(--muted);margin:0}
+.card .k{display:block;font:650 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.callout{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0}
+.callout.warn{border-left-color:var(--warn);background:linear-gradient(90deg,var(--warn-bg),var(--panel) 55%)}
+.callout.bad{border-left-color:var(--bad);background:linear-gradient(90deg,var(--bad-bg),var(--panel) 55%)}
+.callout b{font-size:14px}
+.callout p{margin:5px 0 0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted)}
+.hr{height:1px;background:var(--line);margin:24px 0;border:0}
+
+/* tables */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11.5px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fafaf8}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fbfbf9}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+.caption{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+
+/* badges + chips */
+.badge{display:inline-block;font:650 11px/1.6 var(--mono);padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.badge.ok{color:var(--ok);background:var(--ok-bg);border-color:#bfe0cd}
+.badge.fix{color:var(--bad);background:var(--bad-bg);border-color:#efc7c1}
+.badge.limit{color:var(--warn);background:var(--warn-bg);border-color:#ecd6a8}
+.badge.agpl{color:#6b21a8;background:#f3e8ff;border-color:#e0c9f5}
+.badge.mit{color:#0c6b43;background:#e4f3ea;border-color:#bfe0cd}
+.badge.none{color:#475569;background:#eef1f5;border-color:#d6dbe3}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.chip{font:600 13px/1 var(--sans);padding:8px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* controls */
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:20px 0 8px;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.field{display:grid;gap:5px}
+.field label{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field.search{flex:1 1 260px}
+input[type=search],select{font:14px var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;min-height:40px}
+input[type=search]{width:100%}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;min-height:40px;font-size:13.5px}
+.btn{font:600 13px var(--sans);padding:9px 13px;border-radius:9px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--ink)}
+.result-bar{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:14px 0 4px;font-size:13px;color:var(--muted)}
+.empty{display:none;border:1px dashed var(--line-strong);border-radius:12px;padding:28px;text-align:center;color:var(--muted);background:var(--panel)}
+.empty.show{display:block}
+
+/* diagram */
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 10px;overflow-x:auto}
+.diagram svg{min-width:760px}
+.diagram-hint{display:none;margin:0 0 8px;font-size:12.5px;color:var(--muted)}
+@media (max-width:720px){.diagram-hint{display:block}}
+.diagram svg{display:block;width:100%;height:auto}
+.dbox{fill:#fff;stroke:var(--line-strong);stroke-width:1.2}
+.dbox-accent{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.dtext{fill:var(--ink);font-family:var(--sans);font-weight:600}
+.dsub{fill:var(--muted);font-family:var(--sans)}
+.dash{stroke-dasharray:5 4}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:10px 4px 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:18px;height:2px;background:var(--line-strong);display:inline-block}
+.swatch.dash{background:repeating-linear-gradient(90deg,var(--line-strong) 0 5px,transparent 5px 9px)}
+
+/* steps */
+.steps{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.steps details{border-bottom:1px solid var(--line)}
+.steps details:last-child{border-bottom:0}
+.steps summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:14.5px;list-style:none;display:flex;gap:12px;align-items:baseline}
+.steps summary::-webkit-details-marker{display:none}
+.steps summary:before{content:counter(step,decimal-leading-zero);counter-increment:step;font:600 12px var(--mono);color:var(--accent);min-width:26px}
+.steps{counter-reset:step}
+.steps summary:hover{background:#fbfbf9}
+.steps summary::after{content:"+";margin-left:auto;font:600 18px/1 var(--mono);color:var(--muted)}
+.steps details[open] summary::after{content:"−"}
+.steps .body{padding:0 18px 16px 56px;color:var(--muted);font-size:14.5px}
+.steps .body p{margin:4px 0}
+.steps .body ul{margin:6px 0 0}
+pre{background:#0f141a;color:#e6edf3;padding:16px 18px;border-radius:12px;overflow:auto;font:13px/1.65 var(--mono);margin:14px 0}
+pre .c{color:#8b949e}
+code{font-family:var(--mono);font-size:.9em;background:#eceef2;padding:.1em .35em;border-radius:4px}
+pre code{background:none;padding:0;font-size:inherit}
+
+/* app directory */
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:16px}
+.app{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px 14px;display:flex;flex-direction:column;gap:9px;scroll-margin-top:70px}
+.app:hover{border-color:var(--line-strong)}
+.app-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.app h3{font-size:16px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.app h3 em{font-style:normal;font-size:12.5px;font-weight:500;color:var(--muted)}
+.cat{display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1.5 var(--mono);letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.app p{font-size:13.6px;line-height:1.62;color:var(--muted);margin:0}
+.alt{font-size:12.5px;color:var(--muted)}
+.alt b{color:var(--ink);font-weight:600}
+.app-stats{display:flex;gap:14px;flex-wrap:wrap;font:11.5px/1.5 var(--mono);color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
+.app-stats b{color:var(--ink);font-weight:600}
+.app-links{display:flex;gap:12px;align-items:center;font-size:12.5px;margin-top:auto}
+.tiny{font:10.5px/1.4 var(--mono);color:var(--warn)}
+
+/* category chart */
+.cat-list{display:grid;gap:2px;margin:18px 0 0}
+.cat-row{display:grid;grid-template-columns:110px 1fr 38px;gap:12px;align-items:center;width:100%;background:none;border:0;border-radius:8px;padding:7px 6px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.cat-row:hover{background:var(--panel)}
+.cat-row[aria-pressed="true"]{background:var(--panel);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.cat-name{font-size:13.5px}
+.cat-bar{height:16px;background:#e9eae6;border-radius:4px;overflow:hidden;display:block}
+.cat-bar i{display:block;height:100%;border-radius:4px}
+.cat-count{font:600 12px var(--mono);text-align:right;color:var(--muted)}
+
+/* license bar */
+.lic-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:16px 0 8px;border:1px solid var(--line)}
+.lic-bar span{display:block;height:100%}
+.lic-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.lic-legend b{color:var(--ink)}
+
+/* tiers */
+.tiers{display:grid;gap:14px}
+.tier{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.tier.head{display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.tier h3{font-size:16.5px}
+.tier .count{font:600 12px var(--mono);color:var(--muted)}
+.tier p{font-size:13.8px;color:var(--muted);margin:6px 0 8px}
+.tier .list{font-size:13.5px;color:var(--muted);line-height:1.8}
+.tier .list a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-strong)}
+.tier .list a:hover{text-decoration-color:var(--accent);color:var(--accent)}
+.tier.c{border-left:4px solid var(--bad)}
+.tier.a{border-left:4px solid var(--ok)}
+.tier.b{border-left:4px solid var(--line-strong)}
+.tier.g{border-left:4px solid #8b3a3a}
+
+/* source list */
+.sources{font-size:13.5px;color:var(--muted)}
+.sources li{margin:7px 0}
+.sources a{word-break:break-word}
+footer{padding:40px 0 64px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (max-width:560px){.wide-br{display:none}}
+@media (max-width:720px){
+  .topbar .wrap{flex-wrap:wrap;gap:2px 12px;padding-top:8px;padding-bottom:4px}
+  .brand{flex:1 1 100%;font-size:12px}
+  .nav{width:100%;margin-left:0;padding-bottom:2px}
+  .nav a{font-size:12px;padding:5px 7px}
+}
+@media (max-width:720px){
+  .wrap{padding:0 18px}
+  section,main{scroll-margin-top:108px}
+  .app{scroll-margin-top:108px}
+  .js-tables .table-wrap{overflow:visible;border:0;border-radius:0;background:transparent}
+  .js-tables .table-wrap table{min-width:0;display:block;width:100%}
+  .js-tables .table-wrap thead{display:none}
+  .js-tables .table-wrap tbody{display:block}
+  .js-tables .table-wrap tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 0;margin:0 0 10px}
+  .js-tables .table-wrap td{display:block;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:left}
+  .js-tables .table-wrap td:last-child{border-bottom:0}
+  .js-tables .table-wrap td:first-child::before{display:none}
+  .js-tables .table-wrap td::before{content:attr(data-label);display:block;margin-bottom:3px;font:600 10px/1.7 var(--mono);color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+  .js-tables .table-wrap td.num{text-align:left;font-family:var(--sans);white-space:normal}
+  .js-tables .table-wrap tr:hover td{background:transparent}
+  .section-head{grid-template-columns:1fr;gap:4px}
+  .section-num{padding-top:0}
+  .hero .wrap{padding-top:44px}
+  .metric{border-right:0;padding:16px 0 18px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:0 16px}
+  .cat-row{grid-template-columns:88px 1fr 30px;gap:8px}
+  .app-grid{grid-template-columns:1fr}
+  table{min-width:600px}
+  .steps .body{padding-left:18px}
+}
+@media print{
+  .topbar,.controls,.chips,.btn,.empty{display:none!important}
+  body{background:#fff;font-size:11pt}
+  .hero{background:#fff;color:#000}
+  .hero:before{display:none}
+  .hero .wrap{padding-top:0}
+  .standfirst,.meta-row,.metric span{color:#333}
+  .metric b{color:#000}
+  .metrics{border-color:#bbb}
+  section{page-break-inside:avoid}
+  .table-wrap{overflow:visible;border:1px solid #bbb}
+  table{min-width:0;font-size:9pt}
+  .diagram{overflow:visible}
+  .diagram svg{min-width:0}
+  a{color:#000;text-decoration:underline}
+}
+
+:root{--accent:#1f4fff;--accent-soft:#e8edff;--hero-accent:#9fb4ff;--focus:#1f4fff}
+.hero{--hero:#0b1220}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">开源项目分析 <span>/ 01</span></div>
+    <nav class="nav" aria-label="报告章节">
+      <a href="#position">定位</a><a href="#architecture">架构</a><a href="#selfhost">自托管</a>
+      <a href="#ai">AI</a><a href="#claims">核查</a><a href="#compare">对比</a>
+      <a href="#risk">风险</a><a href="#sources">来源</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Puter · 开源互联网计算机</p>
+    <h1>浏览器里的个人电脑<br>离生产还有多远</h1>
+    <p class="standfirst">44k stars 说明关注度，不等于可运维性。这份报告把 Puter 拆成四层：用户看到的桌面、开发者用的 Puter.js、后端的分层架构、自托管的六个常驻服务。顺手核对了八条常见说法，其中两条需要改。</p>
+    <div class="meta-row">
+      <span>研究对象：HeyPuter/puter</span><span>最新版本：26.10.1</span><span>许可：AGPL-3.0</span><span>数据截至 2026-11-01</span>
+    </div>
+    <div class="metrics" aria-label="关键指标">
+      <div class="metric"><b>44,053</b><span>GitHub stars</span></div>
+      <div class="metric"><b>≈435</b><span>贡献者（含匿名）</span></div>
+      <div class="metric"><b>26.10.1</b><span>最新 release（10-25）</span></div>
+      <div class="metric"><b>6 类</b><span>默认常驻服务</span></div>
+      <div class="metric"><b>AGPL-3.0</b><span>强 copyleft</span></div>
+    </div>
+  </div>
+</div><section id="position">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">01</div><div><h2>它到底是什么：三个同心圆</h2><p class="lede">Puter 同时讲三个故事。分开看，才知道每个故事的成本。</p></div></div>
+    
+<div class="grid">
+  <div class="card"><span class="k">对用户</span><h3>一个浏览器入口</h3><p>窗口、文件管理器、应用商店，以及记事本、表格、相机等自带应用。官方托管在 puter.com，也可以自建。价值在“一个入口”，不是某个单点功能。</p></div>
+  <div class="card"><span class="k">对开发者</span><h3>把后端压进一个 script</h3><p>引入 Puter.js 后，纯前端可以调用账号、文件、KV、AI、Workers、Peer。没有 API key，费用走 user-pays：由终端用户自己的 Puter 账户承担。</p></div>
+  <div class="card"><span class="k">对运维</span><h3>一套完整的单机栈</h3><p>Docker Compose 带 Caddy、Puter、MariaDB、Valkey、DynamoDB-local、S3（RustFS）。得到的是“单机接近生产”，不是高可用集群。</p></div>
+</div>
+<div class="callout"><b>一句话</b><p>Puter 卖的是“把后端压缩成一个前端库”；自托管送的，是同一套后端背后的运维作业。</p></div>
+
+  </div>
+</section><section id="architecture">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">02</div><div><h2>技术架构：不是一个网盘加登录框</h2><p class="lede">后端按 Controller → Driver → Service → Store → Client 分层，扩展可以插入任意一层。这个结构比“浏览器操作系统”的营销词更能说明它想做什么。</p></div></div>
+    
+<p class="diagram-hint">横向示意图，可左右滑动查看。</p>
+<div class="diagram" tabindex="0" role="region" aria-label="Puter 后端架构示意图，可横向滚动">
+<svg viewBox="0 0 900 500" role="img" aria-labelledby="archTitle archDesc">
+<title id="archTitle">Puter 后端分层与基础设施</title>
+<desc id="archDesc">从上到下依次为浏览器、Controllers/Drivers/Extensions、Services、Stores、五类客户端，以及 MariaDB、Valkey、RustFS S3、DynamoDB-local 与可选 SMTP。</desc>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa1ab"/></marker></defs>
+<rect class="dbox-accent" x="50" y="24" width="800" height="64" rx="12"/>
+<text class="dtext" x="70" y="51" font-size="15">浏览器</text>
+<text class="dsub" x="70" y="71" font-size="12.5">桌面与窗口 · 应用商店 · Puter.js SDK</text>
+<line x1="450" y1="88" x2="450" y2="112" stroke="#9aa1ab" stroke-width="1.4" marker-end="url(#ar)"/>
+
+<rect class="dbox" x="50" y="116" width="250" height="58" rx="10"/>
+<text class="dtext" x="68" y="141" font-size="13.5">Controllers</text>
+<text class="dsub" x="68" y="160" font-size="11.5">路由、鉴权门禁、输入校验</text>
+<rect class="dbox" x="325" y="116" width="250" height="58" rx="10"/>
+<text class="dtext" x="343" y="141" font-size="13.5">Drivers</text>
+<text class="dsub" x="343" y="160" font-size="11.5">/drivers/* 上的 RPC 处理器</text>
+<rect class="dbox" x="600" y="116" width="250" height="58" rx="10"/>
+<text class="dtext" x="618" y="141" font-size="13.5">Extensions</text>
+<text class="dsub" x="618" y="160" font-size="11.5">可注册进任意一层</text>
+<line x1="450" y1="174" x2="450" y2="198" stroke="#9aa1ab" stroke-width="1.4" marker-end="url(#ar)"/>
+
+<rect class="dbox" x="50" y="202" width="800" height="50" rx="10"/>
+<text class="dtext" x="68" y="224" font-size="13.5">Services</text>
+<text class="dsub" x="150" y="224" font-size="12">业务逻辑；默认调用方已完成鉴权</text>
+<line x1="450" y1="252" x2="450" y2="276" stroke="#9aa1ab" stroke-width="1.4" marker-end="url(#ar)"/>
+
+<rect class="dbox" x="50" y="280" width="800" height="50" rx="10"/>
+<text class="dtext" x="68" y="302" font-size="13.5">Stores</text>
+<text class="dsub" x="140" y="302" font-size="12">领域形态与持久化</text>
+<line x1="124" y1="330" x2="776" y2="330" stroke="#9aa1ab" stroke-width="1.2"/>
+<line x1="124" y1="330" x2="124" y2="356" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="287" y1="330" x2="287" y2="356" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="450" y1="330" x2="450" y2="356" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="613" y1="330" x2="613" y2="356" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="776" y1="330" x2="776" y2="356" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+
+<rect class="dbox" x="50" y="360" width="148" height="48" rx="9"/><text class="dtext" x="66" y="381" font-size="12">SQL client</text><text class="dsub" x="66" y="397" font-size="10.5">MariaDB</text>
+<rect class="dbox" x="213" y="360" width="148" height="48" rx="9"/><text class="dtext" x="229" y="381" font-size="12">Redis client</text><text class="dsub" x="229" y="397" font-size="10.5">Valkey</text>
+<rect class="dbox" x="376" y="360" width="148" height="48" rx="9"/><text class="dtext" x="392" y="381" font-size="12">S3 client</text><text class="dsub" x="392" y="397" font-size="10.5">RustFS</text>
+<rect class="dbox" x="539" y="360" width="148" height="48" rx="9"/><text class="dtext" x="555" y="381" font-size="12">Dynamo client</text><text class="dsub" x="555" y="397" font-size="10.5">DynamoDB-local</text>
+<rect class="dbox" x="702" y="360" width="148" height="48" rx="9"/><text class="dtext" x="718" y="381" font-size="12">Email client</text><text class="dsub" x="718" y="397" font-size="10.5">SMTP</text>
+
+<line x1="124" y1="408" x2="124" y2="438" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="287" y1="408" x2="287" y2="438" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="450" y1="408" x2="450" y2="438" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="613" y1="408" x2="613" y2="438" stroke="#9aa1ab" stroke-width="1.2" marker-end="url(#ar)"/>
+<line x1="776" y1="408" x2="776" y2="438" stroke="#9aa1ab" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+
+<rect class="dbox" x="50" y="442" width="148" height="40" rx="8"/><text class="dtext" x="66" y="467" font-size="11.5">MariaDB</text>
+<rect class="dbox" x="213" y="442" width="148" height="40" rx="8"/><text class="dtext" x="229" y="467" font-size="11.5">Valkey</text>
+<rect class="dbox" x="376" y="442" width="148" height="40" rx="8"/><text class="dtext" x="392" y="467" font-size="11.5">RustFS S3</text>
+<rect class="dbox" x="539" y="442" width="148" height="40" rx="8"/><text class="dtext" x="555" y="467" font-size="11.5">DynamoDB-local</text>
+<rect class="dbox dash" x="702" y="442" width="148" height="40" rx="8"/><text class="dtext" x="718" y="467" font-size="11.5">SMTP（可选）</text>
+</svg>
+<div class="legend"><span><i class="swatch"></i>实线：文档描述的层间依赖</span><span><i class="swatch dash"></i>虚线：可选服务</span><span>事件与推送通道（doc/push-client.md）未展开</span></div>
+</div>
+<div class="callout"><b>一个值得注意的设计</b><p>文档把 <code>actor.app</code> 与 <code>actor.effectiveApp</code> 分得很清楚：前者是请求直接携带的应用身份，后者是最终生效的身份。对访问令牌类型的 Actor，读 <code>app</code> 而不是 <code>effectiveApp</code> 会得到“没有应用”，权限门禁会放行。这说明它按多租户系统在做，而不是个人网盘加个登录框。</p></div>
+
+<h3 style="margin-top:26px">层与职责</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>层</th><th>位置</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td><strong>Controllers</strong></td><td><code>src/backend/controllers</code></td><td>解析与校验输入、执行每路由的鉴权/限流/子域门禁、调用 Service、组织响应。</td></tr>
+<tr><td><strong>Drivers</strong></td><td><code>src/backend/drivers</code></td><td><code>/drivers/*</code> 上的 RPC 外壳，例如 <code>puter-kvstore</code>、<code>puter-chat-completion</code>。</td></tr>
+<tr><td><strong>Services</strong></td><td><code>src/backend/services</code></td><td>业务逻辑，默认调用方已通过鉴权，不再重复做门禁。</td></tr>
+<tr><td><strong>Stores</strong></td><td><code>src/backend/stores</code></td><td>把客户端包装成领域形态：行、实体、KV 命名空间。</td></tr>
+<tr><td><strong>Clients</strong></td><td><code>src/backend/clients</code></td><td>SQL、Redis、S3、DynamoDB、邮件等协议适配器。</td></tr>
+<tr><td><strong>Extensions</strong></td><td><code>extensions/</code></td><td>旁路注册，可插入任意层；也可挂事件与路由。</td></tr>
+</tbody></table></div>
+<p class="caption">来源：doc/architecture.md。依赖从上层流向下层，由 PuterServer 按 clients → stores → services → drivers → controllers 顺序实例化并注入。</p>
+
+<h3 style="margin-top:26px">能力面：它不只管文件</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>能力</th><th>形态</th><th>要点</th></tr></thead>
+<tbody>
+<tr><td>文件</td><td><code>puter.fs</code> + S3</td><td>用户文件与应用数据共用一套账号与权限模型。</td></tr>
+<tr><td>桌面与应用</td><td>窗口管理、应用商店、私有应用托管</td><td>按 <code>api.</code> / <code>site.</code> / <code>app.</code> 子域路由，因此自托管必须配通配符 DNS。</td></tr>
+<tr><td>AI</td><td>chat / vision / image / TTS / STT / OCR / video</td><td>托管 AI Gateway；下一节单独讨论边界。</td></tr>
+<tr><td>KV 与 Workers</td><td><code>puter-kvstore</code> + Serverless JS</td><td>应用仓库里有邮件 worker 的部署脚本，可作为最小例子。</td></tr>
+<tr><td>Peer 与 Networking</td><td>WebRTC 会议；浏览器内 TCP/IP</td><td>Meetings 应用完全基于 Peer API；Networking 是更激进的能力。</td></tr>
+<tr><td>身份</td><td>账号、应用 token、Actor</td><td>应用可代用户行事，也可持有自己的 token，权限边界靠 Actor 约束。</td></tr>
+</tbody></table></div>
+
+  </div>
+</section><section id="selfhost">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">03</div><div><h2>自托管：一行命令背后的六件事</h2><p class="lede">官方说一条命令。命令是真的，前提也是真的。</p></div></div>
+    
+<div class="steps">
+<details open><summary>装 Docker 与 compose 插件</summary><div class="body"><p>这是文档里唯一要求你自己装的东西。安装脚本会检查 <code>docker compose version</code>，不通过就停下，不会替你安装。</p></div></details>
+<details><summary>准备域名与通配符 DNS</summary><div class="body"><p><code>*.your-domain.com</code> 必须指向服务器 IP。Puter 用子域区分 API、静态站点与私有应用；只解析主域名，子域无法解析，应用与托管会不可用。</p></div></details>
+<details><summary>运行一行安装脚本</summary><div class="body"><p>脚本生成 MariaDB、S3、JWT 等密钥，写 <code>.env</code> 与 <code>puter/config/config.json</code>，下载 compose 与 Caddyfile，然后 <code>docker compose up -d</code>。重复执行不会覆盖已有配置；强制轮换需 <code>PUTER_FORCE=1</code>。</p><pre><code>curl -fsSL https://raw.githubusercontent.com/HeyPuter/puter/main/install.sh | sh</code></pre></div></details>
+<details><summary>配 TLS 与反向代理</summary><div class="body"><p>默认只开 80。生产环境要在 Caddy 配 443 与证书；文档给了 certbot 路线，但证书申请不在安装脚本里自动完成。</p></div></details>
+<details><summary>可选：本地模型与收信</summary><div class="body"><p>compose 的 <code>ai</code> profile 会启动 Ollama 并拉 <code>tinyllama</code>；<code>smtp</code> profile 启动收信服务，把邮件投递到用户邮箱。两者都默认关闭。</p></div></details>
+<details><summary>备份与升级</summary><div class="body"><p>文档说明状态在 <code>./puter/data/&lt;service&gt;/</code>，另有 MariaDB 与对象存储。备份要同时覆盖数据库、对象存储与配置密钥；密钥漂移会导致数据库登录失败。</p></div></details>
+</div>
+
+<h3 style="margin-top:26px">默认拉起什么</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>容器</th><th>镜像</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td>Caddy</td><td><code>caddy:2.11-alpine</code></td><td>80/443 反向代理与子域路由</td></tr>
+<tr><td>Puter</td><td><code>ghcr.io/heyputer/puter</code></td><td>应用本体</td></tr>
+<tr><td>MariaDB</td><td><code>mariadb:11</code></td><td>SQL；首次启动自动建表</td></tr>
+<tr><td>Valkey</td><td><code>valkey/valkey:8-alpine</code></td><td>缓存与限流</td></tr>
+<tr><td>DynamoDB-local</td><td><code>amazon/dynamodb-local</code></td><td>KV 存储；自动建表</td></tr>
+<tr><td>RustFS</td><td><code>rustfs/rustfs</code></td><td>S3 兼容对象存储</td></tr>
+<tr><td>S3 init</td><td><code>amazon/aws-cli</code></td><td>一次性建桶后退出</td></tr>
+</tbody></table></div>
+<p class="caption">可选服务：Ollama（CPU，GPU 需额外开启）与 SMTP 收信。前六行为常驻服务，S3 init 为一次性建桶。文档没有给最低配置或并发基准，容量需要按 MariaDB、对象存储与 Puter 本体自行压测。</p>
+
+<div class="callout warn"><b>“一行命令”的准确含义</b><p>一条命令可以完成安装，但它不是“零前置”。Docker、通配符 DNS、证书、备份策略仍然要人来准备。文档自己把 compose 描述为单机上最接近生产的部署，这不是 SLA 承诺。</p></div>
+
+  </div>
+</section><section id="ai">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">04</div><div><h2>AI 网关：500+ 模型，和它的边界</h2><p class="lede">500+ 是真的，但它描述的是 Puter 的托管网关，不是自托管安装包的默认能力。</p></div></div>
+    
+<div class="grid">
+  <div class="card"><span class="k">对独立开发者</span><h3>没有 key，也没有后端</h3><p>一个 script 标签就能调用文本、图像、语音与 OCR。模型切换是改参数；应用可以直接发布到 App Store 或自己的域名。</p></div>
+  <div class="card"><span class="k">对自托管者</span><h3>500+ 不会随 compose 到位</h3><p>默认只拉起 Ollama 与 tinyllama。要用 GPT、Claude、Gemini，需要自己接供应商或扩展模型层；“500+”描述的是托管网关。</p></div>
+  <div class="card"><span class="k">对终端用户</span><h3>用的人付费</h3><p>user-pays 把 AI 成本放到用户自己的 Puter 账户。开发者不承担账单，但也意味着用户必须先有账号、接受额度与数据路径。</p></div>
+</div>
+
+<h3 style="margin-top:26px">托管网关与自托管默认栈</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>维度</th><th>puter.com / Puter.js</th><th>自托管默认</th></tr></thead>
+<tbody>
+<tr><td>模型范围</td><td>官方称 500+，含 GPT、Claude、Gemini、Grok、DeepSeek、FLUX 等</td><td>Ollama + tinyllama；其余需自行接入</td></tr>
+<tr><td>鉴权</td><td>用户登录 Puter，无需 API key</td><td>自己的账号体系；上游模型密钥自管</td></tr>
+<tr><td>计费</td><td>user-pays，用户承担</td><td>自己的算力与供应商账单</td></tr>
+<tr><td>数据路径</td><td>请求经过 Puter 网关再到上游</td><td>数据留在自己的服务器与模型上</td></tr>
+</tbody></table></div>
+<p class="caption">“模型”包含对话、图像、语音、OCR、视频等，不等于 500 个通用大语言模型。</p>
+
+<h3 style="margin-top:26px">调用形态（示意，未在本报告执行）</h3>
+<pre><code>&lt;script src="https://js.puter.com/v2/"&gt;&lt;/script&gt;
+&lt;script&gt;
+(async () =&gt; {
+  const reply = await puter.ai.chat("用三句话解释云操作系统");
+  await puter.fs.write("notes/hello.md", "hello");
+  console.log(reply);
+})();
+&lt;/script&gt;</code></pre>
+<div class="callout"><b>把“500+ 模型”当成产品能力，不要当成部署属性</b><p>选型时先问：模型请求走谁的网络、谁付钱、出问题找谁。这三个答案在托管与自托管下完全不同。</p></div>
+
+  </div>
+</section><section id="claims">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">05</div><div><h2>事实核查：哪些说法要改</h2><p class="lede">以下八条来自常见介绍与截图文案，逐条对照仓库、文档与产品页。</p></div></div>
+    
+<div class="chips" role="group" aria-label="按核查结论筛选">
+  <button class="chip" type="button" data-verdict="all" aria-pressed="true">全部 <span aria-hidden="true">8</span></button>
+  <button class="chip" type="button" data-verdict="fix" aria-pressed="false">需修正 <span aria-hidden="true">2</span></button>
+  <button class="chip" type="button" data-verdict="limit" aria-pressed="false">需限定 <span aria-hidden="true">5</span></button>
+  <button class="chip" type="button" data-verdict="ok" aria-pressed="false">已核实 <span aria-hidden="true">1</span></button>
+</div>
+<p class="note" id="claimCount" role="status" aria-live="polite">显示 8 / 8 条</p>
+<div class="table-wrap" style="margin-top:12px"><table>
+<thead><tr><th style="width:24%">说法</th><th style="width:11%">判定</th><th>核对结果</th></tr></thead>
+<tbody id="claimBody"><tr data-verdict="fix"><td><strong>“Node.js 16 以上就能部署”</strong></td><td><span class="badge fix">需修正</span></td><td>本地开发要求 Node >= 24.0.0（package.json 的 engines 字段）；Docker 路线不依赖本机 Node。Everything 的应用要求 22.12+。<div class="note" style="margin-top:6px">证据：puter/package.json；everything/README</div></td></tr>
+<tr data-verdict="fix"><td><strong>“49 个完整项目源码”</strong></td><td><span class="badge fix">需修正</span></td><td>src/ 下是 51 个应用目录（2026-11-01 的 main 分支）。数量会变，引用时应写“截至某日”。<div class="note" style="margin-top:6px">证据：git tree；README 表格</div></td></tr>
+<tr data-verdict="limit"><td><strong>“复刻约 50 款商业软件”</strong></td><td><span class="badge limit">需限定</span></td><td>目录有 51 个应用，但其中 5 个是棋牌/益智游戏；1 个（Assets）是占位。不能全部等同于商业软件替代品。<div class="note" style="margin-top:6px">证据：README；src/assets 目录</div></td></tr>
+<tr data-verdict="limit"><td><strong>“内置 500+ AI 模型”</strong></td><td><span class="badge limit">需限定</span></td><td>官方 AI Gateway 页面确实写 500+，覆盖文本、图像、语音、OCR 等；但这是托管网关能力，自托管默认只带 Ollama 的 tinyllama。<div class="note" style="margin-top:6px">证据：developer.puter.com/ai；self-hosting.md</div></td></tr>
+<tr data-verdict="limit"><td><strong>“几行命令完成 Docker 部署”</strong></td><td><span class="badge limit">需限定</span></td><td>一条安装命令确实能拉起；前置条件是 Docker + compose、通配符 DNS 与 TLS，默认 6 类常驻服务。<div class="note" style="margin-top:6px">证据：install.sh；docker-compose.yml</div></td></tr>
+<tr data-verdict="limit"><td><strong>“Dropbox / Google Drive 的开源替代”</strong></td><td><span class="badge limit">需限定</span></td><td>文件、应用与身份有重叠，但 Puter 还包含 AI 网关、Serverless Workers 与桌面环境；定位比网盘大，成熟度比网盘小。<div class="note" style="margin-top:6px">证据：README；doc/architecture.md</div></td></tr>
+<tr data-verdict="limit"><td><strong>“隐私优先”</strong></td><td><span class="badge limit">需限定</span></td><td>自托管时数据在自己机器上，这个说法成立；托管在 puter.com 时仍是第三方云服务，需要看条款与数据路径。<div class="note" style="margin-top:6px">证据：产品定位；部署文档</div></td></tr>
+<tr data-verdict="ok"><td><strong>“Everything 大部分应用接入 Puter.js”</strong></td><td><span class="badge ok">已核实</span></td><td>抽查 5 个不同类别应用的 index.html，均直接加载 https://js.puter.com/v2/；文件与身份依赖 Puter。<div class="note" style="margin-top:6px">证据：抽取 spreadsheet/documents/cad/teamchat/photo-studio</div></td></tr></tbody>
+</table></div>
+  </div>
+</section><section id="compare">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">06</div><div><h2>横向对比：它站在哪一格</h2><p class="lede">不是“Puter 好不好”，而是“在你的场景里，它替代的是哪一层”。</p></div></div>
+    
+<div class="table-wrap"><table>
+<thead><tr><th>方案</th><th>定位</th><th>部署</th><th>AI</th><th>许可</th><th>主要代价</th></tr></thead>
+<tbody>
+<tr><td><strong>Puter</strong></td><td>云桌面 + 个人云 + 开发者 BaaS</td><td>官方托管或单机 compose</td><td>托管网关 500+；自托管需自接</td><td>AGPL-3.0</td><td>服务面大，运维与安全边界要自己扛</td></tr>
+<tr><td><strong>Nextcloud</strong></td><td>文件同步与协作套件</td><td>自托管或托管商</td><td>靠应用/外部集成</td><td>AGPL-3.0</td><td>不是浏览器桌面；AI 与 Workers 需另拼</td></tr>
+<tr><td><strong>Google / Microsoft 云办公</strong></td><td>托管生产力套件</td><td>不可自托管</td><td>内置</td><td>闭源</td><td>数据与费用锁定；无法改后端</td></tr>
+<tr><td><strong>自己拼 S3 + Auth + AI + 前端</strong></td><td>按需定制</td><td>自建</td><td>自选</td><td>混合</td><td>集成与维护成本最高，但边界最清楚</td></tr>
+</tbody></table></div>
+<p class="caption">除 Puter 与 Nextcloud 的许可、部署形态外，本表为分析判断，不是基准测试。</p>
+
+  </div>
+</section><section id="risk">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">07</div><div><h2>风险与适用边界</h2><p class="lede">把代价写在前面，比把功能列满更有用。</p></div></div>
+    
+<div class="grid risk-grid">
+  <div class="card"><span class="k">许可</span><h3>AGPL 不是 MIT</h3><p>修改后通过网络向用户提供服务，通常需要提供对应源码。闭源商用、二次分发、SaaS 封装都要先过法务。官方仓库是 AGPL-3.0-only。</p></div>
+  <div class="card"><span class="k">运维</span><h3>六个服务，一条链路</h3><p>MariaDB、Valkey、DynamoDB、S3、Caddy、Puter 任一处配置漂移都会表现为登录或文件失败。文档面向单机 compose，多节点与故障转移需自行设计。</p></div>
+  <div class="card"><span class="k">安全</span><h3>攻击面比网盘大</h3><p>身份、文件、Workers、浏览器内网络、邮件都在同一栈里。自托管意味着补丁、备份、审计都由你负责；本报告未做安全审计。</p></div>
+  <div class="card"><span class="k">集中度</span><h3>便利来自同一家</h3><p>托管模式下，AI、应用分发、身份都指向 Puter。自托管能拿回数据，但也失去 500+ 模型的默认便利。</p></div>
+  <div class="card"><span class="k">节奏</span><h3>版本跑得快</h3><p>日历式版本号（26.x），Node 24 起步，main 分支活跃。生产部署要锁镜像 tag、锁 Node 版本，并留回滚路径。</p></div>
+  <div class="card"><span class="k">数据</span><h3>出口不止一处</h3><p>用户文件在 S3，元数据在 MariaDB，应用数据还有各自的 KV 与协作结构。迁移不是拷一个目录；要先定义导出格式，再做回读验证。</p></div>
+</div>
+
+<h3 style="margin-top:28px">适合与不适合</h3>
+<div class="grid">
+  <div class="card"><span class="k">适合</span><h3>这些场景值得试</h3><ul style="font-size:14px;color:var(--muted);padding-left:20px;margin-top:6px">
+    <li>给 AI 生成的前端应用找“无后端”后端</li>
+    <li>需要文件、账号、KV、AI 一体的自托管个人云</li>
+    <li>内部工具、教学、演示，能接受单机与手工运维</li>
+    <li>愿意读 AGPL 并接受其义务</li>
+  </ul></div>
+  <div class="card"><span class="k">不适合</span><h3>这些场景先别上</h3><ul style="font-size:14px;color:var(--muted);padding-left:20px;margin-top:6px">
+    <li>要求 SLA、多活、等保/审计合规的生产系统</li>
+    <li>没有 Docker、DNS、备份能力的团队</li>
+    <li>要求模型完全不出内网，且不愿自接模型</li>
+    <li>要把修改版闭源对外提供</li>
+  </ul></div>
+</div>
+
+<div class="callout"><b>落地前做三个验证</b><p>1）用 compose 起一遍，再按文档恢复一次备份；2）用一个真实应用走通登录、写入、分享、权限四条路径；3）让法务看 AGPL 与 user-pays 条款。三步都过，再谈迁移。</p></div>
+
+  </div>
+</section><section id="sources">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">08</div><div><h2>来源与方法</h2><p class="lede">所有数字都能回到一个链接或一次 API 查询。</p></div></div>
+    
+<ol class="sources">
+<li><a href="https://github.com/HeyPuter/puter" target="_blank" rel="noopener noreferrer">HeyPuter/puter 仓库与 README</a>，访问于 2026-11-01。</li>
+<li><a href="https://github.com/HeyPuter/puter/blob/main/package.json" target="_blank" rel="noopener noreferrer">package.json</a>（main 分支）：版本 26.07，<code>engines.node &gt;=24.0.0</code>，AGPL-3.0-only。</li>
+<li><a href="https://github.com/HeyPuter/puter/blob/main/doc/architecture.md" target="_blank" rel="noopener noreferrer">doc/architecture.md</a>：分层、Actor、Extensions。</li>
+<li><a href="https://github.com/HeyPuter/puter/blob/main/doc/self-hosting.md" target="_blank" rel="noopener noreferrer">doc/self-hosting.md</a>：安装、容器、通配符 DNS、备份。</li>
+<li><a href="https://github.com/HeyPuter/puter/blob/main/docker-compose.yml" target="_blank" rel="noopener noreferrer">docker-compose.yml</a> 与 <code>install.sh</code>。</li>
+<li><a href="https://github.com/HeyPuter/puter/releases" target="_blank" rel="noopener noreferrer">Releases</a>：最新 26.10.1（2026-10-25）。</li>
+<li><a href="https://developer.puter.com/ai/" target="_blank" rel="noopener noreferrer">Puter AI Gateway</a>：500+ 模型、供应商、user-pays。</li>
+<li><a href="https://github.com/HeyPuter/puter/commits/main" target="_blank" rel="noopener noreferrer">main 分支</a>：HEAD <code>efc0ab7</code>（2026-11-02 UTC）。</li>
+<li>GitHub API：stars 44,053、forks 4,138、open issues 44；贡献者分页推算约 435（含匿名）。</li>
+</ol>
+<p class="caption">方法：阅读仓库文档与配置，统计 GitHub 元数据，未运行 Puter 实例，未做性能、安全或合规审计。星标与 issue 数是快照，会继续变化。</p>
+
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <span>数据截至 2026-11-01；星标、贡献者等为当日快照。</span>
+    <span>独立分析，不代表 Puter 项目方。配套报告：Everything 应用全景（everything-apps-report.html）</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var chips = Array.prototype.slice.call(document.querySelectorAll('[data-verdict]'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#claimBody tr'));
+  var count = document.getElementById('claimCount');
+  function apply(v){
+    var shown = 0;
+    rows.forEach(function(r){ var on = (v==='all'||r.getAttribute('data-verdict')===v); r.hidden = !on; if(on) shown++; });
+    chips.forEach(function(c){ c.setAttribute('aria-pressed', c.getAttribute('data-verdict')===v ? 'true':'false'); });
+    count.textContent = '显示 ' + shown + ' / ' + rows.length + ' 条';
+  }
+  chips.forEach(function(c){ c.addEventListener('click', function(){ apply(c.getAttribute('data-verdict')); }); });
+  apply('all');
+  Array.prototype.forEach.call(document.querySelectorAll('.table-wrap table'), function(table){
+    var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th){ return th.textContent.trim(); });
+    Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function(tr){
+      Array.prototype.forEach.call(tr.children, function(td, i){ if(heads[i]) td.setAttribute('data-label', heads[i]); });
+    });
+  });
+  document.documentElement.classList.add('js-tables');
+
+  Array.prototype.forEach.call(document.querySelectorAll('.table-wrap, pre'), function(el){
+    if(el.scrollWidth > el.clientWidth + 1){ el.tabIndex = 0; el.setAttribute('role','region'); el.setAttribute('aria-label','可横向滚动的内容'); }
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -31,6 +31,8 @@
 | [`Hackathons/`](Hackathons/index.html) | AI 黑客松：8 个找赛平台地图 + [商业逻辑分析](Hackathons/business.html) |
 | [`Video/课代表立正/`](Video/课代表立正/index.html) | B站 UP「课代表立正」投稿索引：804 条视频的标题、发布日期、播放量、时长、分区、简介概述，支持主题 / 形式 / 年份筛选（2026-10 抓取） |
 | [`Video/课代表立正/topics.html`](Video/课代表立正/topics.html) | 同频道的分类与资料整理：10 个主题、6 种内容形式、32 本书、45 位访谈嘉宾、87 条站外链接 |
+| [`SoftwareEngineering/kimi/`](SoftwareEngineering/kimi/index.html) | Kimi 开源图谱：MoonshotAI 42 个公开仓库 + Mooncake 逐项分析，每项一页（2026-11） |
+| [`SoftwareEngineering/DeepSeek/`](SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html) | DeepSeek 开源全景：46 个官方仓库的分层地图、逐项分析与时间线（2026-10 快照） |
 
 ## 约定
 
@@ -50,4 +52,8 @@ python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_ht
 for f in "$PWD"/Video/课代表立正/*.html; do
   python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$f"
 done
+for f in "$PWD"/SoftwareEngineering/kimi/*.html; do
+  python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$f"
+done
+python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html"
 ```

@@ -1,0 +1,1570 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="DeepSeek 开源项目全集：46 个仓库的分层梳理、逐项分析与时间线，离线单文件报告。">
+<title>DeepSeek 开源全景 · 46 个项目的分层分析与时间线</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234d6bfe'/%3E%3Ctext x='16' y='22' font-size='14' text-anchor='middle' fill='white' font-family='sans-serif'%3EDS%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --ink:#14171c; --muted:#5c6470; --line:#e1e4ea; --line-2:#cfd4dd;
+    --accent:#4d6bfe; --accent-soft:#e9edff; --dark:#0d1220;
+    --model:#4d6bfe; --train:#7a5af8; --kernel:#0f8f80; --storage:#b7791f; --agent:#d9480f; --eco:#5b6472;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em;background:#eceff4;padding:.1em .35em;border-radius:4px}
+  h1,h2,h3{line-height:1.3;letter-spacing:-.01em}
+  h2{font-size:24px;margin:0 0 4px}
+  h3{font-size:16px;margin:0}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  header.top{background:radial-gradient(1200px 400px at 20% -10%,#1b2748 0%,transparent 60%),linear-gradient(180deg,#0b101c 0%,#131b2e 100%);color:#e8ecf5;padding:44px 0 38px;border-bottom:1px solid #070a11}
+  .kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#8ea3c8}
+  header.top h1{font-size:34px;margin:12px 0 10px;color:#fff}
+  header.top p.lead{color:#b7c2d6;max-width:860px;margin:0;font-size:16px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .meta span{font-size:12.5px;color:#c6d0e2;border:1px solid #2c3853;background:#151f33;border-radius:999px;padding:3px 11px}
+  nav.sticky{position:sticky;top:0;z-index:20;background:rgba(244,245,247,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav.sticky .wrap{display:flex;gap:6px;overflow-x:auto;padding-top:9px;padding-bottom:9px}
+  nav.sticky a{flex:0 0 auto;font-size:13px;color:#3b4352;border:1px solid transparent;border-radius:8px;padding:5px 10px}
+  nav.sticky a:hover{background:#fff;border-color:var(--line);text-decoration:none}
+  section{padding:44px 0 8px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+  .sec-head .num{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .sec-head p{color:var(--muted);margin:0;font-size:14px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0 8px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat b{display:block;font-size:26px;line-height:1.2;letter-spacing:-.02em}
+  .stat span{font-size:12.5px;color:var(--muted)}
+  .three{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 22px;margin-top:18px}
+  .three ol{counter-reset:t;list-style:none;padding:0;margin:14px 0}
+  .three ol li{counter-increment:t;position:relative;padding-left:38px;margin:12px 0}
+  .three ol li::before{content:counter(t);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:#2a43b8;font-family:var(--mono);font-size:12px;display:grid;place-items:center}
+  .layerbar{display:flex;height:14px;border-radius:999px;overflow:hidden;margin:20px 0 10px;border:1px solid var(--line-2);background:#e9ecf1}
+  .seg{display:block;height:100%}
+  .seg-model{background:var(--model)} .seg-train{background:var(--train)} .seg-kernel{background:var(--kernel)}
+  .seg-storage{background:var(--storage)} .seg-agent{background:var(--agent)} .seg-eco{background:var(--eco)}
+  .legend{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:#444c5a}
+  .legend li{display:flex;align-items:center;gap:7px;margin:0}
+  .legend b{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot-model{background:var(--model)} .dot-train{background:var(--train)} .dot-kernel{background:var(--kernel)}
+  .dot-storage{background:var(--storage)} .dot-agent{background:var(--agent)} .dot-eco{background:var(--eco)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .stack{width:100%;height:auto;display:block}
+  .st-bar{fill:#eef1f6;stroke:#dde2ea}
+  .st-model{fill:#e9edff} .st-train{fill:#f0ebff} .st-kernel{fill:#e3f4f1} .st-storage{fill:#fbf1dc} .st-agent{fill:#fdeee6}
+  .st-label{font-family:var(--sans);font-size:14px;font-weight:600;fill:#1b2029}
+  .st-sub{font-family:var(--mono);font-size:10.5px;fill:#6b7280}
+  .st-repo{font-family:var(--sans);font-size:11.5px;fill:#3d4655}
+  .st-note{font-family:var(--sans);font-size:10.5px;fill:#6b7280}
+  .timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
+  .tl-year{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 14px 8px}
+  .tl-year h3{display:flex;justify-content:space-between;align-items:baseline;font-size:18px;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .tl-year h3 span{font-size:11.5px;color:var(--muted);font-weight:400;font-family:var(--mono)}
+  .tl-year ul{list-style:none;padding:0;margin:0}
+  .tl-year li{margin:0}
+  .tl-year a{display:flex;justify-content:space-between;gap:8px;padding:4px 6px;border-radius:6px;color:#2b3240;font-size:12.5px}
+  .tl-year a:hover{background:#f0f3f9;text-decoration:none}
+  .tl-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tl-meta{font-family:var(--mono);font-size:10.5px;color:#8a92a0;flex:0 0 auto}
+  .findings{counter-reset:f;list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+  .findings li{counter-increment:f;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px 14px;margin:0}
+  .findings h3{font-size:15px;margin-bottom:6px;padding-left:30px;position:relative}
+  .findings h3::before{content:counter(f,decimal-leading-zero);position:absolute;left:0;top:0;font-family:var(--mono);font-size:11px;color:#8a92a0}
+  .findings p{font-size:13.5px;color:#3c4452;margin:0}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0 6px}
+  .controls input[type=search]{flex:1 1 240px;min-width:200px;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line-2);border-radius:9px;background:#fff}
+  .controls input[type=search]:focus-visible,.controls select:focus-visible,.chip:focus-visible,.btn:focus-visible,.tl-year a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .controls select{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:9px;background:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+  .chip,.btn{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-2);background:#fff;color:#3b4352;cursor:pointer}
+  .chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn:hover,.chip:hover{border-color:#aab2c0}
+  .count-line{font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+  .count-line b{font-family:var(--mono);color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px 12px;display:flex;flex-direction:column;scroll-margin-top:70px}
+  .card[hidden]{display:none}
+  .card:target{box-shadow:0 0 0 3px #c9d3ff;border-color:#9fb0ff}
+  .card-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px}
+  .layer-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:#eef1f7;color:#48505f;white-space:nowrap}
+  .card[data-layer=model] .layer-tag{background:#e9edff;color:#2b46b8}
+  .card[data-layer=train] .layer-tag{background:#f0ebff;color:#5a3fc0}
+  .card[data-layer=kernel] .layer-tag{background:#e3f4f1;color:#0b6f63}
+  .card[data-layer=storage] .layer-tag{background:#fbf1dc;color:#8a5a12}
+  .card[data-layer=agent] .layer-tag{background:#fdeee6;color:#a83a0c}
+  .card[data-layer=eco] .layer-tag{background:#eef0f3;color:#4a5261}
+  .maturity{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+  .card h3{font-size:17px;margin:0 0 6px;word-break:break-word}
+  .card h3 a{color:var(--ink)}
+  .card h3 a:hover{color:var(--accent)}
+  .official{font-size:13px;color:#4a5260;margin:0 0 10px}
+  .label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8a92a0;margin:0 0 2px}
+  .analysis{margin:0 0 8px;padding-left:18px}
+  .analysis li{font-size:13px;color:#2f3745;margin:3px 0}
+  .caveat{font-size:12px;color:#8a5a12;background:#fdf6e8;border:1px solid #f3e3bf;border-radius:8px;padding:7px 9px;margin:8px 0 10px}
+  .caveat span{color:#a8690d;font-weight:600;margin-right:6px}
+  .card-meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-family:var(--mono);font-size:11px;color:#7c8493;border-top:1px solid var(--line);padding-top:9px;margin-top:auto}
+  body.compact .analysis-wrap{display:none}
+  .empty{margin:20px 0;padding:24px;border:1px dashed var(--line-2);border-radius:12px;text-align:center;color:var(--muted)}
+  .method{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:16px}
+  .method .panel{font-size:13.5px;color:#3c4452}
+  .method h3{font-size:14px;margin:0 0 6px}
+  .sources{columns:2;column-gap:26px;font-size:13px}
+  .sources li{break-inside:avoid;margin:5px 0}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 40px;color:var(--muted);font-size:12.5px}
+  @media (max-width:640px){
+    header.top h1{font-size:26px}
+    .sources{columns:1}
+    .grid{grid-template-columns:1fr}
+    .findings{grid-template-columns:1fr}
+  }
+  @media print{
+    nav.sticky,.controls,.chips{display:none}
+    body{background:#fff}
+    .card{break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Software Engineering · DeepSeek Research</div>
+    <h1>DeepSeek 开源全景</h1>
+    <p class="lead">从 2023 年的 DeepSeek-LLM 到 2026 年的 Agent harness 与推理框架：46 个官方仓库的分层地图、逐项分析与发布时间线。</p>
+    <div class="meta">
+      <span>数据快照 2026-10-31</span>
+      <span>46 个仓库</span>
+      <span>6 个技术层</span>
+      <span>2023–2026</span>
+      <span>约 74 万 star</span>
+    </div>
+  </div>
+</header>
+
+<nav class="sticky" aria-label="页面导航">
+  <div class="wrap">
+    <a href="#overview">概览</a>
+    <a href="#stack">技术栈</a>
+    <a href="#timeline">时间线</a>
+    <a href="#findings">十条观察</a>
+    <a href="#catalog">项目目录</a>
+    <a href="#method">口径与可信度</a>
+    <a href="#sources">来源</a>
+  </div>
+</nav>
+
+<section id="overview">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">01</span><h2>先看结论</h2></div>
+    <p style="color:var(--muted);max-width:900px">这份报告把 deepseek-ai 组织下 46 个公开仓库按“它在系统里解决什么问题”分成六层。star 数与许可证为 2026-10-31 的近似快照；每张卡片区分“官方定位”与“我的分析”。</p>
+
+    <div class="stats">
+      <div class="stat"><b>46</b><span>公开仓库（含清单与文档）</span></div>
+      <div class="stat"><b>19</b><span>模型与算法仓库</span></div>
+      <div class="stat"><b>9</b><span>算子 / 推理 / 通信</span></div>
+      <div class="stat"><b>33</b><span>MIT 许可证仓库</span></div>
+      <div class="stat"><b>4</b><span>Apache-2.0 仓库</span></div>
+      <div class="stat"><b>2025.02</b><span>开源周：系统的分水岭</span></div>
+    </div>
+
+    <div class="three">
+      <ol>
+        <li><b>真正的分水岭是 2025 年 2 月的开源周。</b>此前开源的是“模型权重 + 推理 demo”，此后开源的是“生产系统”：FlashMLA、DeepEP、DeepGEMM、DualPipe/EPLB、3FS/smallpond 五天连发，open-infra-index 是这套发布的说明书。</li>
+        <li><b>技术主线是同一句话：用更少的显存和通信换同样的效果。</b>MoE 细粒度专家、MLA、MTP、DSA、Engram 是模型侧的答案；FlashMLA、DeepEP、DeepGEMM、DeepSelect 是同一答案在 kernel 侧的落地。两边必须一起读。</li>
+        <li><b>2026 年的新增几乎都指向 Agent 运行时与推理框架。</b>harness 拿到 268k star，DeepInfer 与 recipe 补齐“怎么服务、怎么接协议”。开源竞争面已经从权重转向系统。</li>
+      </ol>
+    </div>
+
+    <h3 style="margin-top:26px">按层分布</h3>
+    
+    <div class="layerbar" role="img" aria-label="按层分布：基础模型与算法 19 个; 训练与并行策略 6 个; 算子与推理引擎 9 个; 数据与存储 2 个; Agent 与工具链 6 个; 生态与索引 4 个">
+      <span class="seg seg-model" style="width:41.30%" title="基础模型与算法 19"></span><span class="seg seg-train" style="width:13.04%" title="训练与并行策略 6"></span><span class="seg seg-kernel" style="width:19.57%" title="算子与推理引擎 9"></span><span class="seg seg-storage" style="width:4.35%" title="数据与存储 2"></span><span class="seg seg-agent" style="width:13.04%" title="Agent 与工具链 6"></span><span class="seg seg-eco" style="width:8.70%" title="生态与索引 4"></span>
+    </div>
+    <ul class="legend"><li><i class="dot dot-model"></i>基础模型与算法<b>19</b></li><li><i class="dot dot-train"></i>训练与并行策略<b>6</b></li><li><i class="dot dot-kernel"></i>算子与推理引擎<b>9</b></li><li><i class="dot dot-storage"></i>数据与存储<b>2</b></li><li><i class="dot dot-agent"></i>Agent 与工具链<b>6</b></li><li><i class="dot dot-eco"></i>生态与索引<b>4</b></li></ul>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">02</span><h2>技术栈：五层加一条硬件副线</h2>
+      <p>同一层内的项目通常互相依赖；跨层读，才能看出每个仓库的真实位置。</p></div>
+    <div class="panel" style="margin-top:14px">
+      
+    <svg class="stack" viewBox="0 0 760 400" role="img" aria-labelledby="stackTitle stackDesc">
+      <title id="stackTitle">DeepSeek 开源栈分层</title>
+      <desc id="stackDesc">自下而上为存储、算子与推理、训练并行、基础模型、Agent 工具链五层；昇腾适配贯穿其中。</desc>
+      <rect class="st-bar st-agent" x="0" y="10" width="760" height="56" rx="10"/><text class="st-label" x="18" y="34">Agent 与工具链</text><text class="st-sub" x="18" y="52">6 个仓库</text><text class="st-repo" x="186" y="33">harness · recipe · dsh-*</text><text class="st-repo" x="186" y="50">clangd-ascend</text><rect class="st-bar st-model" x="0" y="78" width="760" height="56" rx="10"/><text class="st-label" x="18" y="102">基础模型与算法</text><text class="st-sub" x="18" y="120">19 个仓库</text><text class="st-repo" x="186" y="101">LLM / MoE / V2 / V3 / V3.2-Exp / R1</text><text class="st-repo" x="186" y="118">Engram · OCR · VL / Janus · Coder · Prover</text><rect class="st-bar st-train" x="0" y="146" width="760" height="56" rx="10"/><text class="st-label" x="18" y="170">训练与并行策略</text><text class="st-sub" x="18" y="188">6 个仓库</text><text class="st-repo" x="186" y="169">DualPipe · EPLB · LPLB</text><text class="st-repo" x="186" y="186">ESFT · DeepSpec · profile-data</text><rect class="st-bar st-kernel" x="0" y="214" width="760" height="56" rx="10"/><text class="st-label" x="18" y="238">算子与推理引擎</text><text class="st-sub" x="18" y="256">9 个仓库</text><text class="st-repo" x="186" y="237">DeepInfer · FlashMLA · DeepEP</text><text class="st-repo" x="186" y="254">DeepGEMM · DeepSelect · DeepJIT · TileKernels</text><rect class="st-bar st-storage" x="0" y="282" width="760" height="56" rx="10"/><text class="st-label" x="18" y="306">数据与存储</text><text class="st-sub" x="18" y="324">2 个仓库</text><text class="st-repo" x="186" y="305">3FS · smallpond</text><text class="st-note" x="0" y="364">贯穿整栈的两条硬件线：NVIDIA（主）与昇腾 Ascend（GEMM / EP / TopK / TileKernels / clangd / DeepInfer）</text>
+    </svg>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-top:12px">说明：这是按“在系统里承担的角色”划分，不是官方分类。生态清单类仓库不占栈内位置，单列在第六层。</p>
+  </div>
+</section>
+
+<section id="timeline">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">03</span><h2>时间线：三年，三次转向</h2>
+      <p>点击任意项目跳到对应分析卡片。月份为仓库或论文首次公开的近似时间。</p></div>
+    <div class="timeline">
+
+      <div class="tl-year">
+        <h3>2023<span>2 个</span></h3>
+        <ul><li><a href="#p-deepseek-coder" title="DeepSeek-Coder"><span class="tl-name">DeepSeek-Coder</span><span class="tl-meta">11 月 · 24k</span></a></li>
+<li><a href="#p-deepseek-llm" title="DeepSeek-LLM"><span class="tl-name">DeepSeek-LLM</span><span class="tl-meta">11 月 · 7.3k</span></a></li></ul>
+      </div>
+
+      <div class="tl-year">
+        <h3>2024<span>10 个</span></h3>
+        <ul><li><a href="#p-deepseek-moe" title="DeepSeek-MoE"><span class="tl-name">DeepSeek-MoE</span><span class="tl-meta">01 月 · 2k</span></a></li>
+<li><a href="#p-dreamcraft3d" title="DreamCraft3D"><span class="tl-name">DreamCraft3D</span><span class="tl-meta">02 月 · 3k</span></a></li>
+<li><a href="#p-deepseek-vl" title="DeepSeek-VL"><span class="tl-name">DeepSeek-VL</span><span class="tl-meta">03 月 · 4.2k</span></a></li>
+<li><a href="#p-deepseek-math" title="DeepSeek-Math"><span class="tl-name">DeepSeek-Math</span><span class="tl-meta">04 月 · 3.5k</span></a></li>
+<li><a href="#p-deepseek-v2" title="DeepSeek-V2"><span class="tl-name">DeepSeek-V2</span><span class="tl-meta">05 月 · 5.1k</span></a></li>
+<li><a href="#p-deepseek-coder-v2" title="DeepSeek-Coder-V2"><span class="tl-name">DeepSeek-Coder-V2</span><span class="tl-meta">06 月 · 7k</span></a></li>
+<li><a href="#p-deepseek-prover-v1-5" title="DeepSeek-Prover-V1.5"><span class="tl-name">DeepSeek-Prover-V1.5</span><span class="tl-meta">08 月 · 590</span></a></li>
+<li><a href="#p-esft" title="ESFT"><span class="tl-name">ESFT</span><span class="tl-meta">09 月 · 754</span></a></li>
+<li><a href="#p-deepseek-v3" title="DeepSeek-V3"><span class="tl-name">DeepSeek-V3</span><span class="tl-meta">12 月 · 105k</span></a></li>
+<li><a href="#p-deepseek-vl2" title="DeepSeek-VL2"><span class="tl-name">DeepSeek-VL2</span><span class="tl-meta">12 月 · 5.4k</span></a></li></ul>
+      </div>
+
+      <div class="tl-year">
+        <h3>2025<span>17 个</span></h3>
+        <ul><li><a href="#p-deepseek-r1" title="DeepSeek-R1"><span class="tl-name">DeepSeek-R1</span><span class="tl-meta">01 月 · 92k</span></a></li>
+<li><a href="#p-janus" title="Janus"><span class="tl-name">Janus</span><span class="tl-meta">01 月 · 18k</span></a></li>
+<li><a href="#p-flashmla" title="FlashMLA"><span class="tl-name">FlashMLA</span><span class="tl-meta">02 月 · 13.2k</span></a></li>
+<li><a href="#p-deepep" title="DeepEP"><span class="tl-name">DeepEP</span><span class="tl-meta">02 月 · 10.4k</span></a></li>
+<li><a href="#p-3fs" title="3FS"><span class="tl-name">3FS</span><span class="tl-meta">02 月 · 10k</span></a></li>
+<li><a href="#p-deepgemm" title="DeepGEMM"><span class="tl-name">DeepGEMM</span><span class="tl-meta">02 月 · 9.1k</span></a></li>
+<li><a href="#p-smallpond" title="smallpond"><span class="tl-name">smallpond</span><span class="tl-meta">02 月 · 5k</span></a></li>
+<li><a href="#p-dualpipe" title="DualPipe"><span class="tl-name">DualPipe</span><span class="tl-meta">02 月 · 3k</span></a></li>
+<li><a href="#p-eplb" title="EPLB"><span class="tl-name">EPLB</span><span class="tl-meta">02 月 · 1.5k</span></a></li>
+<li><a href="#p-profile-data" title="profile-data"><span class="tl-name">profile-data</span><span class="tl-meta">02 月 · 1.2k</span></a></li>
+<li><a href="#p-deepseek-prover-v2" title="DeepSeek-Prover-V2"><span class="tl-name">DeepSeek-Prover-V2</span><span class="tl-meta">04 月 · 1.3k</span></a></li>
+<li><a href="#p-open-infra-index" title="open-infra-index"><span class="tl-name">open-infra-index</span><span class="tl-meta">05 月 · 8.1k</span></a></li>
+<li><a href="#p-deepseek-v3-2-exp" title="DeepSeek-V3.2-Exp"><span class="tl-name">DeepSeek-V3.2-Exp</span><span class="tl-meta">09 月 · 1.7k</span></a></li>
+<li><a href="#p-deepseek-ocr" title="DeepSeek-OCR"><span class="tl-name">DeepSeek-OCR</span><span class="tl-meta">10 月 · 24k</span></a></li>
+<li><a href="#p-deepseek-math-v2" title="DeepSeek-Math-V2"><span class="tl-name">DeepSeek-Math-V2</span><span class="tl-meta">11 月 · 1.6k</span></a></li>
+<li><a href="#p-awesome-deepseek-coder" title="awesome-deepseek-coder"><span class="tl-name">awesome-deepseek-coder</span><span class="tl-meta">11 月 · 838</span></a></li>
+<li><a href="#p-lplb" title="LPLB"><span class="tl-name">LPLB</span><span class="tl-meta">11 月 · 545</span></a></li></ul>
+      </div>
+
+      <div class="tl-year">
+        <h3>2026<span>17 个</span></h3>
+        <ul><li><a href="#p-engram" title="Engram"><span class="tl-name">Engram</span><span class="tl-meta">01 月 · 4.8k</span></a></li>
+<li><a href="#p-deepseek-ocr-2" title="DeepSeek-OCR-2"><span class="tl-name">DeepSeek-OCR-2</span><span class="tl-meta">01 月 · 3.5k</span></a></li>
+<li><a href="#p-awesome-deepseek-integration" title="awesome-deepseek-integration"><span class="tl-name">awesome-deepseek-integration</span><span class="tl-meta">02 月 · 40k</span></a></li>
+<li><a href="#p-deepspec" title="DeepSpec"><span class="tl-name">DeepSpec</span><span class="tl-meta">07 月 · 7.3k</span></a></li>
+<li><a href="#p-awesome-deepseek-agent" title="awesome-deepseek-agent"><span class="tl-name">awesome-deepseek-agent</span><span class="tl-meta">09 月 · 6.3k</span></a></li>
+<li><a href="#p-deepselect" title="DeepSelect"><span class="tl-name">DeepSelect</span><span class="tl-meta">09 月 · 527</span></a></li>
+<li><a href="#p-deepep-ascend" title="DeepEP-Ascend"><span class="tl-name">DeepEP-Ascend</span><span class="tl-meta">09 月 · 283</span></a></li>
+<li><a href="#p-dsh-libreoffice-kit" title="dsh-libreoffice-kit"><span class="tl-name">dsh-libreoffice-kit</span><span class="tl-meta">09 月 · 206</span></a></li>
+<li><a href="#p-clangd-ascend" title="clangd-ascend"><span class="tl-name">clangd-ascend</span><span class="tl-meta">09 月 · 34</span></a></li>
+<li><a href="#p-deepseek-harness" title="deepseek-harness"><span class="tl-name">deepseek-harness</span><span class="tl-meta">10 月 · 268k</span></a></li>
+<li><a href="#p-deepinfer" title="DeepInfer"><span class="tl-name">DeepInfer</span><span class="tl-meta">10 月 · 25k</span></a></li>
+<li><a href="#p-dsh-superagent-prototype" title="dsh-superagent-prototype"><span class="tl-name">dsh-superagent-prototype</span><span class="tl-meta">10 月 · 5.2k</span></a></li>
+<li><a href="#p-deepseek-recipe" title="deepseek-recipe"><span class="tl-name">deepseek-recipe</span><span class="tl-meta">10 月 · 2.7k</span></a></li>
+<li><a href="#p-tilekernels" title="TileKernels"><span class="tl-name">TileKernels</span><span class="tl-meta">10 月 · 2k</span></a></li>
+<li><a href="#p-deepgemm-ascend" title="DeepGEMM-Ascend"><span class="tl-name">DeepGEMM-Ascend</span><span class="tl-meta">10 月 · 624</span></a></li>
+<li><a href="#p-deepjit" title="DeepJIT"><span class="tl-name">DeepJIT</span><span class="tl-meta">10 月 · 437</span></a></li>
+<li><a href="#p-dsh-node-addon-require-builtin" title="dsh-node-addon-require-builtin"><span class="tl-name">dsh-node-addon-require-builtin</span><span class="tl-meta">10 月 · 20</span></a></li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">04</span><h2>十条观察</h2>
+      <p>这一节是我对全量仓库的综合判断，不是对官方说法的复述。</p></div>
+    <ol class="findings">
+      <li><h3>开源的是“能跑得像”，不是“能训得像”</h3><p>权重 + 推理 demo 是常态，训练配方只以论文和拆散的 infra 仓库出现。真正被完整开源的是推理与系统能力，而不是预训练本身。</p></li>
+      <li><h3>一条清晰的技术主线：MoE → MLA → MTP → DSA → Engram</h3><p>每一步都在压单位 token 的显存或算力，而且每一步都配了对应 kernel。架构和工程是同步发布的，这是 DeepSeek 最难被复制的地方。</p></li>
+      <li><h3>开源周是分水岭</h3><p>2025-02 五天放出 FlashMLA、DeepEP、DeepGEMM、DualPipe/EPLB、3FS/smallpond，把训练系统拆成可复用积木；open-infra-index 解释了每块积木在生产里怎么用。</p></li>
+      <li><h3>2026 年重心明显转向 Agent 与运行时</h3><p>harness、DeepInfer、recipe 三者合起来是“模型 → 可执行系统”的转向。权重不再是唯一的竞争面，协议、工具调用与运行稳定性变得同样重要。</p></li>
+      <li><h3>国产硬件是第二条主线</h3><p>Ascend 版本覆盖 GEMM、EP、TopK、TileKernels、clangd、DeepInfer，已经不是“移植一个 demo”，而是完整栈。这在国内是差异化优势。</p></li>
+      <li><h3>许可证总体友好，但边界要分清</h3><p>代码多为 MIT，infra 有 Apache-2.0，文档清单用 CC0；模型权重另有 Model License。Prover-V2、clangd-ascend、DeepEP-Ascend 等“Other / 未标注”的仓库，商用前必须单独确认。</p></li>
+      <li><h3>成熟度差异极大，README 自己会说</h3><p>3FS / DeepGEMM / DeepEP / FlashMLA 是生产级；LPLB、Engram demo、dsh-superagent 是研究原型；harness 明说 developer preview。按仓库自述判断，别按 star 数判断。</p></li>
+      <li><h3>停更也是信息</h3><p>V2 停在 2024-09、Janus 停在 2025-02、Coder 系停在 2025-11，对应的是架构或产品线的世代更替，不是项目失败。读旧仓库要看它被谁取代。</p></li>
+      <li><h3>最能“拿走去用”的五块</h3><p>recipe（协议适配）、DeepJIT（JIT 缓存）、DeepSelect（TopK）、EPLB/LPLB（负载均衡）、DeepSpec（投机解码）。它们不绑定 DeepSeek 模型，迁移成本最低。</p></li>
+      <li><h3>三条阅读路径，对应三种目的</h3><p>理解模型：V2 / V3 论文 + V3.2-Exp；理解系统：open-infra-index 再按图索骥；做产品：DeepInfer + recipe + harness。不要混着读。</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="catalog">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">05</span><h2>项目目录：46 个仓库，逐个分析</h2>
+      <p>按层筛选、按名称或关键词搜索；排序只改变顺序，不隐藏内容。</p></div>
+
+    <div class="controls">
+      <label for="search" class="sr-only" style="position:absolute;left:-9999px">搜索项目</label>
+      <input id="search" type="search" placeholder="搜索项目名、关键词，例如 MLA / Ascend / 推理 / 负载均衡（按 / 聚焦）" autocomplete="off">
+      <select id="sort" aria-label="排序方式">
+        <option value="stars">按 star 排序</option>
+        <option value="year">按时间排序（早→晚）</option>
+        <option value="name">按名称排序</option>
+      </select>
+      <button class="btn" id="compact" type="button" aria-pressed="false">只看定位</button>
+      <button class="btn" id="clear" type="button">清除筛选</button>
+    </div>
+
+    <div class="chips" role="group" aria-label="按技术层筛选">
+      <button class="chip" type="button" data-layer="all" aria-pressed="true">全部</button><button class="chip" type="button" data-layer="model" aria-pressed="false">基础模型与算法</button><button class="chip" type="button" data-layer="train" aria-pressed="false">训练与并行策略</button><button class="chip" type="button" data-layer="kernel" aria-pressed="false">算子与推理引擎</button><button class="chip" type="button" data-layer="storage" aria-pressed="false">数据与存储</button><button class="chip" type="button" data-layer="agent" aria-pressed="false">Agent 与工具链</button><button class="chip" type="button" data-layer="eco" aria-pressed="false">生态与索引</button>
+    </div>
+
+    <p class="count-line">显示 <b id="count">46</b> / 46 个项目</p>
+
+    <div class="grid" id="grid">
+
+    <article class="card" id="p-deepseek-llm" data-layer="model" data-year="2023" data-stars="7300" data-name="deepseek-llm" data-search="deepseek-llm 67b 稠密中英双语模型，2023 年 11 月发布，口号是 “let there be answers”。 权重与示例 基础模型与算法 2023 mit python 它确立了 deepseek 后来的发布范式：技术报告讲训练方法，仓库给权重和推理示例，训练代码不开源。 数据侧值得看的是中英配比与去重策略；模型本身已经被 v2 之后的 moe 路线取代。 作为起点，它证明小团队用较少算力也能做出可用的 67b 基座，这个定位比架构细节更有史料价值。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与示例</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-LLM" target="_blank" rel="noopener">DeepSeek-LLM</a></h3>
+      <p class="official">67B 稠密中英双语模型，2023 年 11 月发布，口号是 “Let there be answers”。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它确立了 DeepSeek 后来的发布范式：技术报告讲训练方法，仓库给权重和推理示例，训练代码不开源。</li>
+        <li>数据侧值得看的是中英配比与去重策略；模型本身已经被 V2 之后的 MoE 路线取代。</li>
+        <li>作为起点，它证明小团队用较少算力也能做出可用的 67B 基座，这个定位比架构细节更有史料价值。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>没有训练代码，无法复现训练过程；2024 年后基本停更。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 7.3k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2023.11</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-moe" data-layer="model" data-year="2024" data-stars="2000" data-name="deepseek-moe" data-search="deepseek-moe deepseekmoe：细粒度专家切分 + 共享专家，目标是让专家真正专业化。 研究代码 基础模型与算法 2024 mit python 把专家切得更细、再留一组共享专家承接通用知识，是 v2 / v3 稀疏架构的种子。 仓库是论文配套的小规模研究代码，生产实现要到 deepep、deepgemm、tilekernels 才补齐。 读它的价值在于理解路由设计，而不是直接拿来当推理引擎。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-MoE" target="_blank" rel="noopener">DeepSeek-MoE</a></h3>
+      <p class="official">DeepSeekMoE：细粒度专家切分 + 共享专家，目标是让专家真正专业化。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把专家切得更细、再留一组共享专家承接通用知识，是 V2 / V3 稀疏架构的种子。</li>
+        <li>仓库是论文配套的小规模研究代码，生产实现要到 DeepEP、DeepGEMM、TileKernels 才补齐。</li>
+        <li>读它的价值在于理解路由设计，而不是直接拿来当推理引擎。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>研究代码，不含大规模训练与部署能力。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 2k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.01</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-math" data-layer="model" data-year="2024" data-stars="3500" data-name="deepseek-math" data-search="deepseek-math deepseekmath 7b，提出 grpo，面向数学推理的开源模型。 研究代码 基础模型与算法 2024 mit python grpo 是这里最重要的产出：用组内相对优势替代 critic，省掉一个价值网络，后来成了 r1 系列的基础算法。 数学预训练数据的清洗与配比在报告里讲得比代码多，仓库更像评测与训练脚本集合。 如果只想理解 r1 为什么能用纯 rl 训起来，应该从这里读起。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Math" target="_blank" rel="noopener">DeepSeek-Math</a></h3>
+      <p class="official">DeepSeekMath 7B，提出 GRPO，面向数学推理的开源模型。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>GRPO 是这里最重要的产出：用组内相对优势替代 critic，省掉一个价值网络，后来成了 R1 系列的基础算法。</li>
+        <li>数学预训练数据的清洗与配比在报告里讲得比代码多，仓库更像评测与训练脚本集合。</li>
+        <li>如果只想理解 R1 为什么能用纯 RL 训起来，应该从这里读起。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>训练数据未公开，代码以脚本为主。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 3.5k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.04</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-math-v2" data-layer="model" data-year="2025" data-stars="1600" data-name="deepseek-math-v2" data-search="deepseek-math-v2 自验证数学推理模型，基于 v3.2-exp-base；在 imo 2025、cmo 2024 达到金牌水平，putnam 2024 为 118/120（scaled test-time compute）。 权重与评测 基础模型与算法 2025 apache-2.0 python 路线从“奖励最终答案”转向“验证推理过程”：先训一个可信 verifier，再用它当 reward model 训证明生成器。 生成器变强后验证差距会拉大，所以它用更多验证算力自动标注难验证证明，反过来继续训 verifier。 这是 test-time compute 的一个具体工程解，而不是又一个刷分模型。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与评测</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Math-V2" target="_blank" rel="noopener">DeepSeek-Math-V2</a></h3>
+      <p class="official">自验证数学推理模型，基于 V3.2-Exp-Base；在 IMO 2025、CMO 2024 达到金牌水平，Putnam 2024 为 118/120（scaled test-time compute）。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>路线从“奖励最终答案”转向“验证推理过程”：先训一个可信 verifier，再用它当 reward model 训证明生成器。</li>
+        <li>生成器变强后验证差距会拉大，所以它用更多验证算力自动标注难验证证明，反过来继续训 verifier。</li>
+        <li>这是 test-time compute 的一个具体工程解，而不是又一个刷分模型。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>成绩依赖大规模测试时计算与未公开数据；仓库只给权重和评测产物。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 1.6k</span>
+        <span>Apache-2.0</span>
+        <span>Python</span>
+        <span>2025.11</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-vl" data-layer="model" data-year="2024" data-stars="4200" data-name="deepseek-vl" data-search="deepseek-vl 早期视觉语言模型，1.3b / 7b 两档，面向真实场景的图文理解。 权重与示例 基础模型与算法 2024 mit python 真正有复用价值的是数据配方：交错图文、图表、网页截图、pdf 混在一起，而不是模型结构。 1.3b 档让单卡可跑，是当时少数能本地部署的中文 vlm。 后续 vl2 转向 moe，这条 dense 分支就停在原地了。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与示例</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-VL" target="_blank" rel="noopener">DeepSeek-VL</a></h3>
+      <p class="official">早期视觉语言模型，1.3B / 7B 两档，面向真实场景的图文理解。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>真正有复用价值的是数据配方：交错图文、图表、网页截图、PDF 混在一起，而不是模型结构。</li>
+        <li>1.3B 档让单卡可跑，是当时少数能本地部署的中文 VLM。</li>
+        <li>后续 VL2 转向 MoE，这条 dense 分支就停在原地了。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>架构已被 VL2 取代，长上下文与高分辨率支持有限。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 4.2k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.03</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-vl2" data-layer="model" data-year="2024" data-stars="5400" data-name="deepseek-vl2" data-search="deepseek-vl2 moe 视觉语言模型（含 4.5b 总参 / 1b 激活档），用动态切片处理高分辨率图像。 权重与推理 基础模型与算法 2024 mit python 把 v2 的 moe + mla 搬到多模态，视觉侧用动态分块控制 token 数，是“按图付费”的早期实现。 仓库直接给 huggingface 推理链路，工程完成度明显高于 vl1。 它的价值是证明 moe 在视觉语言任务上也能省算力，而不是刷新榜单。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-VL2" target="_blank" rel="noopener">DeepSeek-VL2</a></h3>
+      <p class="official">MoE 视觉语言模型（含 4.5B 总参 / 1B 激活档），用动态切片处理高分辨率图像。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 V2 的 MoE + MLA 搬到多模态，视觉侧用动态分块控制 token 数，是“按图付费”的早期实现。</li>
+        <li>仓库直接给 HuggingFace 推理链路，工程完成度明显高于 VL1。</li>
+        <li>它的价值是证明 MoE 在视觉语言任务上也能省算力，而不是刷新榜单。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>与闭源前沿 VLM 仍有差距；依赖特定 transformers 版本。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 5.4k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.12</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-v2" data-layer="model" data-year="2024" data-stars="5100" data-name="deepseek-v2" data-search="deepseek-v2 236b 总参 / 21b 激活的 moe 模型，提出 mla 与 deepseekmoe；训练成本降 42.5%，kv cache 降 93.3%，生成吞吐提升 5.76 倍。 权重与推理 基础模型与算法 2024 mit python mla 是这轮架构创新的核心：把 kv 压成 latent 再投影，长上下文显存直接降一个量级。 v3、r1、flashmla 全部建立在这套注意力上，读 v2 就是读后面所有模型的地基。 readme 自己承认 huggingface 实现比内部代码慢，说明开源版是“能跑”而非“线上同款”。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-V2" target="_blank" rel="noopener">DeepSeek-V2</a></h3>
+      <p class="official">236B 总参 / 21B 激活的 MoE 模型，提出 MLA 与 DeepSeekMoE；训练成本降 42.5%，KV cache 降 93.3%，生成吞吐提升 5.76 倍。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>MLA 是这轮架构创新的核心：把 KV 压成 latent 再投影，长上下文显存直接降一个量级。</li>
+        <li>V3、R1、FlashMLA 全部建立在这套注意力上，读 V2 就是读后面所有模型的地基。</li>
+        <li>README 自己承认 HuggingFace 实现比内部代码慢，说明开源版是“能跑”而非“线上同款”。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>开源实现性能低于内部版本；2024-09 后停止更新。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 5.1k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.05</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-v3" data-layer="model" data-year="2024" data-stars="105000" data-name="deepseek-v3" data-search="deepseek-v3 671b 总参 / 37b 激活的 moe 模型，mla + deepseekmoe + mtp，fp8 混合精度训练，128k 上下文。 权重与推理 基础模型与算法 2024 mit python 它更像一篇训练系统工程论文：dualpipe、fp8、mtp、通信重叠在这里第一次闭环。 开源的是权重和推理 demo，训练栈只以论文和同期 infra 仓库的形式给出。 105k star 说明它是很多人心里的“开源大模型默认基线”，但复现门槛在集群与数据，不在代码。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-V3" target="_blank" rel="noopener">DeepSeek-V3</a></h3>
+      <p class="official">671B 总参 / 37B 激活的 MoE 模型，MLA + DeepSeekMoE + MTP，FP8 混合精度训练，128K 上下文。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它更像一篇训练系统工程论文：DualPipe、FP8、MTP、通信重叠在这里第一次闭环。</li>
+        <li>开源的是权重和推理 demo，训练栈只以论文和同期 infra 仓库的形式给出。</li>
+        <li>105k star 说明它是很多人心里的“开源大模型默认基线”，但复现门槛在集群与数据，不在代码。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>完整预训练不可复现；单机部署需要大量显存或多机推理。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 105k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.12</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-r1" data-layer="model" data-year="2025" data-stars="92000" data-name="deepseek-r1" data-search="deepseek-r1 推理模型 r1 / r1-zero，用纯强化学习激发长链推理，并蒸馏到 qwen / llama 小模型。 权重与推理 基础模型与算法 2025 mit python 最重要的结论是：不靠 sft 冷启动，纯 rl 也能让基座自发出现反思与长链推理。 它同时给了蒸馏路线，把推理能力压进 1.5b–70b 的稠密模型，社区因此有了低成本基线。 r1 之后，“推理模型”从论文概念变成可下载、可微调的公共资产。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-R1" target="_blank" rel="noopener">DeepSeek-R1</a></h3>
+      <p class="official">推理模型 R1 / R1-Zero，用纯强化学习激发长链推理，并蒸馏到 Qwen / Llama 小模型。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>最重要的结论是：不靠 SFT 冷启动，纯 RL 也能让基座自发出现反思与长链推理。</li>
+        <li>它同时给了蒸馏路线，把推理能力压进 1.5B–70B 的稠密模型，社区因此有了低成本基线。</li>
+        <li>R1 之后，“推理模型”从论文概念变成可下载、可微调的公共资产。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>RL 细节、奖励设计与安全对齐成本未完全开源。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 92k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.01</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-v3-2-exp" data-layer="model" data-year="2025" data-stars="1700" data-name="deepseek-v3.2-exp" data-search="deepseek-v3.2-exp 在 v3.1-terminus 上引入 deepseek sparse attention（dsa），验证长上下文训练与推理的降本空间。 权重与推理 基础模型与算法 2025 mit python dsa 用 lightning indexer 先给 token 打分，再只对 top-k 做注意力，属于细粒度稀疏。 它刻意对齐 v3.1 的训练配置，用“效果基本不变、成本下降”来证明稀疏化的净收益。 readme 里 2025-11-17 的 rope 布局修复说明很关键：indexer 要非交错、mla 要交错，这类细节一错性能就掉。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-V3.2-Exp" target="_blank" rel="noopener">DeepSeek-V3.2-Exp</a></h3>
+      <p class="official">在 V3.1-Terminus 上引入 DeepSeek Sparse Attention（DSA），验证长上下文训练与推理的降本空间。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>DSA 用 lightning indexer 先给 token 打分，再只对 top-k 做注意力，属于细粒度稀疏。</li>
+        <li>它刻意对齐 V3.1 的训练配置，用“效果基本不变、成本下降”来证明稀疏化的净收益。</li>
+        <li>README 里 2025-11-17 的 RoPE 布局修复说明很关键：indexer 要非交错、MLA 要交错，这类细节一错性能就掉。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>实验版本，已被后续 V3.2 / V4 系列取代。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 1.7k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-coder" data-layer="model" data-year="2023" data-stars="24000" data-name="deepseek-coder" data-search="deepseek-coder 1.3b–33b 代码模型，repo 级预训练 + 填空任务，覆盖 80 多种编程语言。 权重与示例 基础模型与算法 2023 mit python 早期就把 repo 级依赖解析、去重和填空目标做进数据管线，这是它当年补全效果好的原因。 33b 在开源补全里是强基线，也直接催生了 wizardcoder、autodev 等一批衍生项目。 架构上没有新东西，价值在数据工程和“小模型也能写好代码”的验证。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与示例</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Coder" target="_blank" rel="noopener">DeepSeek-Coder</a></h3>
+      <p class="official">1.3B–33B 代码模型，repo 级预训练 + 填空任务，覆盖 80 多种编程语言。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>早期就把 repo 级依赖解析、去重和填空目标做进数据管线，这是它当年补全效果好的原因。</li>
+        <li>33B 在开源补全里是强基线，也直接催生了 WizardCoder、AutoDev 等一批衍生项目。</li>
+        <li>架构上没有新东西，价值在数据工程和“小模型也能写好代码”的验证。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>已被 Coder-V2 取代；不支持超长仓库上下文。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 24k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2023.11</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-coder-v2" data-layer="model" data-year="2024" data-stars="7000" data-name="deepseek-coder-v2" data-search="deepseek-coder-v2 236b 总参 / 21b 激活的 moe 代码模型，338 种语言，128k 上下文，对标闭源代码模型。 权重与推理 基础模型与算法 2024 mit python 把 v2 的 moe + mla 直接搬到代码域，是“通用底座 + 领域继续预训练”最干净的一次示范。 338 种语言与 128k 上下文让它能做仓库级补全，而不只是单文件片段。 它和 v2 共享底座思路，说明 deepseek 的模型迭代是平台化的，不是每个领域重造轮子。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Coder-V2" target="_blank" rel="noopener">DeepSeek-Coder-V2</a></h3>
+      <p class="official">236B 总参 / 21B 激活的 MoE 代码模型，338 种语言，128K 上下文，对标闭源代码模型。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 V2 的 MoE + MLA 直接搬到代码域，是“通用底座 + 领域继续预训练”最干净的一次示范。</li>
+        <li>338 种语言与 128K 上下文让它能做仓库级补全，而不只是单文件片段。</li>
+        <li>它和 V2 共享底座思路，说明 DeepSeek 的模型迭代是平台化的，不是每个领域重造轮子。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>仓库以权重和推理为主；训练数据与流程未公开。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 7k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.06</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-prover-v1-5" data-layer="model" data-year="2024" data-stars="590" data-name="deepseek-prover-v1.5" data-search="deepseek-prover-v1.5 lean 4 定理证明模型，rmaxts 搜索 + 课程学习。 研究代码 基础模型与算法 2024 mit python 形式化证明的好处是奖励可验证：lean 编译器直接判对错，不需要奖励模型。 rmaxts 把树搜索和 rl 结合，是“搜索增强训练”的早期样本。 这条线后来演化成 prover-v2 的子目标分解，以及 math-v2 的自验证。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Prover-V1.5" target="_blank" rel="noopener">DeepSeek-Prover-V1.5</a></h3>
+      <p class="official">Lean 4 定理证明模型，RMaxTS 搜索 + 课程学习。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>形式化证明的好处是奖励可验证：Lean 编译器直接判对错，不需要奖励模型。</li>
+        <li>RMaxTS 把树搜索和 RL 结合，是“搜索增强训练”的早期样本。</li>
+        <li>这条线后来演化成 Prover-V2 的子目标分解，以及 Math-V2 的自验证。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>依赖 Lean 环境，使用门槛高；规模已被 V2 取代。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 590</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.08</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-prover-v2" data-layer="model" data-year="2025" data-stars="1300" data-name="deepseek-prover-v2" data-search="deepseek-prover-v2 671b 证明模型，把长证明拆成子目标并递归求解。 研究代码 基础模型与算法 2025 other python 用 v3 底座 + 子目标分解，把“证一个长定理”变成“递归证一堆小引理”。 它展示了搜索、形式验证和大模型三者组合的上限，而不是单纯堆参数。 许可证标为 other，商用前需要单独确认条款。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-Prover-V2" target="_blank" rel="noopener">DeepSeek-Prover-V2</a></h3>
+      <p class="official">671B 证明模型，把长证明拆成子目标并递归求解。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>用 V3 底座 + 子目标分解，把“证一个长定理”变成“递归证一堆小引理”。</li>
+        <li>它展示了搜索、形式验证和大模型三者组合的上限，而不是单纯堆参数。</li>
+        <li>许可证标为 Other，商用前需要单独确认条款。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>代码与数据不完整；许可证非标准 MIT。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 1.3k</span>
+        <span>Other</span>
+        <span>Python</span>
+        <span>2025.04</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-janus" data-layer="model" data-year="2025" data-stars="18000" data-name="janus" data-search="janus janus 系列，统一多模态理解与生成；janus-pro 用更大规模数据与模型验证。 权重与推理 基础模型与算法 2025 mit python 关键洞察是理解和生成需要不同的视觉表征：理解用 siglip 类编码器，生成用 vq tokenizer，硬共享会互相拖累。 把两条视觉路径解耦、再共用同一个 transformer，是统一多模态里最清晰的一个范式。 18k star 说明社区对“一个模型既能看懂又能画”的需求很真实。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">权重与推理</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/Janus" target="_blank" rel="noopener">Janus</a></h3>
+      <p class="official">Janus 系列，统一多模态理解与生成；Janus-Pro 用更大规模数据与模型验证。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>关键洞察是理解和生成需要不同的视觉表征：理解用 SigLIP 类编码器，生成用 VQ tokenizer，硬共享会互相拖累。</li>
+        <li>把两条视觉路径解耦、再共用同一个 Transformer，是统一多模态里最清晰的一个范式。</li>
+        <li>18k star 说明社区对“一个模型既能看懂又能画”的需求很真实。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>生成质量与专用扩散模型仍有差距；仓库更新停在 2025-02。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 18k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.01</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-engram" data-layer="model" data-year="2026" data-stars="4800" data-name="engram" data-search="engram conditional memory via scalable lookup：用 n-gram 查表给 llm 增加一条稀疏轴；engram-27b 在等参等 flops 下优于 moe 基线。 研究代码 基础模型与算法 2026 apache-2.0 python 它把经典 n-gram embedding 现代化成 o(1) 查表，并给出神经计算与静态记忆之间的 u 型最优配比。 确定性寻址让巨大的 embedding 表可以 offload 到 host memory，推理开销很小，这是工程上最值钱的一点。 tilekernels 里已经有 engram 的融合 kernel，说明它不是纯论文，已经进了内部训练与推理。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/Engram" target="_blank" rel="noopener">Engram</a></h3>
+      <p class="official">Conditional Memory via Scalable Lookup：用 N-gram 查表给 LLM 增加一条稀疏轴；Engram-27B 在等参等 FLOPs 下优于 MoE 基线。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它把经典 N-gram embedding 现代化成 O(1) 查表，并给出神经计算与静态记忆之间的 U 型最优配比。</li>
+        <li>确定性寻址让巨大的 embedding 表可以 offload 到 host memory，推理开销很小，这是工程上最值钱的一点。</li>
+        <li>TileKernels 里已经有 Engram 的融合 kernel，说明它不是纯论文，已经进了内部训练与推理。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>仓库 demo 把 attention / MoE 都 mock 了，只能看数据流，不能直接训练。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 4.8k</span>
+        <span>Apache-2.0</span>
+        <span>Python</span>
+        <span>2026.01</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-ocr" data-layer="model" data-year="2025" data-stars="24000" data-name="deepseek-ocr" data-search="deepseek-ocr 上下文光学压缩：把文档转成少量视觉 token，再做 ocr 与文档理解。 生产可用（推理） 基础模型与算法 2025 mit python 思路是把“读文本”换成“看图像”：一页文档压成几十到几百个 vision token，长文档成本大幅下降。 同时给 vllm 和 transformers 两条推理路径，落地友好。 它把 ocr 从工具问题变成表示学习问题，后续 ocr-2 继续沿这条线走。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">生产可用（推理）</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-OCR" target="_blank" rel="noopener">DeepSeek-OCR</a></h3>
+      <p class="official">上下文光学压缩：把文档转成少量视觉 token，再做 OCR 与文档理解。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>思路是把“读文本”换成“看图像”：一页文档压成几十到几百个 vision token，长文档成本大幅下降。</li>
+        <li>同时给 vLLM 和 Transformers 两条推理路径，落地友好。</li>
+        <li>它把 OCR 从工具问题变成表示学习问题，后续 OCR-2 继续沿这条线走。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>复杂版式、手写与低质扫描的还原仍不稳定。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 24k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-ocr-2" data-layer="model" data-year="2026" data-stars="3500" data-name="deepseek-ocr-2" data-search="deepseek-ocr-2 visual causal flow：动态分辨率 (0–6)×768² + 1×1024²，强调类人阅读顺序。 生产可用（推理） 基础模型与算法 2026 apache-2.0 python 从“压得多”转向“读得对”：用因果流建模阅读顺序，用动态切片控制 token 预算。 apache-2.0 比一代的 mit 更明确地允许商用改造。 两代 ocr 合起来看，deepseek 在把视觉编码器做成通用文档接口，而不只是 ocr 工具。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">生产可用（推理）</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSeek-OCR-2" target="_blank" rel="noopener">DeepSeek-OCR-2</a></h3>
+      <p class="official">Visual Causal Flow：动态分辨率 (0–6)×768² + 1×1024²，强调类人阅读顺序。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>从“压得多”转向“读得对”：用因果流建模阅读顺序，用动态切片控制 token 预算。</li>
+        <li>Apache-2.0 比一代的 MIT 更明确地允许商用改造。</li>
+        <li>两代 OCR 合起来看，DeepSeek 在把视觉编码器做成通用文档接口，而不只是 OCR 工具。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>仍依赖固定 prompt 与图像预处理；benchmark 之外的泛化未知。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 3.5k</span>
+        <span>Apache-2.0</span>
+        <span>Python</span>
+        <span>2026.01</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-dreamcraft3d" data-layer="model" data-year="2024" data-stars="3000" data-name="dreamcraft3d" data-search="dreamcraft3d iclr 2024，层次化 3d 生成 + bootstrapped diffusion prior，从单图生成 3d 资产。 研究代码 基础模型与算法 2024 mit python 它不是 llm 主线，是团队早期在 3d 生成上的独立探索，说明 deepseek 的研究面比现在看到的宽。 层次化（先几何后纹理）+ 自举扩散先验，在当时是解决多视角一致性的实用做法。 后来团队收敛到语言与多模态，这条线没有再更新。">
+      <div class="card-top">
+        <span class="layer-tag">基础模型与算法</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DreamCraft3D" target="_blank" rel="noopener">DreamCraft3D</a></h3>
+      <p class="official">ICLR 2024，层次化 3D 生成 + bootstrapped diffusion prior，从单图生成 3D 资产。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它不是 LLM 主线，是团队早期在 3D 生成上的独立探索，说明 DeepSeek 的研究面比现在看到的宽。</li>
+        <li>层次化（先几何后纹理）+ 自举扩散先验，在当时是解决多视角一致性的实用做法。</li>
+        <li>后来团队收敛到语言与多模态，这条线没有再更新。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>依赖特定 CUDA 与扩散栈，2025-04 后停更。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 3k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-dualpipe" data-layer="train" data-year="2025" data-stars="3000" data-name="dualpipe" data-search="dualpipe 双向流水线并行算法，用于 v3 / r1 训练中的计算-通信重叠。 参考实现 训练与并行策略 2025 mit python 把流水线做成双向调度，用反方向微批填掉 bubble，再和 ep / dp 组合成多维并行。 仓库给的是调度算法与示意，不是可直接接入的训练框架。 它和 profile-data 配套看，才能理解论文里 overlap 的数字怎么来的。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">参考实现</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DualPipe" target="_blank" rel="noopener">DualPipe</a></h3>
+      <p class="official">双向流水线并行算法，用于 V3 / R1 训练中的计算-通信重叠。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把流水线做成双向调度，用反方向微批填掉 bubble，再和 EP / DP 组合成多维并行。</li>
+        <li>仓库给的是调度算法与示意，不是可直接接入的训练框架。</li>
+        <li>它和 profile-data 配套看，才能理解论文里 overlap 的数字怎么来的。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>强依赖集群拓扑与自研训练栈，通用性有限。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 3k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-eplb" data-layer="train" data-year="2025" data-stars="1500" data-name="eplb" data-search="eplb 专家并行负载均衡器，为 v3 / r1 的 moe 训练与服务做专家复制与重排。 生产级 训练与并行策略 2025 mit python 解决专家负载随 batch 漂移：先统计、再复制热点专家、最后重排到 gpu。 纯 python、层次化估计 + 贪心打包，代码短到可以一下午读完，是理解 ep 负载均衡的好入口。 它的静态重排是 lplb 动态优化的基线。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/EPLB" target="_blank" rel="noopener">EPLB</a></h3>
+      <p class="official">专家并行负载均衡器，为 V3 / R1 的 MoE 训练与服务做专家复制与重排。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>解决专家负载随 batch 漂移：先统计、再复制热点专家、最后重排到 GPU。</li>
+        <li>纯 Python、层次化估计 + 贪心打包，代码短到可以一下午读完，是理解 EP 负载均衡的好入口。</li>
+        <li>它的静态重排是 LPLB 动态优化的基线。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>只做静态 / 离线规划，不处理单 batch 内的瞬时不均。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 1.5k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-lplb" data-layer="train" data-year="2025" data-stars="545" data-name="lplb" data-search="lplb 基于线性规划的 moe 动态负载均衡器，单 sm 内点法 + cusolverdx / cublasdx，早期研究阶段。 研究原型 训练与并行策略 2025 mit python 在 eplb 的静态重排之上，对每个 batch 解一次 lp，把 token 沿冗余专家形成的边重新分配。 它把“边容量 = 冗余专家本批承载量”讲得很清楚，是少见的把优化模型写明白的 infra 仓库。 作者也承认：只平衡 token 数、不看 grouped gemm 的非线性，极端情况下可能不如 eplb。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">研究原型</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/LPLB" target="_blank" rel="noopener">LPLB</a></h3>
+      <p class="official">基于线性规划的 MoE 动态负载均衡器，单 SM 内点法 + cuSolverDx / cuBLASDx，早期研究阶段。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>在 EPLB 的静态重排之上，对每个 batch 解一次 LP，把 token 沿冗余专家形成的边重新分配。</li>
+        <li>它把“边容量 = 冗余专家本批承载量”讲得很清楚，是少见的把优化模型写明白的 infra 仓库。</li>
+        <li>作者也承认：只平衡 token 数、不看 grouped GEMM 的非线性，极端情况下可能不如 EPLB。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>solver 约 100µs 开销；性能仍在评估，非生产组件。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 545</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.11</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-profile-data" data-layer="train" data-year="2025" data-stars="1200" data-name="profile-data" data-search="profile-data 用于分析 v3 / r1 计算-通信重叠的 profile 数据与脚本。 数据与脚本 训练与并行策略 2025 未标注 python 把性能归因材料直接开源，在头部实验室里很少见。 数据来自 h800 集群，结论不能直接外推到其他卡型。 对想复现 dualpipe / deepep 收益的人，这是最直接的对照物。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">数据与脚本</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/profile-data" target="_blank" rel="noopener">profile-data</a></h3>
+      <p class="official">用于分析 V3 / R1 计算-通信重叠的 profile 数据与脚本。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把性能归因材料直接开源，在头部实验室里很少见。</li>
+        <li>数据来自 H800 集群，结论不能直接外推到其他卡型。</li>
+        <li>对想复现 DualPipe / DeepEP 收益的人，这是最直接的对照物。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>硬件特定；无许可证声明，复用前需确认授权。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 1.2k</span>
+        <span>未标注</span>
+        <span>Python</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-esft" data-layer="train" data-year="2024" data-stars="754" data-name="esft" data-search="esft expert-specialized fine-tuning：只微调与任务相关的专家（emnlp 2024）。 研究代码 训练与并行策略 2024 mit python 先用校准集给每个专家打任务相关性分数，再选 top-p 专家训练，省显存也少灾难性遗忘。 这是 moe 微调的高性价比做法，尤其适合多任务分别出 adapter 的场景。 前提是你能观测路由；黑盒 api 模型用不了这套。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">研究代码</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/ESFT" target="_blank" rel="noopener">ESFT</a></h3>
+      <p class="official">Expert-Specialized Fine-Tuning：只微调与任务相关的专家（EMNLP 2024）。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>先用校准集给每个专家打任务相关性分数，再选 top-p 专家训练，省显存也少灾难性遗忘。</li>
+        <li>这是 MoE 微调的高性价比做法，尤其适合多任务分别出 adapter 的场景。</li>
+        <li>前提是你能观测路由；黑盒 API 模型用不了这套。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>任务分布漂移时专家选择会失效；依赖 DeepSeekMoE 结构。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 754</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2024.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepspec" data-layer="train" data-year="2026" data-stars="7300" data-name="deepspec" data-search="deepspec 投机解码草稿模型全栈：数据准备、draft 模型（eagle3 / dflash / dspark）、训练与评测。 可复现训练栈 训练与并行策略 2026 mit python 把草稿模型当独立模型认真训，而不是随手拿小模型凑；dspark 还用置信度来调度验证长度。 开源了 qwen3-4b / 8b / 14b 与 gemma-4-12b 的 checkpoint，复现路径清晰。 代价是默认配置需要约 38tb target cache 和 8 卡单机，个人开发者只能缩小规模。">
+      <div class="card-top">
+        <span class="layer-tag">训练与并行策略</span>
+        <span class="maturity">可复现训练栈</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSpec" target="_blank" rel="noopener">DeepSpec</a></h3>
+      <p class="official">投机解码草稿模型全栈：数据准备、Draft 模型（Eagle3 / DFlash / DSpark）、训练与评测。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把草稿模型当独立模型认真训，而不是随手拿小模型凑；DSpark 还用置信度来调度验证长度。</li>
+        <li>开源了 Qwen3-4B / 8B / 14B 与 Gemma-4-12B 的 checkpoint，复现路径清晰。</li>
+        <li>代价是默认配置需要约 38TB target cache 和 8 卡单机，个人开发者只能缩小规模。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>数据管线重、存储需求大；换目标模型需重新训练。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 7.3k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2026.07</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepinfer" data-layer="kernel" data-year="2026" data-stars="25000" data-name="deepinfer" data-search="deepinfer 支撑 deepseek 线上服务的高性能推理框架，本次开源离线推理；支持 v4.1-flash，nvidia sm100 与 ascend 950。 生产级（离线） 算子与推理引擎 2026 apache-2.0 python 基于 vllm 改造，但把自家模型特性做进去了：dspark 验证调度、swa 有界重放、batch-invariant、确定性采样。 readme 明确列出没开源的部分（kv cache 系统、pd 分离、多副本负载均衡），边界写得很诚实。 apache-2.0 且可离线跑，是研究“生产级推理长什么样”的最好样本。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级（离线）</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepInfer" target="_blank" rel="noopener">DeepInfer</a></h3>
+      <p class="official">支撑 DeepSeek 线上服务的高性能推理框架，本次开源离线推理；支持 V4.1-Flash，NVIDIA SM100 与 Ascend 950。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>基于 vLLM 改造，但把自家模型特性做进去了：DSpark 验证调度、SWA 有界重放、batch-invariant、确定性采样。</li>
+        <li>README 明确列出没开源的部分（KV cache 系统、PD 分离、多副本负载均衡），边界写得很诚实。</li>
+        <li>Apache-2.0 且可离线跑，是研究“生产级推理长什么样”的最好样本。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>只支持 DeepSeek 自家模型；完整服务仍需自建 KV cache 与调度层。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 25k</span>
+        <span>Apache-2.0</span>
+        <span>Python</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-flashmla" data-layer="kernel" data-year="2025" data-stars="13200" data-name="flashmla" data-search="flashmla hopper gpu 上的 mla 解码 kernel，支持变长序列与分页 kv（block 64）；h800 上 3000 gb/s、bf16 580 tflops。 生产级 算子与推理引擎 2025 mit c++ mla 的 kv 是压缩 latent，解码时既要算对又要吃满带宽，这个 kernel 把两件事同时做了。 后续 pr 加入了 dsa 稀疏注意力 kernel，说明它已从单一 kernel 长成注意力 kernel 集。 它是“模型架构创新必须配套 kernel”的最佳例证。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/FlashMLA" target="_blank" rel="noopener">FlashMLA</a></h3>
+      <p class="official">Hopper GPU 上的 MLA 解码 kernel，支持变长序列与分页 KV（block 64）；H800 上 3000 GB/s、BF16 580 TFLOPS。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>MLA 的 KV 是压缩 latent，解码时既要算对又要吃满带宽，这个 kernel 把两件事同时做了。</li>
+        <li>后续 PR 加入了 DSA 稀疏注意力 kernel，说明它已从单一 kernel 长成注意力 kernel 集。</li>
+        <li>它是“模型架构创新必须配套 kernel”的最佳例证。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>绑定 Hopper 架构，API 随模型版本变动。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 13.2k</span>
+        <span>MIT</span>
+        <span>C++</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepep" data-layer="kernel" data-year="2025" data-stars="10394" data-name="deepep" data-search="deepep 首个开源 ep 通信库，支持 nvlink / rdma、fp8 dispatch、训练与预填充高吞吐、解码低延迟。 生产级 算子与推理引擎 2025 mit cuda 把 moe 的 all-to-all 拆成 dispatch / combine 两段，并针对训练、预填充、解码给三套 kernel。 fp8 原生 dispatch 让通信量和显存一起降，是 v3 / r1 能大规模 ep 的前提。 lplb 可以直接从 deepep buffer 取实时负载，生态是打通的。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepEP" target="_blank" rel="noopener">DeepEP</a></h3>
+      <p class="official">首个开源 EP 通信库，支持 NVLink / RDMA、FP8 dispatch、训练与预填充高吞吐、解码低延迟。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 MoE 的 all-to-all 拆成 dispatch / combine 两段，并针对训练、预填充、解码给三套 kernel。</li>
+        <li>FP8 原生 dispatch 让通信量和显存一起降，是 V3 / R1 能大规模 EP 的前提。</li>
+        <li>LPLB 可以直接从 DeepEP buffer 取实时负载，生态是打通的。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>需要 NVLink / RDMA 集群；版本与 CUDA / NVSHMEM 强绑定。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 10.4k</span>
+        <span>MIT</span>
+        <span>Cuda</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepgemm" data-layer="kernel" data-year="2025" data-stars="9139" data-name="deepgemm" data-search="deepgemm 干净的 fp8 gemm 库，支持 dense 与两种 moe 布局，全 jit，核心约 300 行。 生产级 算子与推理引擎 2025 mit cuda 用 jit 在运行时按 shape 生成调度，少写模板也能在多数矩阵尺寸上超过手工调优。 “核心 300 行”是刻意的工程美学：可读、可改、可审计。 后续承接了 dsa indexer 的 logit kernel，说明它在向模型专用算子集合演化。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepGEMM" target="_blank" rel="noopener">DeepGEMM</a></h3>
+      <p class="official">干净的 FP8 GEMM 库，支持 dense 与两种 MoE 布局，全 JIT，核心约 300 行。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>用 JIT 在运行时按 shape 生成调度，少写模板也能在多数矩阵尺寸上超过手工调优。</li>
+        <li>“核心 300 行”是刻意的工程美学：可读、可改、可审计。</li>
+        <li>后续承接了 DSA indexer 的 logit kernel，说明它在向模型专用算子集合演化。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>依赖 Hopper 与较新 CUDA；极端 shape 仍需自己调。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 9.1k</span>
+        <span>MIT</span>
+        <span>Cuda</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepselect" data-layer="kernel" data-year="2026" data-stars="527" data-name="deepselect" data-search="deepselect dsa 与 sampler 的 topk 算子，支持 cuda 与 ascend，较 torch.topk 快 2–20 倍。 生产级 算子与推理引擎 2026 mit cuda 把 top-k 当带宽问题而不是浮点问题来优化，指标也用有效带宽，思路很正。 针对 topk=512、vocab 128k 这类真实负载特化，支持变长行、stride 对齐与 nan trap。 它是 v3.2 / v4 / v4.1 稀疏注意力与采样器的共同底座。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepSelect" target="_blank" rel="noopener">DeepSelect</a></h3>
+      <p class="official">DSA 与 sampler 的 TopK 算子，支持 CUDA 与 Ascend，较 torch.topk 快 2–20 倍。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 top-k 当带宽问题而不是浮点问题来优化，指标也用有效带宽，思路很正。</li>
+        <li>针对 topk=512、vocab 128K 这类真实负载特化，支持变长行、stride 对齐与 NaN trap。</li>
+        <li>它是 V3.2 / V4 / V4.1 稀疏注意力与采样器的共同底座。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>topk 上限 4096；Ascend 版只支持 bf16。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 527</span>
+        <span>MIT</span>
+        <span>Cuda</span>
+        <span>2026.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepjit" data-layer="kernel" data-year="2026" data-stars="437" data-name="deepjit" data-search="deepjit header-only c++20 jit 运行时，面向 cuda 与 ascend，提供内存 / 磁盘 kernel 缓存。 基础设施库 算子与推理引擎 2026 mit c++ 把每个 kernel 库都要重写一遍的“编译-缓存-加载-启动”抽成公共层，减少重复造轮子。 缓存键覆盖源码、include 树、编译器版本、编译选项、post-hook 哈希，设计比多数 jit 工具严谨。 它也暴露了一个真实问题：jit 的正确性取决于你显式声明了多少隐式依赖。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">基础设施库</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepJIT" target="_blank" rel="noopener">DeepJIT</a></h3>
+      <p class="official">header-only C++20 JIT 运行时，面向 CUDA 与 Ascend，提供内存 / 磁盘 kernel 缓存。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把每个 kernel 库都要重写一遍的“编译-缓存-加载-启动”抽成公共层，减少重复造轮子。</li>
+        <li>缓存键覆盖源码、include 树、编译器版本、编译选项、post-hook 哈希，设计比多数 JIT 工具严谨。</li>
+        <li>它也暴露了一个真实问题：JIT 的正确性取决于你显式声明了多少隐式依赖。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>环境变量、传递头文件等隐式输入不会被自动发现；缓存目录必须可信。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 437</span>
+        <span>MIT</span>
+        <span>C++</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-tilekernels" data-layer="kernel" data-year="2026" data-stars="2021" data-name="tilekernels" data-search="tilekernels 用 tilelang 写的数十个 kernel：moe 路由、engram、量化、流形超连接（mhc）。 生产级 算子与推理引擎 2026 mit python 用 dsl 换可读性和跨后端：同一套 python api 在 nvidia 与 ascend 上自动选后端。 覆盖的是自家模型真正用到的算子，而不是通用 blas，所以“接近带宽 / 算力上限”的说法有场景支撑。 它和 deepgemm 是两种哲学：一个是极致手写，一个是可维护的 dsl。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/TileKernels" target="_blank" rel="noopener">TileKernels</a></h3>
+      <p class="official">用 TileLang 写的数十个 kernel：MoE 路由、Engram、量化、流形超连接（mHC）。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>用 DSL 换可读性和跨后端：同一套 Python API 在 NVIDIA 与 Ascend 上自动选后端。</li>
+        <li>覆盖的是自家模型真正用到的算子，而不是通用 BLAS，所以“接近带宽 / 算力上限”的说法有场景支撑。</li>
+        <li>它和 DeepGEMM 是两种哲学：一个是极致手写，一个是可维护的 DSL。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>依赖 TileLang 0.1.15+ / PyTorch 2.13+；性能声明需自行 benchmark。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 2k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepgemm-ascend" data-layer="kernel" data-year="2026" data-stars="624" data-name="deepgemm-ascend" data-search="deepgemm-ascend 面向华为昇腾 npu 的矩阵乘 kernel 库。 早期 算子与推理引擎 2026 mit c++ 把 deepgemm 的 dense / moe gemm 能力迁到 ascend，是国产硬件适配从“能跑”到“按模型调优”的一步。 它和 deepep-ascend、deepselect 的 ascend 版、tilekernels ascend 后端组成一套完整昇腾算子栈。 更新频繁，说明还在追赶 nvidia 侧的成熟度。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">早期</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepGEMM-Ascend" target="_blank" rel="noopener">DeepGEMM-Ascend</a></h3>
+      <p class="official">面向华为昇腾 NPU 的矩阵乘 kernel 库。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 DeepGEMM 的 dense / MoE GEMM 能力迁到 Ascend，是国产硬件适配从“能跑”到“按模型调优”的一步。</li>
+        <li>它和 DeepEP-Ascend、DeepSelect 的 Ascend 版、TileKernels Ascend 后端组成一套完整昇腾算子栈。</li>
+        <li>更新频繁，说明还在追赶 NVIDIA 侧的成熟度。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>早期项目，算子覆盖与稳定性待验证。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 624</span>
+        <span>MIT</span>
+        <span>C++</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepep-ascend" data-layer="kernel" data-year="2026" data-stars="283" data-name="deepep-ascend" data-search="deepep-ascend 昇腾 npu 上的高性能 ep 通信库。 早期 算子与推理引擎 2026 未标注 c++ 把 nvlink / rdma 那套 ep 语义映射到 hccs / cann，是 moe 在昇腾上规模化训练的前提。 仓库没有许可证声明，商用前必须确认授权。 与 deepep 主仓分开维护，意味着两条硬件线会长期并行。">
+      <div class="card-top">
+        <span class="layer-tag">算子与推理引擎</span>
+        <span class="maturity">早期</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/DeepEP-Ascend" target="_blank" rel="noopener">DeepEP-Ascend</a></h3>
+      <p class="official">昇腾 NPU 上的高性能 EP 通信库。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把 NVLink / RDMA 那套 EP 语义映射到 HCCS / CANN，是 MoE 在昇腾上规模化训练的前提。</li>
+        <li>仓库没有许可证声明，商用前必须确认授权。</li>
+        <li>与 DeepEP 主仓分开维护，意味着两条硬件线会长期并行。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>无 LICENSE 文件；成熟度明显低于 CUDA 版。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 283</span>
+        <span>未标注</span>
+        <span>C++</span>
+        <span>2026.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-3fs" data-layer="storage" data-year="2025" data-stars="10000" data-name="3fs" data-search="3fs fire-flyer file system，面向 ai 训练 / 推理的分离式并行文件系统；180 节点 6.6 tib/s，graysort 3.66 tib/min，单客户端 kvcache 40+ gib/s。 生产级 数据与存储 2025 mit c++ 它不是通用分布式文件系统，而是为“大顺序读 + 高并发 kvcache 查”重写的存储层。 分离式架构 + 强一致 + rdma，把 ssd 带宽和网络带宽同时吃满。 训练数据、checkpoint、kvcache 三种负载共用一套系统，运维面收敛。">
+      <div class="card-top">
+        <span class="layer-tag">数据与存储</span>
+        <span class="maturity">生产级</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/3FS" target="_blank" rel="noopener">3FS</a></h3>
+      <p class="official">Fire-Flyer File System，面向 AI 训练 / 推理的分离式并行文件系统；180 节点 6.6 TiB/s，GraySort 3.66 TiB/min，单客户端 KVCache 40+ GiB/s。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它不是通用分布式文件系统，而是为“大顺序读 + 高并发 KVCache 查”重写的存储层。</li>
+        <li>分离式架构 + 强一致 + RDMA，把 SSD 带宽和网络带宽同时吃满。</li>
+        <li>训练数据、checkpoint、KVCache 三种负载共用一套系统，运维面收敛。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>需要 RDMA 集群与专门运维，部署门槛高。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 10k</span>
+        <span>MIT</span>
+        <span>C++</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-smallpond" data-layer="storage" data-year="2025" data-stars="5026" data-name="smallpond" data-search="smallpond 基于 duckdb 与 3fs 的轻量数据处理框架。 可用 数据与存储 2025 mit python 用 duckdb 做单机执行、3fs 做共享存储，绕开 spark 的调度开销。 适合 pb 级预处理里的“大量中小任务”，而不是低延迟查询。 生态比 spark / flink 小得多，迁移成本要算进去。">
+      <div class="card-top">
+        <span class="layer-tag">数据与存储</span>
+        <span class="maturity">可用</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/smallpond" target="_blank" rel="noopener">smallpond</a></h3>
+      <p class="official">基于 DuckDB 与 3FS 的轻量数据处理框架。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>用 DuckDB 做单机执行、3FS 做共享存储，绕开 Spark 的调度开销。</li>
+        <li>适合 PB 级预处理里的“大量中小任务”，而不是低延迟查询。</li>
+        <li>生态比 Spark / Flink 小得多，迁移成本要算进去。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>依赖 3FS 才能发挥优势；社区规模有限。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 5k</span>
+        <span>MIT</span>
+        <span>Python</span>
+        <span>2025.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-harness" data-layer="agent" data-year="2026" data-stars="268000" data-name="deepseek-harness" data-search="deepseek-harness 开源 agent harness（dsh），everything-is-a-plugin，基于 cordis；提供 web ui 与桌面端。 开发者预览 agent 与工具链 2026 mit typescript 268k star 说明 2026 年的主战场已经从“模型权重”转到“agent 运行时”。 插件化把工具、模型、界面都变成可替换单元，野心是做一个开放的 agent 操作系统。 readme 直接写明 developer preview、会有 breaking changes，态度比很多项目诚实。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">开发者预览</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">deepseek-harness</a></h3>
+      <p class="official">开源 Agent harness（dsh），everything-is-a-plugin，基于 Cordis；提供 Web UI 与桌面端。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>268k star 说明 2026 年的主战场已经从“模型权重”转到“Agent 运行时”。</li>
+        <li>插件化把工具、模型、界面都变成可替换单元，野心是做一个开放的 Agent 操作系统。</li>
+        <li>README 直接写明 developer preview、会有 breaking changes，态度比很多项目诚实。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>极早期，API 不稳定；运行前必须读 SAFETY.md。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 268k</span>
+        <span>MIT</span>
+        <span>TypeScript</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-dsh-superagent-prototype" data-layer="agent" data-year="2026" data-stars="5200" data-name="dsh-superagent-prototype" data-search="dsh-superagent-prototype 面向单个 github 仓库的主动式 coding agent，监听 github / 飞书，按请求开工并回 pr。 研究原型 agent 与工具链 2026 mit typescript 核心不是功能，而是“注意力预算”哲学：只在被请求或团队规则允许时行动，只在需要人决策时说话。 工程大量由 coding agent 自己写，作者承认风格不一致、可能有 bug，这本身是一个有意思的样本。 它示范了 agent 如何嵌入真实协作流（issue → work item → pr），而不是停在 demo。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">研究原型</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/dsh-superagent-prototype" target="_blank" rel="noopener">dsh-superagent-prototype</a></h3>
+      <p class="official">面向单个 GitHub 仓库的主动式 coding agent，监听 GitHub / 飞书，按请求开工并回 PR。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>核心不是功能，而是“注意力预算”哲学：只在被请求或团队规则允许时行动，只在需要人决策时说话。</li>
+        <li>工程大量由 coding agent 自己写，作者承认风格不一致、可能有 bug，这本身是一个有意思的样本。</li>
+        <li>它示范了 agent 如何嵌入真实协作流（issue → work item → PR），而不是停在 demo。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>明确非官方产品、非生产可用；配置步骤较多。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 5.2k</span>
+        <span>MIT</span>
+        <span>TypeScript</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-dsh-node-addon-require-builtin" data-layer="agent" data-year="2026" data-stars="20" data-name="dsh-node-addon-require-builtin" data-search="dsh-node-addon-require-builtin deepseek harness 使用的内部 c++ addon，用于 require 内置模块。 内部组件 agent 与工具链 2026 mit c++ 只有 20 star，但暴露了 electron / node 打包场景里一个真实痛点：打包后如何稳定解析内置模块。 把它单独开源，说明 harness 的插件体系确实拆得很细。 对做 electron 工具链的人有直接参考价值。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">内部组件</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/dsh-node-addon-require-builtin" target="_blank" rel="noopener">dsh-node-addon-require-builtin</a></h3>
+      <p class="official">DeepSeek Harness 使用的内部 C++ addon，用于 require 内置模块。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>只有 20 star，但暴露了 Electron / Node 打包场景里一个真实痛点：打包后如何稳定解析内置模块。</li>
+        <li>把它单独开源，说明 harness 的插件体系确实拆得很细。</li>
+        <li>对做 Electron 工具链的人有直接参考价值。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>内部组件，无独立文档与兼容性承诺。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 20</span>
+        <span>MIT</span>
+        <span>C++</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-dsh-libreoffice-kit" data-layer="agent" data-year="2026" data-stars="206" data-name="dsh-libreoffice-kit" data-search="dsh-libreoffice-kit deepseek harness 的 libreoffice 集成组件。 内部组件 agent 与工具链 2026 mpl-2.0 javascript 让 agent 能真正操作文档（转换、渲染、批处理），补上“只会写代码”之外的办公场景。 mpl-2.0 与主体 mit 不同：修改该组件的文件需以 mpl 公开，商用集成要单独评估。 单独拆仓而不是塞进 monorepo，便于独立升级 libreoffice 运行时。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">内部组件</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/dsh-libreoffice-kit" target="_blank" rel="noopener">dsh-libreoffice-kit</a></h3>
+      <p class="official">DeepSeek Harness 的 LibreOffice 集成组件。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>让 agent 能真正操作文档（转换、渲染、批处理），补上“只会写代码”之外的办公场景。</li>
+        <li>MPL-2.0 与主体 MIT 不同：修改该组件的文件需以 MPL 公开，商用集成要单独评估。</li>
+        <li>单独拆仓而不是塞进 monorepo，便于独立升级 LibreOffice 运行时。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>内部组件；MPL-2.0 的文件级 copyleft 需注意。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 206</span>
+        <span>MPL-2.0</span>
+        <span>JavaScript</span>
+        <span>2026.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-deepseek-recipe" data-layer="agent" data-year="2026" data-stars="2700" data-name="deepseek-recipe" data-search="deepseek-recipe rust 库 + python 绑定：把 messages / chat completions / responses 统一成 conversation，渲染 v4 / v4.1 prompt，编码 token，解析输出。 可用（0.2） agent 与工具链 2026 mit rust 把“协议适配”下沉成库：同一份请求在三种 api 格式间转换，还处理 thinking mode、tool calls、结构化输出、图像预处理。 rust 核心 + python 绑定，性能和部署都照顾到了；还带一个可视化 demo。 它是自建推理服务时最容易被低估、却最省事的一块。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">可用（0.2）</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/deepseek-recipe" target="_blank" rel="noopener">deepseek-recipe</a></h3>
+      <p class="official">Rust 库 + Python 绑定：把 Messages / Chat Completions / Responses 统一成 Conversation，渲染 V4 / V4.1 prompt，编码 token，解析输出。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>把“协议适配”下沉成库：同一份请求在三种 API 格式间转换，还处理 thinking mode、tool calls、结构化输出、图像预处理。</li>
+        <li>Rust 核心 + Python 绑定，性能和部署都照顾到了；还带一个可视化 demo。</li>
+        <li>它是自建推理服务时最容易被低估、却最省事的一块。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>与模型版本强绑定（V4 / V4.1），升级需跟版本。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 2.7k</span>
+        <span>MIT</span>
+        <span>Rust</span>
+        <span>2026.10</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-clangd-ascend" data-layer="agent" data-year="2026" data-stars="34" data-name="clangd-ascend" data-search="clangd-ascend 面向昇腾的 clangd，用于代码补全与 lint。 工具 agent 与工具链 2026 other c++ 昇腾 c++ 开发长期缺 ide 体验，这个项目把 clangd 的索引与补全接到 cann 工具链上。 它说明 deepseek 的 ascend 投入已经深入到开发者工具层，而不只是 kernel。 许可证为 other，二次分发前要确认。">
+      <div class="card-top">
+        <span class="layer-tag">Agent 与工具链</span>
+        <span class="maturity">工具</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/clangd-ascend" target="_blank" rel="noopener">clangd-ascend</a></h3>
+      <p class="official">面向昇腾的 clangd，用于代码补全与 lint。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>昇腾 C++ 开发长期缺 IDE 体验，这个项目把 clangd 的索引与补全接到 CANN 工具链上。</li>
+        <li>它说明 DeepSeek 的 Ascend 投入已经深入到开发者工具层，而不只是 kernel。</li>
+        <li>许可证为 Other，二次分发前要确认。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>小众工具、文档少；仅覆盖 Ascend 场景。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 34</span>
+        <span>Other</span>
+        <span>C++</span>
+        <span>2026.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-awesome-deepseek-integration" data-layer="eco" data-year="2026" data-stars="40000" data-name="awesome-deepseek-integration" data-search="awesome-deepseek-integration deepseek api 的集成清单，覆盖聊天客户端、ide、知识库、浏览器插件等。 清单 生态与索引 2026 cc0-1.0 markdown 它是 deepseek 生态的入口页，也是观察“哪些场景真的有人用”的样本。 cc0 意味着可以自由整理、二次发布，适合做内部选型参考。 清单类仓库的通病是链接腐化，需要定期校验。">
+      <div class="card-top">
+        <span class="layer-tag">生态与索引</span>
+        <span class="maturity">清单</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/awesome-deepseek-integration" target="_blank" rel="noopener">awesome-deepseek-integration</a></h3>
+      <p class="official">DeepSeek API 的集成清单，覆盖聊天客户端、IDE、知识库、浏览器插件等。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它是 DeepSeek 生态的入口页，也是观察“哪些场景真的有人用”的样本。</li>
+        <li>CC0 意味着可以自由整理、二次发布，适合做内部选型参考。</li>
+        <li>清单类仓库的通病是链接腐化，需要定期校验。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>社区维护，条目质量与时效不一致。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 40k</span>
+        <span>CC0-1.0</span>
+        <span>Markdown</span>
+        <span>2026.02</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-awesome-deepseek-agent" data-layer="eco" data-year="2026" data-stars="6300" data-name="awesome-deepseek-agent" data-search="awesome-deepseek-agent agent 相关项目清单，与 harness 生态配套。 清单 生态与索引 2026 未标注 markdown 配合 dsh-plugin topic 做发现，是 harness 生态的“应用商店雏形”。 从清单结构能看出 agent 生态的分层：框架、工具、垂直 agent、评测。 未标注许可证，引用内容前需确认。">
+      <div class="card-top">
+        <span class="layer-tag">生态与索引</span>
+        <span class="maturity">清单</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/awesome-deepseek-agent" target="_blank" rel="noopener">awesome-deepseek-agent</a></h3>
+      <p class="official">Agent 相关项目清单，与 harness 生态配套。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>配合 dsh-plugin topic 做发现，是 harness 生态的“应用商店雏形”。</li>
+        <li>从清单结构能看出 Agent 生态的分层：框架、工具、垂直 agent、评测。</li>
+        <li>未标注许可证，引用内容前需确认。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>无许可证声明；条目未做安全审计。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 6.3k</span>
+        <span>未标注</span>
+        <span>Markdown</span>
+        <span>2026.09</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-awesome-deepseek-coder" data-layer="eco" data-year="2025" data-stars="838" data-name="awesome-deepseek-coder" data-search="awesome-deepseek-coder deepseek coder 相关开源项目清单（微调、量化、copilot 替代）。 清单 生态与索引 2025 未标注 markdown 记录了 coder 时代的社区玩法：thebloke 量化、tabby / continue 接入、wizardcoder 蒸馏。 现在看更像历史档案，能解释 deepseek 在代码模型上的社区基础从哪来。 更新停在 2025-11，已不再覆盖 coder-v2 之后的生态。">
+      <div class="card-top">
+        <span class="layer-tag">生态与索引</span>
+        <span class="maturity">清单</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/awesome-deepseek-coder" target="_blank" rel="noopener">awesome-deepseek-coder</a></h3>
+      <p class="official">DeepSeek Coder 相关开源项目清单（微调、量化、Copilot 替代）。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>记录了 Coder 时代的社区玩法：TheBloke 量化、Tabby / Continue 接入、WizardCoder 蒸馏。</li>
+        <li>现在看更像历史档案，能解释 DeepSeek 在代码模型上的社区基础从哪来。</li>
+        <li>更新停在 2025-11，已不再覆盖 Coder-V2 之后的生态。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>内容过时；无许可证声明。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 838</span>
+        <span>未标注</span>
+        <span>Markdown</span>
+        <span>2025.11</span>
+      </div>
+    </article>
+
+    <article class="card" id="p-open-infra-index" data-layer="eco" data-year="2025" data-stars="8112" data-name="open-infra-index" data-search="open-infra-index 生产验证过的 ai infra 工具索引，含 2025 开源周说明、isca&#x27;25 论文与推理引擎开源路径。 文档 生态与索引 2025 cc0-1.0 markdown 它不是代码，而是“发布说明书”：解释 flashmla / deepep / deepgemm / 3fs 在生产里各自解决什么问题。 想理解 deepseek 的开源策略，这一篇比任何单个仓库都值钱。 它也坦白了边界：开源的是在线服务的积木，不是完整训练配方。">
+      <div class="card-top">
+        <span class="layer-tag">生态与索引</span>
+        <span class="maturity">文档</span>
+      </div>
+      <h3><a href="https://github.com/deepseek-ai/open-infra-index" target="_blank" rel="noopener">open-infra-index</a></h3>
+      <p class="official">生产验证过的 AI infra 工具索引，含 2025 开源周说明、ISCA&#x27;25 论文与推理引擎开源路径。</p>
+      <div class="analysis-wrap">
+        <p class="label">我的分析</p>
+        <ul class="analysis">
+        <li>它不是代码，而是“发布说明书”：解释 FlashMLA / DeepEP / DeepGEMM / 3FS 在生产里各自解决什么问题。</li>
+        <li>想理解 DeepSeek 的开源策略，这一篇比任何单个仓库都值钱。</li>
+        <li>它也坦白了边界：开源的是在线服务的积木，不是完整训练配方。</li>
+        </ul>
+        <p class="caveat"><span>风险 / 局限</span>2025-05 后未更新，未覆盖 2026 年的 Agent 与推理框架。</p>
+      </div>
+      <div class="card-meta">
+        <span>★ 8.1k</span>
+        <span>CC0-1.0</span>
+        <span>Markdown</span>
+        <span>2025.05</span>
+      </div>
+    </article>
+    </div>
+    <div class="empty" id="empty" hidden>没有匹配的项目。试试更短的关键词，或点“清除筛选”。</div>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">06</span><h2>口径与可信度</h2></div>
+    <div class="method">
+      <div class="panel">
+        <h3>数据来源</h3>
+        <p>仓库清单、star、许可证与最后更新时间来自 GitHub 组织仓库页（抓取于 2026-10-31）；“官方定位”是对各仓库 README 与 open-infra-index 的转述；论文链接指向各仓库给出的 arXiv 编号。</p>
+      </div>
+      <div class="panel">
+        <h3>哪些是事实，哪些是判断</h3>
+        <p>每张卡片的“官方定位”尽量贴事实；“我的分析”和“风险 / 局限”是我的推断与评价；成熟度分级（生产级 / 研究原型 / 内部组件…）也是我的判断，不是官方声明。</p>
+      </div>
+      <div class="panel">
+        <h3>没有做什么</h3>
+        <p>没有克隆代码、没有运行 benchmark、没有审计许可证全文。所有性能数字都是 README 声明，未独立验证。star 会变，时间只精确到月。</p>
+      </div>
+      <div class="panel">
+        <h3>已知盲区</h3>
+        <p>GitHub 组织页可能不含全部实验性仓库；部分早期仓库的发布时间只能从创建/更新记录推断；模型权重的“Model License”条款需以 HuggingFace 仓库为准。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">07</span><h2>来源</h2></div>
+    <ul class="sources">
+      <li><a href="https://github.com/orgs/deepseek-ai/repositories" target="_blank" rel="noopener">deepseek-ai repositories（GitHub 组织页）</a></li>
+      <li><a href="https://github.com/deepseek-ai/open-infra-index" target="_blank" rel="noopener">open-infra-index：开源周与推理引擎说明</a></li>
+      <li><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">deepseek-harness</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepInfer" target="_blank" rel="noopener">DeepInfer</a></li>
+      <li><a href="https://github.com/deepseek-ai/deepseek-recipe" target="_blank" rel="noopener">deepseek-recipe</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSeek-V3" target="_blank" rel="noopener">DeepSeek-V3</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSeek-R1" target="_blank" rel="noopener">DeepSeek-R1</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSeek-V3.2-Exp" target="_blank" rel="noopener">DeepSeek-V3.2-Exp（DSA）</a></li>
+      <li><a href="https://github.com/deepseek-ai/Engram" target="_blank" rel="noopener">Engram</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSeek-Math-V2" target="_blank" rel="noopener">DeepSeek-Math-V2</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSpec" target="_blank" rel="noopener">DeepSpec</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSeek-OCR-2" target="_blank" rel="noopener">DeepSeek-OCR-2</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepSelect" target="_blank" rel="noopener">DeepSelect</a></li>
+      <li><a href="https://github.com/deepseek-ai/DeepJIT" target="_blank" rel="noopener">DeepJIT</a></li>
+      <li><a href="https://github.com/deepseek-ai/TileKernels" target="_blank" rel="noopener">TileKernels</a></li>
+      <li><a href="https://github.com/deepseek-ai/LPLB" target="_blank" rel="noopener">LPLB</a></li>
+      <li><a href="https://github.com/deepseek-ai/3FS" target="_blank" rel="noopener">3FS</a></li>
+      <li><a href="https://arxiv.org/abs/2607.05147" target="_blank" rel="noopener">DSpark 论文（arXiv 2607.05147）</a></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>DeepSeek 开源全景 · 单文件离线报告 · 数据快照 2026-10-31 · 生成于本仓库 SoftwareEngineering/DeepSeek。</p>
+    <p>外部链接仅作引用，页面不依赖任何网络资源；所有 CSS / JS / 图形均内联。</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var grid = document.getElementById('grid');
+  var cards = Array.prototype.slice.call(grid.querySelectorAll('.card'));
+  var state = { q: '', layer: 'all', sort: 'stars' };
+  var search = document.getElementById('search');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var sortSel = document.getElementById('sort');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip[data-layer]'));
+
+  function apply(){
+    var q = state.q.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(c){
+      var hay = c.getAttribute('data-search') || '';
+      var okQ = !q || hay.indexOf(q) !== -1;
+      var okL = state.layer === 'all' || c.getAttribute('data-layer') === state.layer;
+      var vis = okQ && okL;
+      c.hidden = !vis;
+      if (vis) shown++;
+    });
+    cards.slice().sort(function(a,b){
+      if (state.sort === 'year') {
+        return (+a.dataset.year - +b.dataset.year) || a.dataset.name.localeCompare(b.dataset.name);
+      }
+      if (state.sort === 'name') {
+        return a.dataset.name.localeCompare(b.dataset.name);
+      }
+      return (+b.dataset.stars) - (+a.dataset.stars);
+    }).forEach(function(c){ grid.appendChild(c); });
+    count.textContent = shown;
+    empty.hidden = shown !== 0;
+  }
+
+  search.addEventListener('input', function(){ state.q = search.value; apply(); });
+  sortSel.addEventListener('change', function(){ state.sort = sortSel.value; apply(); });
+  chips.forEach(function(chip){
+    chip.addEventListener('click', function(){
+      state.layer = chip.getAttribute('data-layer');
+      chips.forEach(function(c){ c.setAttribute('aria-pressed', String(c === chip)); });
+      apply();
+    });
+  });
+
+  var compactBtn = document.getElementById('compact');
+  compactBtn.addEventListener('click', function(){
+    var on = document.body.classList.toggle('compact');
+    compactBtn.setAttribute('aria-pressed', String(on));
+    compactBtn.textContent = on ? '显示分析' : '只看定位';
+  });
+
+  document.getElementById('clear').addEventListener('click', function(){
+    state = { q: '', layer: 'all', sort: 'stars' };
+    search.value = ''; sortSel.value = 'stars';
+    chips.forEach(function(c){ c.setAttribute('aria-pressed', String(c.getAttribute('data-layer') === 'all')); });
+    apply();
+    search.focus();
+  });
+
+  document.addEventListener('keydown', function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    var typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    if (e.key === '/' && !typing) { e.preventDefault(); search.focus(); }
+    if (e.key === 'Escape' && (state.q || state.layer !== 'all')) {
+      state.q = ''; state.layer = 'all'; search.value = '';
+      chips.forEach(function(c){ c.setAttribute('aria-pressed', String(c.getAttribute('data-layer') === 'all')); });
+      apply();
+    }
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi K2 · Kimi 开源图谱</title>
+<meta name="description" content="1T 总参、32B 激活的 MoE，Kimi 的 Agent 能力基座">
+<style>
+:root{
+  --bg:#f3f4ef; --panel:#ffffff; --ink:#15181c; --muted:#626a74;
+  --line:#e1e3dd; --line-strong:#c9cdc4;
+  --accent:#0c6b5c; --accent-2:#0a4f45; --accent-soft:#e2f1ec;
+  --lime:#c9f24d; --lime-soft:#f2fad4;
+  --warn:#8a5a00; --warn-soft:#fbf0d8;
+  --bad:#9c2f25; --bad-soft:#f9e7e4;
+  --blue:#245c9c; --blue-soft:#e7f0fa;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.72;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:#edf0ea;padding:.12em .38em;border-radius:4px;word-break:break-word}
+h1,h2,h3{line-height:1.3;letter-spacing:-.015em}
+h2{font-size:22px;margin:0 0 8px}
+h3{font-size:16px;margin:20px 0 6px}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;padding:8px 12px;z-index:100}
+.skip:focus{left:8px;top:8px}
+
+.topbar{background:#0e1417;color:#dfe7e3;border-bottom:1px solid #1f2a2c}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;letter-spacing:.01em}
+.brand:hover{text-decoration:none}
+.brand .mark{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;background:var(--lime);color:#102018;font-size:14px;font-weight:800}
+.topnav{display:flex;gap:16px;font-size:13.5px;flex-wrap:wrap}
+.topnav a{color:#b9c7c2}
+.topnav a:hover{color:#fff;text-decoration:none}
+
+.hero{background:linear-gradient(180deg,#0d1316 0%,#122024 100%);color:#eef3f0;padding:46px 0 40px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.kicker{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#8fa8a0}
+.hero h1{font-size:38px;margin:10px 0 10px;color:#fff;letter-spacing:-.03em}
+.hero .lede{color:#b7c6c1;max-width:820px;font-size:16px;margin:0}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.075);color:#d6e2de;border:1px solid rgba(255,255,255,.13)}
+.chip b{color:#fff;font-weight:650}
+.chip.lime{background:rgba(201,242,77,.13);border-color:rgba(201,242,77,.32);color:#e6f7b5}
+
+.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+.stat{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);border-radius:10px;padding:14px 16px}
+.stat b{display:block;font-size:25px;color:#fff;line-height:1.15;letter-spacing:-.02em}
+.stat span{font-size:12px;color:#9fb2ac}
+
+.layout{display:grid;grid-template-columns:224px minmax(0,1fr);gap:34px;align-items:start;padding:30px 0 64px}
+nav.toc{position:sticky;top:18px;font-size:13.5px}
+nav.toc .toc-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+nav.toc a{display:block;padding:7px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;line-height:1.45}
+nav.toc a:hover{background:#e9ece5;color:var(--ink);text-decoration:none}
+nav.toc a.active{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:650}
+.toc-note{margin:14px 10px 0;font-size:12px;color:var(--muted);line-height:1.55}
+
+main{min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin-bottom:18px;scroll-margin-top:16px}
+section > .sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.sec-num{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:5px}
+.lede{color:var(--muted);margin:2px 0 14px}
+
+.callout{border-radius:9px;padding:12px 14px;margin:14px 0;border:1px solid;font-size:14px}
+.callout.ok{background:#e8f5ee;border-color:#bfe3cd;color:#0d4f2a}
+.callout.warn{background:var(--warn-soft);border-color:#eed7a8;color:#6b4200}
+.callout.info{background:var(--blue-soft);border-color:#c6dbf2;color:#173f6d}
+.callout b{font-weight:700}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:#fbfcf9}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:4px 0;color:var(--muted);font-size:13.8px}
+.card .num{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.04em}
+
+.points{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.points li{position:relative;padding-left:24px;margin:0}
+.points li:before{content:"";position:absolute;left:4px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.points b{font-weight:650}
+
+.prose h2{margin-top:0}
+.prose h3{margin-top:20px}
+.prose p{max-width:74ch}
+.prose code{white-space:normal}
+
+.specs{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+.specs th,.specs td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.specs th{width:38%;color:var(--muted);font-weight:600;background:#fafbf8}
+.specs tr:last-child th,.specs tr:last-child td{border-bottom:0}
+
+.codebox{background:#0f1619;color:#dfe9e4;border-radius:10px;margin:12px 0 0;overflow:hidden;border:1px solid #1d2b2e}
+.codebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#131e21;border-bottom:1px solid #223135;font-size:12px;color:#9fb5ad}
+.codebar .lang{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
+.copy{border:1px solid #35484b;background:#1a292c;color:#d7e4df;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit}
+.copy:hover{background:#24383b}
+.copy:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+pre{margin:0;padding:15px 16px;overflow:auto;font-family:var(--mono);font-size:12.6px;line-height:1.6;tab-size:2}
+pre code{background:none;padding:0;font-size:inherit;color:inherit;white-space:pre}
+
+.rel{display:grid;gap:10px}
+.rel a.rel-card{display:block;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#fbfcf9;color:var(--ink)}
+.rel a.rel-card:hover{border-color:var(--accent);text-decoration:none;background:#f6faf7}
+.rel .rel-name{font-weight:650;color:var(--accent)}
+.rel .rel-note{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+
+.caveats{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:8px}
+.caveats li{position:relative;padding-left:24px}
+.caveats li:before{content:"!";position:absolute;left:4px;top:.1em;width:16px;height:16px;border-radius:50%;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:800;display:grid;place-items:center;border:1px solid #ecd3a0}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
+.pager a{flex:1;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#fff;color:var(--ink)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager .dir{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block}
+.pager .nm{font-weight:650;color:var(--accent)}
+.pager .right{text-align:right}
+
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:30px;align-items:start}
+.hero-card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 18px}
+.hero-card .hc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa8a0;margin-bottom:10px}
+.hero-card .hs{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.09)}
+.hero-card .hs:last-child{border-bottom:0}
+.hero-card .hs b{color:#fff;font-size:14px;font-weight:650;text-align:right}
+.hero-card .hs span{color:#a9bcb5;font-size:12.5px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 13px;font-size:13.5px;border:1px solid rgba(255,255,255,.18);color:#e9f1ee;background:rgba(255,255,255,.06)}
+.btn:hover{text-decoration:none;background:rgba(255,255,255,.12)}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:#102018;font-weight:700}
+.btn.primary:hover{background:#d6f873}
+
+.crumbs{font-size:12.5px;color:#93a8a1;margin-bottom:14px}
+.crumbs a{color:#c9d8d3}
+.en{font-family:var(--mono);font-size:13px;color:#9db1aa;margin:0 0 8px}
+.tagline{font-size:17px;color:#dbe6e2;max-width:780px;margin:0}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.fact{background:var(--accent)}
+.dot.judge{background:#b07a00}
+.dot.time{background:var(--blue)}
+
+/* index */
+.explorer{margin-top:4px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 16px}
+.search{flex:1 1 260px;min-width:220px;position:relative}
+.search input{width:100%;border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:10px 12px 10px 36px;font:inherit;font-size:14px;color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted)}
+select{border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:10px 12px;font:inherit;font-size:13.5px;color:var(--ink)}
+select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 6px}
+.fbtn{border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:650}
+.fbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-size:12.5px;color:var(--muted);margin:2px 0 14px}
+.grid-proj{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.proj{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;padding:15px 16px;background:#fff;color:var(--ink);min-height:150px}
+.proj[hidden]{display:none}
+.proj:hover{border-color:var(--accent);box-shadow:0 3px 14px rgba(12,107,92,.08);text-decoration:none;transform:translateY(-1px)}
+.proj .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.proj .nm{font-weight:700;font-size:15.5px;letter-spacing:-.01em}
+.proj .repo{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px;word-break:break-all}
+.proj .tag{font-size:13px;color:var(--muted);margin:9px 0 12px;flex:1}
+.proj .bot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid #c9e4da;white-space:nowrap;font-weight:650}
+.badge.archived{background:#f0f0ed;color:#5f625c;border-color:#dcded6}
+.badge.moved{background:var(--blue-soft);color:var(--blue);border-color:#c6dbf2}
+.badge.research{background:#f4ecfb;color:#6b3fa0;border-color:#e0d0f2}
+.badge.demo{background:var(--lime-soft);color:#4d5c0e;border-color:#dceba0}
+.badge.meta{background:#f0f0ed;color:#5f625c;border-color:#dcded6}
+.badge.external{background:#fdf1dd;color:#8a5a00;border-color:#eed7a8}
+.stars{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600}
+
+.timeline{list-style:none;padding:0;margin:10px 0 0;border-left:2px solid var(--line-strong);margin-left:6px}
+.timeline li{position:relative;padding:0 0 18px 22px;margin:0}
+.timeline li:before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.timeline .when{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.03em}
+.timeline .what{display:block;margin-top:1px}
+.timeline .what a{font-weight:650}
+.timeline .desc{display:block;color:var(--muted);font-size:13px}
+
+.footer{border-top:1px solid var(--line);background:#eef0ea;padding:26px 0;color:var(--muted);font-size:13px}
+.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.footer a{color:var(--accent)}
+
+.noscript{background:var(--warn-soft);border:1px solid #eed7a8;color:#6b4200;padding:10px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;gap:18px}
+  nav.toc{position:static;order:-1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+  nav.toc a{display:inline-block;border-left:0;border-bottom:2px solid transparent;padding:5px 8px}
+  nav.toc a.active{border-left:0;border-bottom-color:var(--accent)}
+  .toc-note{display:none}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-card{max-width:420px}
+}
+@media (max-width:760px){
+  .hero h1{font-size:29px}
+  .statrow{grid-template-columns:1fr 1fr}
+  .grid2,.grid3,.grid-proj{grid-template-columns:1fr}
+  section{padding:19px 17px}
+  .hero{padding:32px 0 28px}
+  .specs th{width:42%}
+  .pager{flex-direction:column}
+  .pager .right{text-align:left}
+  .topnav{gap:11px}
+}
+@media print{
+  .topbar,.hero-actions,.controls,.copy,.pager,nav.toc{display:none!important}
+  body{background:#fff}
+  .layout{display:block}
+  section{break-inside:avoid;border-color:#ccc}
+  .hero{background:#fff;color:#000;padding:0 0 12px}
+  .hero h1,.hero .lede,.hero .tagline,.en,.crumbs{color:#000}
+  .hero-card{background:#fff;border-color:#ccc}
+  .hero-card .hs b,.hero-card .hs span{color:#000}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">K</span><span>Kimi 开源图谱</span></a>
+    <nav class="topnav" aria-label="站点导航">
+      <a href="index.html">全部项目</a>
+      <a href="index.html#mainlines">技术主线</a>
+      <a href="index.html#timeline">时间线</a>
+      <a href="index.html#method">方法与来源</a>
+      <a href="https://github.com/MoonshotAI" target="_blank" rel="noopener">GitHub 组织 ↗</a>
+    </nav>
+  </div>
+</header>
+<header class="hero">
+  <div class="wrap">
+    <div class="crumbs"><a href="index.html">Kimi 开源图谱</a> / <a href="index.html#explorer">基础模型</a> / <span>Kimi K2</span></div>
+    <div class="hero-grid">
+      <div>
+        <div class="kicker">基础模型 · 活跃</div>
+        <h1>Kimi K2</h1>
+        <p class="en">MoonshotAI/Kimi-K2</p>
+        <p class="tagline">1T 总参、32B 激活的 MoE，Kimi 的 Agent 能力基座</p>
+        <div class="meta">
+          <span class="chip"><b>11.1k</b> Stars</span>
+          <span class="chip"><b>912</b> Forks</span>
+          <span class="chip"><b>模型卡</b></span>
+          <span class="chip"><b>Modified MIT</b></span>
+          <span class="chip">创建 <b>2025-07-03</b></span>
+        </div>
+        <div class="hero-actions">
+          <a class="btn primary" href="https://github.com/MoonshotAI/Kimi-K2" target="_blank" rel="noopener">打开 GitHub ↗</a>
+          <a class="btn" href="index.html">返回索引</a>
+        </div>
+      </div>
+      <aside class="hero-card" aria-label="关键数字">
+        <div class="hc-title">关键数字</div>
+        <div class="hs"><span>总参数</span><b>1T</b></div><div class="hs"><span>激活参数</span><b>32B</b></div><div class="hs"><span>上下文</span><b>128K</b></div><div class="hs"><span>训练 token</span><b>15.5T</b></div>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="本页目录">
+    <p class="toc-title">本页目录</p>
+    <a href="#read">30 秒读懂</a><a href="#s1">为什么 K2 重要</a><a href="#s2">两个版本怎么选</a><a href="#s3">部署与工具调用</a><a href="#specs">关键规格</a><a href="#quickstart">快速开始</a><a href="#relations">生态关系</a><a href="#caveats">边界与注意</a><a href="#sources">来源与标注</a>
+    <p class="toc-note">最后 push：2026-01-21<br>数据快照：2026-11-01</p>
+  </nav>
+  <main id="main">
+    <section id="read">
+      <div class="sec-head"><span class="sec-num">00</span><h2>30 秒读懂</h2></div>
+      <p class="lede">2025 年 7 月发布的万亿参数 MoE 模型，用 MuonClip 优化器在 15.5T token 上训练且无训练不稳定。K2 Instruct 以工具调用和 Agent 循环著称，是后续 K2.5、K3 的起点。</p>
+      <ul class="points"><li>1T 总参数、32B 激活，61 层，384 个专家中每 token 选 8 个，另 1 个共享专家。</li><li>MLA 注意力、128K 上下文、160K 词表、SwiGLU。</li><li>MuonClip：在超大规模上使用 Muon，并用 QK-Clip 抑制注意力 logit 爆炸。</li><li>Base 适合继续训练，Instruct 适合开箱即用的对话与工具调用。</li></ul>
+    </section>
+    <section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>为什么 K2 重要</h2></div>
+  <div class="prose"><p>K2 是 Kimi 第一次把开放 MoE 推到 1T 参数。它真正的差异化不在参数，而在“为 Agent 训练”：工具调用、多步推理、自主解决问题被放进后训练目标。README 的评测里，SWE-bench Verified（agentic）单次 65.8、多次 71.6，TerminalBench 30.0，这些指标比单纯的 MMLU 更能说明它的用途。</p><p>训练侧的关键是 MuonClip。Muon 在小模型上表现很好，但放大到万亿参数容易出现注意力 logit 爆炸；Kimi 用 QK-Clip 在训练中约束 query/key 的范数，官方称实现了 15.5T token 零训练不稳定。</p></div>
+</section><section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>两个版本怎么选</h2></div>
+  <div class="prose"><p><b>Kimi-K2-Base</b> 是基础模型，适合研究者和需要完全控制微调流程的团队；<b>Kimi-K2-Instruct</b> 是后训练版本，适合直接做聊天和 Agent 应用，官方建议 temperature=0.6。仓库本身是模型卡 + 部署指南，不包含训练代码。</p></div>
+</section><section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>部署与工具调用</h2></div>
+  <div class="prose"><p>README 给出了 OpenAI 兼容的 chat 与 tool calling 示例：把工具 schema 放进每次请求，模型自行决定何时调用。实际生产里还需要注意 chat template、工具结果回填格式，以及不同推理引擎对 MLA 的支持程度。</p></div>
+</section>
+    <section id="specs">
+  <div class="sec-head"><span class="sec-num">规格</span><h2>关键规格</h2></div>
+  <p class="lede">以下数值来自仓库 README / 模型卡；未标注单位的比例与分数按原文。</p>
+  <table class="specs"><tbody><tr><th>总参数 / 激活参数</th><td>1T / 32B</td></tr><tr><th>层数</th><td>61（1 层 dense）</td></tr><tr><th>专家</th><td>384 选 8，1 个共享专家</td></tr><tr><th>上下文</th><td>128K</td></tr><tr><th>注意力</th><td>MLA</td></tr><tr><th>训练 token</th><td>15.5T</td></tr><tr><th>许可证</th><td>Modified MIT License</td></tr></tbody></table>
+</section>
+    <section id="quickstart">
+  <div class="sec-head"><span class="sec-num">上手</span><h2>快速开始</h2></div>
+  <p class="lede">本地或远端 OpenAI 兼容服务的对话调用。</p>
+  <div class="codebox">
+    <div class="codebar"><span class="lang">python</span><button class="copy" type="button">复制</button></div>
+    <pre><code>from openai import OpenAI
+
+client = OpenAI(api_key=&quot;YOUR_KEY&quot;, base_url=&quot;http://localhost:8000/v1&quot;)
+resp = client.chat.completions.create(
+    model=&quot;kimi-k2-instruct&quot;,
+    messages=[
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;You are Kimi, an AI assistant created by Moonshot AI.&quot;},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;请用一句话介绍你自己。&quot;},
+    ],
+    temperature=0.6,
+    max_tokens=256,
+)
+print(resp.choices[0].message.content)</code></pre>
+  </div>
+</section>
+    <section id="relations">
+  <div class="sec-head"><span class="sec-num">关系</span><h2>在 Kimi 生态里的位置</h2></div>
+  <p class="lede">这些是同一组织下与它直接相关的项目；关系说明为编辑判断，不是官方依赖声明。</p>
+  <div class="rel"><a class="rel-card" href="kimi-k2-5.html"><span class="rel-name">Kimi-K2.5</span><span class="rel-note">在 K2-Base 上继续预训练的视觉版</span></a><a class="rel-card" href="kimi-k3.html"><span class="rel-name">Kimi-K3</span><span class="rel-note">K2 的下一代旗舰</span></a><a class="rel-card" href="kimi-dev.html"><span class="rel-name">Kimi-Dev</span><span class="rel-note">面向软件工程的 72B 专用模型</span></a><a class="rel-card" href="k2-vendor-verifier.html"><span class="rel-name">K2-Vendor-Verifier</span><span class="rel-note">验证各供应商 K2 API 的工具调用精度</span></a></div>
+</section>
+    <section id="caveats">
+  <div class="sec-head"><span class="sec-num">边界</span><h2>边界与注意</h2></div>
+  <ul class="caveats"><li>1T 参数需要多卡/多机，个人开发者通常只能通过 API 使用。</li><li>128K 上下文已被 K2.5 的 256K 和 K3 的 1M 超越；新项目应优先评估更新版本。</li><li>工具调用效果高度依赖推理引擎与 chat template，换供应商前应做回归测试。</li></ul>
+</section>
+    <section id="sources">
+  <div class="sec-head"><span class="sec-num">来源</span><h2>来源与标注</h2></div>
+  <p>本页事实主要来自 <a href="https://github.com/MoonshotAI/Kimi-K2" target="_blank" rel="noopener">Kimi-K2</a> 的 README 与 GitHub API 元数据（快照 2026-11-01）。</p>
+  <ul><li><a href="https://github.com/MoonshotAI/Kimi-K2" target="_blank" rel="noopener">GitHub 仓库 ↗</a></li><li><a href="https://github.com/MoonshotAI/Kimi-K2#readme" target="_blank" rel="noopener">README ↗</a></li></ul>
+  <div class="legend">
+    <span><i class="dot fact"></i>事实：README / GitHub 元数据</span>
+    <span><i class="dot judge"></i>判断：编辑分析，已尽量与事实分开</span>
+    <span><i class="dot time"></i>时效：Stars、日期、榜单会变化</span>
+  </div>
+  <div class="callout info"><b>读法：</b>“关键规格”与正文中的数字以仓库原文为准；“边界与注意”和“生态关系”包含编辑判断，不构成官方结论或选型建议。模型能力与许可证请以实际 checkpoint / 合同为准。</div>
+</section>
+    <div class="pager"><a href="index.html"><span class="dir">← 返回</span><span class="nm">全部仓库</span></a><a class="right" href="kimi-k3.html"><span class="dir">下一个 →</span><span class="nm">Kimi K3</span></a></div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Kimi 开源图谱 · 第 1 / 43 个项目</span>
+    <span>数据：GitHub API 2026-11-01 · 单文件离线可读</span>
+  </div>
+</footer>
+<script>
+(function(){
+  var toc = document.querySelectorAll('nav.toc a[href^="#"]');
+  if (!('IntersectionObserver' in window) || !toc.length) return;
+  var map = {};
+  toc.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) {
+        toc.forEach(function(a){ a.classList.remove('active'); });
+        var a = map[e.target.id];
+        if (a) a.classList.add('active');
+      }
+    });
+  }, {rootMargin: '-15% 0px -70% 0px', threshold: 0});
+  document.querySelectorAll('main section[id]').forEach(function(s){ obs.observe(s); });
+})();
+
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('.copy');
+  if (!btn) return;
+  var box = btn.closest('.codebox');
+  var code = box ? box.querySelector('code') : null;
+  if (!code) return;
+  var text = code.innerText;
+  function done(ok){
+    var old = btn.textContent;
+    btn.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(function(){ btn.textContent = old; }, 1400);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+  } else {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); done(true);
+    } catch (err) { done(false); }
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi 开源图谱 · 43 个项目</title>
+<meta name="description" content="MoonshotAI 42 个公开仓库 + Mooncake 的分类、分析与逐项页面。">
+<style>
+:root{
+  --bg:#f3f4ef; --panel:#ffffff; --ink:#15181c; --muted:#626a74;
+  --line:#e1e3dd; --line-strong:#c9cdc4;
+  --accent:#0c6b5c; --accent-2:#0a4f45; --accent-soft:#e2f1ec;
+  --lime:#c9f24d; --lime-soft:#f2fad4;
+  --warn:#8a5a00; --warn-soft:#fbf0d8;
+  --bad:#9c2f25; --bad-soft:#f9e7e4;
+  --blue:#245c9c; --blue-soft:#e7f0fa;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.72;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:#edf0ea;padding:.12em .38em;border-radius:4px;word-break:break-word}
+h1,h2,h3{line-height:1.3;letter-spacing:-.015em}
+h2{font-size:22px;margin:0 0 8px}
+h3{font-size:16px;margin:20px 0 6px}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;padding:8px 12px;z-index:100}
+.skip:focus{left:8px;top:8px}
+
+.topbar{background:#0e1417;color:#dfe7e3;border-bottom:1px solid #1f2a2c}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;letter-spacing:.01em}
+.brand:hover{text-decoration:none}
+.brand .mark{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;background:var(--lime);color:#102018;font-size:14px;font-weight:800}
+.topnav{display:flex;gap:16px;font-size:13.5px;flex-wrap:wrap}
+.topnav a{color:#b9c7c2}
+.topnav a:hover{color:#fff;text-decoration:none}
+
+.hero{background:linear-gradient(180deg,#0d1316 0%,#122024 100%);color:#eef3f0;padding:46px 0 40px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.kicker{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#8fa8a0}
+.hero h1{font-size:38px;margin:10px 0 10px;color:#fff;letter-spacing:-.03em}
+.hero .lede{color:#b7c6c1;max-width:820px;font-size:16px;margin:0}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.075);color:#d6e2de;border:1px solid rgba(255,255,255,.13)}
+.chip b{color:#fff;font-weight:650}
+.chip.lime{background:rgba(201,242,77,.13);border-color:rgba(201,242,77,.32);color:#e6f7b5}
+
+.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+.stat{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);border-radius:10px;padding:14px 16px}
+.stat b{display:block;font-size:25px;color:#fff;line-height:1.15;letter-spacing:-.02em}
+.stat span{font-size:12px;color:#9fb2ac}
+
+.layout{display:grid;grid-template-columns:224px minmax(0,1fr);gap:34px;align-items:start;padding:30px 0 64px}
+nav.toc{position:sticky;top:18px;font-size:13.5px}
+nav.toc .toc-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+nav.toc a{display:block;padding:7px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;line-height:1.45}
+nav.toc a:hover{background:#e9ece5;color:var(--ink);text-decoration:none}
+nav.toc a.active{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:650}
+.toc-note{margin:14px 10px 0;font-size:12px;color:var(--muted);line-height:1.55}
+
+main{min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin-bottom:18px;scroll-margin-top:16px}
+section > .sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.sec-num{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:5px}
+.lede{color:var(--muted);margin:2px 0 14px}
+
+.callout{border-radius:9px;padding:12px 14px;margin:14px 0;border:1px solid;font-size:14px}
+.callout.ok{background:#e8f5ee;border-color:#bfe3cd;color:#0d4f2a}
+.callout.warn{background:var(--warn-soft);border-color:#eed7a8;color:#6b4200}
+.callout.info{background:var(--blue-soft);border-color:#c6dbf2;color:#173f6d}
+.callout b{font-weight:700}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:#fbfcf9}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:4px 0;color:var(--muted);font-size:13.8px}
+.card .num{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.04em}
+
+.points{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.points li{position:relative;padding-left:24px;margin:0}
+.points li:before{content:"";position:absolute;left:4px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.points b{font-weight:650}
+
+.prose h2{margin-top:0}
+.prose h3{margin-top:20px}
+.prose p{max-width:74ch}
+.prose code{white-space:normal}
+
+.specs{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+.specs th,.specs td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.specs th{width:38%;color:var(--muted);font-weight:600;background:#fafbf8}
+.specs tr:last-child th,.specs tr:last-child td{border-bottom:0}
+
+.codebox{background:#0f1619;color:#dfe9e4;border-radius:10px;margin:12px 0 0;overflow:hidden;border:1px solid #1d2b2e}
+.codebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#131e21;border-bottom:1px solid #223135;font-size:12px;color:#9fb5ad}
+.codebar .lang{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
+.copy{border:1px solid #35484b;background:#1a292c;color:#d7e4df;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit}
+.copy:hover{background:#24383b}
+.copy:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+pre{margin:0;padding:15px 16px;overflow:auto;font-family:var(--mono);font-size:12.6px;line-height:1.6;tab-size:2}
+pre code{background:none;padding:0;font-size:inherit;color:inherit;white-space:pre}
+
+.rel{display:grid;gap:10px}
+.rel a.rel-card{display:block;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#fbfcf9;color:var(--ink)}
+.rel a.rel-card:hover{border-color:var(--accent);text-decoration:none;background:#f6faf7}
+.rel .rel-name{font-weight:650;color:var(--accent)}
+.rel .rel-note{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+
+.caveats{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:8px}
+.caveats li{position:relative;padding-left:24px}
+.caveats li:before{content:"!";position:absolute;left:4px;top:.1em;width:16px;height:16px;border-radius:50%;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:800;display:grid;place-items:center;border:1px solid #ecd3a0}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
+.pager a{flex:1;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:#fff;color:var(--ink)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager .dir{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block}
+.pager .nm{font-weight:650;color:var(--accent)}
+.pager .right{text-align:right}
+
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:30px;align-items:start}
+.hero-card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 18px}
+.hero-card .hc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8fa8a0;margin-bottom:10px}
+.hero-card .hs{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.09)}
+.hero-card .hs:last-child{border-bottom:0}
+.hero-card .hs b{color:#fff;font-size:14px;font-weight:650;text-align:right}
+.hero-card .hs span{color:#a9bcb5;font-size:12.5px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 13px;font-size:13.5px;border:1px solid rgba(255,255,255,.18);color:#e9f1ee;background:rgba(255,255,255,.06)}
+.btn:hover{text-decoration:none;background:rgba(255,255,255,.12)}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:#102018;font-weight:700}
+.btn.primary:hover{background:#d6f873}
+
+.crumbs{font-size:12.5px;color:#93a8a1;margin-bottom:14px}
+.crumbs a{color:#c9d8d3}
+.en{font-family:var(--mono);font-size:13px;color:#9db1aa;margin:0 0 8px}
+.tagline{font-size:17px;color:#dbe6e2;max-width:780px;margin:0}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.fact{background:var(--accent)}
+.dot.judge{background:#b07a00}
+.dot.time{background:var(--blue)}
+
+/* index */
+.explorer{margin-top:4px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 16px}
+.search{flex:1 1 260px;min-width:220px;position:relative}
+.search input{width:100%;border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:10px 12px 10px 36px;font:inherit;font-size:14px;color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted)}
+select{border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:10px 12px;font:inherit;font-size:13.5px;color:var(--ink)}
+select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 6px}
+.fbtn{border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:650}
+.fbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-size:12.5px;color:var(--muted);margin:2px 0 14px}
+.grid-proj{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.proj{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;padding:15px 16px;background:#fff;color:var(--ink);min-height:150px}
+.proj[hidden]{display:none}
+.proj:hover{border-color:var(--accent);box-shadow:0 3px 14px rgba(12,107,92,.08);text-decoration:none;transform:translateY(-1px)}
+.proj .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.proj .nm{font-weight:700;font-size:15.5px;letter-spacing:-.01em}
+.proj .repo{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:1px;word-break:break-all}
+.proj .tag{font-size:13px;color:var(--muted);margin:9px 0 12px;flex:1}
+.proj .bot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid #c9e4da;white-space:nowrap;font-weight:650}
+.badge.archived{background:#f0f0ed;color:#5f625c;border-color:#dcded6}
+.badge.moved{background:var(--blue-soft);color:var(--blue);border-color:#c6dbf2}
+.badge.research{background:#f4ecfb;color:#6b3fa0;border-color:#e0d0f2}
+.badge.demo{background:var(--lime-soft);color:#4d5c0e;border-color:#dceba0}
+.badge.meta{background:#f0f0ed;color:#5f625c;border-color:#dcded6}
+.badge.external{background:#fdf1dd;color:#8a5a00;border-color:#eed7a8}
+.stars{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600}
+
+.timeline{list-style:none;padding:0;margin:10px 0 0;border-left:2px solid var(--line-strong);margin-left:6px}
+.timeline li{position:relative;padding:0 0 18px 22px;margin:0}
+.timeline li:before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.timeline .when{font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.03em}
+.timeline .what{display:block;margin-top:1px}
+.timeline .what a{font-weight:650}
+.timeline .desc{display:block;color:var(--muted);font-size:13px}
+
+.footer{border-top:1px solid var(--line);background:#eef0ea;padding:26px 0;color:var(--muted);font-size:13px}
+.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.footer a{color:var(--accent)}
+
+.noscript{background:var(--warn-soft);border:1px solid #eed7a8;color:#6b4200;padding:10px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;gap:18px}
+  nav.toc{position:static;order:-1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+  nav.toc a{display:inline-block;border-left:0;border-bottom:2px solid transparent;padding:5px 8px}
+  nav.toc a.active{border-left:0;border-bottom-color:var(--accent)}
+  .toc-note{display:none}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-card{max-width:420px}
+}
+@media (max-width:760px){
+  .hero h1{font-size:29px}
+  .statrow{grid-template-columns:1fr 1fr}
+  .grid2,.grid3,.grid-proj{grid-template-columns:1fr}
+  section{padding:19px 17px}
+  .hero{padding:32px 0 28px}
+  .specs th{width:42%}
+  .pager{flex-direction:column}
+  .pager .right{text-align:left}
+  .topnav{gap:11px}
+}
+@media print{
+  .topbar,.hero-actions,.controls,.copy,.pager,nav.toc{display:none!important}
+  body{background:#fff}
+  .layout{display:block}
+  section{break-inside:avoid;border-color:#ccc}
+  .hero{background:#fff;color:#000;padding:0 0 12px}
+  .hero h1,.hero .lede,.hero .tagline,.en,.crumbs{color:#000}
+  .hero-card{background:#fff;border-color:#ccc}
+  .hero-card .hs b,.hero-card .hs span{color:#000}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">K</span><span>Kimi 开源图谱</span></a>
+    <nav class="topnav" aria-label="站点导航">
+      <a href="index.html">全部项目</a>
+      <a href="index.html#mainlines">技术主线</a>
+      <a href="index.html#timeline">时间线</a>
+      <a href="index.html#method">方法与来源</a>
+      <a href="https://github.com/MoonshotAI" target="_blank" rel="noopener">GitHub 组织 ↗</a>
+    </nav>
+  </div>
+</header>
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">MoonshotAI / Kimi · Open Source Atlas</div>
+    <h1>Kimi 开源了什么？</h1>
+    <p class="lede">把 MoonshotAI 组织下的 42 个公开仓库，加上组织外但直接为 Kimi 提供 serving 的 Mooncake，一起放进一张图：哪些是模型，哪些是架构研究，哪些是 Agent 产品与底层系统，哪些只是评测、生态或组织基建。每个项目都有独立页面，事实与判断分开标注。</p>
+    <div class="meta">
+      <span class="chip lime"><b>42</b> 个 MoonshotAI 仓库</span>
+      <span class="chip lime"><b>1</b> 个组织外核心</span>
+      <span class="chip"><b>75.9k</b> Stars 合计（含外部）</span>
+      <span class="chip"><b>6</b> 个类别</span>
+      <span class="chip">数据快照 <b>2026-11-01</b></span>
+      <span class="chip">最近 push <b>2026-11-01</b></span>
+    </div>
+    <div class="statrow">
+      <div class="stat"><b>43</b><span>全部页面（42 官方 + 1 外部）</span></div>
+      <div class="stat"><b>30</b><span>状态为“活跃”的项目</span></div>
+      <div class="stat"><b>3</b><span>已归档或已迁移</span></div>
+      <div class="stat"><b>75,872</b><span>Stars 原始合计（含 Mooncake）</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="页面目录">
+    <p class="toc-title">页面目录</p>
+    <a href="#how">怎么读这张图</a>
+    <a href="#mainlines">四条技术主线</a>
+    <a href="#explorer">全部仓库</a>
+    <a href="#timeline">时间线</a>
+    <a href="#method">方法与来源</a>
+  </nav>
+  <main id="main">
+    <section id="how">
+      <div class="sec-head"><span class="sec-num">01</span><h2>怎么读这张图</h2></div>
+      <p class="lede">43 个页面不是 43 个“模型”。把它们按职责分层，才能看出 Kimi 的开源策略；Mooncake 单列为组织外核心，避免与官方仓库统计混淆。</p>
+      <div class="grid3">
+        <div class="card"><div class="num">LAYER 1</div><h3>模型权重</h3><p>K3 / K2 / K2.5 / k1.5 / VL / Audio / Linear / Moonlight / Dev。决定能力上限，也决定部署门槛。</p></div>
+        <div class="card"><div class="num">LAYER 2</div><h3>架构与训练方法</h3><p>MoBA、KDA、Attention Residuals、Muon。解释“为什么这一代更强/更便宜”。</p></div>
+        <div class="card"><div class="num">LAYER 3</div><h3>系统与工具</h3><p>Mooncake、MoonEP、checkpoint-engine、FlashKDA、walle、batched-benchmark。把模型变成可服务、可训练的系统。</p></div>
+        <div class="card"><div class="num">LAYER 4</div><h3>Agent 产品</h3><p>kimi-code、CLI、SDK、Rust 运行时、Zed/Zsh 集成。离用户最近的一层。</p></div>
+        <div class="card"><div class="num">LAYER 5</div><h3>评测与基准</h3><p>PerceptionBench、WorldVQA、CombiBench、Kimina、Vendor Verifier。定义“什么叫好”。</p></div>
+        <div class="card"><div class="num">LAYER 6</div><h3>生态与组织</h3><p>Cookbook、Koishi 插件、MoonPalace、Branding、Pages。降低接入与传播成本。</p></div>
+      </div>
+      <div class="callout warn"><b>注意：</b>本页把归档、迁移、纯元数据仓库也算进“全部”，因为问题问的是“所有项目”。如果你只关心可用的活跃项目，用下方筛选器看“活跃”，或直接读四条主线。</div>
+    </section>
+
+    <section id="mainlines">
+      <div class="sec-head"><span class="sec-num">02</span><h2>四条技术主线</h2></div>
+      <p class="lede">把仓库按时间与依赖串起来，Kimi 的开源路线其实很集中。</p>
+      <div class="grid2">
+        <div class="card"><div class="num">LINE 1 · 稀疏 MoE 与长上下文</div><h3>K2 → K2.5 → K3</h3><p>1T/32B 的 K2 证明万亿 MoE 可训练；K2.5 加视觉与 256K；K3 用 KDA + AttnRes 把总参推到 2.8T、上下文推到 1M。配套是 MoBA（块稀疏）、Kimi Linear（KDA 验证）、FlashKDA（kernel）。</p></div>
+        <div class="card"><div class="num">LINE 2 · Agent 产品化</div><h3>kimi-cli → kimi-code</h3><p>Python CLI 先跑通终端 Agent、MCP、ACP；kimi-code 用单二进制重做，加入视频输入、子 Agent、插件市场与 hooks；SDK / Rust / Zed / Zsh 把同一运行时铺到更多入口。</p></div>
+        <div class="card"><div class="num">LINE 3 · 训练与推理系统</div><h3>Moonlight → K2 MuonClip → Mooncake / MoonEP / checkpoint-engine</h3><p>先解决优化器可扩展性，再解决万亿 MoE 的 serving、专家并行通信与权重热更新；FlashKDA、walle、batched-benchmark 补齐 kernel、结构化输出与压测。</p></div>
+        <div class="card"><div class="num">LINE 4 · 评测与可信度</div><h3>Vendor Verifier + 原子能力基准</h3><p>K2VV/KimiVV 检查不同供应商的 toolcall 与精度；PerceptionBench/WorldVQA 把多模态能力拆成原子项；CombiBench/Kimina 覆盖形式化数学；Audio-Evalkit 统一音频评测。</p></div>
+      </div>
+    </section>
+
+    <section id="explorer" class="explorer">
+      <div class="sec-head"><span class="sec-num">03</span><h2>全部项目</h2></div>
+      <p class="lede">43 个项目 = 42 个 MoonshotAI 官方仓库 + Mooncake。按 Stars 默认排序；搜索匹配名称、仓库名、简介与类别，筛选与排序只影响显示。</p>
+      <noscript><div class="noscript">JavaScript 已禁用：下方仍会显示全部 43 个项目，但搜索、筛选与排序不可用。</div></noscript>
+      <div class="controls">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <input id="q" type="search" placeholder="搜索项目、仓库名或关键词，例如 KDA、Agent、评测" aria-label="搜索项目">
+        </div>
+        <select id="sort" aria-label="排序方式">
+          <option value="stars">Stars 从高到低</option>
+          <option value="stars-asc">Stars 从低到高</option>
+          <option value="new">创建时间从新到旧</option>
+          <option value="old">创建时间从旧到新</option>
+          <option value="name">名称 A–Z</option>
+        </select>
+      </div>
+      <div class="chips" role="group" aria-label="按类别筛选"><button class="fbtn" type="button" data-cat="all" aria-pressed="true">全部 43</button><button class="fbtn" type="button" data-cat="model" aria-pressed="false">基础模型 9</button><button class="fbtn" type="button" data-cat="architecture" aria-pressed="false">架构与研究 4</button><button class="fbtn" type="button" data-cat="agent" aria-pressed="false">Agent 与开发工具 9</button><button class="fbtn" type="button" data-cat="infra" aria-pressed="false">训练与推理基础设施 6</button><button class="fbtn" type="button" data-cat="eval" aria-pressed="false">评测与基准 7</button><button class="fbtn" type="button" data-cat="eco" aria-pressed="false">生态与组织 8</button></div>
+      <p class="count" id="count">显示 43 / 43 个项目</p>
+      <div class="grid-proj" id="grid"><a class="proj" href="kimi-cli.html"
+   data-name="kimi cli（已归档）"
+   data-cat="agent"
+   data-status="archived"
+   data-stars="11422"
+   data-created="2025-10-15"
+   data-search="kimi cli（已归档） kimi-cli moonshotai/kimi-cli python 版终端 agent，已被 kimi code cli 取代 kimi cli 是早期的 python 终端 agent，包含 kosong（llm 抽象）与 kaos（os 抽象）等包，支持 shell 命令模式、vs code 扩展、acp、zsh 集成与 mcp。仓库已于 2026 年归档，只读，不再发布、修复或提供安全更新。 agent 与开发工具 已归档">
+  <div class="top">
+    <div><div class="nm">Kimi CLI（已归档）</div><div class="repo">MoonshotAI/kimi-cli</div></div>
+    <span class="badge archived">已归档</span>
+  </div>
+  <div class="tag">Python 版终端 Agent，已被 Kimi Code CLI 取代</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 11.4k</span></div>
+</a><a class="proj" href="kimi-k2.html"
+   data-name="kimi k2"
+   data-cat="model"
+   data-status="active"
+   data-stars="11111"
+   data-created="2025-07-03"
+   data-search="kimi k2 kimi-k2 moonshotai/kimi-k2 1t 总参、32b 激活的 moe，kimi 的 agent 能力基座 2025 年 7 月发布的万亿参数 moe 模型，用 muonclip 优化器在 15.5t token 上训练且无训练不稳定。k2 instruct 以工具调用和 agent 循环著称，是后续 k2.5、k3 的起点。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi K2</div><div class="repo">MoonshotAI/Kimi-K2</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">1T 总参、32B 激活的 MoE，Kimi 的 Agent 能力基座</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 11.1k</span></div>
+</a><a class="proj" href="kimi-k3.html"
+   data-name="kimi k3"
+   data-cat="model"
+   data-status="active"
+   data-stars="9028"
+   data-created="2026-07-27"
+   data-search="kimi k3 kimi-k3 moonshotai/kimi-k3 2.8t 参数、1m 上下文的开放权重旗舰，把“3t 级”第一次开放出来 kimi 目前最强的开放权重模型。它用 kimi delta attention（kda）与 attention residuals 替换了大部分全注意力，再把 moe 稀疏度推到 896 选 16，面向长程编码、agent 知识工作与多模态推理。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi K3</div><div class="repo">MoonshotAI/Kimi-K3</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">2.8T 参数、1M 上下文的开放权重旗舰，把“3T 级”第一次开放出来</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 9.0k</span></div>
+</a><a class="proj" href="kimi-code.html"
+   data-name="kimi code cli"
+   data-cat="agent"
+   data-status="active"
+   data-stars="8088"
+   data-created="2026-05-22"
+   data-search="kimi code cli kimi-code moonshotai/kimi-code 单二进制、毫秒启动的终端编码 agent，kimi cli 的正统继任者 kimi code cli 是运行在终端里的 ai 编码 agent：能读写代码、跑 shell、搜文件、抓网页，并根据反馈决定下一步。它用官方脚本安装，不依赖 node.js；tui 面向长时间专注会话设计，还支持视频输入、对话式 mcp 配置、插件市场、子 agent 与生命周期 hooks。 agent 与开发工具 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi Code CLI</div><div class="repo">MoonshotAI/kimi-code</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">单二进制、毫秒启动的终端编码 Agent，Kimi CLI 的正统继任者</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 8.1k</span></div>
+</a><a class="proj" href="mooncake.html"
+   data-name="mooncake"
+   data-cat="infra"
+   data-status="external"
+   data-stars="6945"
+   data-created="2024-06-25"
+   data-search="mooncake mooncake kvcache-ai/mooncake kimi 的以 kvcache 为中心的推理服务平台，fast&#x27;25 最佳论文 mooncake 是 kimi 的 serving platform，核心是 kvcache-centric 的解耦架构：把 prefill 与 decode 拆到不同集群，并把 gpu 集群里闲置的 cpu、dram、ssd 组织成分布式 kv cache 池。它包含 transfer engine、store、ep/pg 等组件，已深度接入 vllm、sglang、tensorrt-llm 等生态。 训练与推理基础设施 外部核心">
+  <div class="top">
+    <div><div class="nm">Mooncake</div><div class="repo">kvcache-ai/Mooncake</div></div>
+    <span class="badge external">外部核心</span>
+  </div>
+  <div class="tag">Kimi 的以 KVCache 为中心的推理服务平台，FAST&#x27;25 最佳论文</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 6.9k</span></div>
+</a><a class="proj" href="kimi-audio.html"
+   data-name="kimi-audio"
+   data-cat="model"
+   data-status="active"
+   data-stars="4750"
+   data-created="2025-04-25"
+   data-search="kimi-audio kimi-audio moonshotai/kimi-audio 一个模型统一音频理解、生成与端到端语音对话 kimi-audio 是音频基础模型：音频 tokenizer 同时产出连续声学特征与 12.5hz 离散语义 token，核心 llm 从 qwen2.5-7b 初始化，输出端用 flow matching + bigvgan 做流式 detokenizer。预训练数据超过 1300 万小时。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi-Audio</div><div class="repo">MoonshotAI/Kimi-Audio</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">一个模型统一音频理解、生成与端到端语音对话</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 4.8k</span></div>
+</a><a class="proj" href="attention-residuals.html"
+   data-name="attention residuals"
+   data-cat="architecture"
+   data-status="research"
+   data-stars="3565"
+   data-created="2026-03-15"
+   data-search="attention residuals attention-residuals moonshotai/attention-residuals 把固定残差累加换成深度方向的注意力 attnres 是标准残差连接的替代品：每层用一个可学习的 pseudo-query，对之前所有层的输出做 softmax 注意力，从而按输入内容选择性聚合历史表示。block attnres 把层分块，把显存从 o(ld) 降到 o(nd)，约 8 块就能接近 full 版本。 架构与研究 研究发布">
+  <div class="top">
+    <div><div class="nm">Attention Residuals</div><div class="repo">MoonshotAI/Attention-Residuals</div></div>
+    <span class="badge research">研究发布</span>
+  </div>
+  <div class="tag">把固定残差累加换成深度方向的注意力</div>
+  <div class="bot"><span>架构与研究</span><span class="stars">★ 3.6k</span></div>
+</a><a class="proj" href="kimi-k1-5.html"
+   data-name="kimi k1.5"
+   data-cat="model"
+   data-status="research"
+   data-stars="3465"
+   data-created="2025-01-19"
+   data-search="kimi k1.5 kimi-k1.5 moonshotai/kimi-k1.5 用 128k 长上下文 rl 做出 o1 级推理，不靠 mcts 和过程奖励 k1.5 是技术报告型仓库。它提出一套简化的长-cot 强化学习框架：把 rl 上下文拉到 128k，用 partial rollouts 复用轨迹，用 online mirror descent 的变体做稳定策略优化；官方称不需要 mcts、价值函数或过程奖励模型。 基础模型 研究发布">
+  <div class="top">
+    <div><div class="nm">Kimi k1.5</div><div class="repo">MoonshotAI/Kimi-k1.5</div></div>
+    <span class="badge research">研究发布</span>
+  </div>
+  <div class="tag">用 128K 长上下文 RL 做出 o1 级推理，不靠 MCTS 和过程奖励</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 3.5k</span></div>
+</a><a class="proj" href="kimi-k2-5.html"
+   data-name="kimi k2.5"
+   data-cat="model"
+   data-status="active"
+   data-stars="2320"
+   data-created="2026-01-30"
+   data-search="kimi k2.5 kimi-k2.5 moonshotai/kimi-k2.5 在 k2 上继续吃 15t 视觉+文本 token，加入 agent swarm k2.5 在 k2-base 上继续预训练约 15t 混合视觉与文本 token，保持 1t/32b 的 moe 规模，把上下文扩到 256k，并引入“agent swarm”：把复杂任务拆成并行子任务，交给动态实例化的领域 agent。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi K2.5</div><div class="repo">MoonshotAI/Kimi-K2.5</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">在 K2 上继续吃 15T 视觉+文本 token，加入 Agent Swarm</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 2.3k</span></div>
+</a><a class="proj" href="moba.html"
+   data-name="moba"
+   data-cat="architecture"
+   data-status="active"
+   data-stars="2197"
+   data-created="2025-02-17"
+   data-search="moba moba moonshotai/moba 把 moe 的思路搬到注意力：每个 query 只挑最相关的 kv 块 moba（mixture of block attention）把上下文切成块，每个 query token 用 parameter-less top-k 门控选择最相关的若干 kv 块，从而把注意力计算从全量降到稀疏。它可以在 full 与 sparse 之间切换，已用于 kimi 的长上下文请求。 架构与研究 活跃">
+  <div class="top">
+    <div><div class="nm">MoBA</div><div class="repo">MoonshotAI/MoBA</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">把 MoE 的思路搬到注意力：每个 query 只挑最相关的 KV 块</div>
+  <div class="bot"><span>架构与研究</span><span class="stars">★ 2.2k</span></div>
+</a><a class="proj" href="kimi-linear.html"
+   data-name="kimi linear"
+   data-cat="model"
+   data-status="active"
+   data-stars="1626"
+   data-created="2025-10-29"
+   data-search="kimi linear kimi-linear moonshotai/kimi-linear 3:1 的 kda/mla 混合注意力，1m 上下文下 kv cache 降 75% kimi linear 是混合线性注意力架构：核心是 kimi delta attention（kda），对 gated deltanet 的门控做了细化；模型按 3:1 混合 kda 与全局 mla，48b 总参、3b 激活，1m 上下文，训练 5.7t token。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi Linear</div><div class="repo">MoonshotAI/Kimi-Linear</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">3:1 的 KDA/MLA 混合注意力，1M 上下文下 KV cache 降 75%</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 1.6k</span></div>
+</a><a class="proj" href="moonlight.html"
+   data-name="moonlight"
+   data-cat="model"
+   data-status="active"
+   data-stars="1557"
+   data-created="2025-02-22"
+   data-search="moonlight moonlight moonshotai/moonlight 证明 muon 优化器能撑起 llm 训练的 3b/16b moe moonlight 用 muon 在 5.7t token 上训练 3b/16b moe，解决了两件事：给 muon 加 weight decay，以及按参数调整更新尺度，让不同矩阵/非矩阵参数的更新 rms 一致。官方称约用 adamw 52% 的 flops 达到同等效果。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Moonlight</div><div class="repo">MoonshotAI/Moonlight</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">证明 Muon 优化器能撑起 LLM 训练的 3B/16B MoE</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 1.6k</span></div>
+</a><a class="proj" href="kimi-dev.html"
+   data-name="kimi-dev"
+   data-cat="model"
+   data-status="active"
+   data-stars="1363"
+   data-created="2025-06-16"
+   data-search="kimi-dev kimi-dev moonshotai/kimi-dev 72b 开源编码模型，swe-bench verified 60.4% kimi-dev-72b 面向真实仓库的 issue resolution。它用大规模 rl 在 docker 里跑仓库，只有整个测试套件通过才给奖励；推理采用两阶段：先做文件级定位，再把完整文件交给修复步骤。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi-Dev</div><div class="repo">MoonshotAI/Kimi-Dev</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">72B 开源编码模型，SWE-bench Verified 60.4%</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 1.4k</span></div>
+</a><a class="proj" href="flashkda.html"
+   data-name="flashkda"
+   data-cat="infra"
+   data-status="active"
+   data-stars="1293"
+   data-created="2026-04-20"
+   data-search="flashkda flashkda moonshotai/flashkda 基于 cutlass 的 kimi delta attention 高性能 kernel flashkda 是 kda 的 cuda kernel 实现，用 cutlass 写前向，面向 sm90 及以上、cuda 12.9 及以上。安装后会被 flash-linear-attention 的 chunk_kda 自动分发为后端；也可以用 fla_flash_kda=0 退回 triton。 训练与推理基础设施 活跃">
+  <div class="top">
+    <div><div class="nm">FlashKDA</div><div class="repo">MoonshotAI/FlashKDA</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">基于 CUTLASS 的 Kimi Delta Attention 高性能 kernel</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 1.3k</span></div>
+</a><a class="proj" href="kimi-vl.html"
+   data-name="kimi-vl"
+   data-cat="model"
+   data-status="active"
+   data-stars="1229"
+   data-created="2025-04-09"
+   data-search="kimi-vl kimi-vl moonshotai/kimi-vl 16b moe、只激活 2.8b 的高效视觉语言模型 kimi-vl 用 moonvit 原生分辨率视觉编码器 + moe 语言解码器，总参 16b、激活 2.8b，支持 128k 上下文。它强调长视频/长文档、ocr、多图理解与 os agent，并提供 instruct、thinking、thinking-2506 三个版本。 基础模型 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi-VL</div><div class="repo">MoonshotAI/Kimi-VL</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">16B MoE、只激活 2.8B 的高效视觉语言模型</div>
+  <div class="bot"><span>基础模型</span><span class="stars">★ 1.2k</span></div>
+</a><a class="proj" href="moonep.html"
+   data-name="moonep"
+   data-cat="infra"
+   data-status="active"
+   data-stars="1197"
+   data-created="2026-07-24"
+   data-search="moonep moonep moonshotai/moonep 用动态冗余专家，把 moe 的专家并行通信做成“完美均衡” moonep 是专家并行（ep）通信库。它不按路由结果被动接收倾斜的 token，而是在线规划少量冗余专家并预取，使每个 rank 恰好收到 s×k 个 token；反向传播时把冗余专家的梯度归约回 home rank。配合 zero-copy 与静态 shape，避免 deepep 在路由倾斜时的长尾与显存碎片。 训练与推理基础设施 活跃">
+  <div class="top">
+    <div><div class="nm">MoonEP</div><div class="repo">MoonshotAI/MoonEP</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">用动态冗余专家，把 MoE 的专家并行通信做成“完美均衡”</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 1.2k</span></div>
+</a><a class="proj" href="checkpoint-engine.html"
+   data-name="checkpoint engine"
+   data-cat="infra"
+   data-status="active"
+   data-stars="1023"
+   data-created="2025-09-08"
+   data-search="checkpoint engine checkpoint-engine moonshotai/checkpoint-engine 约 20 秒把 1t 参数权重同步到上千张 gpu checkpoint engine 是推理引擎旁的权重更新中间件，面向 rl 训练中“训练完立刻给推理引擎换权重”的场景。它提供 broadcast 与 p2p 两种实现：前者适合同步更新大量实例，后者用于动态加入的新实例；官方称更新 kimi-k2（1t）跨数千 gpu 约 20 秒。 训练与推理基础设施 活跃">
+  <div class="top">
+    <div><div class="nm">Checkpoint Engine</div><div class="repo">MoonshotAI/checkpoint-engine</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">约 20 秒把 1T 参数权重同步到上千张 GPU</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 1.0k</span></div>
+</a><a class="proj" href="k2-vendor-verifier.html"
+   data-name="k2 vendor verifier"
+   data-cat="eval"
+   data-status="active"
+   data-stars="600"
+   data-created="2025-09-09"
+   data-search="k2 vendor verifier k2-vendor-verifier moonshotai/k2-vendor-verifier 检查各家 k2 api 的工具调用是不是“货真价实” k2vv 起因是社区反馈不同供应商的 k2 toolcall 精度差异很大。它用 toolcall-trigger similarity、toolcall-schema accuracy 等指标对比各家的 k2 api，帮助用户发现“便宜但工具调用不可靠”的供应商。该方案现已被 kimi-vendor-verifier 更新替代。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">K2 Vendor Verifier</div><div class="repo">MoonshotAI/K2-Vendor-Verifier</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">检查各家 K2 API 的工具调用是不是“货真价实”</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 600</span></div>
+</a><a class="proj" href="kimi-agent-sdk.html"
+   data-name="kimi agent sdk"
+   data-cat="agent"
+   data-status="active"
+   data-stars="580"
+   data-created="2026-01-08"
+   data-search="kimi agent sdk kimi-agent-sdk moonshotai/kimi-agent-sdk 用 go / node / python 把 kimi cli 当作 agent 运行时嵌进产品 kimi agent sdk 是一组多语言薄客户端，复用 kimi code（kimi cli）的配置、工具、skills 与 mcp server。它把 cli 当执行引擎，向外提供流式响应、工具调用、审批请求与会话编排能力。 agent 与开发工具 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi Agent SDK</div><div class="repo">MoonshotAI/kimi-agent-sdk</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">用 Go / Node / Python 把 Kimi CLI 当作 Agent 运行时嵌进产品</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 580</span></div>
+</a><a class="proj" href="kosong.html"
+   data-name="kosong"
+   data-cat="agent"
+   data-status="moved"
+   data-stars="524"
+   data-created="2025-09-08"
+   data-search="kosong kosong moonshotai/kosong agent 应用的 llm 抽象层（已并入 kimi-cli monorepo） kosong 原本是 kimi agent 的 llm 抽象层，统一 messages、tool schemas 与 provider。现在开发已迁移到 kimi-cli 仓库的 packages/kosong，本仓库只保留迁移提示。 agent 与开发工具 已迁移">
+  <div class="top">
+    <div><div class="nm">Kosong</div><div class="repo">MoonshotAI/kosong</div></div>
+    <span class="badge moved">已迁移</span>
+  </div>
+  <div class="tag">Agent 应用的 LLM 抽象层（已并入 kimi-cli monorepo）</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 524</span></div>
+</a><a class="proj" href="kimina-prover-preview.html"
+   data-name="kimina-prover preview"
+   data-cat="eval"
+   data-status="research"
+   data-stars="380"
+   data-created="2025-04-14"
+   data-search="kimina-prover preview kimina-prover-preview moonshotai/kimina-prover-preview 72b 的 lean 4 形式化证明模型，minif2f 首次突破 80% numina 与 kimi 团队合作的形式化推理模型。它用 whole-proof generation + rl，在 lean 4 中生成完整证明，不依赖证明器反馈；32k 上下文，72b 规模，minif2f 通过率 80%+，pass@32 68.85%。 评测与基准 研究发布">
+  <div class="top">
+    <div><div class="nm">Kimina-Prover Preview</div><div class="repo">MoonshotAI/Kimina-Prover-Preview</div></div>
+    <span class="badge research">研究发布</span>
+  </div>
+  <div class="tag">72B 的 Lean 4 形式化证明模型，miniF2F 首次突破 80%</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 380</span></div>
+</a><a class="proj" href="moonpalace.html"
+   data-name="moonpalace（月宫）"
+   data-cat="eco"
+   data-status="active"
+   data-stars="261"
+   data-created="2024-07-30"
+   data-search="moonpalace（月宫） moonpalace moonshotai/moonpalace 把 base_url 指向 localhost:9988，就能抓 kimi api 的完整请求 moonpalace 是 moonshot ai 提供的 api 调试代理：启动后把代码里的 base_url 换成 http://localhost:9988，它就会捕获完整请求，包括网络错误时的现场；支持按 request_id / chatcmpl_id 检索、按 predicate 筛选、一键导出 badcase。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">MoonPalace（月宫）</div><div class="repo">MoonshotAI/moonpalace</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">把 base_url 指向 localhost:9988，就能抓 Kimi API 的完整请求</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 261</span></div>
+</a><a class="proj" href="perceptionbench.html"
+   data-name="perceptionbench"
+   data-cat="eval"
+   data-status="active"
+   data-stars="218"
+   data-created="2026-07-23"
+   data-search="perceptionbench perceptionbench moonshotai/perceptionbench 把“视觉感知”拆成 10 个原子能力来考 perceptionbench 针对多模态模型的原子视觉感知：从 42 个现有 benchmark 的失败点归因出 10 类感知能力，构造 3000 道短答案题。16 个前沿 mllm 无一超过 60%，说明感知仍是短板，且总分接近的模型能力画像可能完全不同。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">PerceptionBench</div><div class="repo">MoonshotAI/PerceptionBench</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">把“视觉感知”拆成 10 个原子能力来考</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 218</span></div>
+</a><a class="proj" href="kimi-vendor-verifier.html"
+   data-name="kimi vendor verifier"
+   data-cat="eval"
+   data-status="active"
+   data-stars="189"
+   data-created="2026-01-02"
+   data-search="kimi vendor verifier kimi-vendor-verifier moonshotai/kimi-vendor-verifier 跨供应商验证 k3 的精度与功能一致性 kimi vendor verifier 用 inspect-ai 在多家供应商的 k3 api 上跑 ocrbench、mmmu pro vision、beam（1m）、deepswe，并额外做参数约束、tool call json schema、k3 特性、prompt token 等预检，公布逐家结果。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi Vendor Verifier</div><div class="repo">MoonshotAI/Kimi-Vendor-Verifier</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">跨供应商验证 K3 的精度与功能一致性</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 189</span></div>
+</a><a class="proj" href="kimi-audio-evalkit.html"
+   data-name="kimi-audio-evalkit"
+   data-cat="eval"
+   data-status="active"
+   data-stars="172"
+   data-created="2025-04-25"
+   data-search="kimi-audio-evalkit kimi-audio-evalkit moonshotai/kimi-audio-evalkit 音频大模型的可复现评测流水线 kimi-audio-evalkit（almevalkit）是音频 llm 的评测框架：统一模型适配、数据集格式与指标，支持 asr、mqa、openqa、refqa 四类任务，覆盖 kimi-audio、qwen2-audio、glm4-voice、baichuan-audio、stepaudio 等模型。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi-Audio-Evalkit</div><div class="repo">MoonshotAI/Kimi-Audio-Evalkit</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">音频大模型的可复现评测流水线</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 172</span></div>
+</a><a class="proj" href="nano-kpu.html"
+   data-name="nano-kpu"
+   data-cat="architecture"
+   data-status="demo"
+   data-stars="142"
+   data-created="2026-07-23"
+   data-search="nano-kpu nano-kpu moonshotai/nano-kpu kimi k3 自己设计的一颗纳米级推理芯片 rtl nano-kpu 是一颗混合注意力 moe transformer 推理芯片的 rtl 设计，完全由 kimi k3 完成：kda 线性注意力、nope mla、sigmoid 路由 moe（top-2 + 1 共享专家）、attention residual mixing，int4 group-128 权重，逐 token 解码。 架构与研究 演示项目">
+  <div class="top">
+    <div><div class="nm">nano-kpu</div><div class="repo">MoonshotAI/nano-kpu</div></div>
+    <span class="badge demo">演示项目</span>
+  </div>
+  <div class="tag">Kimi K3 自己设计的一颗纳米级推理芯片 RTL</div>
+  <div class="bot"><span>架构与研究</span><span class="stars">★ 142</span></div>
+</a><a class="proj" href="worldvqa.html"
+   data-name="worldvqa"
+   data-cat="eval"
+   data-status="active"
+   data-stars="123"
+   data-created="2026-01-26"
+   data-search="worldvqa worldvqa moonshotai/worldvqa 3,500 题测多模态模型“到底记住了多少世界知识” worldvqa 把视觉知识检索与推理拆开，专门测“模型记住了什么”。数据集含 3500 个 vqa 对、9 个类别，从常见头部类别到长尾稀有实体分层采样，并注意语言与文化多样性。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">WorldVQA</div><div class="repo">MoonshotAI/WorldVQA</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">3,500 题测多模态模型“到底记住了多少世界知识”</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 123</span></div>
+</a><a class="proj" href="minitriton.html"
+   data-name="minitriton"
+   data-cat="architecture"
+   data-status="demo"
+   data-stars="86"
+   data-created="2026-07-23"
+   data-search="minitriton minitriton moonshotai/minitriton kimi k3 从零写的教学级 tile 编译器 minitriton 是一个教学级但工程完整的 tile 编译器：python 内嵌 tile dsl 经 mlir 降到 ptx，在 nvidia gpu 上运行；上面还有 eager tensor / autograd / nn 库。flash attention、kda 等应用 kernel 全部用 dsl 写，编译器本身只提供 tile 级原语。 架构与研究 演示项目">
+  <div class="top">
+    <div><div class="nm">MiniTriton</div><div class="repo">MoonshotAI/minitriton</div></div>
+    <span class="badge demo">演示项目</span>
+  </div>
+  <div class="tag">Kimi K3 从零写的教学级 tile 编译器</div>
+  <div class="bot"><span>架构与研究</span><span class="stars">★ 86</span></div>
+</a><a class="proj" href="kimi-researcher.html"
+   data-name="kimi-researcher"
+   data-cat="agent"
+   data-status="research"
+   data-stars="82"
+   data-created="2025-06-20"
+   data-search="kimi-researcher kimi-researcher moonshotai/kimi-researcher 用端到端 agentic rl 训出的搜索研究 agent kimi-researcher 是一个自主的多轮搜索与推理 agent，平均每个任务 23 个推理步骤、探索 200+ url。它基于内部 k 系列模型，完全通过端到端 agentic rl 训练；hle pass@1 从 8.6% 提升到 26.9%，pass@4 40.17%。 agent 与开发工具 研究发布">
+  <div class="top">
+    <div><div class="nm">Kimi-Researcher</div><div class="repo">MoonshotAI/Kimi-Researcher</div></div>
+    <span class="badge research">研究发布</span>
+  </div>
+  <div class="tag">用端到端 Agentic RL 训出的搜索研究 Agent</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 82</span></div>
+</a><a class="proj" href="kimi-agent-rs.html"
+   data-name="kimi agent (rust)"
+   data-cat="agent"
+   data-status="research"
+   data-stars="75"
+   data-created="2026-02-06"
+   data-search="kimi agent (rust) kimi-agent-rs moonshotai/kimi-agent-rs kimi cli 的 rust 重写，wire 协议与 python 版严格兼容 kimi-agent-rs 是 kimi code cli 的 rust 实现，定位为“wire-only json-rpc agent server over stdio”。工作区包含 kimi-agent（主二进制、工具、agent 循环、mcp）、kosong（llm 抽象）、kaos（os 抽象）三个 crate。 agent 与开发工具 研究发布">
+  <div class="top">
+    <div><div class="nm">Kimi Agent (Rust)</div><div class="repo">MoonshotAI/kimi-agent-rs</div></div>
+    <span class="badge research">研究发布</span>
+  </div>
+  <div class="tag">Kimi CLI 的 Rust 重写，wire 协议与 Python 版严格兼容</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 75</span></div>
+</a><a class="proj" href="zsh-kimi-cli.html"
+   data-name="zsh-kimi-cli"
+   data-cat="agent"
+   data-status="active"
+   data-stars="67"
+   data-created="2025-10-16"
+   data-search="zsh-kimi-cli zsh-kimi-cli moonshotai/zsh-kimi-cli 在 zsh 里按 ctrl-x，直接跟 kimi 对话 一个很小的 zsh 插件：按 ctrl-x 进入 kimi cli 模式，再按一次退出。支持手动 source、oh my zsh、antigen、zinit、znap、fig、zplug 等常见插件管理器。 agent 与开发工具 活跃">
+  <div class="top">
+    <div><div class="nm">zsh-kimi-cli</div><div class="repo">MoonshotAI/zsh-kimi-cli</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">在 Zsh 里按 Ctrl-X，直接跟 Kimi 对话</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 67</span></div>
+</a><a class="proj" href="combibench.html"
+   data-name="combibench"
+   data-cat="eval"
+   data-status="active"
+   data-stars="56"
+   data-created="2025-04-28"
+   data-search="combibench combibench moonshotai/combibench 100 道 lean 4 组合数学证明题 combibench 是首个专注组合数学的形式化基准，基于 lean 4，含 100 道不同难度与知识层次的题目。题目来自 imo 2000 年后的组合题、brualdi 教材 14 章各 3 题、hackmath 与其它竞赛，并提供 leaderboard 与两阶段 fine-eval。 评测与基准 活跃">
+  <div class="top">
+    <div><div class="nm">CombiBench</div><div class="repo">MoonshotAI/CombiBench</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">100 道 Lean 4 组合数学证明题</div>
+  <div class="bot"><span>评测与基准</span><span class="stars">★ 56</span></div>
+</a><a class="proj" href="awesome-moonshot-api.html"
+   data-name="awesome-moonshot-api"
+   data-cat="eco"
+   data-status="active"
+   data-stars="41"
+   data-created="2024-02-06"
+   data-search="awesome-moonshot-api awesome-moonshot-api moonshotai/awesome-moonshot-api moonshot api 生态项目清单 一份 curated list，收录与 moonshot api 相关的开源项目：kimi copilot 浏览器扩展、langchain、llamaindex、dify、lobechat、openai translator、huixiangdou、koishi、nonebot 等。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">awesome-moonshot-api</div><div class="repo">MoonshotAI/awesome-moonshot-api</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Moonshot API 生态项目清单</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 41</span></div>
+</a><a class="proj" href="walle.html"
+   data-name="walle"
+   data-cat="infra"
+   data-status="active"
+   data-stars="29"
+   data-created="2025-07-18"
+   data-search="walle walle moonshotai/walle moonshot 风格的 json schema 校验器，四档严格度 walle 是 moonshot ai 使用的 json schema 校验器，核心用 go 写，提供 python 绑定与 cli。它把校验分成 ultra/default、strict、lite、loose 四档：strict 是 moonshot 服务端做高效结构化生成所需的最宽松级别，ultra 则包含更多“无害但严格”的检查。 训练与推理基础设施 活跃">
+  <div class="top">
+    <div><div class="nm">walle</div><div class="repo">MoonshotAI/walle</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Moonshot 风格的 JSON Schema 校验器，四档严格度</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 29</span></div>
+</a><a class="proj" href="moonshotai-cookbook.html"
+   data-name="moonshotai cookbook"
+   data-cat="eco"
+   data-status="active"
+   data-stars="20"
+   data-created="2023-11-10"
+   data-search="moonshotai cookbook moonshotai-cookbook moonshotai/moonshotai-cookbook moonshot api 的示例代码与指南 官方 cookbook：用 python 示例演示 moonshot api 的常见任务。需要 moonshot 账号与 api key；readme 很短，内容以仓库里的 notebook/脚本为主。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">MoonshotAI Cookbook</div><div class="repo">MoonshotAI/MoonshotAI-Cookbook</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Moonshot API 的示例代码与指南</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 20</span></div>
+</a><a class="proj" href="pykaos.html"
+   data-name="pykaos"
+   data-cat="agent"
+   data-status="moved"
+   data-stars="20"
+   data-created="2025-11-19"
+   data-search="pykaos pykaos moonshotai/pykaos agent 的轻量 os 抽象层（已并入 kimi-cli monorepo） pykaos 是 kimi agent 的 os 抽象层，提供 localkaos、路径语义与沙箱相关能力。开发已迁移到 kimi-cli 仓库的 packages/kaos，本仓库只保留迁移提示。 agent 与开发工具 已迁移">
+  <div class="top">
+    <div><div class="nm">PyKAOS</div><div class="repo">MoonshotAI/pykaos</div></div>
+    <span class="badge moved">已迁移</span>
+  </div>
+  <div class="tag">Agent 的轻量 OS 抽象层（已并入 kimi-cli monorepo）</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 20</span></div>
+</a><a class="proj" href="kimi-code-zed-extension.html"
+   data-name="kimi cli zed extension"
+   data-cat="agent"
+   data-status="active"
+   data-stars="13"
+   data-created="2025-12-02"
+   data-search="kimi cli zed extension kimi-code-zed-extension moonshotai/kimi-code-zed-extension 在 zed 的 agent panel 里直接用 kimi code 把 kimi cli 作为 acp（agent client protocol）agent 接进 zed 编辑器。扩展会自动下载并配置二进制，首次使用通过 /setup 选择 provider 并输入 api key，之后可以在 zed 里直接开 kimi 线程。 agent 与开发工具 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi CLI Zed Extension</div><div class="repo">MoonshotAI/kimi-code-zed-extension</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">在 Zed 的 Agent Panel 里直接用 Kimi Code</div>
+  <div class="bot"><span>Agent 与开发工具</span><span class="stars">★ 13</span></div>
+</a><a class="proj" href="koishi-plugin-moonshot-api-plus.html"
+   data-name="koishi-plugin-moonshot-api-plus"
+   data-cat="eco"
+   data-status="active"
+   data-stars="5"
+   data-created="2024-03-13"
+   data-search="koishi-plugin-moonshot-api-plus koishi-plugin-moonshot-api-plus moonshotai/koishi-plugin-moonshot-api-plus koishi 的社区增强版 moonshot api 插件 koishi-plugin-moonshot-api 的社区增强版，发布在 npm。readme 只有一个 npm 徽章，没有使用说明；仓库创建于 2024-03，之后未更新。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">koishi-plugin-moonshot-api-plus</div><div class="repo">MoonshotAI/koishi-plugin-moonshot-api-plus</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Koishi 的社区增强版 Moonshot API 插件</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 5</span></div>
+</a><a class="proj" href="branding-guide.html"
+   data-name="kimi branding guide"
+   data-cat="eco"
+   data-status="active"
+   data-stars="3"
+   data-created="2025-12-04"
+   data-search="kimi branding guide branding-guide moonshotai/branding-guide kimi 品牌视觉规范页 一个单页 html，展示 kimi 的 logo、配色与不同场景下的品牌使用示例。它不是代码库，也不是设计系统文档，更像对外公开的品牌规范页面。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">Kimi Branding Guide</div><div class="repo">MoonshotAI/Branding-Guide</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Kimi 品牌视觉规范页</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 3</span></div>
+</a><a class="proj" href="batched-benchmark.html"
+   data-name="batched-benchmark"
+   data-cat="infra"
+   data-status="active"
+   data-stars="3"
+   data-created="2024-04-19"
+   data-search="batched-benchmark batched-benchmark moonshotai/batched-benchmark 用 sharegpt 和 ob 批量压测 vllm 的内部工具 一套 vllm 批量测速脚本：从 sharegpt 生成固定 token 长度的 prompts，用 ob 做原生或批量 benchmark。readme 以中文为主，ob 的可执行文件未开源，需要邮件联系获取。 训练与推理基础设施 活跃">
+  <div class="top">
+    <div><div class="nm">batched-benchmark</div><div class="repo">MoonshotAI/batched-benchmark</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">用 ShareGPT 和 OB 批量压测 vLLM 的内部工具</div>
+  <div class="bot"><span>训练与推理基础设施</span><span class="stars">★ 3</span></div>
+</a><a class="proj" href="github-org.html"
+   data-name="moonshotai/.github"
+   data-cat="eco"
+   data-status="meta"
+   data-stars="2"
+   data-created="2023-03-28"
+   data-search="moonshotai/.github .github moonshotai/.github 组织级 github 配置与 profile moonshotai 组织的特殊仓库：存放 profile readme、组织级 license 与 .gitignore。它不包含产品代码，但决定了组织主页展示什么。 生态与组织 组织基建">
+  <div class="top">
+    <div><div class="nm">MoonshotAI/.github</div><div class="repo">MoonshotAI/.github</div></div>
+    <span class="badge meta">组织基建</span>
+  </div>
+  <div class="tag">组织级 GitHub 配置与 profile</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 2</span></div>
+</a><a class="proj" href="moonshotai-github-io.html"
+   data-name="moonshotai.github.io"
+   data-cat="eco"
+   data-status="meta"
+   data-stars="2"
+   data-created="2023-03-28"
+   data-search="moonshotai.github.io moonshotai.github.io moonshotai/moonshotai.github.io 组织 github pages 的跳转页（combibench 例外） 这是 moonshotai 组织的 github pages 根域。它把访问者重定向到 moonshot.cn，但保留 combibench 相关路径，用于让 combibench 的 leaderboard 继续可访问。 生态与组织 组织基建">
+  <div class="top">
+    <div><div class="nm">moonshotai.github.io</div><div class="repo">MoonshotAI/moonshotai.github.io</div></div>
+    <span class="badge meta">组织基建</span>
+  </div>
+  <div class="tag">组织 GitHub Pages 的跳转页（CombiBench 例外）</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 2</span></div>
+</a><a class="proj" href="koishi-plugin-moonshot-api.html"
+   data-name="koishi-plugin-moonshot-api"
+   data-cat="eco"
+   data-status="active"
+   data-stars="0"
+   data-created="2024-03-08"
+   data-search="koishi-plugin-moonshot-api koishi-plugin-moonshot-api moonshotai/koishi-plugin-moonshot-api koishi 聊天机器人的官方 moonshot api 插件 koishi 是跨平台聊天机器人框架；这个插件把 moonshot api 接进 koishi。仓库创建于 2024-03，之后没有更新，readme 只有一句介绍。 生态与组织 活跃">
+  <div class="top">
+    <div><div class="nm">koishi-plugin-moonshot-api</div><div class="repo">MoonshotAI/koishi-plugin-moonshot-api</div></div>
+    <span class="badge active">活跃</span>
+  </div>
+  <div class="tag">Koishi 聊天机器人的官方 Moonshot API 插件</div>
+  <div class="bot"><span>生态与组织</span><span class="stars">★ 0</span></div>
+</a></div>
+    </section>
+
+    <section id="timeline">
+      <div class="sec-head"><span class="sec-num">04</span><h2>时间线</h2></div>
+      <p class="lede">按首次发布/创建时间挑选的关键节点；完整日期见每个项目页。</p>
+      <ol class="timeline"><li><span class="when">2023-03</span><span class="what"><a href="github-org.html">.github</a></span><span class="desc">组织成立，先有 profile 与默认配置。</span></li><li><span class="when">2024-06</span><span class="what"><a href="mooncake.html">Mooncake</a></span><span class="desc">Kimi 的 serving platform 开源，后来拿到 FAST&#x27;25 最佳论文。</span></li><li><span class="when">2024-07</span><span class="what"><a href="moonpalace.html">MoonPalace</a></span><span class="desc">API 调试代理上线，解决“请求到底发了什么”。</span></li><li><span class="when">2025-01</span><span class="what"><a href="kimi-k1-5.html">Kimi k1.5</a></span><span class="desc">长上下文 RL 报告，o1 级推理不靠 MCTS/PRM。</span></li><li><span class="when">2025-02</span><span class="what"><a href="moba.html">MoBA / Moonlight</a></span><span class="desc">长上下文块稀疏注意力；Muon 可扩展性验证。</span></li><li><span class="when">2025-04</span><span class="what"><a href="kimi-vl.html">Kimi-VL / Kimi-Audio / Kimina / CombiBench</a></span><span class="desc">多模态、音频、形式化证明与组合数学基准集中发布。</span></li><li><span class="when">2025-06</span><span class="what"><a href="kimi-dev.html">Kimi-Dev / Kimi-Researcher</a></span><span class="desc">编码模型与搜索 Agent，展示 RL 在真实任务上的效果。</span></li><li><span class="when">2025-07</span><span class="what"><a href="kimi-k2.html">Kimi K2</a></span><span class="desc">1T MoE、MuonClip，Agent 能力成为主线。</span></li><li><span class="when">2025-09</span><span class="what"><a href="checkpoint-engine.html">checkpoint-engine / K2VV</a></span><span class="desc">万亿权重 20 秒同步；供应商 toolcall 校验。</span></li><li><span class="when">2025-10</span><span class="what"><a href="kimi-linear.html">Kimi Linear / kimi-cli</a></span><span class="desc">KDA 混合线性注意力；Python 终端 Agent。</span></li><li><span class="when">2026-01</span><span class="what"><a href="kimi-k2-5.html">Kimi K2.5 / Agent SDK / KimiVV</a></span><span class="desc">视觉 Agent、多语言 SDK、跨供应商验证。</span></li><li><span class="when">2026-03</span><span class="what"><a href="attention-residuals.html">Attention Residuals</a></span><span class="desc">用深度方向注意力替代固定残差。</span></li><li><span class="when">2026-05</span><span class="what"><a href="kimi-code.html">kimi-code</a></span><span class="desc">单二进制终端 Agent，接替 Python CLI。</span></li><li><span class="when">2026-07</span><span class="what"><a href="kimi-k3.html">Kimi K3 / MoonEP / nano-kpu / minitriton / PerceptionBench</a></span><span class="desc">2.8T 旗舰与一整套系统/评测配套。</span></li><li><span class="when">2026-10</span><span class="what"><a href="kimi-code.html">kimi-code 持续更新</a></span><span class="desc">最近 push：2026-10-31。</span></li></ol>
+    </section>
+
+    <section id="method">
+      <div class="sec-head"><span class="sec-num">05</span><h2>方法与来源</h2></div>
+      <div class="grid2">
+        <div class="card"><h3>数据</h3><p>仓库清单、Stars、Forks、语言、许可证、创建/推送时间来自 GitHub REST API（<code>orgs/MoonshotAI/repos</code>），抓取于 2026-11-01。项目内容来自各仓库 README。</p></div>
+        <div class="card"><h3>分类</h3><p>6 个类别是编辑归类，依据仓库主职责，不是 GitHub topics。一个项目可能跨类（如 Kimi-Dev 既是模型也服务 Agent），这里取主要用途。</p></div>
+        <div class="card"><h3>判断</h3><p>“边界与注意”“生态关系”和主线叙述含编辑判断，已尽量与 README 事实分开。没有引用来源的数字不要当作官方承诺。</p></div>
+        <div class="card"><h3>时效</h3><p>Stars、榜单、许可证与模型版本都会变。归档/迁移状态以抓取日为准；使用前请回到仓库确认。</p></div>
+      </div>
+      <div class="callout info"><b>覆盖说明：</b>MoonshotAI 组织显示 42 个公开仓库，本页覆盖全部 42 个，包括 1 个归档（kimi-cli）、2 个已迁移（kosong、pykaos）、3 个组织/站点类仓库。另加 1 个组织外核心项目 Mooncake（kvcache-ai），因为它的 README 明确写为 Kimi 的 serving platform。Mooncake 不计入 42 个官方仓库的统计，但单独有一页。其他外部依赖（Kimina Lean Server、flash-linear-attention）只在相关页面提及。</div>
+    </section>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>Kimi 开源图谱 · 42 个官方仓库 + 1 个外部核心 · 每项一页</span>
+    <span>单文件 HTML · 无 CDN · 可离线打开</span>
+  </div>
+</footer>
+<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.proj'));
+  var q = document.getElementById('q');
+  var sort = document.getElementById('sort');
+  var count = document.getElementById('count');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.fbtn'));
+  var cat = 'all';
+
+  function matches(el){
+    var text = (el.getAttribute('data-search') || '').toLowerCase();
+    var term = (q && q.value || '').trim().toLowerCase();
+    if (term && text.indexOf(term) === -1) return false;
+    if (cat !== 'all' && el.getAttribute('data-cat') !== cat) return false;
+    return true;
+  }
+
+  function sortCards(){
+    var mode = sort ? sort.value : 'stars';
+    cards.sort(function(a,b){
+      if (mode === 'name') return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+      if (mode === 'new') return b.getAttribute('data-created').localeCompare(a.getAttribute('data-created'));
+      if (mode === 'old') return a.getAttribute('data-created').localeCompare(b.getAttribute('data-created'));
+      if (mode === 'stars-asc') return (+a.getAttribute('data-stars')) - (+b.getAttribute('data-stars'));
+      return (+b.getAttribute('data-stars')) - (+a.getAttribute('data-stars'));
+    });
+    var grid = document.getElementById('grid');
+    cards.forEach(function(c){ grid.appendChild(c); });
+  }
+
+  function apply(){
+    var n = 0;
+    cards.forEach(function(el){
+      var ok = matches(el);
+      el.hidden = !ok;
+      if (ok) n++;
+    });
+    sortCards();
+    if (count) count.textContent = '显示 ' + n + ' / ' + cards.length + ' 个项目';
+  }
+
+  if (q) q.addEventListener('input', apply);
+  if (sort) sort.addEventListener('change', apply);
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      cat = btn.getAttribute('data-cat');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      apply();
+    });
+  });
+  apply();
+})();
+</script>
+</body>
+</html>

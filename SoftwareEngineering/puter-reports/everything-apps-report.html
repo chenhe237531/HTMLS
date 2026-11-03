@@ -1,0 +1,1299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Everything 全景报告：51 个浏览器应用的真实成色</title>
+<meta name="description" content="对 HeyPuter/everything 的独立分析：51 个应用分类、技术栈、测试规模、许可证差异与复用前必须回答的问题。">
+<style>
+:root{
+  --bg:#f4f4f0; --panel:#ffffff; --ink:#14171c; --muted:#5c636e;
+  --line:#dfe1e5; --line-strong:#c4c8cf; --accent:#1f4fff; --accent-soft:#e8edff;
+  --ok:#0c6b43; --ok-bg:#e4f3ea; --warn:#8a5300; --warn-bg:#fbf0d9;
+  --bad:#a3241c; --bad-bg:#fbe8e5; --hero:#0d1117; --hero-ink:#f4f6fa;
+  --radius:14px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent);text-decoration:none;text-underline-offset:2px}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.02em;font-weight:650;margin:0}
+p{margin:0 0 12px}
+ul,ol{margin:8px 0 0;padding-left:22px}
+li{margin:6px 0}
+strong{font-weight:650}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:focus-visible{outline:3px solid var(--focus,#ff8a00);outline-offset:3px;border-radius:4px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:60;background:rgba(244,244,240,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:18px;min-height:54px}
+.brand{font:650 13px/1.2 var(--mono);letter-spacing:.02em;white-space:nowrap;color:var(--ink)}
+.brand span{color:var(--accent)}
+.nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+.nav::-webkit-scrollbar{display:none}
+.nav a{font-size:13px;color:var(--muted);padding:6px 9px;border-radius:999px;white-space:nowrap}
+.nav a:hover{background:var(--panel);color:var(--ink);text-decoration:none}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:12px;top:8px;background:var(--panel);padding:8px 12px;border-radius:8px;z-index:100}
+
+/* hero */
+.hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background:
+  radial-gradient(900px 380px at 15% -10%,rgba(80,120,255,.28),transparent 60%),
+  radial-gradient(700px 340px at 95% 0%,rgba(255,180,84,.10),transparent 60%);pointer-events:none}
+.hero .wrap{position:relative;padding-top:64px;padding-bottom:0}
+.eyebrow{font:650 12px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--hero-accent,#9fb4ff)}
+.hero h1{font-size:clamp(28px,7vw,60px);max-width:17em;margin:14px 0 18px;letter-spacing:-.035em}
+.standfirst{text-wrap:pretty;font-size:clamp(16px,1.8vw,19px);line-height:1.75;color:rgba(244,246,250,.76);max-width:62ch;margin:0 0 22px}
+.meta-row{display:flex;gap:10px 22px;flex-wrap:wrap;font:12.5px/1.5 var(--mono);color:rgba(244,246,250,.58);padding-bottom:30px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:1px solid rgba(255,255,255,.14)}
+.metric{padding:20px 18px 26px 0;border-right:1px solid rgba(255,255,255,.10)}
+.metric:last-child{border-right:0}
+.metric b{display:block;font:600 clamp(24px,3.4vw,36px)/1.1 var(--mono);letter-spacing:-.04em;color:#fff}
+.metric span{display:block;margin-top:6px;font-size:12px;color:rgba(244,246,250,.60)}
+
+/* sections */
+main{display:block}
+section{padding:54px 0;border-top:1px solid var(--line);scroll-margin-top:72px}
+main{scroll-margin-top:72px}
+section:first-of-type{border-top:0}
+.section-head{display:grid;grid-template-columns:54px 1fr;gap:18px;margin-bottom:28px}
+.section-num{font:650 12px/1.6 var(--mono);color:var(--accent);padding-top:6px;letter-spacing:.08em}
+h2{font-size:clamp(24px,3vw,34px);max-width:26ch}
+.lede{color:var(--muted);max-width:72ch;margin:10px 0 0;font-size:16.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}
+.risk-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.stat-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.qa{border-top:1px solid var(--line);margin-top:8px}
+.qa-row{display:grid;grid-template-columns:44px 230px 1fr;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.qa-num{font:650 12px/1.6 var(--mono);color:var(--accent);padding-top:3px;letter-spacing:.06em}
+.qa-row h3{font-size:15.5px}
+.qa-row p{font-size:14px;color:var(--muted);margin:0}
+@media (max-width:720px){.qa-row{grid-template-columns:36px 1fr;gap:10px}.qa-row p{grid-column:2}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 18px}
+.card h3{font-size:16.5px;margin-bottom:7px}
+.card p{font-size:14.5px;color:var(--muted);margin:0}
+.card .k{display:block;font:650 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.callout{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0}
+.callout.warn{border-left-color:var(--warn);background:linear-gradient(90deg,var(--warn-bg),var(--panel) 55%)}
+.callout.bad{border-left-color:var(--bad);background:linear-gradient(90deg,var(--bad-bg),var(--panel) 55%)}
+.callout b{font-size:14px}
+.callout p{margin:5px 0 0;color:var(--muted);font-size:14.5px}
+.note{font-size:13px;color:var(--muted)}
+.hr{height:1px;background:var(--line);margin:24px 0;border:0}
+
+/* tables */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11.5px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fafaf8}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fbfbf9}
+td.num,th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+.caption{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+
+/* badges + chips */
+.badge{display:inline-block;font:650 11px/1.6 var(--mono);padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.badge.ok{color:var(--ok);background:var(--ok-bg);border-color:#bfe0cd}
+.badge.fix{color:var(--bad);background:var(--bad-bg);border-color:#efc7c1}
+.badge.limit{color:var(--warn);background:var(--warn-bg);border-color:#ecd6a8}
+.badge.agpl{color:#6b21a8;background:#f3e8ff;border-color:#e0c9f5}
+.badge.mit{color:#0c6b43;background:#e4f3ea;border-color:#bfe0cd}
+.badge.none{color:#475569;background:#eef1f5;border-color:#d6dbe3}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.chip{font:600 13px/1 var(--sans);padding:8px 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* controls */
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:20px 0 8px;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.field{display:grid;gap:5px}
+.field label{font:600 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field.search{flex:1 1 260px}
+input[type=search],select{font:14px var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;min-height:40px}
+input[type=search]{width:100%}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;min-height:40px;font-size:13.5px}
+.btn{font:600 13px var(--sans);padding:9px 13px;border-radius:9px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--ink)}
+.result-bar{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:14px 0 4px;font-size:13px;color:var(--muted)}
+.empty{display:none;border:1px dashed var(--line-strong);border-radius:12px;padding:28px;text-align:center;color:var(--muted);background:var(--panel)}
+.empty.show{display:block}
+
+/* diagram */
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 10px;overflow-x:auto}
+.diagram svg{min-width:760px}
+.diagram-hint{display:none;margin:0 0 8px;font-size:12.5px;color:var(--muted)}
+@media (max-width:720px){.diagram-hint{display:block}}
+.diagram svg{display:block;width:100%;height:auto}
+.dbox{fill:#fff;stroke:var(--line-strong);stroke-width:1.2}
+.dbox-accent{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.dtext{fill:var(--ink);font-family:var(--sans);font-weight:600}
+.dsub{fill:var(--muted);font-family:var(--sans)}
+.dash{stroke-dasharray:5 4}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:10px 4px 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:18px;height:2px;background:var(--line-strong);display:inline-block}
+.swatch.dash{background:repeating-linear-gradient(90deg,var(--line-strong) 0 5px,transparent 5px 9px)}
+
+/* steps */
+.steps{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.steps details{border-bottom:1px solid var(--line)}
+.steps details:last-child{border-bottom:0}
+.steps summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:14.5px;list-style:none;display:flex;gap:12px;align-items:baseline}
+.steps summary::-webkit-details-marker{display:none}
+.steps summary:before{content:counter(step,decimal-leading-zero);counter-increment:step;font:600 12px var(--mono);color:var(--accent);min-width:26px}
+.steps{counter-reset:step}
+.steps summary:hover{background:#fbfbf9}
+.steps summary::after{content:"+";margin-left:auto;font:600 18px/1 var(--mono);color:var(--muted)}
+.steps details[open] summary::after{content:"−"}
+.steps .body{padding:0 18px 16px 56px;color:var(--muted);font-size:14.5px}
+.steps .body p{margin:4px 0}
+.steps .body ul{margin:6px 0 0}
+pre{background:#0f141a;color:#e6edf3;padding:16px 18px;border-radius:12px;overflow:auto;font:13px/1.65 var(--mono);margin:14px 0}
+pre .c{color:#8b949e}
+code{font-family:var(--mono);font-size:.9em;background:#eceef2;padding:.1em .35em;border-radius:4px}
+pre code{background:none;padding:0;font-size:inherit}
+
+/* app directory */
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-top:16px}
+.app{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px 14px;display:flex;flex-direction:column;gap:9px;scroll-margin-top:70px}
+.app:hover{border-color:var(--line-strong)}
+.app-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.app h3{font-size:16px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.app h3 em{font-style:normal;font-size:12.5px;font-weight:500;color:var(--muted)}
+.cat{display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1.5 var(--mono);letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.app p{font-size:13.6px;line-height:1.62;color:var(--muted);margin:0}
+.alt{font-size:12.5px;color:var(--muted)}
+.alt b{color:var(--ink);font-weight:600}
+.app-stats{display:flex;gap:14px;flex-wrap:wrap;font:11.5px/1.5 var(--mono);color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
+.app-stats b{color:var(--ink);font-weight:600}
+.app-links{display:flex;gap:12px;align-items:center;font-size:12.5px;margin-top:auto}
+.tiny{font:10.5px/1.4 var(--mono);color:var(--warn)}
+
+/* category chart */
+.cat-list{display:grid;gap:2px;margin:18px 0 0}
+.cat-row{display:grid;grid-template-columns:110px 1fr 38px;gap:12px;align-items:center;width:100%;background:none;border:0;border-radius:8px;padding:7px 6px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.cat-row:hover{background:var(--panel)}
+.cat-row[aria-pressed="true"]{background:var(--panel);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.cat-name{font-size:13.5px}
+.cat-bar{height:16px;background:#e9eae6;border-radius:4px;overflow:hidden;display:block}
+.cat-bar i{display:block;height:100%;border-radius:4px}
+.cat-count{font:600 12px var(--mono);text-align:right;color:var(--muted)}
+
+/* license bar */
+.lic-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:16px 0 8px;border:1px solid var(--line)}
+.lic-bar span{display:block;height:100%}
+.lic-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.lic-legend b{color:var(--ink)}
+
+/* tiers */
+.tiers{display:grid;gap:14px}
+.tier{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.tier.head{display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.tier h3{font-size:16.5px}
+.tier .count{font:600 12px var(--mono);color:var(--muted)}
+.tier p{font-size:13.8px;color:var(--muted);margin:6px 0 8px}
+.tier .list{font-size:13.5px;color:var(--muted);line-height:1.8}
+.tier .list a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-strong)}
+.tier .list a:hover{text-decoration-color:var(--accent);color:var(--accent)}
+.tier.c{border-left:4px solid var(--bad)}
+.tier.a{border-left:4px solid var(--ok)}
+.tier.b{border-left:4px solid var(--line-strong)}
+.tier.g{border-left:4px solid #8b3a3a}
+
+/* source list */
+.sources{font-size:13.5px;color:var(--muted)}
+.sources li{margin:7px 0}
+.sources a{word-break:break-word}
+footer{padding:40px 0 64px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+@media (max-width:560px){.wide-br{display:none}}
+@media (max-width:720px){
+  .topbar .wrap{flex-wrap:wrap;gap:2px 12px;padding-top:8px;padding-bottom:4px}
+  .brand{flex:1 1 100%;font-size:12px}
+  .nav{width:100%;margin-left:0;padding-bottom:2px}
+  .nav a{font-size:12px;padding:5px 7px}
+}
+@media (max-width:720px){
+  .wrap{padding:0 18px}
+  section,main{scroll-margin-top:108px}
+  .app{scroll-margin-top:108px}
+  .js-tables .table-wrap{overflow:visible;border:0;border-radius:0;background:transparent}
+  .js-tables .table-wrap table{min-width:0;display:block;width:100%}
+  .js-tables .table-wrap thead{display:none}
+  .js-tables .table-wrap tbody{display:block}
+  .js-tables .table-wrap tr{display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 0;margin:0 0 10px}
+  .js-tables .table-wrap td{display:block;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:left}
+  .js-tables .table-wrap td:last-child{border-bottom:0}
+  .js-tables .table-wrap td:first-child::before{display:none}
+  .js-tables .table-wrap td::before{content:attr(data-label);display:block;margin-bottom:3px;font:600 10px/1.7 var(--mono);color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+  .js-tables .table-wrap td.num{text-align:left;font-family:var(--sans);white-space:normal}
+  .js-tables .table-wrap tr:hover td{background:transparent}
+  .section-head{grid-template-columns:1fr;gap:4px}
+  .section-num{padding-top:0}
+  .hero .wrap{padding-top:44px}
+  .metric{border-right:0;padding:16px 0 18px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:0 16px}
+  .cat-row{grid-template-columns:88px 1fr 30px;gap:8px}
+  .app-grid{grid-template-columns:1fr}
+  table{min-width:600px}
+  .steps .body{padding-left:18px}
+}
+@media print{
+  .topbar,.controls,.chips,.btn,.empty{display:none!important}
+  body{background:#fff;font-size:11pt}
+  .hero{background:#fff;color:#000}
+  .hero:before{display:none}
+  .hero .wrap{padding-top:0}
+  .standfirst,.meta-row,.metric span{color:#333}
+  .metric b{color:#000}
+  .metrics{border-color:#bbb}
+  section{page-break-inside:avoid}
+  .table-wrap{overflow:visible;border:1px solid #bbb}
+  table{min-width:0;font-size:9pt}
+  .diagram{overflow:visible}
+  .diagram svg{min-width:0}
+  a{color:#000;text-decoration:underline}
+}
+
+:root{--accent:#c2410c;--accent-soft:#fdece3;--hero-accent:#ffb454;--focus:#1f4fff}
+.hero{--hero:#171310}
+.hero:before{background:radial-gradient(900px 380px at 12% -10%,rgba(255,180,84,.20),transparent 60%),radial-gradient(700px 340px at 96% 0%,rgba(194,65,12,.22),transparent 60%)}
+.stat-num{font:600 28px/1.15 var(--mono);letter-spacing:-.03em;margin:2px 0 4px;color:var(--ink)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">开源项目分析 <span>/ 02</span></div>
+    <nav class="nav" aria-label="报告章节">
+      <a href="#distribution">分布</a><a href="#directory">目录</a><a href="#stack">技术栈</a>
+      <a href="#maturity">成熟度</a><a href="#license">许可证</a><a href="#reuse">复用</a><a href="#sources">方法</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
+
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Everything · 51 个浏览器应用</p>
+    <h1>51 个应用的真实成色</h1>
+    <p class="standfirst">19 天、51 个应用、3.4 万个文件。数字很抓眼，但决定能不能用的是另外几件事：哪些应用真的写完、测试长什么样、许可证是否允许你复用，以及它们对 Puter 云的依赖。</p>
+    <div class="meta-row">
+      <span>研究对象：HeyPuter/everything</span><span>commit：b5d2584</span><span>仓库许可：MIT（应用许可不一）</span><span>数据截至 2026-11-01</span>
+    </div>
+    <div class="metrics" aria-label="关键指标">
+      <div class="metric"><b>51</b><span>应用目录</span></div>
+      <div class="metric"><b>9</b><span>分类</span></div>
+      <div class="metric"><b>34,458</b><span>被跟踪文件</span></div>
+      <div class="metric"><b>10,211</b><span>实现代码文件</span></div>
+      <div class="metric"><b>9,253</b><span>测试文件</span></div>
+      <div class="metric"><b>50/51</b><span>有测试的应用</span></div>
+    </div>
+  </div>
+</div><section id="distribution">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">01</div><div><h2>51 个应用，怎么分布</h2><p class="lede">商业管理类最多，办公与协作其次。这个组合说明它瞄准的不是消费级软件，而是中小企业的一长串付费 SaaS。</p></div></div>
+    
+<button class="cat-row" type="button" data-filter-cat="business" aria-pressed="false" aria-label="筛选 商业管理，13 个应用">
+  <span class="cat-name">商业管理</span>
+  <span class="cat-bar"><i style="width:100.0%;background:#c2410c"></i></span>
+  <span class="cat-count">13</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="office" aria-pressed="false" aria-label="筛选 办公，7 个应用">
+  <span class="cat-name">办公</span>
+  <span class="cat-bar"><i style="width:53.8%;background:#2f5cff"></i></span>
+  <span class="cat-count">7</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="collaboration" aria-pressed="false" aria-label="筛选 协作，6 个应用">
+  <span class="cat-name">协作</span>
+  <span class="cat-bar"><i style="width:46.2%;background:#0d7a6f"></i></span>
+  <span class="cat-count">6</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="creative" aria-pressed="false" aria-label="筛选 创意，6 个应用">
+  <span class="cat-name">创意</span>
+  <span class="cat-bar"><i style="width:46.2%;background:#b4478f"></i></span>
+  <span class="cat-count">6</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="productivity" aria-pressed="false" aria-label="筛选 效率，5 个应用">
+  <span class="cat-name">效率</span>
+  <span class="cat-bar"><i style="width:38.5%;background:#0d7a4f"></i></span>
+  <span class="cat-count">5</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="games" aria-pressed="false" aria-label="筛选 游戏，5 个应用">
+  <span class="cat-name">游戏</span>
+  <span class="cat-bar"><i style="width:38.5%;background:#8b3a3a"></i></span>
+  <span class="cat-count">5</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="engineering" aria-pressed="false" aria-label="筛选 工程，4 个应用">
+  <span class="cat-name">工程</span>
+  <span class="cat-bar"><i style="width:30.8%;background:#7a5cff"></i></span>
+  <span class="cat-count">4</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="finance" aria-pressed="false" aria-label="筛选 财务，4 个应用">
+  <span class="cat-name">财务</span>
+  <span class="cat-bar"><i style="width:30.8%;background:#a86a00"></i></span>
+  <span class="cat-count">4</span>
+</button>
+<button class="cat-row" type="button" data-filter-cat="developer" aria-pressed="false" aria-label="筛选 开发者，1 个应用">
+  <span class="cat-name">开发者</span>
+  <span class="cat-bar"><i style="width:7.7%;background:#475569"></i></span>
+  <span class="cat-count">1</span>
+</button>
+<p class="caption">点击任一分类会筛选下方目录；再次点击“全部”恢复。</p>
+<div class="callout"><b>分布不是均质的</b><p>商业管理 13 个（25%），办公 7 个，协作与创意各 6 个。实现文件最多的 10 个应用占全部实现代码的 72.4%；34 个应用不到 100 个实现文件，中位数只有 78。目录规模是 51，不等于 51 个同等成熟度产品。</p></div>
+
+  </div>
+</section><section id="directory">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">02</div><div><h2>应用目录：51 个，可筛选</h2><p class="lede">默认展示全部。搜索、分类、许可证与排序只改变视图，完整内容始终在页面里。</p></div></div>
+    
+<div class="controls" role="group" aria-label="应用目录筛选与排序">
+  <div class="field search">
+    <label for="q">搜索</label>
+    <input id="q" type="search" placeholder="应用名、对标产品、技术关键词" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="sort">排序</label>
+    <select id="sort">
+      <option value="default">默认（分类顺序）</option>
+      <option value="impl">实现文件：多 → 少</option>
+      <option value="tests">测试文件：多 → 少</option>
+      <option value="deps">运行时依赖：多 → 少</option>
+      <option value="name">名称 A → Z</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="licenseFilter">许可证</label>
+    <select id="licenseFilter">
+      <option value="all">全部</option>
+      <option value="AGPL">AGPL-3.0-only</option>
+      <option value="MIT">MIT</option>
+      <option value="None">未声明</option>
+    </select>
+  </div>
+  <label class="check"><input id="hasTests" type="checkbox"> 只看有测试的</label>
+  <button class="btn" id="reset" type="button">重置</button>
+</div>
+<div class="chips" role="group" aria-label="按分类筛选">
+  <button class="chip" type="button" data-filter-cat="all" aria-pressed="true">全部 51</button>
+  <button class="chip" type="button" data-filter-cat="office" aria-pressed="false">办公 7</button><button class="chip" type="button" data-filter-cat="collaboration" aria-pressed="false">协作 6</button><button class="chip" type="button" data-filter-cat="creative" aria-pressed="false">创意 6</button><button class="chip" type="button" data-filter-cat="engineering" aria-pressed="false">工程 4</button><button class="chip" type="button" data-filter-cat="productivity" aria-pressed="false">效率 5</button><button class="chip" type="button" data-filter-cat="finance" aria-pressed="false">财务 4</button><button class="chip" type="button" data-filter-cat="business" aria-pressed="false">商业管理 13</button><button class="chip" type="button" data-filter-cat="developer" aria-pressed="false">开发者 1</button><button class="chip" type="button" data-filter-cat="games" aria-pressed="false">游戏 5</button>
+</div>
+<div class="result-bar">
+  <p id="result" role="status" aria-live="polite" style="margin:0">显示 51 / 51 个应用</p>
+  <span class="note">实现/测试为文件数；“演示未确认”表示 README 自己标注演示地址尚未提供。</span>
+</div>
+<noscript><p class="note">筛选与排序需要 JavaScript；完整目录已在下方列出。</p></noscript>
+<div class="app-grid" id="appGrid">
+<article class="app" id="app-spreadsheet" data-cat="office" data-license="AGPL" data-impl="583" data-tests="3436" data-deps="3" data-name="spreadsheet" data-search="spreadsheet spreadsheet 表格 办公 excel · google sheets · apple numbers 公式、格式化与 .xlsx 读写，文件保存在自己的 puter 云盘。 原生 js；测试最重 agpl">
+  <div class="app-top">
+    <h3>Spreadsheet <em>表格</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>公式、格式化与 .xlsx 读写，文件保存在自己的 Puter 云盘。</p>
+  <p class="alt"><b>对标</b> Excel · Google Sheets · Apple Numbers</p>
+  <p class="alt"><b>技术</b> 原生 JS；测试最重</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>583</b> 实现</span><span><b>3,436</b> 测试</span><span><b>3</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://spreadsheet.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/spreadsheet" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-documents" data-cat="office" data-license="None" data-impl="837" data-tests="1973" data-deps="15" data-name="documents" data-search="documents documents 文档 办公 word · google docs · apple pages 字处理器，读写真实 .docx，支持 yjs 协作。 yjs；含 python 测试脚本 none">
+  <div class="app-top">
+    <h3>Documents <em>文档</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>字处理器，读写真实 .docx，支持 Yjs 协作。</p>
+  <p class="alt"><b>对标</b> Word · Google Docs · Apple Pages</p>
+  <p class="alt"><b>技术</b> Yjs；含 Python 测试脚本</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>837</b> 实现</span><span><b>1,973</b> 测试</span><span><b>15</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://documents.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/documents" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-presentation" data-cat="office" data-license="AGPL" data-impl="496" data-tests="572" data-deps="4" data-name="presentation" data-search="presentation presentation 演示 办公 powerpoint · google slides · keynote 演示文稿编辑器，读写真实 .pptx，带拼写检查。 pptx；无障碍处理 agpl">
+  <div class="app-top">
+    <h3>Presentation <em>演示</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>演示文稿编辑器，读写真实 .pptx，带拼写检查。</p>
+  <p class="alt"><b>对标</b> PowerPoint · Google Slides · Keynote</p>
+  <p class="alt"><b>技术</b> pptx；无障碍处理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>496</b> 实现</span><span><b>572</b> 测试</span><span><b>4</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://presentation.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/presentation" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-whiteboard" data-cat="office" data-license="AGPL" data-impl="1859" data-tests="469" data-deps="9" data-name="whiteboard" data-search="whiteboard whiteboard 白板 办公 miro · microsoft whiteboard · figjam 无限画布白板，支持 pdf 导出与实时协作。 yjs；pdf 导出 agpl">
+  <div class="app-top">
+    <h3>Whiteboard <em>白板</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>无限画布白板，支持 PDF 导出与实时协作。</p>
+  <p class="alt"><b>对标</b> Miro · Microsoft Whiteboard · FigJam</p>
+  <p class="alt"><b>技术</b> Yjs；PDF 导出</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>1,859</b> 实现</span><span><b>469</b> 测试</span><span><b>9</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://whiteboard.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/whiteboard" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-pdf" data-cat="office" data-license="AGPL" data-impl="140" data-tests="373" data-deps="8" data-name="pdf" data-search="pdf pdf pdf 工具 办公 adobe acrobat · pdf expert 私有化 pdf 工作区：阅读、编辑、ocr。 pdf.js + tesseract agpl">
+  <div class="app-top">
+    <h3>PDF <em>PDF 工具</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>私有化 PDF 工作区：阅读、编辑、OCR。</p>
+  <p class="alt"><b>对标</b> Adobe Acrobat · PDF Expert</p>
+  <p class="alt"><b>技术</b> pdf.js + Tesseract</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>140</b> 实现</span><span><b>373</b> 测试</span><span><b>8</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://pdf.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/pdf" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-notes" data-cat="office" data-license="AGPL" data-impl="53" data-tests="16" data-deps="4" data-name="notes" data-search="notes notes 笔记 办公 onenote · evernote · apple notes 笔记本、分区、页面、标签、手写墨迹与搜索。 手写墨迹；公式渲染 agpl">
+  <div class="app-top">
+    <h3>Notes <em>笔记</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>笔记本、分区、页面、标签、手写墨迹与搜索。</p>
+  <p class="alt"><b>对标</b> OneNote · Evernote · Apple Notes</p>
+  <p class="alt"><b>技术</b> 手写墨迹；公式渲染</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>53</b> 实现</span><span><b>16</b> 测试</span><span><b>4</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://notes.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/notes" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-records" data-cat="office" data-license="MIT" data-impl="56" data-tests="22" data-deps="1" data-name="records" data-search="records records 数据表 办公 airtable · microsoft access · baserow 带视图和表单的关联数据表，存在 puter 云。 运行时仅 1 个依赖 mit">
+  <div class="app-top">
+    <h3>Records <em>数据表</em></h3>
+    <span class="cat"><i class="dot" style="background:#2f5cff" aria-hidden="true"></i>办公</span>
+  </div>
+  <p>带视图和表单的关联数据表，存在 Puter 云。</p>
+  <p class="alt"><b>对标</b> Airtable · Microsoft Access · Baserow</p>
+  <p class="alt"><b>技术</b> 运行时仅 1 个依赖</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>56</b> 实现</span><span><b>22</b> 测试</span><span><b>1</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://records.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/records" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-meetings" data-cat="collaboration" data-license="None" data-impl="58" data-tests="45" data-deps="3" data-name="meetings" data-search="meetings meetings 会议 协作 zoom · google meet · microsoft teams 完全基于 puter.js 与 peer api 的实时视频会议。 webrtc；mediapipe none">
+  <div class="app-top">
+    <h3>Meetings <em>会议</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>完全基于 Puter.js 与 Peer API 的实时视频会议。</p>
+  <p class="alt"><b>对标</b> Zoom · Google Meet · Microsoft Teams</p>
+  <p class="alt"><b>技术</b> WebRTC；MediaPipe</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>58</b> 实现</span><span><b>45</b> 测试</span><span><b>3</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://meetings.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/meetings" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-teamchat" data-cat="collaboration" data-license="None" data-impl="105" data-tests="169" data-deps="1" data-name="teamchat" data-search="teamchat teamchat 团队聊天 协作 slack · microsoft teams · google chat 工作区、频道、话题串与私信。 1 个运行时依赖 none">
+  <div class="app-top">
+    <h3>Teamchat <em>团队聊天</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>工作区、频道、话题串与私信。</p>
+  <p class="alt"><b>对标</b> Slack · Microsoft Teams · Google Chat</p>
+  <p class="alt"><b>技术</b> 1 个运行时依赖</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>105</b> 实现</span><span><b>169</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://teamchat.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/teamchat" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-email" data-cat="collaboration" data-license="AGPL" data-impl="50" data-tests="113" data-deps="1" data-name="email" data-search="email email 邮件 协作 gmail · outlook · apple mail 面向 puter 账号的邮件客户端；自托管可加 smtp 收信。 邮件客户端 agpl">
+  <div class="app-top">
+    <h3>Email <em>邮件</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>面向 Puter 账号的邮件客户端；自托管可加 SMTP 收信。</p>
+  <p class="alt"><b>对标</b> Gmail · Outlook · Apple Mail</p>
+  <p class="alt"><b>技术</b> 邮件客户端</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>50</b> 实现</span><span><b>113</b> 测试</span><span><b>1</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://email.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/email" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-contacts" data-cat="collaboration" data-license="None" data-impl="40" data-tests="23" data-deps="0" data-name="contacts" data-search="contacts contacts 联系人 协作 google contacts · apple contacts 地址簿，数据存在 puter 云。 零运行时依赖 none">
+  <div class="app-top">
+    <h3>Contacts <em>联系人</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>地址簿，数据存在 Puter 云。</p>
+  <p class="alt"><b>对标</b> Google Contacts · Apple Contacts</p>
+  <p class="alt"><b>技术</b> 零运行时依赖</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>40</b> 实现</span><span><b>23</b> 测试</span><span><b>0</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://contacts.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/contacts" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-calendar" data-cat="collaboration" data-license="MIT" data-impl="71" data-tests="74" data-deps="0" data-name="calendar" data-search="calendar calendar 日历 协作 google calendar · apple calendar · outlook 轻量日历，基于 puter.js。 零运行时依赖 mit">
+  <div class="app-top">
+    <h3>Calendar <em>日历</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>轻量日历，基于 Puter.js。</p>
+  <p class="alt"><b>对标</b> Google Calendar · Apple Calendar · Outlook</p>
+  <p class="alt"><b>技术</b> 零运行时依赖</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>71</b> 实现</span><span><b>74</b> 测试</span><span><b>0</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://calendar.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/calendar" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-signatures" data-cat="collaboration" data-license="None" data-impl="54" data-tests="34" data-deps="3" data-name="signatures" data-search="signatures signatures 电子签名 协作 docusign · adobe acrobat sign · dropbox sign 发起签署、管理签署文档。 pdf-lib 生成与盖章 none">
+  <div class="app-top">
+    <h3>Signatures <em>电子签名</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a6f" aria-hidden="true"></i>协作</span>
+  </div>
+  <p>发起签署、管理签署文档。</p>
+  <p class="alt"><b>对标</b> DocuSign · Adobe Acrobat Sign · Dropbox Sign</p>
+  <p class="alt"><b>技术</b> pdf-lib 生成与盖章</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>54</b> 实现</span><span><b>34</b> 测试</span><span><b>3</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://sign.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/signatures" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-photo-studio" data-cat="creative" data-license="None" data-impl="773" data-tests="283" data-deps="5" data-name="photo studio" data-search="photo-studio photo studio 照片工作室 创意 photoshop · pixelmator psd 读写、图层与滤镜，wasm 图像引擎，支持协作。 psd；rust→wasm；yjs none">
+  <div class="app-top">
+    <h3>Photo Studio <em>照片工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>PSD 读写、图层与滤镜，WASM 图像引擎，支持协作。</p>
+  <p class="alt"><b>对标</b> Photoshop · Pixelmator</p>
+  <p class="alt"><b>技术</b> PSD；Rust→WASM；Yjs</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>773</b> 实现</span><span><b>283</b> 测试</span><span><b>5</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://ps.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/photo-studio" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-video-studio" data-cat="creative" data-license="AGPL" data-impl="311" data-tests="123" data-deps="16" data-name="video studio" data-search="video-studio video studio 视频工作室 创意 capcut · premiere pro · final cut pro · davinci resolve 多轨时间线、文字、特效、转场、关键帧、字幕与导出。 mediabunny；mediapipe agpl">
+  <div class="app-top">
+    <h3>Video Studio <em>视频工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>多轨时间线、文字、特效、转场、关键帧、字幕与导出。</p>
+  <p class="alt"><b>对标</b> CapCut · Premiere Pro · Final Cut Pro · DaVinci Resolve</p>
+  <p class="alt"><b>技术</b> mediabunny；MediaPipe</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>311</b> 实现</span><span><b>123</b> 测试</span><span><b>16</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://vs.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/video-studio" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-vector-studio" data-cat="creative" data-license="None" data-impl="621" data-tests="213" data-deps="20" data-name="vector studio" data-search="vector-studio vector studio 矢量工作室 创意 illustrator · coreldraw · affinity designer 钢笔、形状、笔刷、液化、符号、3d、文字、画板，svg/pdf 导出。 20 个依赖中 18 个是字体 none">
+  <div class="app-top">
+    <h3>Vector Studio <em>矢量工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>钢笔、形状、笔刷、液化、符号、3D、文字、画板，SVG/PDF 导出。</p>
+  <p class="alt"><b>对标</b> Illustrator · CorelDRAW · Affinity Designer</p>
+  <p class="alt"><b>技术</b> 20 个依赖中 18 个是字体</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>621</b> 实现</span><span><b>213</b> 测试</span><span><b>20</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://ves.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/vector-studio" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-audio-studio" data-cat="creative" data-license="None" data-impl="359" data-tests="117" data-deps="2" data-name="audio studio" data-search="audio-studio audio studio 音频工作室 创意 audition · sound forge 波形与多轨音频编辑：录制、修复、混音、母带。 79 个 rust 文件；lamejs none">
+  <div class="app-top">
+    <h3>Audio Studio <em>音频工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>波形与多轨音频编辑：录制、修复、混音、母带。</p>
+  <p class="alt"><b>对标</b> Audition · Sound Forge</p>
+  <p class="alt"><b>技术</b> 79 个 Rust 文件；lamejs</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>359</b> 实现</span><span><b>117</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://as.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/audio-studio" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-music-studio" data-cat="creative" data-license="None" data-impl="157" data-tests="26" data-deps="1" data-name="music studio" data-search="music-studio music studio 音乐工作室 创意 fl studio · ableton live · logic pro 步进音序器、钢琴卷帘、播放列表与混音效果。 12 个 rust 文件 none">
+  <div class="app-top">
+    <h3>Music Studio <em>音乐工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>步进音序器、钢琴卷帘、播放列表与混音效果。</p>
+  <p class="alt"><b>对标</b> FL Studio · Ableton Live · Logic Pro</p>
+  <p class="alt"><b>技术</b> 12 个 Rust 文件</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>157</b> 实现</span><span><b>26</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://ms.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/music-studio" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-3d" data-cat="creative" data-license="AGPL" data-impl="1395" data-tests="336" data-deps="10" data-name="3d studio" data-search="3d 3d studio 三维工作室 创意 maya · sketchup 通用 3d 编辑：three.js 渲染、物理、路径追踪、csg。 three.js；rapier agpl">
+  <div class="app-top">
+    <h3>3D Studio <em>三维工作室</em></h3>
+    <span class="cat"><i class="dot" style="background:#b4478f" aria-hidden="true"></i>创意</span>
+  </div>
+  <p>通用 3D 编辑：three.js 渲染、物理、路径追踪、CSG。</p>
+  <p class="alt"><b>对标</b> Maya · SketchUp</p>
+  <p class="alt"><b>技术</b> three.js；Rapier</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>1,395</b> 实现</span><span><b>336</b> 测试</span><span><b>10</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://3d.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/3d" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-cad" data-cat="engineering" data-license="None" data-impl="96" data-tests="28" data-deps="3" data-name="cad" data-search="cad cad cad 工程 autocad · draftsight · bricscad 2d 制图：精确绘制、编辑、图层、块、标注、dxf 交换。 dxf；rbush none">
+  <div class="app-top">
+    <h3>CAD <em>CAD</em></h3>
+    <span class="cat"><i class="dot" style="background:#7a5cff" aria-hidden="true"></i>工程</span>
+  </div>
+  <p>2D 制图：精确绘制、编辑、图层、块、标注、DXF 交换。</p>
+  <p class="alt"><b>对标</b> AutoCAD · DraftSight · BricsCAD</p>
+  <p class="alt"><b>技术</b> DXF；rbush</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>96</b> 实现</span><span><b>28</b> 测试</span><span><b>3</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://cad.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/cad" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-parametric" data-cat="engineering" data-license="MIT" data-impl="79" data-tests="25" data-deps="3" data-name="parametric" data-search="parametric parametric 参数化建模 工程 solidworks · fusion · inventor 特征建模：约束草图、拉伸、旋转、圆角、抽壳、阵列，step/stl 导出。 opencascade wasm；b-rep mit">
+  <div class="app-top">
+    <h3>Parametric <em>参数化建模</em></h3>
+    <span class="cat"><i class="dot" style="background:#7a5cff" aria-hidden="true"></i>工程</span>
+  </div>
+  <p>特征建模：约束草图、拉伸、旋转、圆角、抽壳、阵列，STEP/STL 导出。</p>
+  <p class="alt"><b>对标</b> SolidWorks · Fusion · Inventor</p>
+  <p class="alt"><b>技术</b> OpenCascade WASM；B-rep</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>79</b> 实现</span><span><b>25</b> 测试</span><span><b>3</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://parametric.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/parametric" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-circuits" data-cat="engineering" data-license="None" data-impl="100" data-tests="21" data-deps="4" data-name="circuits" data-search="circuits circuits 电路设计 工程 altium · eagle · orcad 原理图捕获与 pcb 布局，webgl 渲染，设计规则检查，gerber 导出。 webgl；gerber none">
+  <div class="app-top">
+    <h3>Circuits <em>电路设计</em></h3>
+    <span class="cat"><i class="dot" style="background:#7a5cff" aria-hidden="true"></i>工程</span>
+  </div>
+  <p>原理图捕获与 PCB 布局，WebGL 渲染，设计规则检查，Gerber 导出。</p>
+  <p class="alt"><b>对标</b> Altium · Eagle · OrCAD</p>
+  <p class="alt"><b>技术</b> WebGL；Gerber</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>100</b> 实现</span><span><b>21</b> 测试</span><span><b>4</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://circuits.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/circuits" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-building-design" data-cat="engineering" data-license="AGPL" data-impl="131" data-tests="51" data-deps="2" data-name="building design" data-search="building-design building design 建筑设计 工程 revit · archicad · vectorworks bim：墙、门、窗、楼板、屋顶、楼梯、房间，平立剖与明细表。 bim 数据模型 agpl">
+  <div class="app-top">
+    <h3>Building Design <em>建筑设计</em></h3>
+    <span class="cat"><i class="dot" style="background:#7a5cff" aria-hidden="true"></i>工程</span>
+  </div>
+  <p>BIM：墙、门、窗、楼板、屋顶、楼梯、房间，平立剖与明细表。</p>
+  <p class="alt"><b>对标</b> Revit · ArchiCAD · Vectorworks</p>
+  <p class="alt"><b>技术</b> BIM 数据模型</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>131</b> 实现</span><span><b>51</b> 测试</span><span><b>2</b> 依赖</span><span class="badge agpl">AGPL</span>
+  </div>
+  <div class="app-links"><a href="https://bd.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/building-design" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-tasks" data-cat="productivity" data-license="None" data-impl="48" data-tests="13" data-deps="1" data-name="tasks" data-search="tasks tasks 任务 效率 todoist · microsoft to do · ticktick 个人与共享待办清单。 轻量 crud none">
+  <div class="app-top">
+    <h3>Tasks <em>任务</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a4f" aria-hidden="true"></i>效率</span>
+  </div>
+  <p>个人与共享待办清单。</p>
+  <p class="alt"><b>对标</b> Todoist · Microsoft To Do · TickTick</p>
+  <p class="alt"><b>技术</b> 轻量 CRUD</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>48</b> 实现</span><span><b>13</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://tasks.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/tasks" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-projects" data-cat="productivity" data-license="MIT" data-impl="92" data-tests="29" data-deps="1" data-name="projects" data-search="projects projects 项目 效率 trello · asana · monday.com 看板、时间线、里程碑、评论与附件。 轻量 crud mit">
+  <div class="app-top">
+    <h3>Projects <em>项目</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a4f" aria-hidden="true"></i>效率</span>
+  </div>
+  <p>看板、时间线、里程碑、评论与附件。</p>
+  <p class="alt"><b>对标</b> Trello · Asana · monday.com</p>
+  <p class="alt"><b>技术</b> 轻量 CRUD</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>92</b> 实现</span><span><b>29</b> 测试</span><span><b>1</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://projects.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/projects" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-wiki" data-cat="productivity" data-license="None" data-impl="68" data-tests="21" data-deps="2" data-name="wiki" data-search="wiki wiki 知识库 效率 notion · confluence · coda 页面、文档与数据库，供个人或团队使用。 yjs 协作 none">
+  <div class="app-top">
+    <h3>Wiki <em>知识库</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a4f" aria-hidden="true"></i>效率</span>
+  </div>
+  <p>页面、文档与数据库，供个人或团队使用。</p>
+  <p class="alt"><b>对标</b> Notion · Confluence · Coda</p>
+  <p class="alt"><b>技术</b> Yjs 协作</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>68</b> 实现</span><span><b>21</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://wiki.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/wiki" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-time-tracking" data-cat="productivity" data-license="None" data-impl="48" data-tests="11" data-deps="1" data-name="time tracking" data-search="time-tracking time tracking 工时 效率 toggl · harvest · clockify 按客户、项目或任务记录可计费工时。 工时表 none">
+  <div class="app-top">
+    <h3>Time Tracking <em>工时</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a4f" aria-hidden="true"></i>效率</span>
+  </div>
+  <p>按客户、项目或任务记录可计费工时。</p>
+  <p class="alt"><b>对标</b> Toggl · Harvest · Clockify</p>
+  <p class="alt"><b>技术</b> 工时表</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>48</b> 实现</span><span><b>11</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://tt.puter.com" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/time-tracking" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-survey" data-cat="productivity" data-license="MIT" data-impl="78" data-tests="19" data-deps="2" data-name="surveys" data-search="survey surveys 问卷 效率 surveymonkey · google forms · typeform 建问卷、发链接、看结果，带二维码。 qrcode-generator mit">
+  <div class="app-top">
+    <h3>Surveys <em>问卷</em></h3>
+    <span class="cat"><i class="dot" style="background:#0d7a4f" aria-hidden="true"></i>效率</span>
+  </div>
+  <p>建问卷、发链接、看结果，带二维码。</p>
+  <p class="alt"><b>对标</b> SurveyMonkey · Google Forms · Typeform</p>
+  <p class="alt"><b>技术</b> qrcode-generator</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>78</b> 实现</span><span><b>19</b> 测试</span><span><b>2</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://survey.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/survey" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-accounting" data-cat="finance" data-license="MIT" data-impl="77" data-tests="15" data-deps="1" data-name="accounting" data-search="accounting accounting 会计 财务 quickbooks · xero · wave 复式记账：发票、账单、银行、对账、财务报表。 复式记账 mit">
+  <div class="app-top">
+    <h3>Accounting <em>会计</em></h3>
+    <span class="cat"><i class="dot" style="background:#a86a00" aria-hidden="true"></i>财务</span>
+  </div>
+  <p>复式记账：发票、账单、银行、对账、财务报表。</p>
+  <p class="alt"><b>对标</b> QuickBooks · Xero · Wave</p>
+  <p class="alt"><b>技术</b> 复式记账</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>77</b> 实现</span><span><b>15</b> 测试</span><span><b>1</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://accounting.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/accounting" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-invoicing" data-cat="finance" data-license="None" data-impl="65" data-tests="26" data-deps="1" data-name="invoicing" data-search="invoicing invoicing 开票 财务 freshbooks · zoho invoice · wave 报价、发票、周期计费、收据与收款链接。 开票流程 none">
+  <div class="app-top">
+    <h3>Invoicing <em>开票</em></h3>
+    <span class="cat"><i class="dot" style="background:#a86a00" aria-hidden="true"></i>财务</span>
+  </div>
+  <p>报价、发票、周期计费、收据与收款链接。</p>
+  <p class="alt"><b>对标</b> FreshBooks · Zoho Invoice · Wave</p>
+  <p class="alt"><b>技术</b> 开票流程</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>65</b> 实现</span><span><b>26</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://invoicing.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/invoicing" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-expense" data-cat="finance" data-license="None" data-impl="41" data-tests="11" data-deps="1" data-name="expenses" data-search="expense expenses 报销 财务 expensify · sap concur · zoho expense 收据拍摄、ai ocr、报销单与对账。 ai ocr none">
+  <div class="app-top">
+    <h3>Expenses <em>报销</em></h3>
+    <span class="cat"><i class="dot" style="background:#a86a00" aria-hidden="true"></i>财务</span>
+  </div>
+  <p>收据拍摄、AI OCR、报销单与对账。</p>
+  <p class="alt"><b>对标</b> Expensify · SAP Concur · Zoho Expense</p>
+  <p class="alt"><b>技术</b> AI OCR</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>41</b> 实现</span><span><b>11</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://expenses.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/expense" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-cap-table" data-cat="finance" data-license="None" data-impl="95" data-tests="49" data-deps="1" data-name="cap table" data-search="cap-table cap table 股权表 财务 carta · pulley 股权、期权与融资管理。 股权结构 none">
+  <div class="app-top">
+    <h3>Cap Table <em>股权表</em></h3>
+    <span class="cat"><i class="dot" style="background:#a86a00" aria-hidden="true"></i>财务</span>
+  </div>
+  <p>股权、期权与融资管理。</p>
+  <p class="alt"><b>对标</b> Carta · Pulley</p>
+  <p class="alt"><b>技术</b> 股权结构</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>95</b> 实现</span><span><b>49</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://captable.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/cap-table" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-crm" data-cat="business" data-license="None" data-impl="75" data-tests="25" data-deps="1" data-name="crm" data-search="crm crm 客户关系 商业管理 salesforce · hubspot · pipedrive 线索、公司、商机、跟进与预测。 销售管道 none">
+  <div class="app-top">
+    <h3>CRM <em>客户关系</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>线索、公司、商机、跟进与预测。</p>
+  <p class="alt"><b>对标</b> Salesforce · HubSpot · Pipedrive</p>
+  <p class="alt"><b>技术</b> 销售管道</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>75</b> 实现</span><span><b>25</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://crm.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/crm" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-help-desk" data-cat="business" data-license="MIT" data-impl="90" data-tests="36" data-deps="1" data-name="help desk" data-search="help-desk help desk 工单 商业管理 zendesk · freshdesk · intercom 共享收件箱、工单、客户、帮助中心与报表。 客服工单 mit">
+  <div class="app-top">
+    <h3>Help Desk <em>工单</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>共享收件箱、工单、客户、帮助中心与报表。</p>
+  <p class="alt"><b>对标</b> Zendesk · Freshdesk · Intercom</p>
+  <p class="alt"><b>技术</b> 客服工单</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>90</b> 实现</span><span><b>36</b> 测试</span><span><b>1</b> 依赖</span><span class="badge mit">MIT</span>
+  </div>
+  <div class="app-links"><a href="https://help.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/help-desk" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-contracts" data-cat="business" data-license="None" data-impl="44" data-tests="9" data-deps="2" data-name="contracts" data-search="contracts contracts 合同 商业管理 contractsafe · juro 合同存储、续约提醒、义务提取，关联联系人与文档。 合同管理 none">
+  <div class="app-top">
+    <h3>Contracts <em>合同</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>合同存储、续约提醒、义务提取，关联联系人与文档。</p>
+  <p class="alt"><b>对标</b> ContractSafe · Juro</p>
+  <p class="alt"><b>技术</b> 合同管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>44</b> 实现</span><span><b>9</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://contracts.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/contracts" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-pos" data-cat="business" data-license="None" data-impl="72" data-tests="29" data-deps="1" data-name="point of sale" data-search="pos point of sale 收银 商业管理 square pos · shopify pos · lightspeed 商品、结账、收据、折扣、税与销售报表。 零售收银 none">
+  <div class="app-top">
+    <h3>Point of Sale <em>收银</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>商品、结账、收据、折扣、税与销售报表。</p>
+  <p class="alt"><b>对标</b> Square POS · Shopify POS · Lightspeed</p>
+  <p class="alt"><b>技术</b> 零售收银</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>72</b> 实现</span><span><b>29</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://pos.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/pos" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-inventory" data-cat="business" data-license="None" data-impl="102" data-tests="34" data-deps="1" data-name="inventory" data-search="inventory inventory 库存 商业管理 zoho inventory · sortly · inflow 商品、数量、库位、成本、低库存提醒、供应商与 csv。 库存管理 none">
+  <div class="app-top">
+    <h3>Inventory <em>库存</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>商品、数量、库位、成本、低库存提醒、供应商与 CSV。</p>
+  <p class="alt"><b>对标</b> Zoho Inventory · Sortly · inFlow</p>
+  <p class="alt"><b>技术</b> 库存管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>102</b> 实现</span><span><b>34</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://inventory.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/inventory" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-assets" data-cat="business" data-license="None" data-impl="2" data-tests="0" data-deps="2" data-name="assets" data-search="assets assets 资产 商业管理 asset panda · ezofficeinventory 设备与资产：笔记本、工具、保修、领用、维护、归还日期。 仅 7 个文件；入口缺失 none">
+  <div class="app-top">
+    <h3>Assets <em>资产</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>设备与资产：笔记本、工具、保修、领用、维护、归还日期。</p>
+  <p class="alt"><b>对标</b> Asset Panda · EZOfficeInventory</p>
+  <p class="alt"><b>技术</b> 仅 7 个文件；入口缺失</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>2</b> 实现</span><span><b>0</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://github.com/HeyPuter/everything/tree/main/src/assets" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">仓库内无演示入口</span></div>
+</article>
+<article class="app" id="app-hiring" data-cat="business" data-license="None" data-impl="68" data-tests="28" data-deps="1" data-name="hiring" data-search="hiring hiring 招聘 商业管理 greenhouse · lever · workable 招聘页、候选人管道、面试安排、评分卡、offer 与入职。 ats none">
+  <div class="app-top">
+    <h3>Hiring <em>招聘</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>招聘页、候选人管道、面试安排、评分卡、offer 与入职。</p>
+  <p class="alt"><b>对标</b> Greenhouse · Lever · Workable</p>
+  <p class="alt"><b>技术</b> ATS</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>68</b> 实现</span><span><b>28</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://hiring.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/hiring" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-shifts" data-cat="business" data-license="None" data-impl="54" data-tests="29" data-deps="1" data-name="shifts" data-search="shifts shifts 排班 商业管理 deputy · when i work · homebase 员工可用性、班次、换班与考勤。 排班 none">
+  <div class="app-top">
+    <h3>Shifts <em>排班</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>员工可用性、班次、换班与考勤。</p>
+  <p class="alt"><b>对标</b> Deputy · When I Work · Homebase</p>
+  <p class="alt"><b>技术</b> 排班</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>54</b> 实现</span><span><b>29</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://shifts.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/shifts" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-childcare" data-cat="business" data-license="None" data-impl="72" data-tests="71" data-deps="1" data-name="childcare" data-search="childcare childcare 托育 商业管理 brightwheel · procare · himama 托育机构：签到、日报、家长沟通与学费账单。 托育管理 none">
+  <div class="app-top">
+    <h3>Childcare <em>托育</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>托育机构：签到、日报、家长沟通与学费账单。</p>
+  <p class="alt"><b>对标</b> brightwheel · Procare · HiMama</p>
+  <p class="alt"><b>技术</b> 托育管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>72</b> 实现</span><span><b>71</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://childcare.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/childcare" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-field-service" data-cat="business" data-license="None" data-impl="82" data-tests="34" data-deps="1" data-name="field service" data-search="field-service field service 外勤 商业管理 jobber · housecall pro · servicetitan 客户、请求、报价、工单、排程、发票与收款。 外勤服务 none">
+  <div class="app-top">
+    <h3>Field Service <em>外勤</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>客户、请求、报价、工单、排程、发票与收款。</p>
+  <p class="alt"><b>对标</b> Jobber · Housecall Pro · ServiceTitan</p>
+  <p class="alt"><b>技术</b> 外勤服务</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>82</b> 实现</span><span><b>34</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://fieldservice.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/field-service" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-legal" data-cat="business" data-license="None" data-impl="98" data-tests="31" data-deps="1" data-name="legal" data-search="legal legal 律所 商业管理 clio · mycase · practicepanther 案件、联系人、工时与费用、账单、信托会计、日历、任务与文档。 律所管理 none">
+  <div class="app-top">
+    <h3>Legal <em>律所</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>案件、联系人、工时与费用、账单、信托会计、日历、任务与文档。</p>
+  <p class="alt"><b>对标</b> Clio · MyCase · PracticePanther</p>
+  <p class="alt"><b>技术</b> 律所管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>98</b> 实现</span><span><b>31</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://legal.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/legal" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-fleet" data-cat="business" data-license="None" data-impl="109" data-tests="62" data-deps="1" data-name="fleet" data-search="fleet fleet 车队 商业管理 fleetio · samsara · whip around 车辆、检查、问题、维修、工单、提醒、燃油、零件与成本。 车队管理 none">
+  <div class="app-top">
+    <h3>Fleet <em>车队</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>车辆、检查、问题、维修、工单、提醒、燃油、零件与成本。</p>
+  <p class="alt"><b>对标</b> Fleetio · Samsara · Whip Around</p>
+  <p class="alt"><b>技术</b> 车队管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>109</b> 实现</span><span><b>62</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://fleet.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/fleet" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-property-management" data-cat="business" data-license="None" data-impl="125" data-tests="30" data-deps="1" data-name="property management" data-search="property-management property management 物业 商业管理 buildium · appfolio · rent manager 物业、单元、租约、租户、收租、会计、维修与报表。 物业管理 none">
+  <div class="app-top">
+    <h3>Property Management <em>物业</em></h3>
+    <span class="cat"><i class="dot" style="background:#c2410c" aria-hidden="true"></i>商业管理</span>
+  </div>
+  <p>物业、单元、租约、租户、收租、会计、维修与报表。</p>
+  <p class="alt"><b>对标</b> Buildium · AppFolio · Rent Manager</p>
+  <p class="alt"><b>技术</b> 物业管理</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>125</b> 实现</span><span><b>30</b> 测试</span><span><b>1</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://github.com/HeyPuter/everything/tree/main/src/property-management" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">仓库内无演示入口</span></div>
+</article>
+<article class="app" id="app-api-client" data-cat="developer" data-license="None" data-impl="82" data-tests="33" data-deps="14" data-name="api client" data-search="api-client api client api 客户端 开发者 postman · insomnia · hoppscotch 构建、发送、测试与整理 http 请求，可选同步到 puter 云。 codemirror 6 none">
+  <div class="app-top">
+    <h3>API Client <em>API 客户端</em></h3>
+    <span class="cat"><i class="dot" style="background:#475569" aria-hidden="true"></i>开发者</span>
+  </div>
+  <p>构建、发送、测试与整理 HTTP 请求，可选同步到 Puter 云。</p>
+  <p class="alt"><b>对标</b> Postman · Insomnia · Hoppscotch</p>
+  <p class="alt"><b>技术</b> CodeMirror 6</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>82</b> 实现</span><span><b>33</b> 测试</span><span><b>14</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://apic.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/api-client" target="_blank" rel="noopener noreferrer">源码</a><span class="tiny">演示未确认</span></div>
+</article>
+<article class="app" id="app-chess" data-cat="games" data-license="None" data-impl="16" data-tests="10" data-deps="2" data-name="chess" data-search="chess chess 国际象棋 游戏 原创小游戏，无直接商业对标 人机、本地或在线对局，带时钟。 原生 js；无框架 none">
+  <div class="app-top">
+    <h3>Chess <em>国际象棋</em></h3>
+    <span class="cat"><i class="dot" style="background:#8b3a3a" aria-hidden="true"></i>游戏</span>
+  </div>
+  <p>人机、本地或在线对局，带时钟。</p>
+  <p class="alt"><b>对标</b> 原创小游戏，无直接商业对标</p>
+  <p class="alt"><b>技术</b> 原生 JS；无框架</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>16</b> 实现</span><span><b>10</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://chess.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/chess" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-backgammon" data-cat="games" data-license="None" data-impl="17" data-tests="13" data-deps="2" data-name="backgammon" data-search="backgammon backgammon 双陆棋 游戏 原创小游戏，无直接商业对标 人机、本地或在线对局。 原生 js；无框架 none">
+  <div class="app-top">
+    <h3>Backgammon <em>双陆棋</em></h3>
+    <span class="cat"><i class="dot" style="background:#8b3a3a" aria-hidden="true"></i>游戏</span>
+  </div>
+  <p>人机、本地或在线对局。</p>
+  <p class="alt"><b>对标</b> 原创小游戏，无直接商业对标</p>
+  <p class="alt"><b>技术</b> 原生 JS；无框架</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>17</b> 实现</span><span><b>13</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://backgammon.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/backgammon" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-checkers" data-cat="games" data-license="None" data-impl="17" data-tests="14" data-deps="2" data-name="checkers" data-search="checkers checkers 跳棋 游戏 原创小游戏，无直接商业对标 美式跳棋，人机或本地对局。 原生 js；无框架 none">
+  <div class="app-top">
+    <h3>Checkers <em>跳棋</em></h3>
+    <span class="cat"><i class="dot" style="background:#8b3a3a" aria-hidden="true"></i>游戏</span>
+  </div>
+  <p>美式跳棋，人机或本地对局。</p>
+  <p class="alt"><b>对标</b> 原创小游戏，无直接商业对标</p>
+  <p class="alt"><b>技术</b> 原生 JS；无框架</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>17</b> 实现</span><span><b>14</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://checkers.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/checkers" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-solitaire" data-cat="games" data-license="None" data-impl="29" data-tests="13" data-deps="0" data-name="solitaire" data-search="solitaire solitaire 纸牌 游戏 原创小游戏，无直接商业对标 klondike（单张/三张，vegas 计分）与 spider，可选云存档。 零运行时依赖 none">
+  <div class="app-top">
+    <h3>Solitaire <em>纸牌</em></h3>
+    <span class="cat"><i class="dot" style="background:#8b3a3a" aria-hidden="true"></i>游戏</span>
+  </div>
+  <p>Klondike（单张/三张，Vegas 计分）与 Spider，可选云存档。</p>
+  <p class="alt"><b>对标</b> 原创小游戏，无直接商业对标</p>
+  <p class="alt"><b>技术</b> 零运行时依赖</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>29</b> 实现</span><span><b>13</b> 测试</span><span><b>0</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://solitaire.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/solitaire" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+<article class="app" id="app-sudoku" data-cat="games" data-license="None" data-impl="21" data-tests="16" data-deps="2" data-name="sudoku" data-search="sudoku sudoku 数独 游戏 原创小游戏，无直接商业对标 四档难度、每日题、铅笔标记与解释性提示。 原生 js；无框架 none">
+  <div class="app-top">
+    <h3>Sudoku <em>数独</em></h3>
+    <span class="cat"><i class="dot" style="background:#8b3a3a" aria-hidden="true"></i>游戏</span>
+  </div>
+  <p>四档难度、每日题、铅笔标记与解释性提示。</p>
+  <p class="alt"><b>对标</b> 原创小游戏，无直接商业对标</p>
+  <p class="alt"><b>技术</b> 原生 JS；无框架</p>
+  <div class="app-stats" title="代码文件不含测试；测试文件含脚本，排除 fixtures；依赖为 package.json 运行时依赖">
+    <span><b>21</b> 实现</span><span><b>16</b> 测试</span><span><b>2</b> 依赖</span><span class="badge none">未声明</span>
+  </div>
+  <div class="app-links"><a href="https://sudoku.puter.com/" target="_blank" rel="noopener noreferrer">打开应用</a><a href="https://github.com/HeyPuter/everything/tree/main/src/sudoku" target="_blank" rel="noopener noreferrer">源码</a></div>
+</article>
+</div>
+<div class="empty" id="empty">
+  <p style="margin:0 0 10px"><strong>没有匹配的应用</strong></p>
+  <p style="margin:0 0 12px">试试更短的关键词，或清空许可证与分类筛选。</p>
+  <button class="btn" id="emptyReset" type="button">清空筛选</button>
+</div>
+
+  </div>
+</section><section id="stack">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">03</div><div><h2>技术栈：没有框架，靠库和测试</h2><p class="lede">51 个应用是 51 个独立 Vite 工程，靠 Puter.js 共享账号、存储与 AI。没有 UI 框架，也没有统一后端。</p></div></div>
+    
+<div class="grid stat-grid">
+  <div class="card"><span class="k">运行时依赖合计</span><div class="stat-num">166</div><p>51 个 package.json 的 dependencies 之和，不含 devDependencies。</p></div>
+  <div class="card"><span class="k">依赖中位数</span><div class="stat-num">2</div><p>35 个应用 ≤ 2 个运行时依赖；3 个应用零依赖：Contacts、Calendar、Solitaire。</p></div>
+  <div class="card"><span class="k">前端框架</span><div class="stat-num">0</div><p>51 个应用都没有 React / Vue / Svelte / Angular 运行时依赖。</p></div>
+  <div class="card"><span class="k">Rust 源文件</span><div class="stat-num">103</div><p>Audio 79、Music 12、Circuits 6、Vector 4、Video 1、Photo 1。</p></div>
+  <div class="card"><span class="k">.wasm 产物/夹具</span><div class="stat-num">132</div><p>图像、CAD 内核、OCR 与音频处理把重活交给 WASM。</p></div>
+  <div class="card"><span class="k">测试文件</span><div class="stat-num">9,253</div><p>含 Python 测试脚本，排除 fixtures；数量是结构信号，不是覆盖率。</p></div>
+</div>
+
+<div class="grid" style="margin-top:16px">
+  <div class="card"><span class="k">结构</span><h3>51 个独立工程，不是 monorepo 工作区</h3>
+    <ul style="font-size:14px;color:var(--muted);padding-left:20px;margin:8px 0 0">
+      <li>仓库没有根 package.json，也没有 workspaces；每个应用单独 <code>npm install</code>。</li>
+      <li>每个应用各自带 Vite 配置，README 要求 Node.js 22.12+。</li>
+      <li>抽查 5 个不同类别的 index.html，均直接加载 <code>https://js.puter.com/v2/</code>。</li>
+      <li>4 个应用引入 Yjs：Documents、Whiteboard、Photo Studio、Wiki。</li>
+    </ul>
+  </div>
+  <div class="card"><span class="k">重依赖</span><h3>重活交给成熟库，不自己造轮子</h3>
+    <ul style="font-size:14px;color:var(--muted);padding-left:20px;margin:8px 0 0">
+      <li>PDF：pdf.js、pdf-lib、Tesseract。</li>
+      <li>PSD：ag-psd；视频：mediabunny；3D：three.js；代码编辑：CodeMirror 6。</li>
+      <li>CAD 内核：replicad + OpenCascade WASM；音频编码：lamejs。</li>
+      <li>“从零重写”指应用层与交互，不是把渲染、解析、编解码全部重写。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout warn"><b>测试多，不等于测试有效</b><p>Spreadsheet 有 3,436 个测试文件，Documents 有 1,973 个，Presentation 572 个。这个密度在同类开源应用里少见，但文件数不是覆盖率，也没有看到统一的 CI 覆盖率报告；复用前仍要自己跑 <code>npm test</code> 并读关键用例。</p></div>
+
+  </div>
+</section><section id="maturity">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">04</div><div><h2>成熟度：三种成色，另加一类小游戏</h2><p class="lede">以下分层只看仓库形状，不代替运行验收。</p></div></div>
+    
+<div class="table-wrap"><table>
+<thead><tr><th>深度实现（10）</th><th class="num">实现</th><th class="num">测试</th><th>为什么放在这一层</th></tr></thead>
+<tbody><tr><td><a href="#app-spreadsheet"><strong>Spreadsheet</strong></a> <span class="note">表格</span></td><td class="num">583</td><td class="num">3,436</td><td>公式与 xlsx，测试最密</td></tr>
+<tr><td><a href="#app-documents"><strong>Documents</strong></a> <span class="note">文档</span></td><td class="num">837</td><td class="num">1,973</td><td>docx 与协作，测试第二</td></tr>
+<tr><td><a href="#app-presentation"><strong>Presentation</strong></a> <span class="note">演示</span></td><td class="num">496</td><td class="num">572</td><td>pptx 与无障碍处理</td></tr>
+<tr><td><a href="#app-whiteboard"><strong>Whiteboard</strong></a> <span class="note">白板</span></td><td class="num">1,859</td><td class="num">469</td><td>画布、协作、PDF 导出</td></tr>
+<tr><td><a href="#app-pdf"><strong>PDF</strong></a> <span class="note">PDF 工具</span></td><td class="num">140</td><td class="num">373</td><td>OCR 与 PDF 对象模型</td></tr>
+<tr><td><a href="#app-3d"><strong>3D Studio</strong></a> <span class="note">三维工作室</span></td><td class="num">1,395</td><td class="num">336</td><td>渲染、物理、路径追踪</td></tr>
+<tr><td><a href="#app-photo-studio"><strong>Photo Studio</strong></a> <span class="note">照片工作室</span></td><td class="num">773</td><td class="num">283</td><td>PSD 与 WASM 图像引擎</td></tr>
+<tr><td><a href="#app-vector-studio"><strong>Vector Studio</strong></a> <span class="note">矢量工作室</span></td><td class="num">621</td><td class="num">213</td><td>矢量内核与 PDF 导出</td></tr>
+<tr><td><a href="#app-video-studio"><strong>Video Studio</strong></a> <span class="note">视频工作室</span></td><td class="num">311</td><td class="num">123</td><td>多轨媒体与编码</td></tr>
+<tr><td><a href="#app-audio-studio"><strong>Audio Studio</strong></a> <span class="note">音频工作室</span></td><td class="num">359</td><td class="num">117</td><td>DSP，Rust 代码最多</td></tr></tbody>
+</table></div>
+<p class="caption">入选标准：实现文件 ≥300，或测试文件 ≥300 且涉及文件格式/渲染内核。文件数来自 git tree，不代表运行质量。</p>
+
+<div class="tiers" style="margin-top:20px">
+  <div class="tier b">
+    <div class="head"><h3>其余 35 个：工具、管理与轻量创作</h3><span class="count">全库中位数 78</span></div>
+    <p>多为 CRUD 与流程型应用：能跑通主流程，但复杂边界、导入导出与权限细节需要逐个验收。</p>
+    <div class="list"><a href="#app-teamchat">团队聊天</a> · <a href="#app-meetings">会议</a> · <a href="#app-email">邮件</a> · <a href="#app-contacts">联系人</a> · <a href="#app-calendar">日历</a> · <a href="#app-signatures">电子签名</a> · <a href="#app-notes">笔记</a> · <a href="#app-records">数据表</a> · <a href="#app-cad">CAD</a> · <a href="#app-parametric">参数化建模</a> · <a href="#app-circuits">电路设计</a> · <a href="#app-building-design">建筑设计</a> · <a href="#app-tasks">任务</a> · <a href="#app-projects">项目</a> · <a href="#app-wiki">知识库</a> · <a href="#app-time-tracking">工时</a> · <a href="#app-survey">问卷</a> · <a href="#app-accounting">会计</a> · <a href="#app-invoicing">开票</a> · <a href="#app-expense">报销</a> · <a href="#app-cap-table">股权表</a> · <a href="#app-crm">客户关系</a> · <a href="#app-help-desk">工单</a> · <a href="#app-contracts">合同</a> · <a href="#app-pos">收银</a> · <a href="#app-inventory">库存</a> · <a href="#app-hiring">招聘</a> · <a href="#app-shifts">排班</a> · <a href="#app-childcare">托育</a> · <a href="#app-field-service">外勤</a> · <a href="#app-legal">律所</a> · <a href="#app-fleet">车队</a> · <a href="#app-property-management">物业</a> · <a href="#app-api-client">API 客户端</a> · <a href="#app-music-studio">音乐工作室</a></div>
+  </div>
+  <div class="tier g">
+    <div class="head"><h3>小而完整：游戏（5）</h3><span class="count">16–29 个实现文件</span></div>
+    <p>体积小是设计选择，不是残缺：规则引擎、AI 对手与本地/在线对局都在。它们不依赖 Puter 的复杂数据模型。</p>
+    <div class="list"><a href="#app-chess">国际象棋</a> · <a href="#app-backgammon">双陆棋</a> · <a href="#app-checkers">跳棋</a> · <a href="#app-solitaire">纸牌</a> · <a href="#app-sudoku">数独</a></div>
+  </div>
+  <div class="tier c">
+    <div class="head"><h3>占位：Assets（1）</h3><span class="count">7 个文件 · 0 个测试</span></div>
+    <p>README 把它列为资产管理，但 <code>src/assets</code> 只有 <code>index.html</code>、<code>package.json</code>、<code>vite.config.js</code>、图标与 README；<code>index.html</code> 引用的 <code>/src/main.js</code> 不存在。按目录清单判断，这是未完成项。</p>
+  </div>
+</div>
+<div class="callout"><b>分层是仓库形状，不是验收结论</b><p>本报告没有启动任何一个应用，也没有做功能、性能或安全测试。把“深度实现”理解成“代码与测试体量更大、涉及更难的文件格式”，不是“可以直接替代 Photoshop/AutoCAD”。</p></div>
+
+  </div>
+</section><section id="license">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">05</div><div><h2>许可证：MIT 的招牌，AGPL 的房间</h2><p class="lede">根 README 写 MIT；打开应用自己的 package.json，会看到另一套答案。</p></div></div>
+    
+<div class="lic-bar" role="img" aria-label="许可证分布：AGPL 9 个，MIT 7 个，未声明 35 个">
+  <span style="width:17.6%;background:#7a3ea8" title="AGPL 9"></span>
+  <span style="width:13.7%;background:#0c6b43" title="MIT 7"></span>
+  <span style="width:68.6%;background:#c9ced6" title="未声明 35"></span>
+</div>
+<div class="lic-legend">
+  <span><b>AGPL-3.0-only</b> 9 个</span><span><b>MIT</b> 7 个</span><span><b>未声明</b> 35 个</span>
+</div>
+
+<div class="table-wrap" style="margin-top:20px"><table>
+<thead><tr><th>package.json 声明</th><th class="num">数量</th><th>应用</th></tr></thead>
+<tbody>
+<tr><td><span class="badge agpl">AGPL-3.0-only</span></td><td class="num">9</td><td>表格、演示、白板、PDF 工具、笔记、邮件、视频工作室、三维工作室、建筑设计</td></tr>
+<tr><td><span class="badge mit">MIT</span></td><td class="num">7</td><td>数据表、日历、参数化建模、项目、问卷、会计、工单</td></tr>
+<tr><td><span class="badge none">未声明</span></td><td class="num">35</td><td>其余应用，包括 Photo Studio、CAD、Teamchat、Meetings、API Client 等未单独声明的应用。</td></tr>
+</tbody></table></div>
+<p class="caption">读取各应用 package.json 的 <code>license</code> 字段；仓库根 <code>LICENSE</code> 与 README 声明 MIT。</p>
+
+<div class="callout warn"><b>“MIT”不是整仓统一答案</b><p>根 README 写“MIT unless explicitly stated otherwise”，而 9 个应用确实单独声明了 AGPL-3.0-only，35 个没有声明。也就是说，仓库级 MIT 与目录级 AGPL 同时存在。把某个应用嵌进产品前，先看那个目录的 package.json。</p></div>
+<div class="callout bad"><b>AGPL 的网络条款</b><p>如果你修改了 AGPL 应用并让它通过网络对外提供服务，通常需要向用户提供对应源码。闭源 SaaS、二次分发、白标封装都要先过法务。Puter 平台本身也是 AGPL-3.0-only，和 Everything 的 MIT 不是一回事。</p></div>
+
+  </div>
+</section><section id="reuse">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">06</div><div><h2>复用它之前，先回答五个问题</h2><p class="lede">这五个问题决定你是“参考实现”，还是把债务接进产品。</p></div></div>
+    
+<div class="qa">
+  <div class="qa-row"><span class="qa-num">01</span><h3>许可证允许你的分发方式吗？</h3><p>9 个 AGPL、7 个 MIT、35 个未声明。先定位目标应用，再看目录级声明；不要用根 README 的 MIT 覆盖它。</p></div>
+  <div class="qa-row"><span class="qa-num">02</span><h3>数据层接在哪里？</h3><p>应用的 index.html 默认加载官方 Puter.js，文件、账号、AI 都走 Puter。仓库里没有独立后端；少量应用带 Serverless Worker（如邮件处理），仍运行在 Puter 上。“完全自托管”需要替换 SDK 来源并自行验证。</p></div>
+  <div class="qa-row"><span class="qa-num">03</span><h3>文件能不能带走？</h3><p>格式支持是这批应用的强项：xlsx、docx、pptx、psd、pdf、dxf、step、stl、gerber。协作数据用 Yjs，迁移要按具体应用的存储结构验证。</p></div>
+  <div class="qa-row"><span class="qa-num">04</span><h3>测试能不能信？</h3><p>9,253 个测试文件是信号，不是保证。先跑 <code>npm test</code>，再看与你相关的路径：导入导出、权限、异常输入、协作冲突。</p></div>
+  <div class="qa-row"><span class="qa-num">05</span><h3>维护由谁来做？</h3><p>51 个包各自独立，没有根工作区；Node 22.12+；上游 SDK 或格式库升级时要逐个跟进。把它当“源码参考库”比当“统一产品”更稳妥。</p></div>
+</div>
+
+<h3 style="margin-top:28px">跑起来</h3>
+<pre><code>git clone https://github.com/HeyPuter/everything.git
+cd everything/src/spreadsheet
+npm install
+npm run dev</code></pre>
+<p class="note">要求 Node.js 22.12+。每个应用单独安装、单独启动；运行时还需要网络访问 <code>js.puter.com</code>；存储与身份由 Puter 提供，通常需要一个账号。仓库没有统一的离线或自托管构建脚本。</p>
+
+<div class="callout"><b>时间也是证据</b><p>仓库创建于 2026-10-13，到数据快照日只有 19 天，已包含 51 个应用、34,458 个文件。这个速度很可能意味着高度自动化的开发流程（本报告无法核实具体工具）。这不是贬义，但意味着评估时要更依赖测试、代码审查与实际运行，而不是“项目年龄”。</p></div>
+
+  </div>
+</section><section id="sources">
+  <div class="wrap">
+    <div class="section-head"><div class="section-num">07</div><div><h2>来源与方法</h2><p class="lede">数字都能回到 git tree 或某个 package.json。</p></div></div>
+    
+<ol class="sources">
+<li><a href="https://github.com/HeyPuter/everything" target="_blank" rel="noopener noreferrer">HeyPuter/everything 仓库</a>：README 的应用表、分类、对标产品与演示链接。</li>
+<li><a href="https://github.com/HeyPuter/everything/tree/b5d2584" target="_blank" rel="noopener noreferrer">git tree（commit b5d2584）</a>：34,458 个被跟踪文件；51 个 <code>src/</code> 应用目录。</li>
+<li>各应用 <code>src/&lt;app&gt;/package.json</code>：运行时依赖、Node 要求、<code>license</code> 字段。</li>
+<li>抽样 <code>index.html</code>：<a href="https://github.com/HeyPuter/everything/blob/main/src/spreadsheet/index.html" target="_blank" rel="noopener noreferrer">spreadsheet</a>、<a href="https://github.com/HeyPuter/everything/blob/main/src/documents/index.html" target="_blank" rel="noopener noreferrer">documents</a>、<a href="https://github.com/HeyPuter/everything/blob/main/src/cad/index.html" target="_blank" rel="noopener noreferrer">cad</a>、<a href="https://github.com/HeyPuter/everything/blob/main/src/teamchat/index.html" target="_blank" rel="noopener noreferrer">teamchat</a>、<a href="https://github.com/HeyPuter/everything/blob/main/src/photo-studio/index.html" target="_blank" rel="noopener noreferrer">photo-studio</a>。</li>
+<li><a href="https://github.com/HeyPuter/everything/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">根 LICENSE</a> 与 README 的 MIT 声明；<code>src/assets</code> 目录用于占位判断。</li>
+<li><a href="https://github.com/HeyPuter/puter" target="_blank" rel="noopener noreferrer">HeyPuter/puter</a>：平台本体，AGPL-3.0-only。</li>
+<li>GitHub API：stars 6,376、forks 674、open issues 62；仓库创建于 2026-10-13。</li>
+</ol>
+<p class="caption">方法：文件计数按扩展名与 <code>tests/</code>、<code>*.test.*</code>、<code>*.spec.*</code> 启发式统计，排除 fixtures；不是代码行数。测试未执行，应用未启动；成熟度为基于仓库形状的推断。许可证以 package.json 的 <code>license</code> 字段为准。</p>
+
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <span>数据截至 2026-11-01；文件计数来自 git tree，未运行任何应用。</span>
+    <span>独立分析，不代表项目方。配套报告：Puter 平台分析（puter-analysis-report.html）</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var grid = document.getElementById('appGrid');
+  var cards = Array.prototype.slice.call(grid.querySelectorAll('.app'));
+  var q = document.getElementById('q');
+  var sort = document.getElementById('sort');
+  var lic = document.getElementById('licenseFilter');
+  var hasTests = document.getElementById('hasTests');
+  var reset = document.getElementById('reset');
+  var emptyReset = document.getElementById('emptyReset');
+  var empty = document.getElementById('empty');
+  var result = document.getElementById('result');
+  var catButtons = Array.prototype.slice.call(document.querySelectorAll('[data-filter-cat]'));
+  var state = { cat: 'all' };
+
+  function setCat(cat){
+    state.cat = cat;
+    catButtons.forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-filter-cat')===cat ? 'true':'false'); });
+  }
+
+  function apply(){
+    var term = q.value.trim().toLowerCase();
+    var l = lic.value;
+    var onlyTests = hasTests.checked;
+    var shown = 0;
+    cards.forEach(function(card){
+      var okCat = state.cat==='all' || card.getAttribute('data-cat')===state.cat;
+      var okLic = l==='all' || card.getAttribute('data-license')===l;
+      var okTerm = !term || card.getAttribute('data-search').indexOf(term) !== -1;
+      var okTests = !onlyTests || Number(card.getAttribute('data-tests')) > 0;
+      var on = okCat && okLic && okTerm && okTests;
+      card.hidden = !on;
+      if(on) shown++;
+    });
+
+    var mode = sort.value;
+    var ordered = cards.slice();
+    if(mode==='impl'||mode==='tests'||mode==='deps'){
+      ordered.sort(function(a,b){ return Number(b.getAttribute('data-'+mode)) - Number(a.getAttribute('data-'+mode)); });
+    } else if(mode==='name'){
+      ordered.sort(function(a,b){ return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name')); });
+    }
+    ordered.forEach(function(card){ grid.appendChild(card); });
+
+    result.textContent = '显示 ' + shown + ' / ' + cards.length + ' 个应用';
+    empty.classList.toggle('show', shown===0);
+    empty.setAttribute('aria-hidden', shown===0 ? 'false' : 'true');
+  }
+
+  catButtons.forEach(function(b){
+    b.addEventListener('click', function(){
+      var cat = b.getAttribute('data-filter-cat');
+      setCat(cat==='all' ? 'all' : (state.cat===cat ? 'all' : cat));
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+  sort.addEventListener('change', apply);
+  lic.addEventListener('change', apply);
+  hasTests.addEventListener('change', apply);
+
+  function resetAll(){
+    q.value=''; lic.value='all'; hasTests.checked=false; sort.value='default'; setCat('all'); apply(); q.focus();
+  }
+  reset.addEventListener('click', resetAll);
+  emptyReset.addEventListener('click', resetAll);
+
+  apply();
+  Array.prototype.forEach.call(document.querySelectorAll('.table-wrap table'), function(table){
+    var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th){ return th.textContent.trim(); });
+    Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function(tr){
+      Array.prototype.forEach.call(tr.children, function(td, i){ if(heads[i]) td.setAttribute('data-label', heads[i]); });
+    });
+  });
+  document.documentElement.classList.add('js-tables');
+
+  Array.prototype.forEach.call(document.querySelectorAll('.table-wrap, pre'), function(el){
+    if(el.scrollWidth > el.clientWidth + 1){ el.tabIndex = 0; el.setAttribute('role','region'); el.setAttribute('aria-label','可横向滚动的内容'); }
+  });
+})();
+</script>
+
+</body>
+</html>
