@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireshark 工具报告 · 架构、工具链与实战边界</title>
+<meta name="description" content="Wireshark 是什么、仓库在哪、内部怎么分层、命令行工具有哪些、怎么用它排查问题，以及它不能做什么。">
+<style>
+:root{
+  --ink:#14181f; --ink-2:#3c4450; --ink-3:#6a7280;
+  --bg:#fbfbf9; --panel:#fff; --line:#e3e3dc; --line-2:#efefe9;
+  --accent:#0b5c9e; --accent-2:#0d7a86; --accent-soft:#e8f0fa;
+  --warn:#8a5210; --warn-soft:#fdf4e4; --danger:#9b2c2c; --danger-soft:#fbeceb;
+  --ok:#1f6b45; --ok-soft:#e8f4ed;
+  --code-bg:#121820; --code-ink:#dbe4ef;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:hover{text-decoration-style:dotted}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;z-index:99;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+code{font-family:var(--mono);font-size:.9em}
+
+.hero{background:
+  radial-gradient(900px 340px at 8% -20%, #16436b 0%, rgba(22,67,107,0) 70%),
+  radial-gradient(800px 320px at 92% -30%, #10454c 0%, rgba(16,69,76,0) 72%),
+  #0f141c;color:#eef3f9;border-bottom:1px solid #0a0e14}
+.hero .wrap{padding-top:52px;padding-bottom:36px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7fb3e8;margin:0 0 14px}
+h1{font-size:clamp(27px,4.3vw,44px);line-height:1.2;margin:0 0 14px;letter-spacing:-.018em;font-weight:750;color:#fff}
+.lede{font-size:clamp(15px,1.5vw,17.5px);color:#b9c6d6;max-width:66ch;margin:0 0 24px}
+.lede strong{color:#fff;font-weight:600}
+.hero-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);overflow:hidden;margin:0 0 22px}
+.hero-facts div{background:#121923;padding:13px 15px}
+.hero-facts dt{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8b9db4;margin:0 0 4px;font-family:var(--mono)}
+.hero-facts dd{margin:0;font-size:13.5px;color:#e9eff7;font-weight:600;line-height:1.45}
+.note-strip{border:1px solid rgba(140,190,255,.28);background:rgba(140,190,255,.08);border-radius:var(--radius);padding:13px 16px;font-size:13.5px;color:#c9dcf2;line-height:1.6}
+.note-strip b{color:#eaf3ff}
+.note-strip.warn{border-color:rgba(255,196,120,.34);background:rgba(255,196,120,.09);color:#f0dcc0}
+.note-strip.warn b{color:#ffd9a6}
+
+.toc{position:sticky;top:0;z-index:20;background:rgba(251,251,249,.94);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line)}
+.toc .wrap{display:flex;gap:2px;overflow-x:auto;padding:0 24px;scrollbar-width:none}
+.toc .wrap::-webkit-scrollbar{display:none}
+.toc a{flex:0 0 auto;padding:12px;font-size:13.5px;color:var(--ink-2);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
+.toc a:hover{color:var(--accent);border-bottom-color:var(--line)}
+.toc a .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:5px}
+
+main{padding-bottom:20px}
+section{padding:50px 0 8px;border-top:1px solid var(--line-2);scroll-margin-top:62px}
+section:first-of-type{border-top:0}
+h2{font-size:clamp(21px,2.5vw,29px);line-height:1.3;margin:0 0 14px;letter-spacing:-.012em;font-weight:720}
+h2 .num{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.15em;color:var(--accent-2);font-weight:600;margin-bottom:8px}
+h3{font-size:17px;margin:28px 0 10px;letter-spacing:-.005em}
+h4{font-size:15px;margin:20px 0 8px}
+p{margin:0 0 14px}
+.sub{font-size:15.5px;color:var(--ink-2);max-width:76ch}
+.sub em{font-style:normal;background:linear-gradient(transparent 62%, #ffe8a8 62%);padding:0 1px}
+
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin:20px 0}
+.cols2 > *{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.panel h3,.panel h4{margin-top:0}
+.panel.warn{background:var(--warn-soft);border-color:#f0dfc2}
+.panel.bad{background:var(--danger-soft);border-color:#f2d4d1}
+.panel.good{background:var(--ok-soft);border-color:#cfe6d9}
+.panel p:last-child,.panel ul:last-child{margin-bottom:0}
+ul,ol{margin:0 0 14px;padding-left:20px}
+li{margin:5px 0}
+li::marker{color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;line-height:1.5;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid #d5e0f6;white-space:nowrap}
+.tag.g{background:var(--ok-soft);color:var(--ok);border-color:#cfe6d9}
+.tag.w{background:var(--warn-soft);color:var(--warn);border-color:#f0dfc2}
+.tag.r{background:var(--danger-soft);color:var(--danger);border-color:#f2d4d1}
+
+.tbl-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:600px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:#f6f6f1;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+table code{background:#f2f3ee;padding:1px 5px;border-radius:4px;white-space:nowrap}
+
+.figure{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:18px 0}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{font-size:12.5px;color:var(--ink-3);margin-top:10px;line-height:1.55}
+
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:13px 15px;overflow-x:auto;font-size:13px;line-height:1.62;margin:0 0 14px;font-family:var(--mono);tab-size:2}
+pre code{font-size:inherit}
+pre .c{color:#7d8b9c}
+pre .p{color:#8fd0ff}
+pre .k{color:#ffc98b}
+pre .s{color:#a8e0b4}
+.codewrap{position:relative;margin:0 0 14px}
+.codewrap pre{margin:0;padding-right:58px}
+.copy{position:absolute;top:8px;right:8px;font:inherit;font-size:11.5px;font-family:var(--mono);padding:3px 9px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.09);color:#c8d4e2;border:1px solid rgba(255,255,255,.14);opacity:.6;transition:opacity .15s}
+.codewrap:hover .copy,.copy:focus-visible{opacity:1}
+.copy:focus-visible{outline-color:#8fb6ff}
+
+.step{display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;margin:0 0 10px}
+.step .no{font-family:var(--mono);font-size:12px;color:#fff;background:var(--accent);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:600}
+.step > *{min-width:0}
+.step h4{margin:0 0 4px;font-size:15px}
+.step code{word-break:break-word}
+.step p{margin:0 0 6px;font-size:14px;color:var(--ink-2)}
+.step p:last-child{margin-bottom:0}
+
+details{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:0 18px;margin:10px 0}
+details[open]{padding-bottom:6px}
+summary{cursor:pointer;padding:13px 0;font-weight:600;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--accent);font-size:16px;line-height:1}
+details[open] summary::before{content:"–"}
+details p,details ul{font-size:14.5px;color:var(--ink-2)}
+
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin:16px 0}
+.links div{border:1px solid var(--line);border-radius:8px;padding:10px 13px;background:var(--panel);font-size:13.5px}
+.links b{display:block;font-size:14px;margin-bottom:2px}
+.links a{word-break:break-all;font-size:12.5px;color:var(--ink-3);text-decoration:none}
+.links a:hover{color:var(--accent);text-decoration:underline}
+
+footer{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 40px;font-size:12.5px;color:var(--ink-3)}
+footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media (max-width:720px){
+  .toc .wrap{flex-wrap:nowrap;overflow-x:auto}
+  .cols2{grid-template-columns:minmax(0,1fr)}
+  .step{grid-template-columns:44px minmax(0,1fr);gap:12px}
+  .hero .wrap{padding-top:36px}
+  section{padding-top:36px}
+}
+@media print{
+  .toc,.copy{display:none}
+  body{background:#fff}
+  pre{white-space:pre-wrap;word-break:break-word}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tool Report · Wireshark</p>
+    <h1>Wireshark：把"网线里发生了什么"<br>变成一棵可以点的树</h1>
+    <p class="lede">
+      Wireshark 是网络协议分析器的事实标准：<strong>抓包、解码、过滤、还原</strong>四件事做成一条流水线。
+      这份报告讲清三件事：GitHub 上的仓库为什么只是镜像、<strong>1700 多个解析器</strong>是怎么组织的、
+      以及哪些问题适合用它、哪些问题它根本不该上场。
+    </p>
+    <dl class="hero-facts">
+      <div><dt>License</dt><dd>GPL-2.0</dd></div>
+      <div><dt>Language</dt><dd>C / C++ / Qt</dd></div>
+      <div><dt>Stable</dt><dd>4.6.9（旧稳定 4.4.19）</dd></div>
+      <div><dt>Dev</dt><dd>4.7.x → 5.0 RC</dd></div>
+      <div><dt>主仓库</dt><dd>GitLab，不是 GitHub</dd></div>
+    </dl>
+    <p class="note-strip warn">
+      <b>先说明仓库关系：</b>github.com/wireshark/wireshark 是只读镜像，所有 commit / MR / issue 都在
+      gitlab.com/wireshark/wireshark。镜像延迟、issue 区几乎为空，都是正常的，<b>不要</b>在 GitHub 上提 PR。
+    </p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章节导航">
+  <div class="wrap">
+    <a href="#tldr"><span class="n">01</span>结论</a>
+    <a href="#repo"><span class="n">02</span>仓库现状</a>
+    <a href="#arch"><span class="n">03</span>架构</a>
+    <a href="#tools"><span class="n">04</span>工具链</a>
+    <a href="#start"><span class="n">05</span>上手</a>
+    <a href="#cases"><span class="n">06</span>排障场景</a>
+    <a href="#perf"><span class="n">07</span>大文件</a>
+    <a href="#risk"><span class="n">08</span>安全与合规</a>
+    <a href="#limits"><span class="n">09</span>局限与替代</a>
+    <a href="#eco"><span class="n">10</span>生态</a>
+    <a href="#sources"><span class="n">11</span>来源</a>
+  </div>
+</nav>
+
+<main id="main">
+<div class="wrap">
+
+<section id="tldr">
+  <h2><span class="num">01 / BOTTOM LINE</span>三句话说完，再决定要不要读完</h2>
+  <div class="cols2">
+    <div class="panel good">
+      <h3>它的护城河是"解析"</h3>
+      <p>
+        抓包这件事 tcpdump 也能做，真正难的是把 1700 多个协议解析器组织成同一套字段树，
+        再让你用 <code>http.response.code &gt;= 500</code> 这种表达式直接问问题。换工具容易，换这套字段体系很难。
+      </p>
+    </div>
+    <div class="panel good">
+      <h3>命令行才是它能自动化的那一半</h3>
+      <p>
+        GUI 适合人看，<code>tshark</code> 适合机器看。把 <code>-Y</code> 过滤器和 <code>-T fields</code>
+        拼起来，等于给任何脚本加了一个"能读协议"的函数——这是它被集成进流水线的真正原因。
+      </p>
+    </div>
+    <div class="panel warn">
+      <h3>它是显微镜，不是监控系统</h3>
+      <p>
+        没有告警、没有长期留存、没有资产画像。连续抓一周的流量该交给 Zeek / Arkime / Suricata，
+        Wireshark 负责"这条流为什么慢"这种需要人盯着看的时刻。
+      </p>
+    </div>
+    <div class="panel warn">
+      <h3>解析器就是攻击面</h3>
+      <p>
+        每个 dissector 都在处理不可信输入。项目自己把"解析器崩溃或死循环"列为安全漏洞，
+        并持续做 fuzzing。打开来源不明的 pcap，最稳的做法是放进虚拟机。
+      </p>
+    </div>
+  </div>
+
+  <h3>适合 / 不适合</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>任务</th><th>用 Wireshark</th><th>更好的选择</th></tr></thead>
+      <tbody>
+        <tr><td>某接口 500ms 延迟从哪来</td><td>是，首选</td><td>—</td></tr>
+        <tr><td>TLS 握手失败、证书链问题</td><td>是，前提是有密钥或 keylog</td><td>openssl s_client</td></tr>
+        <tr><td>还原一次 HTTP 上传 / 抓明文口令</td><td>是</td><td>NetworkMiner（更省事）</td></tr>
+        <tr><td>7×24 流量留存与检索</td><td>否</td><td>Arkime、Zeek + 对象存储</td></tr>
+        <tr><td>入侵检测与告警</td><td>否</td><td>Suricata、Zeek、NDR 产品</td></tr>
+        <tr><td>CI 里对 pcap 做断言</td><td>是（tshark + 脚本）</td><td>scapy（写逻辑更自由）</td></tr>
+        <tr><td>审计加密流量内容</td><td>不适用</td><td>端点侧 eBPF / 应用日志</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="repo">
+  <h2><span class="num">02 / THE REPO</span>两个仓库，分工很清楚</h2>
+  <p class="sub">
+    Wireshark 2006 年从 Ethereal 改名而来，2014 年在 GitHub 建立镜像。镜像存在的意义是"可搜索、可引用"，
+    不是"可协作"。理解这一点，能省掉很多"为什么我的 PR 没人理"的困惑。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th></th><th>GitHub 镜像</th><th>GitLab 主仓库</th></tr></thead>
+      <tbody>
+        <tr><td>地址</td><td><code>wireshark/wireshark</code></td><td><code>gitlab.com/wireshark/wireshark</code></td></tr>
+        <tr><td>性质</td><td>只读镜像，README 明确写了 "Read-only mirror"</td><td>开发主库：合并请求、CI、issue 都在这里</td></tr>
+        <tr><td>提交</td><td>与上游同步，有延迟</td><td>唯一入口，走 Merge Request + 代码评审</td></tr>
+        <tr><td>Issue</td><td>镜像上仅 2 个，基本不用</td><td>缺陷与需求在这里跟踪</td></tr>
+        <tr><td>Star（抓取时）</td><td>约 10.1k</td><td>约 1.7k</td></tr>
+        <tr><td>适合做什么</td><td>读源码、grep、给文章做引用</td><td>提交补丁、跟进开发进度</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">仓库规模（本次统计）</h3>
+      <ul style="margin-bottom:0">
+        <li><code>epan/dissectors/</code>：3,560 个文件，其中 1,874 个 <code>.c</code> 解析器</li>
+        <li><code>wiretap/</code>：198 个文件，负责 90+ 种抓包文件格式</li>
+        <li><code>ui/qt/</code>：848 个文件，Qt 界面层</li>
+        <li><code>test/</code>：927 个文件，pytest + 抓包样本</li>
+        <li><code>extcap/</code>：26 个文件，15 个外接采集器</li>
+        <li>仓库体积约 1.5 GB，C 为主</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">版本节奏（抓取时）</h3>
+      <ul style="margin-bottom:0">
+        <li>当前稳定：<b>4.6.9</b>；旧稳定：<b>4.4.19</b>（仍在维护）</li>
+        <li>开发分支：<b>4.7.x</b>，master 已进入 <b>5.0</b> 的 RC 阶段</li>
+        <li>发布说明里写着 "experimental release intended to test new features for Wireshark 5.0"</li>
+        <li>同树还有 Stratoshark（系统调用 / 日志分析器，`ssv` 版本号）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">给贡献者的两个信号</h3>
+    <p>
+      仓库根目录有 <code>AGENTS.md</code>，专门写给 AI 编程助手：提交必须用 <code>Assisted-by: Claude</code>
+      这类 trailer 声明 AI 参与，摘要行要用组件名前缀（如 <code>TLS: Fix ...</code>），
+      并且要求"每个 MR 的 commit 原样落地，修订请 amend + force-push"。
+      这不是形式主义——它意味着合并历史保持线性，<code>git log</code> 能当变更日志读。
+    </p>
+    <p style="margin-bottom:0">
+      另一条是 <code>doc/README.developer</code> 的健壮性规则：解析器遇到畸形数据只能报 expert info，
+      不能 assert、不能无限递归。<code>DISSECTOR_ASSERT()</code> 只用于"代码有 bug"，不是"包有问题"。
+    </p>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="num">03 / ARCHITECTURE</span>一条包从网卡到字段树的路径</h2>
+  <p class="sub">
+    分层很干净：<em>采集</em>、<em>落盘</em>、<em>解析</em>、<em>呈现</em>四段各自独立，
+    中间用 pcap/pcapng 文件格式解耦。这也是为什么 <code>dumpcap</code>、<code>tshark</code>、GUI 能共享同一套解析代码。
+  </p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 920 380" role="img" aria-labelledby="wsdiag">
+      <title id="wsdiag">Wireshark 分层架构：采集层、文件层、解析层、呈现层</title>
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8c98a8"/>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,Segoe UI,PingFang SC,sans-serif" font-size="13">
+        <text x="0" y="16" fill="#6a7280" font-size="11" letter-spacing="1.2">CAPTURE</text>
+
+        <rect x="0" y="26" width="250" height="62" rx="8" fill="#eef4fc" stroke="#c9dcf2"/>
+        <text x="14" y="50" fill="#14181f" font-weight="600">网卡 / 外接采集器</text>
+        <text x="14" y="69" fill="#3c4450" font-size="12">libpcap · Npcap · extcap</text>
+        <text x="14" y="84" fill="#6a7280" font-size="10.5">sshdump · ciscodump · androiddump</text>
+
+        <rect x="0" y="106" width="250" height="62" rx="8" fill="#eaf5f2" stroke="#cbe5dd"/>
+        <text x="14" y="130" fill="#14181f" font-weight="600">dumpcap（特权进程）</text>
+        <text x="14" y="149" fill="#3c4450" font-size="12">实时抓包、环形缓冲、文件轮转</text>
+
+        <rect x="0" y="196" width="250" height="62" rx="8" fill="#fdf5e6" stroke="#efdfc2"/>
+        <text x="14" y="220" fill="#14181f" font-weight="600">pcap / pcapng 文件</text>
+        <text x="14" y="239" fill="#3c4450" font-size="12">唯一的落盘格式与进程间契约</text>
+
+        <text x="330" y="16" fill="#6a7280" font-size="11" letter-spacing="1.2">DISSECT</text>
+
+        <rect x="330" y="26" width="250" height="148" rx="8" fill="#e9eefb" stroke="#cbd8f0"/>
+        <text x="344" y="50" fill="#14181f" font-weight="600">epan 解析引擎</text>
+        <text x="344" y="72" fill="#3c4450" font-size="12">· 1,874 个 dissector</text>
+        <text x="344" y="92" fill="#3c4450" font-size="12">· 字段注册表 / 协议树</text>
+        <text x="344" y="112" fill="#3c4450" font-size="12">· 显示过滤器编译</text>
+        <text x="344" y="132" fill="#3c4450" font-size="12">· taps：统计与专家信息</text>
+        <text x="344" y="156" fill="#6a7280" font-size="11">Lua / 插件在此挂载</text>
+
+        <rect x="330" y="196" width="250" height="62" rx="8" fill="#eef4fc" stroke="#c9dcf2"/>
+        <text x="344" y="220" fill="#14181f" font-weight="600">wiretap</text>
+        <text x="344" y="239" fill="#3c4450" font-size="12">90+ 种文件格式读取 / 写出</text>
+
+        <text x="660" y="16" fill="#6a7280" font-size="11" letter-spacing="1.2">SURFACE</text>
+
+        <rect x="660" y="26" width="250" height="58" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="674" y="50" fill="#14181f" font-weight="600">Wireshark GUI（Qt）</text>
+        <text x="674" y="69" fill="#3c4450" font-size="12">人看的界面：树、字节、时序图</text>
+
+        <rect x="660" y="96" width="250" height="58" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="674" y="120" fill="#14181f" font-weight="600">tshark / rawshark</text>
+        <text x="674" y="139" fill="#3c4450" font-size="12">脚本与流水线读的接口</text>
+
+        <rect x="660" y="166" width="250" height="58" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="674" y="190" fill="#14181f" font-weight="600">sharkd / extcap 生态</text>
+        <text x="674" y="209" fill="#3c4450" font-size="12">守护进程、第三方工具接入</text>
+
+        <rect x="660" y="236" width="250" height="58" rx="8" fill="#fdf1ef" stroke="#f0d6d1"/>
+        <text x="674" y="260" fill="#14181f" font-weight="600">Stratoshark</text>
+        <text x="674" y="279" fill="#3c4450" font-size="12">同一套引擎分析系统调用 / 日志</text>
+
+        <line x1="125" y1="88" x2="125" y2="100" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="125" y1="168" x2="125" y2="190" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="250" y1="137" x2="322" y2="137" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="250" y1="227" x2="322" y2="227" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="455" y1="196" x2="455" y2="180" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="580" y1="55" x2="652" y2="55" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="580" y1="120" x2="652" y2="120" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="580" y1="160" x2="652" y2="192" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="580" y1="170" x2="652" y2="258" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar)"/>
+
+        <text x="0" y="300" fill="#3c4450" font-size="12">两条入口：实时（dumpcap → epan）和离线（文件 → wiretap → epan）。两条路最终汇到同一个解析引擎，</text>
+        <text x="0" y="320" fill="#3c4450" font-size="12">所以"命令行看到的"和"界面里看到的"必然一致；代价是解析规则只能有一套，协议有歧义时工具会做启发式猜测。</text>
+        <text x="0" y="344" fill="#6a7280" font-size="11">示意：省略了插件加载、偏好设置与 TLS 解密钩子。</text>
+      </g>
+    </svg>
+    <figcaption>
+      图的重点不是层数，而是<b>解耦位置</b>：文件格式把"采集"和"解析"分开，所以可以离线分析别人抓的包；
+      解析引擎把"数据"和"界面"分开，所以同一份 pcap 能同时被 GUI、tshark 和统计脚本消费。
+    </figcaption>
+  </figure>
+
+  <h3>四个模块各管什么</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>模块</th><th>职责</th><th>你会直接碰到的部分</th></tr></thead>
+      <tbody>
+        <tr><td>capture / dumpcap</td><td>通过 libpcap/Npcap 抓包；环形缓冲；权限分离（GUI 不用 root）</td><td>抓包选项、<code>-b</code> 轮转、网卡列表</td></tr>
+        <tr><td>wiretap</td><td>读写抓包文件格式，不关心协议</td><td>打开 pcapng、导出成别的格式、<code>editcap</code></td></tr>
+        <tr><td>epan</td><td>真正的解析引擎：dissector、字段、显示过滤器、统计 tap、专家信息</td><td>过滤表达式、列、统计菜单、<code>-z</code></td></tr>
+        <tr><td>ui / 前端</td><td>Qt 界面、tshark 命令、sharkd 服务</td><td>快捷键、profile、导出 JSON/CSV</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<section id="tools">
+  <h2><span class="num">04 / TOOLCHAIN</span>别只认识那个蓝色图标</h2>
+  <p class="sub">
+    发行包里其实有十几个可执行文件，man 手册也是按工具分开的。GUI 只是最显眼的一个，
+    <em>真正能进脚本、进 CI、进事故复盘的</em>是后面这几个。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>命令</th><th>干什么</th><th>典型用途</th></tr></thead>
+      <tbody>
+        <tr><td>wireshark</td><td>Qt 图形界面</td><td>人工逐个包看、画时序、跟流</td></tr>
+        <tr><td>tshark</td><td>命令行解析器，功能≈GUI 的解析部分</td><td>批量提取字段、CI 断言、统计</td></tr>
+        <tr><td>dumpcap</td><td>专职抓包，权限最小化</td><td>长时间抓包、环形缓冲、多文件轮转</td></tr>
+        <tr><td>editcap</td><td>按条件裁剪 / 切分 / 改时间戳</td><td>把 20GB 拆成可分析的小块、去重</td></tr>
+        <tr><td>mergecap</td><td>按时间合并多个抓包</td><td>多网卡、多段同时抓的包合成一条时间线</td></tr>
+        <tr><td>capinfos</td><td>输出文件元信息</td><td>先看时长、包数、接口，再决定怎么分析</td></tr>
+        <tr><td>text2pcap</td><td>十六进制 / ASCII 转 pcap</td><td>把日志里的报文片段变成可解析的包</td></tr>
+        <tr><td>rawshark</td><td>对原始字段做过滤输出</td><td>字段级处理，比 tshark 更底层</td></tr>
+        <tr><td>sharkd</td><td>解析守护进程（socket 接口）</td><td>给别的程序提供解析能力</td></tr>
+        <tr><td>randpkt / captype / reordercap</td><td>造随机包、判类型、重排序</td><td>压测解析器、修乱序抓包</td></tr>
+        <tr><td>stratoshark / strato</td><td>系统调用与日志分析前端</td><td>把 syscall 当"包"来过滤（结合 Falco 采集）</td></tr>
+        <tr><td>sshdump / ciscodump / androiddump / sdjournal / etwdump</td><td>extcap 外接采集器</td><td>远程抓、交换机抓、安卓抓、读 systemd/ETW 日志</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">一个经常被忽略的组合：<code>dumpcap</code> 抓 + <code>tshark</code> 判 + <code>editcap</code> 切</h3>
+    <p style="margin-bottom:0">
+      事故现场先用 <code>dumpcap</code> 低开销抓 10 分钟（带环形缓冲，防止写满磁盘），
+      回办公室用 <code>capinfos</code> 看规模，<code>editcap -A/-B</code> 截出问题时段，
+      再用 <code>tshark</code> 出统计，最后才打开 GUI 精看。整条链路不需要图形界面，也不需要 sudo 跑 GUI。
+    </p>
+  </div>
+</section>
+
+<section id="start">
+  <h2><span class="num">05 / GETTING STARTED</span>装好、拿到权限、抓第一个包</h2>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">安装</h3>
+<pre style="margin-bottom:0"><code><span class="c"># Debian / Ubuntu / Kali</span>
+sudo apt install wireshark tshark
+
+<span class="c"># macOS</span>
+brew install --cask wireshark
+
+<span class="c"># Windows：装官方包，会一并安装 Npcap</span>
+winget install WiresharkFoundation.Wireshark</code></pre>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">权限：不要用 root 开 GUI</h3>
+<pre style="margin-bottom:0"><code><span class="c"># Linux：让普通用户能用 dumpcap 抓包</span>
+sudo dpkg-reconfigure wireshark-common   <span class="c"># 选 Yes</span>
+sudo usermod -aG wireshark "$USER"
+newgrp wireshark
+
+<span class="c"># macOS：安装包里的 ChmodBPF 会处理 BPF 权限</span>
+
+<span class="c"># 验证</span>
+dumpcap -D</code></pre>
+    </div>
+  </div>
+
+  <h3>三种抓包姿势，按场景选</h3>
+<pre><code><span class="c"># 1) 临时看一眼：只留 DNS 和 HTTP，避免抓一堆无关流量</span>
+sudo dumpcap -i eth0 -f 'port 53 or port 80' -w /tmp/look.pcapng
+
+<span class="c"># 2) 长时间抓：每 200MB 或每 5 分钟切一个，最多留 20 个（约 4GB 上限）</span>
+sudo dumpcap -i eth0 -b duration:300 -b filesize:204800 -b files:20 -w /var/tmp/cap.pcapng
+
+<span class="c"># 3) 远程机器：sshdump 免装 Wireshark，直接抓远端接口</span>
+<span class="c">#    GUI: Capture ▸ Options ▸ SSH remote capture</span></code></pre>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">捕获过滤器和显示过滤器不是一回事</h3>
+    <p>
+      捕获过滤器是 BPF，在抓之前就把包丢掉，写错就等于没抓到；显示过滤器是 Wireshark 自己的语法，
+      作用于已经落盘的数据，可以随时改。常见错误是在 <code>-f</code> 里写 <code>http.request</code>——
+      BPF 不认识这个字段，只会静默抓到空文件。
+    </p>
+  </div>
+
+  <h3>六个够用的显示过滤器</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>目的</th><th>过滤器</th></tr></thead>
+      <tbody>
+        <tr><td>只看某主机的 HTTP 请求</td><td><code>ip.addr == 10.0.0.5 &amp;&amp; http.request</code></td></tr>
+        <tr><td>5xx 响应</td><td><code>http.response.code &gt;= 500</code></td></tr>
+        <tr><td>TCP 层异常（重传、乱序、零窗口）</td><td><code>tcp.analysis.flags</code></td></tr>
+        <tr><td>TLS 握手失败</td><td><code>tls.alert_message</code></td></tr>
+        <tr><td>DNS 返回错误</td><td><code>dns.flags.rcode != 0</code></td></tr>
+        <tr><td>只看到致命错误（专家信息）</td><td><code>_ws.expert.severity == error</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:13.5px">
+    记不住字段名时：<code>tshark -G fields | grep -i tls</code> 列出所有字段，<code>tshark -G protocols</code> 列协议。
+    这比背文档可靠——字段名随版本变，<code>-G</code> 永远和当前二进制一致。
+  </p>
+
+  <h3>tshark：把包变成表格</h3>
+<pre><code><span class="c"># 一条 TCP 流里，谁在哪一刻重传了</span>
+tshark -r cap.pcapng -Y 'tcp.analysis.retransmission' \
+  -T fields -e frame.number -e frame.time_relative -e ip.src -e tcp.srcport -e tcp.seq
+
+<span class="c"># HTTP 请求清单（含耗时）</span>
+tshark -r cap.pcapng -Y 'http.request' -T fields \
+  -e frame.time_relative -e ip.src -e http.host -e http.request.method -e http.request.uri -e http.time
+
+<span class="c"># 协议分层统计 + 会话统计</span>
+tshark -r cap.pcapng -q -z io,phs -z conv,tcp
+
+<span class="c"># 导出为 JSON 再交给 jq</span>
+tshark -r cap.pcapng -Y 'dns' -T json | jq '.[]._source.layers.dns'</code></pre>
+</section>
+
+<section id="cases">
+  <h2><span class="num">06 / FIELD NOTES</span>五个真实场景，过滤器 + 怎么读</h2>
+  <p class="sub">
+    这一节不是"功能列表"，而是拿包的人实际会遇到的判断顺序。每条都给过滤器和<b>判读要点</b>——
+    后者才是新手和熟手的差距。
+  </p>
+
+  <details>
+    <summary>1. 接口慢：先分清"网络慢"还是"服务慢"</summary>
+    <p><b>过滤器：</b><code>tcp.analysis.flags</code>、<code>tcp.window_size == 0</code>、<code>frame.time_delta &gt; 0.2</code></p>
+    <p><b>读法：</b>先看 <i>Statistics ▸ TCP Stream Graphs ▸ Time/Sequence</i>。曲线出现平台说明等待（零窗口=接收端处理不过来；
+       没有 ACK=链路丢包）。再看 <code>tcp.analysis.retransmission</code> 的比例：偶发重传是常态，
+       成片重传才是链路问题。最后对齐服务端日志的时间戳——如果请求到达服务端时已经晚了 300ms，问题在网络上，不在应用里。</p>
+    <p><b>常见误判：</b>把"客户端渲染慢"当成网络慢。Wireshark 只看到 TCP 层，看不到浏览器解析和 JS 执行。</p>
+  </details>
+
+  <details>
+    <summary>2. TLS 握手失败：证书、协议版本还是 SNI</summary>
+    <p><b>过滤器：</b><code>tls.handshake.type == 1 || tls.handshake.type == 2</code>、<code>tls.alert_message</code></p>
+    <p><b>读法：</b>先展开 Client Hello，看 <code>supported_versions</code>、<code>server_name</code>、密码套件；
+       再看 Server Hello 选了什么；最后看 Alert 的 <code>description</code>（40=handshake_failure，112=unrecognized_name，70=protocol_version）。
+       现代排查还要注意：中间设备（防火墙、CDN、零信任网关）会替服务端回 RST 或伪造证书，此时握手看起来"失败得很干净"，
+       但 <code>ip.ttl</code> 和证书签发者会露馅。</p>
+  </details>
+
+  <details>
+    <summary>3. HTTP 500：到底是哪一跳返回的</summary>
+    <p><b>过滤器：</b><code>http.response.code &gt;= 500</code>，然后 <i>Follow ▸ HTTP Stream</i></p>
+    <p><b>读法：</b>看响应头里的 <code>Server</code>、<code>X-Powered-By</code>、<code>Via</code>，判断是源站还是网关；
+       对比 <code>http.time</code> 与 <code>tcp.time_delta</code>——前者是服务端处理时间，后者包含排队与网络。
+       如果响应体是 HTML 错误页而不是 JSON，多半是网关/反代生成的，先把责任边界划清再找研发。</p>
+  </details>
+
+  <details>
+    <summary>4. DNS 慢：是解析慢，还是每次都重新解析</summary>
+    <p><b>过滤器：</b><code>dns.flags.rcode != 0</code>、<code>dns.time &gt; 0.5</code></p>
+    <p><b>读法：</b><code>Statistics ▸ DNS</code> 能直接看响应时间分布；看 <code>dns.flags.response == 0</code>
+       的请求是否有对应的响应，没有就是超时重试。NXDOMAIN 大量出现时，先怀疑拼写错误或搜索域后缀被滥用，
+       而不是"DNS 服务器坏了"。</p>
+    <p><b>注意：</b>加密 DNS（DoH/DoT）下看不到域名，只能看到 443/853 的连接行为，这是协议设计，不是工具缺陷。</p>
+  </details>
+
+  <details>
+    <summary>5. 广播风暴 / ARP 冲突：二层问题不要在三层找</summary>
+    <p><b>过滤器：</b><code>arp.duplicate-address-detected</code>、<code>arp.opcode == 1</code>、<code>broadcast</code></p>
+    <p><b>读法：</b>先看 <i>Statistics ▸ Endpoints</i> 里广播包的占比，再按 MAC 统计发包量找出"话最多"的那台。
+       一个 IP 对应两个 MAC 且频繁切换，通常不是攻击，是有人在手动改 IP 或双网卡同时上线。
+       ARP 欺骗的特征是"网关 MAC 突然变了"，此时对比 <code>arp.src.hw_mac</code> 的历史值即可。</p>
+  </details>
+
+  <h3>加一条：找明文凭据</h3>
+<pre><code><span class="c"># 只在授权范围内使用：找 Basic 认证头、FTP/Telnet 明文口令</span>
+tshark -r cap.pcapng -Y 'http.authorization || ftp.request.command == "PASS" || telnet' \
+  -T fields -e ip.src -e http.authorization -e ftp.request.arg -e telnet.data</code></pre>
+  <p class="muted" style="font-size:13.5px">
+    这条命令本身就是"pcap 为什么不能随手外发"的最好证明：一个抓包文件里可能有别人的口令、Cookie 和会话令牌。
+  </p>
+</section>
+
+<section id="perf">
+  <h2><span class="num">07 / SCALE</span>大文件不是不能开，是别用错方式</h2>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">采集端就该做的</h3>
+      <ul style="margin-bottom:0">
+        <li>先加捕获过滤器，别"先全抓再筛"</li>
+        <li>用环形缓冲 <code>-b filesize/files/duration</code>，别让磁盘写满</li>
+        <li>按需改 snaplen（<code>-s 128</code> 只看头），能显著降体积</li>
+        <li>关名字解析（<code>-n</code>），否则每个包都可能触发一次 DNS 查询</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">分析端该做的</h3>
+      <ul style="margin-bottom:0">
+        <li><code>capinfos</code> 先看规模和时长，再决定是否切分</li>
+        <li><code>editcap -A "2026-11-01 10:00:00" -B "2026-11-01 10:05:00"</code> 截时段</li>
+        <li>用 <code>tshark -Y</code> 做统计，而不是打开 GUI 加载整包</li>
+        <li>确实要看树时，先 <code>editcap -c 50000</code> 切块</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">两个性能陷阱</h3>
+    <p>
+      <b>1）<code>-V</code> 是奢侈品。</b>它会把每个包的完整协议树都渲染出来，几十万包就会让 tshark 慢到不可用。
+      先用 <code>-T fields</code> 提取你真正需要的字段。
+    </p>
+    <p style="margin-bottom:0">
+      <b>2）GUI 的内存和包数近似线性。</b>千万级包的 pcapng 不要直接双击打开；先切分，或者用
+      <code>tshark</code> + <code>tcp.stream</code> 定位到具体流，再把那一小段导出来看。
+    </p>
+  </div>
+</section>
+
+<section id="risk">
+  <h2><span class="num">08 / RISK</span>三个必须提前想清楚的风险</h2>
+
+  <div class="cols2">
+    <div class="panel bad">
+      <h3 style="margin-top:0">1. 解析器是攻击面</h3>
+      <p>
+        项目自己的安全策略把"dissector 崩溃或死循环""文件解析器崩溃""本地/远程代码执行"都算安全漏洞。
+        这意味着：<b>别人给你的 pcap 和网上的样本包，等于可执行输入</b>。
+        分析来源不明的包，用虚拟机或容器，别在办公机上直接双击。
+      </p>
+    </div>
+    <div class="panel bad">
+      <h3 style="margin-top:0">2. 抓包即收集个人数据</h3>
+      <p>
+        抓包里可能有账号、Cookie、聊天内容、内网拓扑。在中国法域下，这同时涉及《网络安全法》《数据安全法》
+        与《个人信息保护法》：<b>没有授权不能抓他人流量</b>，抓到了也要最小化留存、限期销毁、控制访问。
+        pcap 不应进公开仓库、不应发到群里求助。
+      </p>
+    </div>
+    <div class="panel bad">
+      <h3 style="margin-top:0">3. 远程抓包不是"开个端口"</h3>
+      <p>
+        历史上的 rpcapd 远程捕获缺少认证与加密，直接暴露在网络上等于把网卡交出去。
+        需要远程抓包时，优先用 <code>sshdump</code>（走 SSH）或在目标机上抓完再拉文件，
+        不要为了省事把 rpcapd 暴露到公网。
+      </p>
+    </div>
+    <div class="panel warn">
+      <h3 style="margin-top:0">GPL-2.0 的边界</h3>
+      <p>
+        Wireshark 是 GPL-2.0。把它的代码链接进闭源产品会触发开源义务；用 Lua 写插件、
+        通过 <code>tshark</code> 子进程调用、或用 <code>sharkd</code> 做进程隔离，通常风险更低，
+        但"通常"不等于"一定"——商用前让法务看，不要靠博客文章下结论。
+      </p>
+    </div>
+  </div>
+
+  <h3>TLS 解密的现实边界</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>你手上有什么</th><th>能解吗</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>浏览器/客户端的 <code>SSLKEYLOGFILE</code></td><td>能</td><td>Wireshark 里设置 <code>tls.keylog_file</code> 即可；TLS 1.3 也适用</td></tr>
+        <tr><td>RSA 密钥交换 + 服务器私钥</td><td>能（仅旧套件）</td><td>TLS 1.2 的 RSA 密钥交换已基本淘汰</td></tr>
+        <tr><td>ECDHE 会话 + 服务器私钥</td><td>不能</td><td>前向保密的意义就在于此</td></tr>
+        <tr><td>只有中间人证书（企业代理）</td><td>取决于客户端是否信任</td><td>客户端不信任就是握手失败，不是"解不开"</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="limits">
+  <h2><span class="num">09 / LIMITS</span>它明确不解决的问题</h2>
+  <ul>
+    <li><b>不做检测与告警。</b>没有规则引擎、没有基线、没有值班通知。需要这些，上 Suricata / Zeek / NDR。</li>
+    <li><b>不做长期留存与检索。</b>没有索引、没有冷热分层。需要"三个月前那次连接"，上 Arkime 或自建 pcap 归档。</li>
+    <li><b>不看应用内部。</b>它看到的是协议，不是业务逻辑；"为什么这个请求算失败"只有应用日志知道。</li>
+    <li><b>不重建加密内容。</b>端到端加密、证书固定（pinning）、QUIC 加密握手，都会让可见性骤降。</li>
+    <li><b>不做统计建模。</b>内置统计够用，但异常检测、聚类、时序预测不是它的职责。</li>
+  </ul>
+
+  <h3>替代与搭配</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>工具</th><th>定位</th><th>和 Wireshark 的关系</th></tr></thead>
+      <tbody>
+        <tr><td>tcpdump</td><td>最小化抓包</td><td>服务器上通常只装它；抓完拉回 Wireshark 看</td></tr>
+        <tr><td>Zeek</td><td>流量转结构化日志</td><td>长期留存用 Zeek，细节回查用 pcap</td></tr>
+        <tr><td>Arkime</td><td>大规模 pcap 索引与检索</td><td>"先搜后看"，搜到会话再导出给 Wireshark</td></tr>
+        <tr><td>Suricata</td><td>IDS/IPS</td><td>告警触发后，用 Wireshark 复盘那一段</td></tr>
+        <tr><td>scapy</td><td>用 Python 造包/解包</td><td>需要写逻辑和批量处理时比 tshark 更自由</td></tr>
+        <tr><td>Stratoshark</td><td>系统调用 / 日志分析</td><td>同一套引擎换了数据源，思路可以直接迁移</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="eco">
+  <h2><span class="num">10 / ECOSYSTEM</span>怎么持续跟上它</h2>
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">值得投入的三件事</h3>
+      <ol style="margin-bottom:0">
+        <li><b>熟练 <code>tshark</code> + 字段名</b>：这是从"会用"到"能自动化"的分水岭。</li>
+        <li><b>读几个 dissector 源码</b>：<code>packet-http.c</code> 看状态机，<code>packet-tls.c</code> 看握手解析。</li>
+        <li><b>自己写一个 Lua 解析器</b>：内部协议、私有二进制格式，比等官方支持快得多。</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">学习资源</h3>
+      <ul style="margin-bottom:0">
+        <li>官方 User's Guide 与 Developer's Guide（含 dissector API）</li>
+        <li>Sample Captures 仓库：拿真实 pcap 练过滤器</li>
+        <li>SharkFest 演讲视频：大量"怎么排查某类问题"的实战</li>
+        <li>WCNA 认证：偏系统化的知识梳理，不是上岗门槛</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2><span class="num">11 / SOURCES</span>本文的依据</h2>
+  <p class="sub">
+    数据抓取时间：2026-11-01（UTC-8）。Star 数、版本号、目录规模都会变，
+    引用时请以仓库和官网当时的状态为准。本文是第三方整理，不是官方文档。
+  </p>
+  <div class="links">
+    <div><b>GitHub 镜像</b><a href="https://github.com/wireshark/wireshark" target="_blank" rel="noopener noreferrer">github.com/wireshark/wireshark</a></div>
+    <div><b>GitLab 主仓库</b><a href="https://gitlab.com/wireshark/wireshark" target="_blank" rel="noopener noreferrer">gitlab.com/wireshark/wireshark</a></div>
+    <div><b>官网 / 下载</b><a href="https://www.wireshark.org/" target="_blank" rel="noopener noreferrer">wireshark.org</a></div>
+    <div><b>用户手册</b><a href="https://www.wireshark.org/docs/wsug_html_chunked/" target="_blank" rel="noopener noreferrer">wireshark.org/docs</a></div>
+    <div><b>开发者指南</b><a href="https://www.wireshark.org/docs/wsdg_html_chunked/" target="_blank" rel="noopener noreferrer">wsdg · dissector API</a></div>
+    <div><b>显示过滤器参考</b><a href="https://www.wireshark.org/docs/man-pages/wireshark-filter.html" target="_blank" rel="noopener noreferrer">man wireshark-filter</a></div>
+    <div><b>安全策略</b><a href="https://gitlab.com/wireshark/wireshark/-/blob/master/SECURITY.md" target="_blank" rel="noopener noreferrer">SECURITY.md</a></div>
+    <div><b>Stratoshark</b><a href="https://stratoshark.org" target="_blank" rel="noopener noreferrer">stratoshark.org</a></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">一句话收尾</h3>
+    <p style="margin-bottom:0">
+      Wireshark 的价值不在"能抓包"，而在<b>把协议变成可查询的字段</b>。学会用字段名提问，
+      比记住 50 个菜单项有用得多；而知道它只看得到协议、看不到业务，则能让你少走一半弯路。
+    </p>
+  </div>
+</section>
+
+</div>
+</main>
+<footer>
+  <div class="wrap">
+    <span>Wireshark 工具报告 · 架构、工具链与实战边界</span>
+    <span>数据快照 2026-11-01 · 仅用于授权抓包与自有环境</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* 代码复制 */
+  Array.prototype.slice.call(document.querySelectorAll("pre")).forEach(function (pre) {
+    var wrap = document.createElement("div");
+    wrap.className = "codewrap";
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制这段命令");
+
+    btn.addEventListener("click", function () {
+      var text = pre.innerText;
+      function done(ok) {
+        btn.textContent = ok ? "已复制" : "失败";
+        setTimeout(function () { btn.textContent = "复制"; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+
+  /* 目录高亮 */
+  var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+  var sections = links.map(function (a) {
+    return document.querySelector(a.getAttribute("href"));
+  }).filter(Boolean);
+
+  function setActive(id) {
+    links.forEach(function (a) {
+      var on = a.getAttribute("href") === "#" + id;
+      a.style.color = on ? "var(--accent)" : "";
+      a.style.borderBottomColor = on ? "var(--accent)" : "";
+    });
+  }
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) setActive(en.target.id);
+      });
+    }, { rootMargin: "-70px 0px -70% 0px", threshold: 0 });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

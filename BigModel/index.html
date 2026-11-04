@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="主流大模型调研（2026-11）：各家怎么做评测、综合与分项排名、API 价格与性价比，以及一个按业务量估算月成本的工具。">
+<title>主流大模型调研 · 评测、排名与性价比（2026-11）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:1000px;margin:0 auto;padding:46px clamp(18px,5vw,40px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.method{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+.method .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--amber)}
+.method h3{margin:4px 0 6px;font-size:15px}
+.method p{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.68}
+.method .risk{display:block;margin-top:8px;font-size:12px;color:var(--red);line-height:1.6}
+.rank{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.bar{display:grid;grid-template-columns:190px 1fr 52px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.bar .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{height:12px;background:var(--paper-2);border-radius:999px;overflow:hidden}
+.bar .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#5b7fc9)}
+.bar .score{font-family:var(--mono);font-size:12px;text-align:right;color:var(--ink-2)}
+.bar.top .fill{background:linear-gradient(90deg,var(--amber),#c98a3d)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+td.num{font-family:var(--mono);font-size:12.2px;white-space:nowrap}
+.tag{font-size:10px;font-family:var(--mono);padding:1px 5px;border-radius:4px;border:1px solid var(--line);color:var(--muted);background:var(--paper-2);white-space:nowrap}
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{width:100%;font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--paper);color:var(--ink)}
+.field input{font-family:var(--mono)}
+.field select{font-size:13px}
+.field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.out div{display:grid;gap:2px}
+.out .k{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--serif);font-size:23px;line-height:1.2;letter-spacing:-.01em}
+.out .v small{font-family:var(--sans);font-size:11.5px;color:var(--muted);letter-spacing:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.7;margin:14px 0 0}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,40px) 40px;max-width:1000px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:700px){.bar{grid-template-columns:130px 1fr 44px}.bar .name{font-size:12px}}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.calc{display:none}body{background:#fff}.rank,.method,.kpi{box-shadow:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../README.md">← 仓库索引</a>
+  <span class="crumb">BigModel / 评测 · 排名 · 性价比 · 2026-11-03</span>
+  <nav class="pager"><a href="#eval">怎么评测</a><a href="#rank">排名</a><a href="#price">性价比</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>16 个旗舰模型 · 10 家实验室</div>
+  <h1>主流大模型<br><em>评测、排名与性价比</em></h1>
+  <p class="lede">这份报告不回答“谁最强”，而是回答三个更实用的问题：这些分数是怎么来的、不同榜单为什么互相打架、以及在你自己的业务量下，哪一档最划算。</p>
+
+  <div class="meta-row">
+    <span class="pill">数据读取 <b>2026-11-03</b></span>
+    <span class="pill">综合口径 <b>AA Intelligence Index v5.0</b></span>
+    <span class="pill">价格 <b>OpenRouter 标准档</b></span>
+    <span class="pill">14 天内的变化已标注</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">59.4<span>分</span></div><div class="l">Gemini 4 Carbon 综合最高</div></div>
+    <div class="kpi"><div class="n">58.4<span>分</span></div><div class="l">Claude Opus 5.5 紧随</div></div>
+    <div class="kpi"><div class="n">1.2<span>分</span></div><div class="l">前二差距（在噪声内）</div></div>
+    <div class="kpi"><div class="n">25×<span>价差</span></div><div class="l">同档旗舰的混合价差</div></div>
+  </div>
+
+  <section id="summary">
+    <h2><span class="no">00</span>三句话结论</h2>
+    <div class="callout good">
+      <span class="t">1. 头部已经挤在一起</span>
+      <p>Carbon 59.4、Opus 5.5 58.4、GPT-6 Astra 56.9。前二差 1 分，远小于评测自身的波动；按“谁第一”选型，意义不大。</p>
+    </div>
+    <div class="callout">
+      <span class="t">2. 价格差得远，任务成本差得更远</span>
+      <p>混合价从 $2 到 $50/百万 token。但真正决定账单的是“每任务用掉多少输出 token”：Opus 5.5 跑完一个综合任务约 $10.04，Gemini Carbon 约 $7.76，GPT-6 Astra 约 $6.25——和单价排序并不一致。</p>
+    </div>
+    <div class="callout warn">
+      <span class="t">3. 榜单不能跨版本比</span>
+      <p>Artificial Analysis 在 10 月 27 日把指数升到 v5，换了测试集。v4 的 58 和 v5 的 58 不是同一件事；很多“涨了/跌了”的解读都是错的。</p>
+    </div>
+  </section>
+
+  <section id="eval">
+    <h2><span class="no">01</span>他们是怎么做评测的</h2>
+    <p class="sub">六种证据，回答六个不同的问题。把它们的分数放在一张表里比较，是这类内容最常见的错误。</p>
+
+    <div class="methods">
+      <div class="method">
+        <div class="k">METHOD 1</div>
+        <h3>厂商自测（Model / System Card）</h3>
+        <p>发布时公布 MMLU-Pro、GPQA、AIME、SWE-bench、Terminal-Bench 等分数。优点是覆盖全、有技术细节；缺点是选的是自家最优配置，测试集可能见过。</p>
+        <span class="risk">风险：选择性报告、训练集污染、配置不对等</span>
+      </div>
+      <div class="method">
+        <div class="k">METHOD 2</div>
+        <h3>第三方复测（AA / Epoch）</h3>
+        <p>用固定 harness、统一推理参数重跑，并把多个测试合成一个指数。AA v5 的 9 项里有 5 项基于私有数据，专门降低“背题”空间。</p>
+        <span class="risk">风险：合成权重是主观的；复测成本高，更新有延迟</span>
+      </div>
+      <div class="method">
+        <div class="k">METHOD 3</div>
+        <h3>人类偏好（LMArena）</h3>
+        <p>匿名两两对比、用户投票，用 Bradley-Terry 转成 Elo。它测的是“人更喜欢哪个回答”，不是“谁更正确”；风格控制后仍有排版/讨好倾向。</p>
+        <span class="risk">风险：投票人群偏置、提示词分布偏聊天、分数差距小于 25 属噪声</span>
+      </div>
+      <div class="method">
+        <div class="k">METHOD 4</div>
+        <h3>Agent / 工具任务</h3>
+        <p>Terminal-Bench、SWE-bench、FrontierCode、τ²-Bench：给模型一个环境、工具和验收器，看它能不能完成任务。这是最接近“真实工作”的一类。</p>
+        <span class="risk">风险：分数强依赖 harness、重试策略、工具权限与超时</span>
+      </div>
+      <div class="method">
+        <div class="k">METHOD 5</div>
+        <h3>专业领域评测</h3>
+        <p>Vals 的金融/法律/医疗、GDP.pdf、HLE-Diamond：用领域题和长文档压真实专业能力。分数通常比通用榜低很多，但更接近高价值场景。</p>
+        <span class="risk">风险：题量小、答案争议、领域更新快</span>
+      </div>
+      <div class="method">
+        <div class="k">METHOD 6</div>
+        <h3>成本效率评测</h3>
+        <p>不只看单价，而看“完成一个任务花多少钱、用多少 token”。AA 的 Cost per Task 就是这一类：同一指数任务，输出 token 可能差 2–3 倍。</p>
+        <span class="risk">风险：任务组合不同，结论不可直接搬到你的业务</span>
+      </div>
+    </div>
+
+    <h3>为什么同一个模型，分数能差 10 分</h3>
+    <ul class="check">
+      <li><b>推理档位</b>：Low / Medium / High / Max 是不同产品。榜单标的常是 Max，你默认用的可能是 Medium。</li>
+      <li><b>Harness</b>：同一个 Opus，在 Claude Code 里和自建 agent 里能差出几个点；Terminal-Bench 尤其明显。</li>
+      <li><b>工具与重试</b>：允许联网、允许跑测试、允许重试三次，分数都会变。</li>
+      <li><b>测试集版本</b>：SWE-bench Verified 已接近饱和，新模型之间的差距被压缩到噪声级。</li>
+      <li><b>指标定义</b>：pass@1、pass@k、all-pass、partial score 是四种东西。</li>
+    </ul>
+
+    <div class="callout bad">
+      <span class="t">一个具体例子</span>
+      <p>同一周内，LMArena 的“综合第一”在不同聚合站分别写成 Gemini 4 Carbon（约 1528）和 Gemini 4 Argon（约 1529）——差 1 分，属于置信区间内。把它写成“Carbon 登顶”或“Argon 登顶”都能找到出处，但都没有信息量。</p>
+    </div>
+  </section>
+
+  <section id="rank">
+    <h2><span class="no">02</span>综合排名：AA Intelligence Index v5</h2>
+    <p class="sub">v5.0（2026-10-27）由 9 项评测合成：AA-Briefcase、AutomationBench-AA、Terminal-Bench 4.0、FrontierCode 2.0、AA-Omniscience、GDP.pdf、HLE-Diamond、CritPt v2、Terminal-Bench-Science。分数读取于 11 月 3 日。</p>
+
+    <div class="rank">
+      <div class="bar top"><span class="name">Gemini 4 Carbon (High)</span><span class="track"><span class="fill" style="width:99%"></span></span><span class="score">59.4</span></div>
+      <div class="bar top"><span class="name">Claude Opus 5.5 (Max)</span><span class="track"><span class="fill" style="width:97.3%"></span></span><span class="score">58.4</span></div>
+      <div class="bar"><span class="name">GPT-6 Astra (Max)</span><span class="track"><span class="fill" style="width:94.8%"></span></span><span class="score">56.9</span></div>
+      <div class="bar"><span class="name">GPT-6.1 Sol (Max)</span><span class="track"><span class="fill" style="width:90.8%"></span></span><span class="score">54.5</span></div>
+      <div class="bar"><span class="name">Claude Sonnet 5.5 (Max)</span><span class="track"><span class="fill" style="width:90.3%"></span></span><span class="score">54.2</span></div>
+      <div class="bar"><span class="name">GPT-6.1 Terra (Max)</span><span class="track"><span class="fill" style="width:85%"></span></span><span class="score">51.0</span></div>
+      <div class="bar"><span class="name">Gemini 4 Argon (High)</span><span class="track"><span class="fill" style="width:84%"></span></span><span class="score">50.4</span></div>
+      <div class="bar"><span class="name">Claude Fable 5.1 (Max)</span><span class="track"><span class="fill" style="width:82.8%"></span></span><span class="score">49.7</span></div>
+      <div class="bar"><span class="name">Kimi K3.1 Pro</span><span class="track"><span class="fill" style="width:76.7%"></span></span><span class="score">46.0</span></div>
+      <div class="bar"><span class="name">Muse Wonder (Max)</span><span class="track"><span class="fill" style="width:71.7%"></span></span><span class="score">43.0</span></div>
+      <div class="bar"><span class="name">Muse Spark 1.3</span><span class="track"><span class="fill" style="width:60.7%"></span></span><span class="score">36.4</span></div>
+      <div class="bar"><span class="name">Claude Haiku 5.5 (Max)</span><span class="track"><span class="fill" style="width:60.3%"></span></span><span class="score">36.2</span></div>
+      <div class="bar"><span class="name">DeepSeek V4.1 Flash</span><span class="track"><span class="fill" style="width:53.3%"></span></span><span class="score">32.0</span></div>
+      <div class="bar"><span class="name">GLM-5.3</span><span class="track"><span class="fill" style="width:53.3%"></span></span><span class="score">32.0</span></div>
+      <div class="bar"><span class="name">Gemini 3.8 Flash (High)</span><span class="track"><span class="fill" style="width:51.7%"></span></span><span class="score">31.0</span></div>
+      <div class="bar"><span class="name">MiniMax M3.1 Flash</span><span class="track"><span class="fill" style="width:48.3%"></span></span><span class="score">29.0</span></div>
+    </div>
+    <p class="sub" style="margin-top:12px">条形长度按最高分归一化，不代表绝对差距。Muse Wonder 的分数在不同聚合站有 43 / 41 两种口径，已取较高值并标注不确定性。</p>
+
+    <div class="callout">
+      <span class="t">不要拿这张表做“能力等距”推断</span>
+      <p>指数是 0–100 的合成分，不是线性能力刻度。59 对 54 不等于“强 9%”；在具体任务上，差距可能放大，也可能反转。</p>
+    </div>
+  </section>
+
+  <section id="bytask">
+    <h2><span class="no">03</span>分项排名：不同任务不同赢家</h2>
+    <p class="sub">同一批模型，换一个评测就换一个冠军。以下数字来自 AA v5 相关文章与公开榜单，读取于 2026-11-03。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>评测</th><th>它测什么</th><th>当前领先</th><th>分数</th><th>怎么读</th></tr></thead>
+        <tbody>
+          <tr><td><b>Coding Agent Index</b></td><td>真实编码 agent 任务（含 harness）</td><td>Claude Opus 5.5 + Claude Code</td><td class="num">62</td><td>比“模型单项”更接近工程体验；harness 影响大</td></tr>
+          <tr><td><b>Terminal-Bench 4.0</b></td><td>终端里完成多步任务</td><td>Claude Opus 5.5</td><td class="num">64.9%</td><td>Carbon 64%，差距在一个题以内</td></tr>
+          <tr><td><b>FrontierCode 2.0</b></td><td>前沿代码任务</td><td>Claude Opus 5.5</td><td class="num">46%</td><td>Astra / Terra / Sonnet 5.5 并列 42%</td></tr>
+          <tr><td><b>AA-Omniscience</b></td><td>知识广度与幻觉控制</td><td>Claude Opus 5.5</td><td class="num">48</td><td>知识类任务不能只看通用指数</td></tr>
+          <tr><td><b>AutomationBench-AA</b></td><td>自动化/工作流执行</td><td>Gemini 4 Argon</td><td class="num">78%</td><td>与编码榜不同的冠军，说明任务分化</td></tr>
+          <tr><td><b>ARC-AGI-2</b></td><td>抽象推理（少样本）</td><td>GPT-6 Astra</td><td class="num">95.0%</td><td>接近饱和，区分度下降</td></tr>
+          <tr><td><b>HLE-Diamond</b></td><td>专家级难题</td><td>Claude Opus 5.5</td><td class="num">68%</td><td>不同子集分数差异大，注意口径</td></tr>
+          <tr><td><b>LMArena（文本）</b></td><td>人类偏好</td><td>Opus 5.5 / Carbon / Argon 顶部</td><td class="num">≈1509–1529</td><td>1 分差属噪声；测“讨喜”不测“正确”</td></tr>
+          <tr><td><b>SWE-bench Verified</b></td><td>修真实 GitHub issue</td><td>已接近饱和</td><td class="num">≈75%</td><td>新一代模型差距被压缩，单看排名意义有限</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">一个反直觉的事实</span>
+      <p>“综合第一”的 Carbon 在 Coding Agent Index 上落后 Opus 5.5 3 分；而“综合第五”的 Gemini 4 Argon 在 AutomationBench 上是第一。选型要按任务，不要按总榜。</p>
+    </div>
+  </section>
+
+  <section id="price">
+    <h2><span class="no">04</span>价格与性价比</h2>
+    <p class="sub">单价来自 OpenRouter 标准档（每百万 token，美元），不含 batch / 缓存折扣。混合价按 3:1 输入输出估算：(3×输入 + 输出) ÷ 4。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>模型</th><th>实验室</th><th>指数</th><th>输入 $/M</th><th>输出 $/M</th><th>混合 $/M</th><th>指数 / 美元</th><th>上下文</th></tr></thead>
+        <tbody>
+          <tr><td><b>Gemini 4 Carbon</b> <span class="tag">High</span></td><td>Google</td><td class="num">59.4</td><td class="num">4.00</td><td class="num">20.00</td><td class="num">8.00</td><td class="num">7.4</td><td class="num">1M</td></tr>
+          <tr><td><b>Claude Opus 5.5</b> <span class="tag">Max</span></td><td>Anthropic</td><td class="num">58.4</td><td class="num">4.00</td><td class="num">20.00</td><td class="num">8.00</td><td class="num">7.3</td><td class="num">1M</td></tr>
+          <tr><td><b>GPT-6 Astra</b> <span class="tag">Max</span></td><td>OpenAI</td><td class="num">56.9</td><td class="num">10.00</td><td class="num">50.00</td><td class="num">20.00</td><td class="num">2.8</td><td class="num">1.05M</td></tr>
+          <tr><td><b>GPT-6.1 Sol</b> <span class="tag">Max</span></td><td>OpenAI</td><td class="num">54.5</td><td class="num">2.00</td><td class="num">10.00</td><td class="num">4.00</td><td class="num">13.6</td><td class="num">1.05M</td></tr>
+          <tr><td><b>Claude Sonnet 5.5</b> <span class="tag">Max</span></td><td>Anthropic</td><td class="num">54.2</td><td class="num">2.00</td><td class="num">10.00</td><td class="num">4.00</td><td class="num">13.6</td><td class="num">1M</td></tr>
+          <tr><td><b>GPT-6.1 Terra</b> <span class="tag">Max</span></td><td>OpenAI</td><td class="num">51.0</td><td class="num">1.00</td><td class="num">5.00</td><td class="num">2.00</td><td class="num">25.5</td><td class="num">1.05M</td></tr>
+          <tr><td><b>Gemini 4 Argon</b> <span class="tag">High</span></td><td>Google</td><td class="num">50.4</td><td class="num">2.00</td><td class="num">10.00</td><td class="num">4.00</td><td class="num">12.6</td><td class="num">1M</td></tr>
+          <tr><td><b>Claude Fable 5.1</b> <span class="tag">Max</span></td><td>Anthropic</td><td class="num">49.7</td><td class="num">10.00</td><td class="num">50.00</td><td class="num">20.00</td><td class="num">2.5</td><td class="num">1M</td></tr>
+          <tr><td><b>Kimi K3.1 Pro</b></td><td>Moonshot</td><td class="num">46.0</td><td class="num">2.00</td><td class="num">10.00</td><td class="num">4.00</td><td class="num">11.5</td><td class="num">1M</td></tr>
+          <tr><td><b>Muse Wonder</b> <span class="tag">Max</span></td><td>Meta</td><td class="num">43.0</td><td class="num">4.00</td><td class="num">20.00</td><td class="num">8.00</td><td class="num">5.4</td><td class="num">1M</td></tr>
+          <tr><td><b>Muse Spark 1.3</b></td><td>Meta</td><td class="num">36.4</td><td class="num">1.25</td><td class="num">4.25</td><td class="num">2.00</td><td class="num">18.2</td><td class="num">1M</td></tr>
+          <tr><td><b>Claude Haiku 5.5</b> <span class="tag">Max</span></td><td>Anthropic</td><td class="num">36.2</td><td class="num">0.10</td><td class="num">0.50</td><td class="num">0.20</td><td class="num">181</td><td class="num">1M</td></tr>
+          <tr><td><b>DeepSeek V4.1 Flash</b></td><td>DeepSeek</td><td class="num">32.0</td><td class="num">0.30</td><td class="num">1.20</td><td class="num">0.53</td><td class="num">61</td><td class="num">1M</td></tr>
+          <tr><td><b>GLM-5.3</b></td><td>Z.ai</td><td class="num">32.0</td><td class="num">0.08</td><td class="num">3.60</td><td class="num">0.96</td><td class="num">33</td><td class="num">1M</td></tr>
+          <tr><td><b>Gemini 3.8 Flash</b> <span class="tag">High</span></td><td>Google</td><td class="num">31.0</td><td class="num">0.83</td><td class="num">4.13</td><td class="num">1.65</td><td class="num">18.8</td><td class="num">1M</td></tr>
+          <tr><td><b>MiniMax M3.1 Flash</b></td><td>MiniMax</td><td class="num">29.0</td><td class="num">0.15</td><td class="num">0.60</td><td class="num">0.26</td><td class="num">110</td><td class="num">1M</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout bad">
+      <span class="t">“指数 / 美元”会骗人</span>
+      <p>它天然偏向便宜模型：Haiku 5.5 的比值是 181，Opus 5.5 只有 7.3，但 Haiku 做不了 Opus 的任务。这个指标只适合在同一能力档内比较，不能跨档选型。</p>
+    </div>
+
+    <h3>更接近真实账单的三个数字</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>模型</th><th>完成一个 AA 综合任务的成本</th><th>相对 Opus 5.5</th><th>输出 token 特征</th></tr></thead>
+        <tbody>
+          <tr><td><b>GPT-6 Astra (Max)</b></td><td class="num">$6.25</td><td>约 62%</td><td>单价最高，但任务总成本最低</td></tr>
+          <tr><td><b>Gemini 4 Carbon</b></td><td class="num">$7.76</td><td>约 77%</td><td>每任务 123k 输出，比 Opus 少 29%</td></tr>
+          <tr><td><b>Claude Opus 5.5 (Max)</b></td><td class="num">$10.04</td><td>100%</td><td>每任务 173k 输出</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">来源：AA 2026-10-28 文章。单价与任务成本不是同一个东西：Astra 单价是 Opus 的 2.5 倍，但在这组任务上总成本反而低 38%，因为它用更少的 token 完成任务。</p>
+  </section>
+
+  <section id="calc">
+    <h2><span class="no">05</span>按你的业务量算月成本</h2>
+    <p class="sub">单价只是起点。把请求数、输入长度、输出长度填进去，差距通常比单价更大。</p>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="field"><label for="model">模型</label><select id="model">
+          <option value="carbon">Gemini 4 Carbon · $4/$20 · 59.4</option>
+          <option value="opus">Claude Opus 5.5 · $4/$20 · 58.4</option>
+          <option value="astra">GPT-6 Astra · $10/$50 · 56.9</option>
+          <option value="sol">GPT-6.1 Sol · $2/$10 · 54.5</option>
+          <option value="sonnet">Claude Sonnet 5.5 · $2/$10 · 54.2</option>
+          <option value="terra">GPT-6.1 Terra · $1/$5 · 51.0</option>
+          <option value="argon">Gemini 4 Argon · $2/$10 · 50.4</option>
+          <option value="kimi">Kimi K3.1 Pro · $2/$10 · 46.0</option>
+          <option value="haiku">Claude Haiku 5.5 · $0.10/$0.50 · 36.2</option>
+          <option value="deepseek">DeepSeek V4.1 Flash · $0.30/$1.20 · 32.0</option>
+          <option value="glm">GLM-5.3 · $0.08/$3.60 · 32.0</option>
+          <option value="minimax">MiniMax M3.1 Flash · $0.15/$0.60 · 29.0</option>
+        </select></div>
+        <div class="field"><label for="req">每月请求数</label><input id="req" type="number" min="0" step="1000" value="100000" inputmode="numeric"></div>
+        <div class="field"><label for="in">平均输入 token</label><input id="in" type="number" min="0" step="100" value="3000" inputmode="numeric"></div>
+        <div class="field"><label for="out">平均输出 token</label><input id="out" type="number" min="0" step="100" value="800" inputmode="numeric"></div>
+        <div class="field"><label for="cache">缓存命中率（%）</label><input id="cache" type="number" min="0" max="90" step="5" value="0" inputmode="numeric"></div>
+      </div>
+      <div class="out" aria-live="polite">
+        <div><span class="k">月成本</span><span class="v" id="o-cost">—</span></div>
+        <div><span class="k">每千次请求</span><span class="v" id="o-k">—</span></div>
+        <div><span class="k">每百万 token</span><span class="v" id="o-m">—</span></div>
+        <div><span class="k">月 token 总量</span><span class="v" id="o-tok">—</span></div>
+      </div>
+      <p class="hint">缓存按输入价 5% 计（常见 90% 折扣），只作用于输入；未计入推理档位差异、失败重试、batch 折扣与长上下文溢价。真实账单通常比这个数字高 20%–100%。</p>
+    </div>
+  </section>
+
+  <section id="choose">
+    <h2><span class="no">06</span>怎么选：按任务，不按总榜</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>你的场景</th><th>首选</th><th>备选</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>编码 agent / 长任务</td><td>Claude Opus 5.5</td><td>Gemini 4 Carbon</td><td>Coding Agent Index 与 Terminal-Bench 领先；Carbon 便宜约 23%</td></tr>
+          <tr><td>高吞吐、低风险任务</td><td>GPT-6.1 Terra</td><td>Claude Haiku 5.5</td><td>指数 51、混合价 $2；Haiku 更便宜但能力低一档</td></tr>
+          <tr><td>复杂推理 / 高风险决策</td><td>Gemini 4 Carbon</td><td>GPT-6 Astra</td><td>综合指数最高；Astra 在部分推理子项更强但贵 2.5 倍</td></tr>
+          <tr><td>自动化 / 工作流</td><td>Gemini 4 Argon</td><td>Claude Sonnet 5.5</td><td>AutomationBench 领先；Sonnet 成本结构更稳</td></tr>
+          <tr><td>中文 / 成本敏感</td><td>Kimi K3.1 Pro</td><td>GLM-5.3 / DeepSeek V4.1 Flash</td><td>46 分档里价格低；中文语料与工具生态更贴近</td></tr>
+          <tr><td>超长上下文</td><td>多数旗舰均为 1M</td><td>—</td><td>区别在长上下文下的有效召回与溢价，需自测</td></tr>
+          <tr><td>自部署 / 数据不出域</td><td>DeepSeek / GLM / Qwen / Muse Spark Open</td><td>—</td><td>开放权重；上线前核对许可证与商用条款</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">一条可执行建议</span>
+      <p>用 20–50 条你自己的真实任务做一个小 eval，同时跑 3 个候选模型，记录“通过率 × 单任务成本”。这比任何公开榜单都准——因为榜单测的是别人的任务。</p>
+    </div>
+  </section>
+
+  <section id="caveats">
+    <h2><span class="no">07</span>口径、不确定性与来源</h2>
+
+    <h3>必须知道的五个口径问题</h3>
+    <ul class="check">
+      <li><b>版本不可比</b>：AA v5（2026-10-27）与 v4.3.2 的测试集不同，分数不能直接比较。</li>
+      <li><b>聚合站有 ±1 分差异</b>：Carbon 有 59.0 / 59.4 两种写法；Opus 有 58 / 58.4。本文取较高精度值并标注。</li>
+      <li><b>价格是标准档</b>：未含 batch（通常 5 折）、缓存（输入约 5%–25%）、长上下文溢价与区域价。</li>
+      <li><b>推理档位不同</b>：Max 分数不等于你 API 默认调用的分数；Low/Medium 可能低 5–8 分。</li>
+      <li><b>榜单会变</b>：本文是 2026-11-03 的快照；两周后头部顺序可能变化。</li>
+    </ul>
+
+    <h3>本文覆盖范围</h3>
+    <p>选取 10 家实验室的 16 个旗舰/主力模型。未纳入：同代小模型（Luna、GLM Flash、Qwen Flash 等）、图像/视频/语音模型、以及部分区域限定模型。它们的性价比可能更高，但不适合与旗舰放在同一张“能力”表里。</p>
+
+    <h3>来源</h3>
+    <ul class="sources">
+      <li>Artificial Analysis Intelligence Index v5 与模型页：<a href="https://artificialanalysis.ai/" rel="noreferrer">artificialanalysis.ai</a>（2026-10-27 至 11-03）</li>
+      <li>Gemini 4 Carbon 分析与 Cost per Task：<a href="https://artificialanalysis.ai/articles/gemini-4-carbon-new-number-1" rel="noreferrer">AA 文章，2026-10-28</a></li>
+      <li>指数 v5 方法说明：<a href="https://artificialanalysis.ai/methodology/intelligence-benchmarking" rel="noreferrer">methodology</a></li>
+      <li>价格与上下文：<a href="https://openrouter.ai/api/v1/models" rel="noreferrer">OpenRouter Models API</a>（2026-11-03 抓取）</li>
+      <li>LMArena 数据：<a href="https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset" rel="noreferrer">lmarena-ai/leaderboard-dataset</a> 与 <a href="https://lmarena.ai/" rel="noreferrer">lmarena.ai</a></li>
+      <li>分项榜单交叉核对：<a href="https://modelcap.ai/benchmarks/aa-intelligence-index" rel="noreferrer">ModelCap</a>、<a href="https://llmbenchmark.ai/" rel="noreferrer">LLMBenchmark</a>（2026-11-02/03）</li>
+    </ul>
+    <p class="sub" style="margin-top:12px">榜单数字归各评测机构；本文做的是整理、换算与解读。价格与分数均可能变化，做采购决策前请回到原始页面复核。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>BigModel · 主流大模型调研 · 2026-11-03</div>
+  <span>本页为独立分析，不构成采购建议；所有分数与价格以原始来源为准。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var M = {
+    carbon:{name:'Gemini 4 Carbon',in:4,out:20,idx:59.4},
+    opus:{name:'Claude Opus 5.5',in:4,out:20,idx:58.4},
+    astra:{name:'GPT-6 Astra',in:10,out:50,idx:56.9},
+    sol:{name:'GPT-6.1 Sol',in:2,out:10,idx:54.5},
+    sonnet:{name:'Claude Sonnet 5.5',in:2,out:10,idx:54.2},
+    terra:{name:'GPT-6.1 Terra',in:1,out:5,idx:51.0},
+    argon:{name:'Gemini 4 Argon',in:2,out:10,idx:50.4},
+    kimi:{name:'Kimi K3.1 Pro',in:2,out:10,idx:46.0},
+    haiku:{name:'Claude Haiku 5.5',in:0.1,out:0.5,idx:36.2},
+    deepseek:{name:'DeepSeek V4.1 Flash',in:0.3,out:1.2,idx:32.0},
+    glm:{name:'GLM-5.3',in:0.08,out:3.6,idx:32.0},
+    minimax:{name:'MiniMax M3.1 Flash',in:0.15,out:0.6,idx:29.0}
+  };
+  function n(id, fb){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) && v >= 0 ? v : fb; }
+  function money(x){
+    if (x >= 1000) return '$' + Math.round(x).toLocaleString('en-US');
+    return '$' + x.toFixed(2);
+  }
+  function calc(){
+    var key = document.getElementById('model').value;
+    var m = M[key] || M.opus;
+    var req = n('req', 100000);
+    var tin = n('in', 3000);
+    var tout = n('out', 800);
+    var cache = Math.min(90, n('cache', 0)) / 100;
+
+    var inTokens = req * tin;
+    var cached = inTokens * cache;
+    var fresh = inTokens - cached;
+    var outTokens = req * tout;
+    var cost = (fresh / 1e6) * m.in + (cached / 1e6) * m.in * 0.05 + (outTokens / 1e6) * m.out;
+    var per1k = req > 0 ? cost / (req / 1000) : 0;
+    var totalTokens = inTokens + outTokens;
+    var perM = totalTokens > 0 ? cost / (totalTokens / 1e6) : 0;
+
+    document.getElementById('o-cost').textContent = money(cost);
+    document.getElementById('o-k').textContent = money(per1k);
+    document.getElementById('o-m').textContent = money(perM);
+    document.getElementById('o-tok').innerHTML = (totalTokens >= 1e9 ? (totalTokens / 1e9).toFixed(2) + 'B' : (totalTokens / 1e6).toFixed(1) + 'M') + ' <small>tokens</small>';
+  }
+  ['model','req','in','out','cache'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', calc);
+    el.addEventListener('change', calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账号体系的攻防地图 — Google / Apple / Microsoft / Meta / 腾讯 / 阿里 与 2020–2025 入侵案例</title>
+<meta name="description" content="主流账号与身份体系的原理拆解，以及对应的真实攻击案例与防御控制：OAuth 2.0/OIDC、SAML/SSO、Sign in with Apple、微信 openid/unionid、支付宝签名、Passkey/WebAuthn、MFA 与账号恢复。">
+<style>
+:root{
+  --ink:#15171b; --ink2:#41454d; --muted:#6f747d; --faint:#9aa0a8;
+  --paper:#fbfbf8; --panel:#ffffff; --panel2:#f2f3ef; --line:#e4e4dd; --line2:#d3d4cb;
+  --slate:#1f3a5f; --slate-soft:#e8eef5; --verm:#b3352b; --verm-soft:#f8e7e4;
+  --moss:#35694a; --moss-soft:#e6f1e9; --gold:#9a6a14; --gold-soft:#f8eede;
+  --shadow:0 1px 2px rgba(20,22,26,.04),0 10px 30px rgba(20,22,26,.06);
+  --radius:12px; --maxw:1140px;
+  --serif:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:16.5px; line-height:1.75; -webkit-font-smoothing:antialiased; overflow-wrap:break-word}
+a{color:var(--slate); text-decoration:none; border-bottom:1px solid rgba(31,58,95,.3)}
+a:hover{border-bottom-color:var(--slate)}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,label:focus-visible{outline:3px solid #c08a2e; outline-offset:2px; border-radius:4px}
+.skip{position:absolute; left:-9999px; top:0; background:#fff; color:#000; padding:10px 16px; z-index:99}
+.skip:focus{left:8px; top:8px}
+.progress{position:fixed; top:0; left:0; height:3px; width:0; background:linear-gradient(90deg,#b3352b,#1f3a5f); z-index:60}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
+
+/* hero */
+.hero{background:#12151a; color:#f4f2ec; padding:64px 0 56px; position:relative; overflow:hidden}
+.hero::before{content:""; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px); background-size:44px 44px; mask-image:radial-gradient(120% 80% at 30% 0%,#000 30%,transparent 75%)}
+.hero .wrap{position:relative}
+.hero .eyebrow{font-size:12.5px; letter-spacing:.22em; text-transform:uppercase; color:#e0a25a; font-weight:600}
+.hero h1{font-family:var(--serif); font-weight:600; font-size:clamp(32px,4.6vw,50px); line-height:1.16; margin:16px 0 0; letter-spacing:-.01em}
+.hero h1 .sub{display:block; font-family:var(--sans); font-size:clamp(16px,1.75vw,19px); font-weight:400; color:#c8c6bf; margin-top:18px; line-height:1.7; max-width:46em; letter-spacing:0}
+.hero .metaline{display:flex; flex-wrap:wrap; gap:8px; margin:26px 0 0; padding:0; list-style:none}
+.hero .metaline li{font-size:12.8px; color:#d6d3ca; border:1px solid #333842; background:#191d23; padding:5px 11px; border-radius:999px}
+.hero .metaline b{color:#fff; font-weight:600}
+.hero .kt{display:grid; grid-template-columns:repeat(auto-fit,minmax(208px,1fr)); gap:1px; margin:34px 0 0; background:#2a2f37; border:1px solid #2a2f37; border-radius:12px; overflow:hidden}
+.hero .kt div{background:#171b21; padding:16px 18px}
+.hero .kt .v{font-family:var(--serif); font-size:26px; color:#fff; line-height:1.2}
+.hero .kt .k{font-size:12.4px; color:#a9adb4; margin-top:6px; line-height:1.5}
+
+.verdict{margin:0 0 0; padding:24px 26px; background:#171b21; border:1px solid #2f353e; border-left:4px solid #b3352b; border-radius:4px 12px 12px 4px}
+.verdict h2{font-family:var(--sans); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:#e0a25a; margin:0 0 12px; font-weight:700}
+.verdict ol{margin:0; padding-left:20px; color:#e9e6de}
+.verdict li{margin:10px 0; font-size:15.6px; line-height:1.72}
+.verdict li::marker{color:#b3352b; font-weight:700}
+.verdict b{color:#fff}
+
+/* nav */
+.nav{position:sticky; top:0; z-index:50; background:rgba(251,251,248,.93); backdrop-filter:blur(10px) saturate(1.5); border-bottom:1px solid var(--line)}
+.nav ul{display:flex; gap:2px; margin:0 auto; padding:9px 26px; list-style:none; overflow-x:auto; scrollbar-width:none; max-width:var(--maxw)}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a{white-space:nowrap; font-size:13.4px; color:var(--ink2); padding:6px 11px; border-radius:999px; border-bottom:none}
+.nav a:hover{background:var(--panel2); color:var(--ink)}
+.nav a[aria-current="true"]{background:var(--ink); color:#fff}
+
+/* sections */
+section{padding:58px 0 6px; scroll-margin-top:64px}
+.kicker{font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--verm); font-weight:700; margin:0 0 8px}
+h2{font-family:var(--serif); font-weight:600; font-size:clamp(25px,3vw,33px); line-height:1.25; margin:0 0 14px}
+h3{font-size:19px; margin:36px 0 10px; font-weight:650}
+h4{font-size:15.6px; margin:22px 0 6px; font-weight:650}
+p{margin:0 0 14px; max-width:78ch}
+.lead{font-size:18px; color:var(--ink2); max-width:72ch}
+.small{font-size:13.6px; color:var(--muted)}
+ul.tight{margin:0 0 14px; padding-left:20px; max-width:78ch}
+ul.tight li{margin:5px 0}
+hr.sep{border:0; border-top:1px solid var(--line); margin:40px 0 0}
+
+/* tags */
+.tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:5px; border:1px solid; white-space:nowrap; vertical-align:1px; letter-spacing:.01em}
+.tag::before{content:""; width:5px; height:5px; border-radius:50%; background:currentColor}
+.tag.spec{color:#1f3a5f; border-color:#c3d2e3; background:#ecf1f8}
+.tag.vendor{color:#35694a; border-color:#c2dccb; background:#ecf6ef}
+.tag.case{color:#8f2b22; border-color:#e6c3be; background:#fbeceb}
+.tag.warn{color:#8a5a10; border-color:#e7d2ad; background:#fbf2e2}
+
+/* cards & grids */
+.grid{display:grid; gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(392px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(258px,1fr))}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow)}
+.card h3{margin:0 0 8px; font-size:17px}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.card .head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:6px 10px; margin-bottom:8px}
+
+.callout{margin:22px 0; padding:18px 20px 18px 22px; border:1px solid var(--line2); border-left:4px solid var(--slate); border-radius:4px 10px 10px 4px; background:linear-gradient(180deg,#f8fafc,#eef3f8)}
+.callout.warn{border-left-color:var(--verm); background:linear-gradient(180deg,#fdf8f7,#f9eeec)}
+.callout.ok{border-left-color:var(--moss); background:linear-gradient(180deg,#f9fcf9,#eff7f1)}
+.callout .label{font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--slate); margin-bottom:6px}
+.callout.warn .label{color:var(--verm)}
+.callout.ok .label{color:var(--moss)}
+.callout p:last-child{margin-bottom:0}
+
+/* tables */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); box-shadow:var(--shadow); margin:16px 0 8px}
+table{border-collapse:collapse; width:100%; font-size:14.1px; min-width:620px}
+caption{caption-side:top; text-align:left; padding:13px 16px 4px; font-size:12.8px; color:var(--muted)}
+th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+thead th{background:var(--panel2); font-size:12.4px; letter-spacing:.03em; color:var(--ink2); font-weight:650; white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafaf6}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+.mono,td.mono{font-family:var(--mono); font-size:12.7px}
+th.sortable button{all:inherit; cursor:pointer; font:inherit; color:inherit; display:inline-flex; gap:5px; align-items:center}
+th.sortable button::after{content:"↕"; color:var(--faint); font-size:11px}
+th[aria-sort="ascending"] button::after{content:"↑"; color:var(--slate)}
+th[aria-sort="descending"] button::after{content:"↓"; color:var(--slate)}
+.tblnote{font-size:12.7px; color:var(--muted); margin:6px 0 0; max-width:82ch}
+
+/* provider tabs */
+.tabs{display:flex; flex-wrap:wrap; gap:6px; margin:20px 0 0; padding:0; list-style:none}
+.tab{font:inherit; font-size:13.4px; cursor:pointer; padding:7px 14px; border-radius:999px; border:1px solid var(--line2); background:var(--panel); color:var(--ink2)}
+.tab[aria-selected="true"]{background:var(--slate); border-color:var(--slate); color:#fff; font-weight:600}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px 26px; margin:16px 0 0}
+.panel h3{margin-top:0}
+.provgrid{display:grid; grid-template-columns:1.15fr .85fr; gap:24px}
+@media (max-width:820px){.provgrid{grid-template-columns:1fr}}
+.stack{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; padding:0; list-style:none}
+.stack li{font-family:var(--mono); font-size:11.8px; background:var(--panel2); border:1px solid var(--line); padding:2px 8px; border-radius:5px; color:var(--ink2)}
+ol.flow{margin:0; padding-left:22px; counter-reset:f}
+ol.flow li{margin:7px 0; font-size:14.6px}
+ol.flow li::marker{font-family:var(--mono); color:var(--verm); font-weight:700}
+.kv{margin:0 0 10px; font-size:14.4px}
+.kv b{display:inline-block; min-width:5.6em; color:var(--ink)}
+
+/* timeline */
+.toolbar{display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; margin:18px 0 0}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none}
+.chip{font:inherit; font-size:12.8px; cursor:pointer; padding:4px 11px; border-radius:999px; border:1px solid var(--line2); background:var(--panel); color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:#fff}
+.search{display:flex; gap:8px; align-items:center; margin-left:auto}
+.search label{font-size:12.8px; color:var(--muted)}
+input[type="search"]{font:inherit; font-size:13.2px; padding:6px 11px; border:1px solid var(--line2); border-radius:8px; background:var(--panel); width:200px}
+.btn{font:inherit; font-size:12.8px; padding:6px 12px; border:1px solid var(--line2); border-radius:8px; background:var(--panel); cursor:pointer; color:var(--ink2)}
+.btn:hover{background:var(--panel2)}
+.empty{margin:14px 0 0; padding:14px 16px; border:1px dashed var(--line2); border-radius:10px; color:var(--muted); font-size:13.6px}
+
+.tl{position:relative; margin:24px 0 0; padding:0 0 0 26px; list-style:none; border-left:2px solid var(--line2)}
+.tl > li{position:relative; margin:0 0 18px}
+.tl > li::before{content:""; position:absolute; left:-33px; top:18px; width:11px; height:11px; border-radius:50%; background:var(--panel); border:2.5px solid var(--verm)}
+.tl > li[data-stage="断言"]::before{border-color:#7a4b9b}
+.tl > li[data-stage="会话"]::before{border-color:#1f3a5f}
+.tl > li[data-stage="凭据"]::before{border-color:#9a6a14}
+.tl > li[data-stage="恢复"]::before{border-color:#35694a}
+.tl > li[data-stage="授权"]::before{border-color:#a3562a}
+.tl > li[data-stage="认证"]::before{border-color:#b3352b}
+.tlcard{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 18px; box-shadow:var(--shadow)}
+.tlcard .top{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; margin-bottom:4px}
+.tlcard time{font-family:var(--mono); font-size:12.4px; color:var(--muted); letter-spacing:.02em}
+.tlcard h4{margin:0; font-size:15.6px}
+.tlcard .body{font-size:14.4px; color:var(--ink2)}
+.tlcard .body b{color:var(--ink)}
+.tlcard .stages{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+.tlcard .tag{white-space:normal; line-height:1.5}
+
+/* matrix */
+.matrix td:first-child{font-weight:650; white-space:nowrap; background:var(--panel2)}
+.matrix ul{margin:0; padding-left:17px; font-size:13.6px}
+.matrix li{margin:4px 0}
+.matrix .base li::marker{color:var(--moss)}
+.matrix .adv li::marker{color:var(--slate)}
+.matrix .det li::marker{color:var(--verm)}
+
+/* checklist */
+.checks{list-style:none; margin:14px 0 0; padding:0; display:grid; gap:8px}
+.checks li{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px}
+.checks input{margin:4px 0 0; width:17px; height:17px; accent-color:var(--moss); flex:none}
+.checks label{cursor:pointer; font-size:14.4px}
+.checks .why{display:block; font-size:12.8px; color:var(--muted); margin-top:3px}
+.checks li.done{background:#f4f8f5; border-color:#c8ddcf}
+.checks li.done label{text-decoration:line-through; text-decoration-color:#9fbfa9; color:var(--ink2)}
+.progressline{display:flex; align-items:center; gap:12px; margin:16px 0 0}
+.progressbar{flex:1; height:9px; background:var(--panel2); border-radius:5px; overflow:hidden; border:1px solid var(--line)}
+.progressbar span{display:block; height:100%; width:0; background:linear-gradient(90deg,#4b8b62,#35694a); transition:width .2s}
+.count{font-family:var(--mono); font-size:13px; color:var(--ink2); min-width:56px; text-align:right}
+
+/* roadmap */
+.road{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin:18px 0 0}
+.road .card h3{display:flex; align-items:center; gap:10px}
+.road .card h3 .num{font-family:var(--mono); font-size:11.5px; background:var(--slate); color:#fff; border-radius:5px; padding:2px 7px}
+
+/* misc */
+pre{background:#14181d; color:#e9ecf1; padding:15px 18px; border-radius:10px; overflow-x:auto; font-family:var(--mono); font-size:12.7px; line-height:1.65; border:1px solid #262c34; margin:14px 0}
+pre code{background:none; border:0; padding:0; color:inherit; font-size:inherit}
+code{font-family:var(--mono); font-size:.89em; background:#f0f1eb; border:1px solid var(--line); padding:1px 5px; border-radius:4px}
+pre .c{color:#8e959f}
+pre .k{color:#e0a25a}
+pre .s{color:#9ecfa5}
+figure{margin:22px 0}
+figure svg{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+figcaption{font-size:12.8px; color:var(--muted); margin-top:8px; max-width:82ch}
+details{border:1px solid var(--line); border-radius:10px; background:var(--panel); margin:14px 0; overflow:hidden; box-shadow:var(--shadow)}
+details > summary{cursor:pointer; padding:13px 18px; font-weight:600; font-size:14.5px; list-style:none; display:flex; gap:10px; align-items:center}
+details > summary::-webkit-details-marker{display:none}
+details > summary::before{content:"+"; font-family:var(--mono); color:var(--verm); width:12px}
+details[open] > summary::before{content:"–"}
+details[open] > summary{border-bottom:1px solid var(--line); background:var(--panel2)}
+details .body{padding:6px 18px 16px}
+footer{margin-top:60px; padding:42px 0 64px; border-top:1px solid var(--line); background:#f4f4ee}
+footer h2{font-size:20px; margin-bottom:10px}
+footer ul{padding-left:20px; margin:0 0 16px}
+footer li{margin:6px 0; font-size:14px}
+.footnote{font-size:12.6px; color:var(--muted); max-width:84ch}
+
+@media (max-width:760px){
+  figure{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  figure svg{min-width:660px}
+  .hero .kt{grid-template-columns:1fr 1fr}
+  body{font-size:16px}
+  .hero{padding:44px 0 38px}
+  .wrap{padding:0 18px}
+  .nav ul{padding-left:18px; padding-right:18px}
+  section{padding:44px 0 4px}
+  .search{margin-left:0; width:100%}
+  input[type="search"]{width:100%}
+  .panel{padding:20px 18px}
+}
+@media print{
+  body{background:#fff; font-size:10.5pt}
+  .nav,.progress,.toolbar,.skip,.progressline{display:none !important}
+  .hero{background:#fff; color:#000; padding:12px 0}
+  .hero .kt,.verdict{background:#fff; border-color:#999}
+  .hero .metaline li{background:#fff; color:#333; border-color:#bbb}
+  a{color:#000; border-bottom:none}
+  .card,.callout,.tlcard,table{break-inside:avoid}
+  .is-hidden{display:none !important}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} .progressbar span{transition:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">安全研究 · 账号与身份 · 2026</p>
+    <h1>账号体系的攻防地图
+      <span class="sub">Google、Apple、Microsoft、Meta、腾讯、阿里与企业 SSO 是怎么证明「你是你」的，攻击者又是怎么绕过这一步的。原理拆到协议字段，案例对到真实事件。</span>
+    </h1>
+    <ul class="metaline">
+      <li>协议基准 <b>OAuth 2.0 / OIDC / SAML 2.0 / WebAuthn</b></li>
+      <li>权威标准 <b>RFC 9700 · NIST SP 800-63B</b></li>
+      <li>覆盖体系 <b>8 类</b></li>
+      <li>攻击手法 <b>20 种</b></li>
+      <li>案例 <b>2020–2025 · 14 起</b></li>
+    </ul>
+
+    <div class="verdict">
+      <h2>三条结论</h2>
+      <ol>
+        <li>MFA 普及之后，攻击重心已经从「偷密码」移到<b>偷断言、偷会话</b>：SolarWinds 偷的是 ADFS 签名证书，Storm-0558 用的是签名密钥加校验缺陷，infostealer 卖的是浏览器 Cookie。<b>密码只是入口之一，不再是主战场。</b></li>
+        <li>六家账号体系的密码学基础几乎一样，差别在<b>信任范围的收放</b>：Apple 用中继邮箱把数据面压到最小；Google 与 Microsoft 用设备绑定把会话钉在硬件上；微信与支付宝把身份收敛到服务端、用 openid 与签名做信任锚。<b>设计差异决定攻击面差异。</b></li>
+        <li>防御的有效顺序是：<b>先缩短会话与令牌寿命，再换抗钓鱼认证，最后才是检测</b>。只加一层可中继的 MFA，等于把攻击者从撞库赶到实时钓鱼——Twilio、Uber、Cisco 三起事件是同一条路径。</li>
+      </ol>
+    </div>
+
+    <div class="kt">
+      <div><div class="v">5 环</div><div class="k">凭据 → 认证 → 断言 → 会话 → 授权/恢复</div></div>
+      <div><div class="v">3 类</div><div class="k">可被中继 / 可被伪造 / 可被重放</div></div>
+      <div><div class="v">AAL2 → 3</div><div class="k">NIST：AAL2 须提供抗钓鱼选项，AAL3 禁用可导出私钥</div></div>
+      <div><div class="v">零信任</div><div class="k">「已登录」不等于「有权限」</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="章节导航">
+  <ul>
+    <li><a href="#model">通用模型</a></li>
+    <li><a href="#providers">各家体系</a></li>
+    <li><a href="#attacks">攻击手法</a></li>
+    <li><a href="#cases">案例时间线</a></li>
+    <li><a href="#defense">防御矩阵</a></li>
+    <li><a href="#deep">三个专题</a></li>
+    <li><a href="#roadmap">落地路线</a></li>
+    <li><a href="#checklist">自查清单</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+
+<section id="model">
+  <div class="wrap">
+    <p class="kicker">01 · 通用模型</p>
+    <h2>先分清五件事，再看各家怎么实现</h2>
+    <p class="lead">几乎所有账号体系都能拆成同一条链：证明你是谁（认证）、由谁替你作证（断言）、之后每次请求凭什么被相信（会话）、以及你能做什么（授权）。最后还要回答一个常被忽略的问题：账号丢了怎么找回（恢复）。</p>
+
+    
+<figure>
+<svg viewBox="0 0 990 330" role="img" aria-labelledby="f1t f1d" xmlns="http://www.w3.org/2000/svg">
+<title id="f1t">账号体系的五个环节与各自的攻击面</title>
+<desc id="f1d">流程图：凭据、认证、断言、会话、授权与恢复五个环节串联；上排是各环节的防御重点，下排是常见攻击手法。</desc>
+<defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9aa0a8"/></marker></defs>
+<rect width="990" height="330" fill="#fff"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+<g font-size="11.5" fill="#35694a">
+<text x="36" y="28">强口令 · 泄露凭据检测</text><text x="228" y="28">MFA · 抗钓鱼认证</text><text x="440" y="28">签名与 issuer 校验</text><text x="636" y="28">绑定设备 · 短会话</text><text x="838" y="28">对象级鉴权 · 强恢复</text>
+</g>
+<g stroke="#e2e2dc" stroke-width="1">
+<line x1="20" y1="40" x2="970" y2="40"/>
+</g>
+<rect x="20" y="70" width="172" height="86" rx="10" fill="#f2f5f9" stroke="#c9d6e4"/>
+<text x="106" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1f3a5f">凭据</text>
+<text x="106" y="119" text-anchor="middle" font-size="11.5" fill="#5a6573">密码 · 密钥 · 设备</text>
+<text x="106" y="137" text-anchor="middle" font-size="11.5" fill="#5a6573">攻击者要「拿到它」</text>
+
+<rect x="220" y="70" width="172" height="86" rx="10" fill="#f2f5f9" stroke="#c9d6e4"/>
+<text x="306" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1f3a5f">认证</text>
+<text x="306" y="119" text-anchor="middle" font-size="11.5" fill="#5a6573">证明「你是你」</text>
+<text x="306" y="137" text-anchor="middle" font-size="11.5" fill="#5a6573">攻击者要「骗过它」</text>
+
+<rect x="420" y="70" width="172" height="86" rx="10" fill="#f2f5f9" stroke="#c9d6e4"/>
+<text x="506" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1f3a5f">断言</text>
+<text x="506" y="119" text-anchor="middle" font-size="11.5" fill="#5a6573">IdP 说「他是谁」</text>
+<text x="506" y="137" text-anchor="middle" font-size="11.5" fill="#5a6573">攻击者要「伪造它」</text>
+
+<rect x="620" y="70" width="172" height="86" rx="10" fill="#f2f5f9" stroke="#c9d6e4"/>
+<text x="706" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1f3a5f">会话</text>
+<text x="706" y="119" text-anchor="middle" font-size="11.5" fill="#5a6573">之后的每一次请求</text>
+<text x="706" y="137" text-anchor="middle" font-size="11.5" fill="#5a6573">攻击者要「重放它」</text>
+
+<rect x="820" y="70" width="150" height="86" rx="10" fill="#f2f5f9" stroke="#c9d6e4"/>
+<text x="895" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1f3a5f">授权 / 恢复</text>
+<text x="895" y="119" text-anchor="middle" font-size="11.5" fill="#5a6573">能做什么 · 丢了怎么办</text>
+<text x="895" y="137" text-anchor="middle" font-size="11.5" fill="#5a6573">攻击者要「绕过去」</text>
+
+<g stroke="#9aa0a8" stroke-width="1.4" fill="none">
+<line x1="194" y1="113" x2="214" y2="113" marker-end="url(#a1)"/>
+<line x1="394" y1="113" x2="414" y2="113" marker-end="url(#a1)"/>
+<line x1="594" y1="113" x2="614" y2="113" marker-end="url(#a1)"/>
+<line x1="794" y1="113" x2="814" y2="113" marker-end="url(#a1)"/>
+</g>
+
+<g font-size="11.5" fill="#b3352b">
+<text x="34" y="196">撞库</text><text x="76" y="196">·</text><text x="88" y="196">木马日志</text>
+<text x="232" y="196">实时钓鱼</text><text x="232" y="215">疲劳推送 · SIM</text>
+<text x="430" y="196">签名伪造</text><text x="430" y="215">重放 · XSW</text>
+<text x="630" y="196">Cookie / 令牌窃取</text><text x="630" y="215">pass-the-PRT</text>
+<text x="830" y="196">越权访问</text><text x="830" y="215">客服社工</text>
+</g>
+<g stroke="#e6c3be" stroke-width="1" stroke-dasharray="3 3">
+<line x1="30" y1="170" x2="956" y2="170"/>
+</g>
+
+<text x="30" y="262" font-size="12" fill="#6f747d">每一次箭头都是一次「信任转移」：后一环不重新验证前一环，只验证前一环留下的凭据或签名。</text>
+<text x="30" y="284" font-size="12" fill="#6f747d">因此攻击者的最优路径永远是「找最弱的那一环」，而不是「正面破解最强的那一环」。</text>
+</g>
+</svg>
+<figcaption>图 1　五个环节与对应攻击面。凭据、认证、断言、会话、授权/恢复，任何一环被突破，后面四环的强度都失去意义。</figcaption>
+</figure>
+
+
+    <h3>把一次登录摊开：四条泳道</h3>
+    <p>下面这张时序图是 OAuth 2.0 授权码 + PKCE 的标准流程。八类体系的具体字段不同，但「谁把什么交给谁、谁验证什么」的结构基本相同——包括微信的 code 换 openid、支付宝的 auth_code 换 user_id。</p>
+
+    
+<figure>
+<svg viewBox="0 0 980 470" role="img" aria-labelledby="f2t f2d" xmlns="http://www.w3.org/2000/svg">
+<title id="f2t">OAuth 2.0 授权码 + PKCE 的时序</title>
+<desc id="f2d">四条泳道：浏览器、应用后端、身份提供方、资源服务。依次为跳转授权、回跳 code、后端换 token、校验 id_token、调用资源。</desc>
+<defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5a6573"/></marker></defs>
+<rect width="980" height="470" fill="#fff"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif" font-size="11.5" fill="#41454d">
+<g fill="#1f3a5f" font-weight="700" font-size="12.5" text-anchor="middle">
+<text x="120" y="34">浏览器 / 用户</text><text x="370" y="34">应用后端</text><text x="640" y="34">身份提供方 IdP</text><text x="860" y="34">资源服务</text>
+</g>
+<g stroke="#e9e9e2" stroke-width="1">
+<line x1="120" y1="48" x2="120" y2="440"/><line x1="370" y1="48" x2="370" y2="440"/><line x1="640" y1="48" x2="640" y2="440"/><line x1="860" y1="48" x2="860" y2="440"/>
+</g>
+<g stroke="#5a6573" stroke-width="1.2" fill="none">
+<line x1="120" y1="72" x2="366" y2="72" marker-end="url(#a2)"/>
+<line x1="370" y1="104" x2="124" y2="104" marker-end="url(#a2)"/>
+<line x1="120" y1="140" x2="636" y2="140" marker-end="url(#a2)"/>
+<line x1="640" y1="176" x2="124" y2="176" marker-end="url(#a2)"/>
+<line x1="120" y1="212" x2="366" y2="212" marker-end="url(#a2)"/>
+<line x1="370" y1="248" x2="636" y2="248" marker-end="url(#a2)"/>
+<line x1="640" y1="284" x2="374" y2="284" marker-end="url(#a2)"/>
+<line x1="370" y1="320" x2="856" y2="320" marker-end="url(#a2)"/>
+<line x1="860" y1="356" x2="374" y2="356" marker-end="url(#a2)"/>
+<line x1="370" y1="392" x2="124" y2="392" marker-end="url(#a2)"/>
+</g>
+<g font-size="11" fill="#41454d">
+<text x="130" y="66">① 点击登录</text>
+<text x="376" y="98">② 302 + state / nonce / code_challenge</text>
+<text x="128" y="134">③ 授权请求（client_id, redirect_uri, scope）</text>
+<text x="128" y="170">④ 登录 + 同意页（可被社工的一屏）</text>
+<text x="130" y="206">⑤ 回跳：code + state</text>
+<text x="378" y="242">⑥ code + code_verifier + client_secret</text>
+<text x="376" y="278">⑦ id_token + access_token（+ refresh）</text>
+<text x="378" y="314">⑧ Bearer access_token</text>
+<text x="376" y="350">⑨ 返回数据</text>
+<text x="130" y="386">⑩ 自建会话 Cookie（或前端会话）</text>
+</g>
+<g font-size="10.8" fill="#b3352b">
+<text x="648" y="166">code 被截获 → 无 verifier 换不到</text>
+<text x="648" y="274">验签 + iss/aud/exp/nonce</text>
+<text x="648" y="392">Cookie 被复制 → 会话重放</text>
+</g>
+</g>
+</svg>
+<figcaption>图 2　授权码 + PKCE 时序。code 是一次性的、且必须配合 <code>code_verifier</code> 才能兑换，这让「截获 code」不再等于「登录成功」；但一旦会话建立，Cookie 就成了新的可窃取凭据。</figcaption>
+</figure>
+
+
+    <div class="grid g3">
+      <div class="card">
+        <h3>认证 ≠ 授权</h3>
+        <p>认证回答「你是谁」，授权回答「你能做什么」。大量真实漏洞属于后者：用户确实登录了，但接口没校验「这条数据是不是他的」。</p>
+        <p class="small"><span class="tag spec">协议规范</span> RFC 9700 把授权码流的安全边界写得很细，但对象级授权仍要业务自己实现。</p>
+      </div>
+      <div class="card">
+        <h3>断言是「别人替你作证」</h3>
+        <p>OIDC 的 <code>id_token</code>、SAML 的 <code>Assertion</code> 都是 IdP 签名的声明。应用的信任对象不是用户，而是签名。</p>
+        <p class="small">所以攻击者一旦拿到签名密钥或校验缺陷，就不需要再碰用户。</p>
+      </div>
+      <div class="card">
+        <h3>会话才是长期资产</h3>
+        <p>MFA 只在建立会话的那一秒起作用。之后 30 天里，一个 Cookie 就能代表你——这也是 infostealer 与 AitM 钓鱼都盯着会话的原因。</p>
+        <p class="small">会话寿命 × 绑定强度 = 攻击窗口。</p>
+      </div>
+    </div>
+
+    <h3>三个术语先对齐</h3>
+    <div class="tablewrap"><table>
+      <caption>表 1　后文反复用到的概念。括号内是对应的规范或标准。</caption>
+      <thead><tr><th scope="col">概念</th><th scope="col">含义</th><th scope="col">常见载体</th></tr></thead>
+      <tbody>
+        <tr><td><strong>IdP / SP（RP）</strong></td><td>身份提供方负责认证并签发断言；依赖方（应用）负责校验断言</td><td>Google、Entra ID、Okta、微信开放平台</td></tr>
+        <tr><td><strong>断言（assertion）</strong></td><td>IdP 签名的身份声明，含主体、受众、有效期、签发者</td><td>SAML Assertion、OIDC id_token（JWT）</td></tr>
+        <tr><td><strong>访问令牌 / 刷新令牌</strong></td><td>访问令牌短命、用于调资源；刷新令牌长命、用于换新令牌</td><td>OAuth 2.0 access/refresh token</td></tr>
+        <tr><td><strong>会话</strong></td><td>浏览器或设备上代表「已登录」的状态</td><td>Cookie、PRT（Windows）、refresh token</td></tr>
+        <tr><td><strong>抗钓鱼认证</strong></td><td>凭据与源站密码学绑定，钓鱼域名无法复用</td><td>WebAuthn / Passkey / FIDO2 安全密钥</td></tr>
+        <tr><td><strong>AAL</strong></td><td>认证保证等级，NIST 按强度分 AAL1/2/3</td><td>AAL2 需两种因素且须提供抗钓鱼选项；AAL3 要求不可导出私钥</td></tr>
+      </tbody>
+    </table></div>
+    <p class="tblnote">AAL 的定义来自 NIST SP 800-63B（2025 年 8 月版）。其中 AAL3 明确不允许使用「可同步」的认证器（例如云同步 passkey），因为私钥必须可导出才能同步——这条限制直接决定了高价值系统该用什么。</p>
+
+    <div class="callout warn">
+      <div class="label">一个反直觉的事实</div>
+      <p>在 2020 年之后的大型身份事件里，<strong>被攻破的几乎都不是「密码算法」，而是信任链上的实现细节</strong>：一个没校验的 issuer、一个客服流程、一个 HAR 文件里的 Cookie、一台没上 MFA 的远程桌面。协议本身很少是短板，落地方式才是。</p>
+    </div>
+  </div>
+</section>
+
+<section id="providers">
+  <div class="wrap">
+    <p class="kicker">02 · 各家体系</p>
+    <h2>八类账号体系，同一道题的不同解法</h2>
+    <p class="lead">下面每一家都按同一个模板拆：协议栈、一次登录的步骤、已知失效模式、防御要点、同类机制对照。切换标签看具体实现，重点不在 API 名字，而在「它把信任放在哪里」。</p>
+
+    <ul class="tabs" role="tablist" aria-label="账号体系"><li role="presentation"><button class="tab" role="tab" id="tab-google" aria-controls="panel-google" aria-selected="true" tabindex="0">Google</button></li><li role="presentation"><button class="tab" role="tab" id="tab-apple" aria-controls="panel-apple" aria-selected="false" tabindex="-1">Apple</button></li><li role="presentation"><button class="tab" role="tab" id="tab-microsoft" aria-controls="panel-microsoft" aria-selected="false" tabindex="-1">Microsoft</button></li><li role="presentation"><button class="tab" role="tab" id="tab-meta" aria-controls="panel-meta" aria-selected="false" tabindex="-1">Meta / Facebook</button></li><li role="presentation"><button class="tab" role="tab" id="tab-tencent" aria-controls="panel-tencent" aria-selected="false" tabindex="-1">腾讯（微信 / QQ）</button></li><li role="presentation"><button class="tab" role="tab" id="tab-alipay" aria-controls="panel-alipay" aria-selected="false" tabindex="-1">阿里（支付宝 / 淘宝）</button></li><li role="presentation"><button class="tab" role="tab" id="tab-sso" aria-controls="panel-sso" aria-selected="false" tabindex="-1">企业 SSO（SAML / CAS / Kerberos）</button></li><li role="presentation"><button class="tab" role="tab" id="tab-webauthn" aria-controls="panel-webauthn" aria-selected="false" tabindex="-1">无密码与 MFA（Passkey / TOTP / 短信）</button></li></ul>
+    
+<div class="panel" role="tabpanel" id="panel-google" aria-labelledby="tab-google">
+  <div class="provgrid">
+    <div>
+      <h3>Google<span class="small" style="font-weight:400; margin-left:10px">OIDC + 设备绑定会话</span></h3>
+      <p>把「登录 Google」拆成三件事：OIDC 发断言、短命 access token 换数据、设备绑定的会话 Cookie。</p>
+      <ul class="stack"><li>OAuth 2.0</li><li>OpenID Connect</li><li>PKCE</li><li>JWT/JWKS</li><li>Session Cookie</li><li>DBSC</li><li>Passkey</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li>应用生成 <code>state</code>（防 CSRF）、<code>nonce</code>（防 id_token 重放）和 PKCE 的 <code>code_verifier</code>，只把它的 SHA-256（<code>code_challenge</code>）放进跳转链接。</li><li><code>accounts.google.com/o/oauth2/v2/auth</code>，带 <code>client_id</code>、<code>redirect_uri</code>、<code>response_type=code</code>、<code>scope=openid email profile</code>、<code>code_challenge</code>。</li><li>密码、Passkey 或安全密钥在这一步；随后是授权同意页，用户看到的是「这个应用要读你的哪些数据」，这是整个链条里最容易被社工的一屏。</li><li>浏览器只拿到一次性 <code>code</code>；后端带 <code>code_verifier</code> 与 <code>client_secret</code> 调 <code>/token</code>，浏览器永远看不到 refresh token。</li><li>验签名（Google JWKS）、<code>iss=accounts.google.com</code>、<code>aud=client_id</code>、<code>exp</code>、<code>nonce</code>；用户主键用 <code>sub</code>，不要用 email。</li><li>access token 默认 1 小时；refresh token 长期有效，靠 <code>/revoke</code> 与用户端的「第三方应用」页面撤销。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>把 email 当主键</b>：Workspace 域改名、邮箱回收、代理邮箱都会让 email 漂移；用 <code>sub</code> 才稳定。</li><li><b>公共客户端不做 PKCE</b>：原生 App、SPA 的 code 可被同设备恶意应用截获并抢先兑换。RFC 9700 已把隐式流与不带 PKCE 的授权码流列为不推荐。</li><li><b>redirect_uri 通配或可被开放重定向</b>：code 被送到攻击者域名，等于把登录票据直接交出。</li><li><b>前端解析 id_token 不验签</b>：攻击者伪造 <code>{"sub":"admin"}</code> 即可；必须后端验签或走 <code>/userinfo</code>。</li><li><b>同意钓鱼（consent phishing）</b>：诱导用户给一个恶意 OAuth 应用授权 offline access，之后不需要密码也能长期读邮件。</li><li><b>会话 Cookie 被窃取</b>：MFA 只保护「建立会话」那一刻；infostealer 复制 Cookie 后可直接重放，这就是 pass-the-cookie。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>设备绑定会话（DBSC）</b>：Chrome 与 Google 账号把会话绑定到设备上的私钥——Cookie 被复制到另一台机器就失效。</li><li><b>Passkey 优先 + 高级保护</b>：Advanced Protection Program 强制安全密钥/Passkey，直接掐掉 AitM 钓鱼与 OTP 中继。</li><li><b>scope 最小化与令牌审计</b>：只申请必要 scope；定期拉取账号的第三方授权列表，清理离线访问。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>本文清单中没有 Google 侧的公开案例；机制对照：<a href="#case-c9">23andMe 撞库</a>（<a href="#atk-a1">a1</a>）、同意钓鱼（<a href="#atk-a8">a8</a>）、会话 Cookie 重放（<a href="#atk-a10">a10</a>）。</p>
+    <p class="small" style="margin:6px 0 0">Google 自己也是被攻击最密集的 IdP：2024 年后大量 infostealer 日志以「Google 会话 Cookie + 密码」组合打包出售。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-apple" aria-labelledby="tab-apple" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>Apple<span class="small" style="font-weight:400; margin-left:10px">最小披露 + 密钥不出设备</span></h3>
+      <p>Apple 的账号体系里，隐私设计本身就是安全设计：能不给的标识就不给，能给中继地址就不给真邮箱。</p>
+      <ul class="stack"><li>Sign in with Apple</li><li>OIDC 变体</li><li>ES256 client_secret</li><li>iCloud Keychain</li><li>Passkey</li><li>Private Relay</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li><code>appleid.apple.com/auth/authorize</code>，<code>response_mode=form_post</code>，<code>scope=name email</code>，带 <code>nonce</code> 与 <code>state</code>。</li><li>开发者用 <code>.p8</code> 私钥签一个 ES256 的 JWT 当 <code>client_secret</code>，有效期最长 6 个月，不是写死在配置里的字符串。</li><li>选「隐藏邮箱」时返回 <code>xxx@privaterelay.appleid.com</code>，并带 <code>is_private_email</code> 标记；邮件由 Apple 转发。</li><li>验 Apple JWKS 签名、<code>aud</code>（Service ID）、<code>nonce</code>、<code>exp</code>；主键用 <code>sub</code>，它与开发者团队绑定。</li><li>Safari/系统钥匙串保存 passkey，iCloud Keychain 端到端加密同步；App 内登录由系统生物识别解锁私钥。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>不校验 nonce</b>：id_token 可被重放到另一个会话；Apple 的 nonce 是防重放的主开关。</li><li><b>把中继邮箱当真邮箱做账号合并</b>：同一用户换一个 App 会得到不同的中继地址，按邮箱合并会造出重复账号或错误绑定。</li><li><b>client_secret 私钥泄露</b>：拿到 <code>.p8</code> 的人可以为你的 Service ID 签任意 client_secret，冒充你的后端换 token。</li><li><b>依赖「隐藏邮箱」当安全边界</b>：它防的是数据面扩散，不防账号接管；用户侧被钓鱼仍然会丢号。</li><li><b>同步 passkey 的单点风险</b>：iCloud 账号被接管，等于拿到所有同步 passkey 的使用权（私钥不可导出，但可在攻击者设备上解锁使用）。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>短周期轮换 .p8</b>：把私钥放进 KMS，签发 client_secret 的服务最小权限化，定期轮换。</li><li><b>中继邮箱只作通信通道</b>：账号主键、风控、客服全部基于 <code>sub</code>；中继地址只用于发信。</li><li><b>AAL 分级</b>：NIST 800-63B 明确同步类认证器不能用于 AAL3；高价值场景配硬件密钥或设备绑定。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>本文清单中没有 Apple 侧的公开案例；相关机制是 id_token 重放（<a href="#atk-a15">a15</a>）与「中继邮箱被当成主键」导致的账号合并错误。</p>
+    <p class="small" style="margin:6px 0 0">Apple 把「隐藏邮箱 + 中继」做成默认选项，相当于把第三方应用的数据面压到最小——这是账号体系里少见的隐私即安全设计。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-microsoft" aria-labelledby="tab-microsoft" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>Microsoft<span class="small" style="font-weight:400; margin-left:10px">企业身份 + 设备信任</span></h3>
+      <p>Entra ID 的核心不是「验证密码」，而是「判断这台设备、这个位置、这个会话值不值得信任」。</p>
+      <ul class="stack"><li>Entra ID</li><li>OIDC / SAML / WS-Fed</li><li>PRT</li><li>Conditional Access</li><li>CAE</li><li>Token Protection</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li><code>login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize</code>，或 SAML 的 <code>AuthnRequest</code>；租户 ID 决定信任哪个目录。</li><li>加入/注册设备会拿到设备证书与 PRT（Primary Refresh Token），条件访问基于「设备合规 + 用户 + 位置 + 应用敏感度」组合判定。</li><li>Authenticator 推送（带数字匹配）、FIDO2 安全密钥、Windows Hello、临时访问通行证（TAP）。</li><li>access token（JWT）+ refresh token + 浏览器会话 Cookie；PRT 由系统代理（WAM）持有，普通进程拿不到明文。</li><li>CAE 让撤销在分钟级生效，不必等 token 过期；Defender for Cloud Apps 对异常令牌做「令牌窃取检测」。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>Golden SAML</b>：ADFS 的 token 签名证书被拿走，攻击者可以自己签任意用户的 SAML 断言——签名是真的，身份是假的。</li><li><b>签名密钥 + 校验逻辑双重失守</b>：2023 年 Storm-0558：消费者密钥被用于伪造企业租户令牌，根因之一是接受端没有校验签发者。</li><li><b>设备码钓鱼</b>：诱导用户在真实微软页面上输入攻击者给的 device code，令牌就落到攻击者手里；MFA 全程有效。</li><li><b>遗留协议与历史租户</b>：SMTP AUTH、Basic 认证、多年前创建的非生产租户，往往没有条件访问覆盖，成为密码喷洒入口。</li><li><b>PRT 窃取（pass-the-PRT）</b>：拿到设备上的 PRT 可换出该设备能拿的所有令牌，等同于拿到设备。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>条件访问优先于密码策略</b>：强制合规设备、封堵遗留认证、按应用分级；把「能登录」改成「在什么条件下能登录」。</li><li><b>令牌保护与绑定</b>：Token Protection 把令牌绑到设备密钥；关闭不需要的 device code 流，或对其单独加限制。</li><li><b>监控断言签发面</b>：ADFS/Entra 的签名证书、 federation 信任、企业应用授权变更都是高价值告警项。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>Microsoft 相关事件：<a href="#case-c1">SolarWinds / Golden SAML</a>、<a href="#case-c6">Storm-0558</a>、<a href="#case-c11">Midnight Blizzard</a>。</p>
+    <p class="small" style="margin:6px 0 0">微软自己统计过：密码攻击占入侵入口的绝大多数，而启用 MFA 能挡掉绝大部分自动化攻击——但挡不住钓鱼和令牌窃取，这两类要靠抗钓鱼认证与设备绑定。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-meta" aria-labelledby="tab-meta" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>Meta / Facebook<span class="small" style="font-weight:400; margin-left:10px">社交图谱换登录</span></h3>
+      <p>Facebook Login 卖的是「降低注册摩擦」，代价是长期令牌、复杂权限和一块持续被撞库的靶子。</p>
+      <ul class="stack"><li>Facebook Login</li><li>OAuth 2.0</li><li>Graph API</li><li>Long-lived token</li><li>appsecret_proof</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li><code>facebook.com/v19.0/dialog/oauth</code>，<code>scope=public_profile,email</code>；用户已登录 Facebook 时往往一键通过。</li><li>用 <code>app_id</code> + <code>app_secret</code> 换短期 user token，再换长期 token（约 60 天）。</li><li>拿 <code>id</code>、<code>name</code>、<code>email</code>；<code>appsecret_proof</code> 防止 token 被挪到别的应用使用。</li><li>订阅 <code>deauthorize</code> / <code>data deletion</code> 回调，处理用户解绑与删除请求。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>长期 token 泄露</b>：60 天有效期意味着一次泄露可以长期调用；token 常出现在前端日志、第三方 SDK、崩溃上报里。</li><li><b>恶意应用与权限滥用</b>：用户授权后，应用可读取社交图谱；历史上多次出现大规模数据抓取（scraping）。</li><li><b>撞库</b>：邮箱 + 旧密码组合在暗网流通，社交账号是撞库最高频的目标之一。</li><li><b>账号恢复流程被社工</b>：客服/好友验证/信任联系人被用来重置 MFA，比破解密码便宜。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>token 不落前端</b>：所有 Graph 调用在后端；前端只拿会话，不拿 user token。</li><li><b>最小 scope + 定期清理</b>：只申请必要权限，定期审查已授权应用。</li><li><b>抗钓鱼 MFA 与恢复加固</b>：安全密钥/Passkey 优先；恢复流程加延迟与人工复核，避免客服成为后门。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>机制对照：<a href="#case-c9">23andMe 撞库</a>（<a href="#atk-a1">a1</a>）与 <a href="#case-c13">Snowflake 凭据复用</a>（<a href="#atk-a2">a2</a>）。两者都不是 Meta 自身事故，但攻击路径相同。</p>
+    <p class="small" style="margin:6px 0 0">Meta 的账号体系是「平台化」的典型：第三方应用越多，令牌与授权面越大，攻击者越不需要碰密码。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-tencent" aria-labelledby="tab-tencent" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>腾讯（微信 / QQ）<span class="small" style="font-weight:400; margin-left:10px">openid / unionid 收敛身份</span></h3>
+      <p>国内最主流的账号体系不是 OIDC，而是「code 换 openid」：身份在服务端收敛，前端只拿到一个跳转结果。</p>
+      <ul class="stack"><li>微信网页授权</li><li>扫码登录</li><li>小程序 code2Session</li><li>QQ 互联</li><li>unionid</li><li>access_token</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li>跳 <code>open.weixin.qq.com/connect/oauth2/authorize</code>，<code>scope=snsapi_base</code>（静默）或 <code>snsapi_userinfo</code>（要资料），必须带一次性 <code>state</code>。</li><li>服务端调 <code>sns/oauth2/access_token</code>（appid + secret + code），拿到 <code>access_token</code>、<code>openid</code>；需要资料再调 <code>sns/userinfo</code>。</li><li>同一用户在公众号、小程序、App 之间 openid 不同；只有绑定到同一个微信开放平台账号，才会返回同一 <code>unionid</code>。</li><li><code>wx.login()</code> 拿 code → 后端 <code>code2Session</code> 换 <code>openid</code>、<code>session_key</code>、<code>unionid</code>；<code>session_key</code> 用于解密加密数据。</li><li><code>qrconnect</code> 生成带 state 的二维码，手机扫码确认后，PC 端凭 code 换身份；二维码有效期通常 5 分钟。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>state 缺失或可预测</b>：登录 CSRF——攻击者把自己的 code 塞进受害者的回调，受害者账号被绑到攻击者身份上。</li><li><b>前端信任 openid</b>：openid 由后端换得，任何前端传来的 openid/unionid 都必须视为不可信输入。</li><li><b>session_key / access_token 泄露</b>：session_key 泄露可解密用户加密数据；access_token 出现在 URL、日志、前端缓存里是常见事故。</li><li><b>二维码被替换或转发</b>：钓鱼者用自己的登录二维码替换页面上的二维码，用户「扫码确认」等于把账号交给对方。</li><li><b>回调域名与业务域名校验不严</b>：开放重定向把 code 送到外部域名。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>身份只在服务端解析</b>：前端只接收「登录成功」与自建会话票据；openid/unionid 永不作为前端可信参数。</li><li><b>state 一次性 + 绑定会话</b>：state 与浏览器会话绑定、5 分钟内有效、用后即焚。</li><li><b>绑定前二次确认</b>：手机号/微信绑定涉及账号合并时，要求已登录状态 + 二次验证，避免「一键绑定」被 CSRF。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>本文清单中没有腾讯侧的公开案例；同类机制是登录 CSRF 与账号绑定劫持（<a href="#atk-a9">a9</a>）、二维码劫持（<a href="#atk-a17">a17</a>）。</p>
+    <p class="small" style="margin:6px 0 0">微信生态的攻防重点不在密码学，而在「账号绑定」与「身份映射」：openid、unionid、手机号三套标识之间的合并逻辑最容易出事。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-alipay" aria-labelledby="tab-alipay" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>阿里（支付宝 / 淘宝）<span class="small" style="font-weight:400; margin-left:10px">签名信任 + 回调验签</span></h3>
+      <p>支付账号体系的安全边界是「签名」而不是「密码」：每一笔通知都要能被商户用公钥验回。</p>
+      <ul class="stack"><li>支付宝开放平台</li><li>RSA2 签名</li><li>auth_code</li><li>异步通知</li><li>mTLS（部分场景）</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li>商户跳到支付宝授权页，用户确认后回跳 <code>auth_code</code>；商户用它调 <code>alipay.system.oauth.token</code> 换 <code>user_id</code>/<code>open_id</code>。</li><li>商户用应用私钥对参数按字典序拼接后做 RSA2（SHA256withRSA）签名；支付宝用商户公钥验签。</li><li>支付宝的响应与异步通知 <code>notify</code> 带签名，商户必须用「支付宝公钥」验签，并校验 <code>app_id</code>、<code>out_trade_no</code>、金额、状态。</li><li>同一笔通知会重发；落库要幂等，最终以主动查询/对账为准。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>回调不验签</b>：攻击者伪造 <code>notify</code> 直接「支付成功」，是最经典的资损漏洞。</li><li><b>验签但用错公钥</b>：把应用公钥当支付宝公钥用，等于没验；密钥轮换后更常见。</li><li><b>参数拼接与签名串不一致</b>：中文编码、空值、排序差异导致验签失败，开发者图省事直接跳过验签。</li><li><b>私钥泄露</b>：应用私钥泄露后攻击者可伪造商户请求（退款、查询），必须用 KMS/HSM 托管。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>验签封装成唯一入口</b>：支付回调只允许通过一个验签函数，禁止业务代码直接信任 HTTP 参数。</li><li><b>金额与订单双校验</b>：验签之外再核对订单金额与状态机，防重放与改价。</li><li><b>密钥托管与轮换</b>：私钥不入代码库、不入镜像；按支付宝指引做密钥轮换与灰度。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>本文清单中没有支付宝侧的公开案例；同类风险是异步通知伪造——本质与 <a href="#atk-a19">a19</a> 一样，都是「把未经验证的外部输入当成授权结果」。</p>
+    <p class="small" style="margin:6px 0 0">支付类账号体系的攻击目标通常不是「登录」而是「回调」：一次伪造的支付成功通知就够造成资损。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-sso" aria-labelledby="tab-sso" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>企业 SSO（SAML / CAS / Kerberos）<span class="small" style="font-weight:400; margin-left:10px">一次登录，全公司通行</span></h3>
+      <p>SSO 把几十个应用的信任集中到一个 IdP；这提高了可用性，也把「一个签名密钥」变成全公司的单点。</p>
+      <ul class="stack"><li>SAML 2.0</li><li>CAS</li><li>Kerberos / NTLM</li><li>LDAP</li><li>SCIM</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li>应用（SP）生成 <code>AuthnRequest</code>（含 ID、ACS URL、Issuer），重定向到 IdP。</li><li>用户在 IdP 完成登录（可能已 SSO）；IdP 返回 <code>Response</code>，其中 <code>Assertion</code> 用 IdP 私钥签名。</li><li>验签名、<code>Audience</code>、<code>InResponseTo</code>（防重放）、<code>NotOnOrAfter</code>、<code>Destination</code>，再建本地会话。</li><li>CAS 用一次性 ticket 校验；Kerberos 用 TGT/TGS 与 PAC；LDAP 直接 bind 查目录。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>XML 签名包装（XSW）</b>：把签名节点挪到另一段断言上，解析器验签通过但取到的是攻击者伪造的身份。</li><li><b>签名剥离 / 注释截断</b>：把签名去掉后依赖「未签名也接受」的实现，或用 XML 注释截断身份字段。</li><li><b>断言重放</b>：不校验 <code>InResponseTo</code> 与有效期，截获的断言可以反复用。</li><li><b>Golden SAML</b>：IdP 的 token 签名证书泄露后，攻击者可以离线签发任意身份，日志里看不出异常。</li><li><b>Kerberos / NTLM 旁路</b>：委派配置不当、NTLM relay、Kerberoasting，都是「不碰密码拿身份」的路径。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>严格按规范校验断言</b>：签名必须覆盖断言本身；强制 <code>InResponseTo</code>、<code>Audience</code>、时间窗；用成熟库，别自写 XML 解析。</li><li><b>签名证书与 DKM 分级保护</b>：ADFS 签名证书、DKM 容器、 federation 元数据是最高等级机密，需 HSM + 双人审批。</li><li><b>会话与权限解耦</b>：SSO 只证明「你是谁」，授权仍按应用做最小权限，避免一个断言换到全部系统。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>企业 SSO 相关事件：<a href="#case-c1">SolarWinds</a>（签名证书）、<a href="#case-c6">Storm-0558</a>（签发者校验）、<a href="#case-c8">Okta 支持系统</a>（旁路）。</p>
+    <p class="small" style="margin:6px 0 0">SSO 的安全模型是「信任转移」：应用不再验证密码，而是验证 IdP 的签名。所以攻击者的最优路径也从应用转到了 IdP。</p>
+  </div>
+</div>
+<div class="panel" role="tabpanel" id="panel-webauthn" aria-labelledby="tab-webauthn" hidden="">
+  <div class="provgrid">
+    <div>
+      <h3>无密码与 MFA（Passkey / TOTP / 短信）<span class="small" style="font-weight:400; margin-left:10px">认证器决定抗钓鱼能力</span></h3>
+      <p>同样是「第二个因素」，短信、TOTP、推送、Passkey 的抗攻击能力差了一个数量级——差别在私钥有没有绑定源站。</p>
+      <ul class="stack"><li>WebAuthn / FIDO2</li><li>Passkey</li><li>TOTP (RFC 6238)</li><li>Push MFA</li><li>SMS OTP</li></ul>
+      <h4>一次登录发生了什么</h4>
+      <ol class="flow"><li>服务端发 <code>challenge</code> 与 <code>rp.id</code>；认证器生成密钥对，返回 <code>attestationObject</code> 与 <code>clientDataJSON</code>；服务端存 credential ID、公钥、计数器。</li><li>服务端再发 <code>challenge</code>；认证器用私钥签 <code>authenticatorData || SHA256(clientDataJSON)</code>；服务端验签、验 <code>rpIdHash</code>、验 <code>origin</code>、比对计数器。</li><li>私钥在平台钥匙串（iCloud Keychain / Google 密码管理器）端到端加密同步，换设备可用；代价是恢复能力依赖平台账号。</li><li><code>HMAC-SHA1(secret, floor(time/30))</code> 取 6 位，允许 ±1 个窗口；服务端与客户端共享种子。</li><li>推送靠用户点「批准」；短信 OTP 走 PSTN，受 SIM 交换与 SS7 影响。</li></ol>
+    </div>
+    <div>
+      <h4>已知失效模式</h4>
+      <ul class="tight"><li><b>AitM 钓鱼</b>：反向代理把真实登录页原样搬运，TOTP/短信/推送都能被实时中继；只有绑定源站的 WebAuthn 不行。</li><li><b>推送疲劳</b>：连续轰炸直到用户点错一次；NIST 800-63B 把「认证疲劳」列为正式威胁。</li><li><b>短信 OTP</b>：SIM 交换、运营商内部作案、SS7 拦截；NIST 对 PSTN 通道有明确限制。</li><li><b>只校验签名不校验 origin</b>：等于把 WebAuthn 降级成普通签名，钓鱼站可以转发 challenge。</li><li><b>恢复流程绕过</b>：再强的认证器也挡不住「打客服重置」；恢复通道往往是最弱的一环。</li></ul>
+      <h4>防御要点</h4>
+      <ul class="tight"><li><b>按 AAL 选认证器</b>：AAL2 至少两种因素且必须提供抗钓鱼选项；AAL3 要求抗钓鱼 + 不可导出私钥，同步 passkey 不能用于 AAL3。</li><li><b>passkey 优先，短信兜底但加风控</b>：高风险操作再叠加设备绑定或人工复核。</li><li><b>恢复流程与认证同等强度</b>：恢复要走同样的抗钓鱼与延迟机制，别让客服成为万能钥匙。</li></ul>
+    </div>
+  </div>
+  <div class="callout" style="margin-bottom:0">
+    <div class="label">同类机制对照</div>
+    <p>MFA 相关事件：<a href="#case-c2">Twilio / 0ktapus</a>（OTP 中继）、<a href="#case-c3">Uber</a> 与 <a href="#case-c4">Cisco</a>（推送疲劳）、<a href="#case-c7">MGM</a>（客服重置）、<a href="#case-c14">设备码钓鱼</a>。</p>
+    <p class="small" style="margin:6px 0 0">判断一个 MFA 是否真的有用，只看一个问题：攻击者能不能在自己的域名上完整复刻登录流程并拿到可用的凭据。</p>
+  </div>
+</div>
+  </div>
+</section>
+
+<section id="attacks">
+  <div class="wrap">
+    <p class="kicker">03 · 攻击手法</p>
+    <h2>20 种手法，落在五个环节上</h2>
+    <p class="lead">按「被攻击的是哪一环」分类，比按「用了什么工具」分类更有用：同一种工具（比如反向代理）在认证环节是钓鱼，在会话环节就是令牌窃取。</p>
+
+    <div class="toolbar">
+      <ul class="chips" aria-label="按环节筛选"><li><button type="button" class="chip" data-stage="all" aria-pressed="true">全部 20</button></li><li><button type="button" class="chip" data-stage="凭据" aria-pressed="false">凭据 2</button></li><li><button type="button" class="chip" data-stage="认证" aria-pressed="false">认证 6</button></li><li><button type="button" class="chip" data-stage="断言" aria-pressed="false">断言 4</button></li><li><button type="button" class="chip" data-stage="会话" aria-pressed="false">会话 2</button></li><li><button type="button" class="chip" data-stage="恢复" aria-pressed="false">恢复 2</button></li><li><button type="button" class="chip" data-stage="授权" aria-pressed="false">授权 4</button></li></ul>
+      <div class="search">
+        <label for="atkSearch">搜索手法</label>
+        <input id="atkSearch" type="search" placeholder="如 钓鱼、SAML、Cookie" autocomplete="off">
+        <button type="button" class="btn" id="atkReset">重置</button>
+      </div>
+    </div>
+    <div class="tablewrap"><table class="sortable" id="attackTable">
+      <caption>表 2　攻击手法与对应控制。<span id="atkCount">20</span> / 20 行可见。可直接点表头排序，或按上方环节筛选。</caption>
+      <thead><tr>
+        <th scope="col" class="sortable" data-sort="text"><button type="button">手法</button></th>
+        <th scope="col" class="sortable" data-sort="text"><button type="button">环节</button></th>
+        <th scope="col">原理与为什么有效</th>
+        <th scope="col">阻断与检测</th>
+        <th scope="col">案例</th>
+      </tr></thead>
+      <tbody><tr id="atk-a1" data-stage="凭据"><td><strong>撞库 / 密码喷洒</strong></td><td><span class="tag warn">凭据</span></td><td>凭证填充用别的站点泄露的邮箱+密码批量试；密码喷洒用少量常见密码横向试大量账号，规避锁定阈值。<div class="small" style="margin-top:4px">为什么有效：大量用户复用密码；企业口令策略又鼓励「Summer2024!」这类可预测结构。</div></td><td>查泄露库（HIBP）、禁用已泄露口令、按 IP/设备/行为做速率与风险评分；对喷洒看「单 IP 多账号」而非「单账号多次」。</td><td class="mono"><a href="#case-c9" title="23andMe">c9</a></td></tr><tr id="atk-a2" data-stage="凭据"><td><strong>信息窃取木马日志复用</strong></td><td><span class="tag warn">凭据</span></td><td>Infostealer 从个人电脑抓浏览器保存的密码、Cookie、会话令牌，打包在暗网出售；攻击者直接用现成会话登录。<div class="small" style="margin-top:4px">为什么有效：个人设备不受企业管控；Cookie 加密与浏览器账户绑定常可被同用户进程解密。</div></td><td>设备合规检查、短会话、绑定设备的令牌、检测异常设备指纹；凭据轮换要连带吊销会话。</td><td class="mono"><a href="#case-c13" title="Snowflake 客户群体（UNC5537）">c13</a></td></tr><tr id="atk-a3" data-stage="认证"><td><strong>AitM 实时钓鱼</strong></td><td><span class="tag warn">认证</span></td><td>反向代理（Evilginx、Tycoon2FA 等）把真实登录页镜像到攻击者域名，用户输入与 OTP 被实时转发，登录成功后会话 Cookie 被拿回。<div class="small" style="margin-top:4px">为什么有效：用户只看页面外观；OTP 是一次性但对「实时中继」无效；很多站点没有 origin 绑定。</div></td><td>抗钓鱼认证（WebAuthn/Passkey）、设备绑定会话、品牌域名与证书监控、邮件侧隔离。</td><td class="mono"><a href="#case-c2" title="Twilio / Cloudflare / 约 130 家组织（0ktapus）">c2</a></td></tr><tr id="atk-a4" data-stage="认证"><td><strong>OTP 中继钓鱼</strong></td><td><span class="tag warn">认证</span></td><td>钓鱼页收集账号密码后立刻在真实站点触发 OTP，并把验证码回填到钓鱼页，几秒内完成登录。<div class="small" style="margin-top:4px">为什么有效：短信/OTP 与登录动作没有绑定关系；用户分不清「谁在要这个码」。</div></td><td>淘汰 SMS 作为唯一第二因素；改用 Passkey 或号码匹配推送；对异地新设备加强校验。</td><td class="mono"><a href="#case-c2" title="Twilio / Cloudflare / 约 130 家组织（0ktapus）">c2</a></td></tr><tr id="atk-a5" data-stage="认证"><td><strong>MFA 疲劳 / 推送轰炸</strong></td><td><span class="tag warn">认证</span></td><td>反复发起推送认证，配合电话或聊天施压，等用户误点「批准」。<div class="small" style="margin-top:4px">为什么有效：推送只显示「是否本人操作」，缺少上下文；用户被骚扰到妥协。</div></td><td>数字匹配、显示来源 IP/应用、限速与静默拒绝、异常推送告警；NIST 将认证疲劳列为正式威胁。</td><td class="mono"><a href="#case-c3" title="Uber">c3</a></td></tr><tr id="atk-a6" data-stage="认证"><td><strong>SIM 交换 / SS7</strong></td><td><span class="tag warn">认证</span></td><td>收买运营商内部人员或伪造身份补卡，把受害者号码转到攻击者 SIM；短信与语音 OTP 全部落到攻击者手里。<div class="small" style="margin-top:4px">为什么有效：PSTN 信任链在运营商侧，应用无法验证「谁真正持有号码」。</div></td><td>不要把手机号当唯一身份；号码变更加冷却期与通知；高价值操作改用抗钓鱼认证。</td><td class="mono"><a href="#case-c2" title="Twilio / Cloudflare / 约 130 家组织（0ktapus）">c2</a></td></tr><tr id="atk-a7" data-stage="认证"><td><strong>设备码钓鱼</strong></td><td><span class="tag warn">认证</span></td><td>诱导用户在真实 IdP 页面输入攻击者生成的 device code，授权后令牌落到攻击者处——全程没有假页面，MFA 也照常完成。<div class="small" style="margin-top:4px">为什么有效：设备码流为「输入受限设备」设计，缺少「这个 code 是给谁的」提示。</div></td><td>关闭或限制 device code 流；对 OAuth 授权做应用白名单与条件访问；监控异常授权。</td><td class="mono"><a href="#case-c14" title="设备码钓鱼（Storm-2372 等多起行动）">c14</a></td></tr><tr id="atk-a8" data-stage="授权"><td><strong>OAuth 同意钓鱼</strong></td><td><span class="tag warn">授权</span></td><td>诱导用户给恶意应用授权（如 offline_access + 读邮件），之后用 refresh token 长期访问，无需密码。<div class="small" style="margin-top:4px">为什么有效：用户对「授权」的风险感知远低于「输入密码」；同意页信任链是 IdP 自己签的。</div></td><td>应用白名单/租户限制、用户授权可见与定期清理、检测异常第三方应用与高风险 scope。</td><td class="mono"><a href="#case-c6" title="Microsoft / 约 25 家组织（Storm-0558）">c6</a></td></tr><tr id="atk-a9" data-stage="授权"><td><strong>redirect_uri / state 校验缺失</strong></td><td><span class="tag warn">授权</span></td><td>回调地址允许通配或被开放重定向利用，code 被送到攻击者域名；state 缺失则导致登录 CSRF 与账号绑定劫持。<div class="small" style="margin-top:4px">为什么有效：实现者常把 redirect_uri 当「跳转地址」而非「安全边界」；前端路由与 OAuth 回调混用。</div></td><td>精确匹配 redirect_uri、强制 PKCE、state 一次性并与会话绑定、禁止开放重定向。</td><td class="mono"><a href="#case-c2" title="Twilio / Cloudflare / 约 130 家组织（0ktapus）">c2</a></td></tr><tr id="atk-a10" data-stage="会话"><td><strong>会话 Cookie / 令牌窃取</strong></td><td><span class="tag warn">会话</span></td><td>拿到浏览器 Cookie 或 refresh token 后直接重放，绕过登录与 MFA。<div class="small" style="margin-top:4px">为什么有效：MFA 只保护建立会话；服务端默认信任 Cookie，Cookie 与设备无绑定。</div></td><td>HttpOnly/Secure/SameSite、绑定设备或 IP 风险评分、令牌轮换与重用检测、DBSC。</td><td class="mono"><a href="#case-c13" title="Snowflake 客户群体（UNC5537）">c13</a></td></tr><tr id="atk-a11" data-stage="会话"><td><strong>PRT / 刷新令牌滥用</strong></td><td><span class="tag warn">会话</span></td><td>窃取设备上的 PRT 或长期 refresh token，换出该身份能访问的所有令牌（pass-the-PRT）。<div class="small" style="margin-top:4px">为什么有效：长期令牌设计上就是为了「免登录」，天然是凭证；终端一旦被控就全丢。</div></td><td>令牌绑定设备密钥、缩短 refresh 寿命、条件访问要求合规设备、检测异常令牌使用。</td><td class="mono"><a href="#case-c11" title="Microsoft（Midnight Blizzard）">c11</a></td></tr><tr id="atk-a12" data-stage="断言"><td><strong>JWT 算法与密钥混淆</strong></td><td><span class="tag warn">断言</span></td><td>alg=none、HS256 与 RS256 混淆、把公钥当 HMAC 密钥、通过 jku/x5u 指向攻击者 JWKS。<div class="small" style="margin-top:4px">为什么有效：验签库按 header 选算法；开发者信任 token 里的 kid/jku。</div></td><td>固定允许的算法、按 issuer 取 JWKS、拒绝 kid 内联密钥、校验 aud/iss/exp/nbf。</td><td class="mono"><a href="#case-c6" title="Microsoft / 约 25 家组织（Storm-0558）">c6</a></td></tr><tr id="atk-a13" data-stage="断言"><td><strong>SAML XML 签名包装（XSW）</strong></td><td><span class="tag warn">断言</span></td><td>构造多段断言，让签名验证的是 A 段、业务读取的是 B 段；或利用注释/命名空间差异绕过。<div class="small" style="margin-top:4px">为什么有效：XML 解析器与签名校验器对「哪一段被签名」理解不一致。</div></td><td>用成熟 SAML 库、签名必须覆盖断言本体、拒绝多断言、做 XSW 测试用例。</td><td class="mono"><a href="#case-c1" title="SolarWinds 供应链事件（UNC2452）">c1</a></td></tr><tr id="atk-a14" data-stage="断言"><td><strong>Golden SAML</strong></td><td><span class="tag warn">断言</span></td><td>窃取 IdP 的 token 签名证书后，攻击者离线签发任意用户的 SAML 断言，像 IdP 一样「合法」登录。<div class="small" style="margin-top:4px">为什么有效：所有 SP 只验证「是不是 IdP 签的」；签名有效即身份有效。</div></td><td>签名密钥进 HSM、最小权限与双人审批、审计断言签发异常（同一 IdP 大量新设备/新地理位置）。</td><td class="mono"><a href="#case-c1" title="SolarWinds 供应链事件（UNC2452）">c1</a></td></tr><tr id="atk-a15" data-stage="断言"><td><strong>断言重放 / 受众校验缺失</strong></td><td><span class="tag warn">断言</span></td><td>截获未过期断言或 id_token，在另一个会话/另一个应用重放。<div class="small" style="margin-top:4px">为什么有效：未校验 InResponseTo、nonce、Audience、时间窗。</div></td><td>一次性 nonce、InResponseTo 绑定、严格 Audience、短有效期。</td><td class="mono"><a href="#case-c1" title="SolarWinds 供应链事件（UNC2452）">c1</a></td></tr><tr id="atk-a16" data-stage="恢复"><td><strong>账号恢复滥用</strong></td><td><span class="tag warn">恢复</span></td><td>打客服热线冒充员工，要求重置 MFA 或改绑手机；或利用找回密码逻辑（安全问题、好友验证）绕过。<div class="small" style="margin-top:4px">为什么有效：恢复流程为了体验牺牲验证强度；客服权限过大且缺乏审计。</div></td><td>恢复走强身份核验（视频+证件+经理审批）、延迟生效、通知原设备、把恢复事件当高危告警。</td><td class="mono"><a href="#case-c7" title="MGM Resorts / Caesars（Scattered Spider）">c7</a></td></tr><tr id="atk-a17" data-stage="认证"><td><strong>二维码登录劫持</strong></td><td><span class="tag warn">认证</span></td><td>替换/转发登录二维码，让受害者在自己的手机上「确认登录」攻击者的会话。<div class="small" style="margin-top:4px">为什么有效：扫码确认页缺少「登录设备/位置」提示，用户默认二维码可信。</div></td><td>确认页显示设备与地理位置、二维码短时效且一次性、非同设备登录二次确认。</td><td class="mono"><a href="#case-c3" title="Uber">c3</a></td></tr><tr id="atk-a18" data-stage="授权"><td><strong>开放重定向 / 子域接管</strong></td><td><span class="tag warn">授权</span></td><td>借可被控制的重定向参数把 code 或 token 送到外部；被接管的子域可托管钓鱼页或读取同域 Cookie。<div class="small" style="margin-top:4px">为什么有效：重定向白名单用前缀/正则匹配；遗留子域 CNAME 指向已释放的云资源。</div></td><td>严格白名单、清理悬挂 DNS、CSP 与 HSTS、子域接管监控。</td><td class="mono"><a href="#case-c4" title="Cisco">c4</a></td></tr><tr id="atk-a19" data-stage="授权"><td><strong>对象级越权（IDOR）</strong></td><td><span class="tag warn">授权</span></td><td>已登录用户改一个 ID 就读到别人的数据；认证没问题，授权没做对象级校验。<div class="small" style="margin-top:4px">为什么有效：把「已登录」当成「有权限」；接口按前端传参取数据。</div></td><td>服务端强制对象级授权、统一鉴权中间件、按租户隔离查询、越权测试进 CI。</td><td class="mono"><a href="#case-c5" title="LastPass">c5</a></td></tr><tr id="atk-a20" data-stage="恢复"><td><strong>支持系统 / 运营后台旁路</strong></td><td><span class="tag warn">恢复</span></td><td>不打 IdP，改打 IdP 的客服或支持工单系统，用「帮忙查一下」拿到重置链接或临时密码。<div class="small" style="margin-top:4px">为什么有效：支持系统常是 IdP 的高权限客户端，日志与 MFA 覆盖反而更弱。</div></td><td>支持系统纳入同等认证强度、最小权限、全量审计、敏感操作双人复核。</td><td class="mono"><a href="#case-c8" title="Okta 支持系统泄露">c8</a></td></tr></tbody>
+    </table></div>
+    <p class="empty" id="atkEmpty" hidden>没有匹配的手法。清空搜索词或点「重置」回到全部 20 条。</p>
+
+    <div class="callout warn">
+      <div class="label">攻击者的选择题</div>
+      <p>这 20 种里，成本最低、回报最高的永远是<strong>「不需要 0day、只需要一个电话或一封邮件」</strong>的那几种：客服重置（a16）、OTP 中继（a4）、同意钓鱼（a8）。它们不依赖技术漏洞，所以补丁管不到，只能靠流程与认证强度。</p>
+    </div>
+  </div>
+</section>
+
+<section id="cases">
+  <div class="wrap">
+    <p class="kicker">04 · 案例</p>
+    <h2>2020–2025：身份体系是怎么被绕过去的</h2>
+    <p class="lead">这 14 起事件覆盖了五个环节里的每一个。看的时候注意一件事：几乎没有一起是「密码学被攻破」，全部是信任链某一环的实现或流程出了问题。</p>
+
+    <div class="toolbar">
+      <ul class="chips" aria-label="按环节筛选案例"><li><button type="button" class="chip" data-stage="all" aria-pressed="true">全部 14</button></li><li><button type="button" class="chip" data-stage="凭据" aria-pressed="false">凭据 2</button></li><li><button type="button" class="chip" data-stage="认证" aria-pressed="false">认证 5</button></li><li><button type="button" class="chip" data-stage="断言" aria-pressed="false">断言 3</button></li><li><button type="button" class="chip" data-stage="会话" aria-pressed="false">会话 1</button></li><li><button type="button" class="chip" data-stage="恢复" aria-pressed="false">恢复 2</button></li><li><button type="button" class="chip" data-stage="授权" aria-pressed="false">授权 1</button></li></ul>
+      <div class="search">
+        <label for="caseSearch">搜索案例</label>
+        <input id="caseSearch" type="search" placeholder="如 Okta、SAML、客服" autocomplete="off">
+        <button type="button" class="btn" id="caseReset">重置</button>
+      </div>
+    </div>
+    <p class="small" style="margin:10px 0 0"><span id="caseCount">14</span> / 14 起可见。</p>
+    <ul class="tl">
+<li id="case-c1" data-stage="断言">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2020-12">2020-12</time>
+      <h4>SolarWinds 供应链事件（UNC2452）</h4>
+      <span class="tag case">入口：篡改 Orion 更新包，落地后横向移动到 ADFS 服务器</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：导出 ADFS 的 token 签名证书，离线伪造任意用户的 SAML 断言（Golden SAML），直接访问 Microsoft 365 / Azure，不需要密码也不需要 MFA。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：多个美国联邦机构与数千家客户被访问；事件推动「签名密钥 = 最高等级机密」的行业共识。</p>
+      <p style="margin:0"><b>教训</b>：当断言由 IdP 签名时，签名密钥就是全公司的万能钥匙；它的保护等级必须高于任何单个应用。</p>
+    </div>
+    <div class="stages"><span class="tag warn">断言</span></div>
+  </div>
+</li>
+<li id="case-c2" data-stage="认证">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2022-08">2022-08</time>
+      <h4>Twilio / Cloudflare / 约 130 家组织（0ktapus）</h4>
+      <span class="tag case">入口：短信钓鱼冒充 IT 通知，把员工引到仿冒 Okta 登录页</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：AitM + OTP 实时中继：钓鱼页把账号密码与一次性验证码即时转发到真实 Okta，完成登录后窃取会话。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：约 9,900 组凭据被收集；Twilio 确认约 125 家客户数据被访问；攻击者随后转向新目标。</p>
+      <p style="margin:0"><b>教训</b>：OTP 只能证明「此刻有人能收到码」，不能证明「对面是真实站点」；抗钓鱼认证是唯一的结构性解法。</p>
+    </div>
+    <div class="stages"><span class="tag warn">认证</span></div>
+  </div>
+</li>
+<li id="case-c3" data-stage="认证">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2022-09">2022-09</time>
+      <h4>Uber</h4>
+      <span class="tag case">入口：承包商个人设备被入侵，凭据在暗网购入</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：MFA 疲劳（连续推送 + WhatsApp 冒充 IT 施压）拿到一次批准；随后在内网共享脚本里发现硬编码的管理员凭据，横向到 G-Suite、Slack、AWS 控制台。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：内部工具与部分代码仓库被访问；公司确认无客户数据泄露，但暴露了「MFA + 硬编码凭据」的组合风险。</p>
+      <p style="margin:0"><b>教训</b>：MFA 疲劳是人的问题，硬编码凭据是工程的问题；两者叠加时，第二个因素形同虚设。</p>
+    </div>
+    <div class="stages"><span class="tag warn">认证</span></div>
+  </div>
+</li>
+<li id="case-c4" data-stage="认证">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2022-09">2022-09</time>
+      <h4>Cisco</h4>
+      <span class="tag case">入口：员工个人 Google 账号被控，进而社工其企业账号</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：语音钓鱼 + Duo 推送轰炸，最终拿到 VPN 与内网访问；攻击者自称 Yanluowang，声称窃取大量文件。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：公司承认部分数据被访问，事件与同期多起「vishing + MFA 疲劳」 campaigns 同源。</p>
+      <p style="margin:0"><b>教训</b>：员工的个人账号也是攻击面；推送认证必须带上下文与限速，否则就是可被疲劳攻破的确认框。</p>
+    </div>
+    <div class="stages"><span class="tag warn">认证</span></div>
+  </div>
+</li>
+<li id="case-c5" data-stage="会话">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2022-12">2022-12</time>
+      <h4>LastPass</h4>
+      <span class="tag case">入口：2022 年 8 月开发环境泄露的凭据，加上一名 DevOps 工程师家用电脑被入侵</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：用前期侦察得到的信息进入云存储，导出客户保险库备份（含站点 URL、加密字段与部分未加密元数据）。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：加密保险库被带走；主密码未泄露，但弱主密码可被离线爆破，成为后续大量账号接管的源头。</p>
+      <p style="margin:0"><b>教训</b>：密码管理器的威胁模型是「离线爆破」：KDF 强度、主密码强度与泄露范围披露同样重要。</p>
+    </div>
+    <div class="stages"><span class="tag warn">会话</span></div>
+  </div>
+</li>
+<li id="case-c6" data-stage="断言">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2023-07">2023-07</time>
+      <h4>Microsoft / 约 25 家组织（Storm-0558）</h4>
+      <span class="tag case">入口：签名密钥从崩溃转储中被提取，配合令牌校验缺陷</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：攻击者用消费者账号的签名密钥伪造企业租户令牌；接受端未校验签发者，导致「签名有效但 issuer 不对」的令牌被接受，读取 OWA 邮件。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：约 25 家组织邮箱被访问，含美国政府机构；微软更换密钥并修复校验逻辑。</p>
+      <p style="margin:0"><b>教训</b>：密钥管理之外，校验逻辑同样是边界：签名有效 ≠ 令牌可信，iss/aud/scope 必须逐项对。</p>
+    </div>
+    <div class="stages"><span class="tag warn">断言</span></div>
+  </div>
+</li>
+<li id="case-c7" data-stage="恢复">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2023-09">2023-09</time>
+      <h4>MGM Resorts / Caesars（Scattered Spider）</h4>
+      <span class="tag case">入口：打客服电话冒充员工，要求重置 MFA</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：十余名攻击者用 LinkedIn 收集的信息社工 IT 帮助台，重置多因素认证后进入 Okta 与内网；随后勒索。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：MGM 称事件对季度业绩影响约 1 亿美元；Caesars 据报支付约 1,500 万美元赎金。</p>
+      <p style="margin:0"><b>教训</b>：身份体系最脆弱的一环往往不是协议，而是「有人可以帮你重置」的那个流程。</p>
+    </div>
+    <div class="stages"><span class="tag warn">恢复</span></div>
+  </div>
+</li>
+<li id="case-c8" data-stage="恢复">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2023-10">2023-10</time>
+      <h4>Okta 支持系统泄露</h4>
+      <span class="tag case">入口：攻击者拿到支持系统的服务账号凭据</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：在 Okta 的客服工单系统里读取客户上传的 HAR 文件，其中包含会话令牌；据此访问部分客户环境。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：Okta 确认 134 家客户受影响；Cloudflare 等公司在数周内披露连带事件。</p>
+      <p style="margin:0"><b>教训</b>：支持系统是高权限旁路：HAR、截图、日志里常带活令牌，必须按生产凭证对待。</p>
+    </div>
+    <div class="stages"><span class="tag warn">恢复</span></div>
+  </div>
+</li>
+<li id="case-c9" data-stage="凭据">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2023-10">2023-10</time>
+      <h4>23andMe</h4>
+      <span class="tag case">入口：撞库（用户在其他站点泄露的密码）</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：攻击者用凭证填充登录约 1.4 万个账号，再通过「DNA 亲属」功能横向拿到约 690 万用户的数据。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：约 690 万用户信息泄露；公司面临集体诉讼与监管调查。</p>
+      <p style="margin:0"><b>教训</b>：账号体系不是孤岛：一个「社交/亲属」功能可以把单账号失陷放大到整个关系图谱。</p>
+    </div>
+    <div class="stages"><span class="tag warn">凭据</span></div>
+  </div>
+</li>
+<li id="case-c10" data-stage="断言">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2023-11">2023-11</time>
+      <h4>Cloudflare</h4>
+      <span class="tag case">入口：Okta 事件连带：攻击者用此前窃取的服务账号令牌进入 Okta</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：在 Okta 中创建新的身份提供方与管理员账号，再据此生成 Cloudflare 的控制台 API 令牌，访问少量系统。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：公司在感恩节期间自行发现并处置，称客户数据与生产系统未受影响。</p>
+      <p style="margin:0"><b>教训</b>：IdP 被攻破后，攻击者会「再造一个 IdP」来持久化；对 IdP 配置变更本身要有独立监控。</p>
+    </div>
+    <div class="stages"><span class="tag warn">断言</span></div>
+  </div>
+</li>
+<li id="case-c11" data-stage="授权">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2024-01">2024-01</time>
+      <h4>Microsoft（Midnight Blizzard）</h4>
+      <span class="tag case">入口：对遗留的非生产租户做密码喷洒</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：拿到一个测试租户的账号后，创建 OAuth 应用并授予高权限，读取公司邮箱（少量高管与安全团队）。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：微软披露被访问的邮件数量有限，但事件暴露「历史租户 + OAuth 应用」的组合风险。</p>
+      <p style="margin:0"><b>教训</b>：退役租户、测试应用、遗留授权是身份体系里最容易被漏掉的资产。</p>
+    </div>
+    <div class="stages"><span class="tag warn">授权</span></div>
+  </div>
+</li>
+<li id="case-c12" data-stage="认证">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2024-02">2024-02</time>
+      <h4>Change Healthcare</h4>
+      <span class="tag case">入口：Citrix 远程访问入口未启用 MFA</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：攻击者用泄露的凭据登入远程桌面，横向到核心系统；ALPHV 勒索并要求赎金。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：支付约 2,200 万美元赎金；约 1.9 亿人的健康数据受影响，成为医疗行业最大规模事件之一。</p>
+      <p style="margin:0"><b>教训</b>：「一个没上 MFA 的远程入口」足以让整条业务停摆；身份覆盖要按资产清点，而不是按部门。</p>
+    </div>
+    <div class="stages"><span class="tag warn">认证</span></div>
+  </div>
+</li>
+<li id="case-c13" data-stage="凭据">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2024-06">2024-06</time>
+      <h4>Snowflake 客户群体（UNC5537）</h4>
+      <span class="tag case">入口：从信息窃取木马日志中获得的账号密码</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：受害账号未启用 MFA，攻击者直接登录 Snowflake 实例，导出大量数据并勒索。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：约 165 家组织被针对，Ticketmaster、Santander、AT&T 等相继披露大规模数据泄露。</p>
+      <p style="margin:0"><b>教训</b>：凭据泄露是常态，MFA 与网络访问策略才是兜底；SaaS 的「默认安全」需要客户自己补齐。</p>
+    </div>
+    <div class="stages"><span class="tag warn">凭据</span></div>
+  </div>
+</li>
+<li id="case-c14" data-stage="认证">
+  <div class="tlcard">
+    <div class="top">
+      <time datetime="2025">2025</time>
+      <h4>设备码钓鱼（Storm-2372 等多起行动）</h4>
+      <span class="tag case">入口：通过聊天工具发送「请用这个码登录」的邀请</span>
+    </div>
+    <div class="body">
+      <p style="margin:6px 0 6px"><b>被利用的机制</b>：受害者被引导在真实 IdP 页面输入 device code，授权后令牌直接落到攻击者手中；无假页面、MFA 正常完成。</p>
+      <p style="margin:0 0 6px"><b>影响</b>：多家厂商观测到针对政府、科技、医疗的持续行动，目标包括邮件与协作平台。</p>
+      <p style="margin:0"><b>教训</b>：任何「让用户把某个码输进真实页面」的流程，都可能被反向利用；device code 必须按风险单独管控。</p>
+    </div>
+    <div class="stages"><span class="tag warn">认证</span></div>
+  </div>
+</li></ul>
+    <p class="empty" id="caseEmpty" hidden>没有匹配的案例。清空搜索词或点「重置」回到全部 14 起。</p>
+
+    <div class="callout">
+      <div class="label">横向看这 14 起</div>
+      <p>入口分布：钓鱼与社工 6 起、凭据泄露/撞库 4 起、密钥或令牌泄露 4 起。结局分布：造成大规模数据泄露的往往是「身份系统之外的第二个缺陷」（23andMe 的亲属图谱、Snowflake 的无 MFA、Change Healthcare 的未分段网络）。<strong>身份是入口，但损失大小取决于授权与隔离。</strong></p>
+    </div>
+  </div>
+</section>
+
+<section id="defense">
+  <div class="wrap">
+    <p class="kicker">05 · 防御</p>
+    <h2>按环节布置控制，而不是按产品</h2>
+    <p class="lead">同一份预算，优先顺序会显著影响结果。下表把控制按五层拆开：最低基线、进阶、以及每层该盯的检测信号。</p>
+
+    <div class="tablewrap"><table class="matrix">
+      <caption>表 3　账号体系的分层防御矩阵。基线是「不做就有明显风险」，进阶是「针对高强度攻击者」，检测是「假设前两层会被绕过」。</caption>
+      <thead><tr><th scope="col">环节</th><th scope="col">最低基线</th><th scope="col">进阶（对抗定向攻击）</th><th scope="col">检测信号</th></tr></thead>
+      <tbody>
+<tr>
+  <td>凭据</td>
+  <td><ul class="base"><li>禁用泄露口令、长度优先于复杂度</li><li>密码管理器 + 一次性恢复码</li><li>对已泄露凭据强制重置并吊销会话</li></ul></td>
+  <td><ul class="adv"><li>无密码优先（Passkey / 硬件密钥）</li><li>账号与设备绑定，凭据不可导出</li><li>高价值账号单独的设备策略</li></ul></td>
+  <td><ul class="det"><li>撞库特征：单 IP 多账号、失败率突增</li><li>暗网/泄露库比对告警</li><li>凭据填充后的「成功登录」告警</li></ul></td>
+</tr>
+<tr>
+  <td>认证</td>
+  <td><ul class="base"><li>全量 MFA，覆盖 VPN、远程桌面、管理后台</li><li>推送带数字匹配与来源信息</li><li>禁止 SMS 作为唯一第二因素</li></ul></td>
+  <td><ul class="adv"><li>抗钓鱼认证（WebAuthn/Passkey）</li><li>按 AAL 分级：AAL2 必须提供抗钓鱼选项</li><li>AAL3 用不可导出私钥的硬件认证器</li></ul></td>
+  <td><ul class="det"><li>MFA 疲劳：短时间大量推送</li><li>OTP 中继：登录 IP 与验证码来源不一致</li><li>新设备首次登录的异常地理跳变</li></ul></td>
+</tr>
+<tr>
+  <td>断言</td>
+  <td><ul class="base"><li>严格校验签名、iss/aud/exp/nonce</li><li>SAML 强制 InResponseTo 与 Audience</li><li>JWT 固定算法，按 issuer 取 JWKS</li></ul></td>
+  <td><ul class="adv"><li>签名密钥进 HSM，双人审批</li><li>断言签发与 federation 变更纳入高危变更</li><li>IdP 侧出站断言日志与 SP 侧对账</li></ul></td>
+  <td><ul class="det"><li>同一 IdP 突然出现大量新设备/新地区</li><li>签名证书、DKM、元数据变更</li><li>异常 issuer/aud 组合</li></ul></td>
+</tr>
+<tr>
+  <td>会话</td>
+  <td><ul class="base"><li>Cookie HttpOnly/Secure/SameSite</li><li>access token 短寿命 + refresh 轮换</li><li>登出即吊销，支持单会话踢出</li></ul></td>
+  <td><ul class="adv"><li>设备绑定会话（DBSC 类）</li><li>Token Protection / DPoP / mTLS</li><li>持续评估（CAE）让撤销分钟级生效</li></ul></td>
+  <td><ul class="det"><li>同一 Cookie 多 IP/多设备复用</li><li>令牌重放与刷新令牌重用</li><li>会话建立后权限变更的异常访问</li></ul></td>
+</tr>
+<tr>
+  <td>恢复</td>
+  <td><ul class="base"><li>恢复流程与登录同等强度</li><li>手机号/邮箱变更加冷却期与原设备通知</li><li>客服重置 MFA 需上级审批</li></ul></td>
+  <td><ul class="adv"><li>恢复走线下/视频核验</li><li>恢复事件全量审计并对用户可见</li><li>把恢复通道纳入红队演练</li></ul></td>
+  <td><ul class="det"><li>客服工单中的重置操作频率</li><li>恢复后短时间内的高权限操作</li><li>支持系统里的 HAR/日志含活令牌</li></ul></td>
+</tr></tbody>
+    </table></div>
+
+    <div class="grid g2" style="margin-top:22px">
+      <div class="card">
+        <h3>优先级怎么排</h3>
+        <ol class="tight">
+          <li><strong>先把没有 MFA 的入口全部关掉</strong>（VPN、远程桌面、管理后台、SaaS 管理台）。Change Healthcare 与 Snowflake 都属于这一类。</li>
+          <li><strong>再把 MFA 换成抗钓鱼的</strong>（Passkey / 安全密钥），尤其是管理员、财务、HR、IT 服务台。</li>
+          <li><strong>然后缩短会话与令牌寿命</strong>，并把高价值应用改成条件访问。</li>
+          <li><strong>最后补恢复流程与支持系统</strong>——它们常是攻击者绕开前面三项的通道。</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>标准怎么说</h3>
+        <p><span class="tag spec">协议规范</span> NIST SP 800-63B（2025-08）：AAL2 必须提供抗钓鱼认证选项；AAL3 要求抗钓鱼且私钥不可导出，<strong>同步类认证器不得用于 AAL3</strong>。同时把「认证疲劳」（反复推送直到用户误点）列为正式威胁。</p>
+        <p><span class="tag spec">协议规范</span> RFC 9700（2025-01）：弃用隐式流与不带 PKCE 的授权码流；要求精确匹配 <code>redirect_uri</code>、一次性 <code>state</code>、令牌绑定与受众校验。</p>
+      </div>
+    </div>
+
+    <details>
+      <summary>给工程团队的 8 条落地细则</summary>
+      <div class="body">
+        <ul class="tight">
+          <li><b>身份主键用 <code>sub</code>，不用 email / 手机号。</b>email 会变、手机号会回收，二者都不适合当主键。</li>
+          <li><b>所有断言都做五项校验：</b>签名、<code>iss</code>、<code>aud</code>、<code>exp/nbf</code>、<code>nonce</code> 或 <code>InResponseTo</code>。少一项就等于少一道门。</li>
+          <li><b>授权码流必须带 PKCE</b>，包括「有后端」的 Web 应用；移动端与 SPA 更是必须。</li>
+          <li><b>会话 Cookie：</b><code>HttpOnly</code> + <code>Secure</code> + <code>SameSite=Lax/Strict</code>，登录成功后轮换会话 ID。</li>
+          <li><b>令牌只存后端</b>，前端拿不到 refresh token；日志里禁止出现 <code>id_token</code>、<code>code</code>、Cookie。</li>
+          <li><b>登出与改密要吊销全部会话</b>，并给出「我在哪些设备登录」的可见页面。</li>
+          <li><b>对象级授权中间件</b>统一处理「这条记录属于谁」，别让每个接口自己判断。</li>
+          <li><b>把 IdP 配置变更当高危变更</b>：federation、签名证书、企业应用授权、条件访问策略，每一项都要变更审计与告警。</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section id="deep">
+  <div class="wrap">
+    <p class="kicker">06 · 三个专题</p>
+    <h2>为什么这三件事值得单独说</h2>
+    <p class="lead">前面是地图，这三节是地图上最容易被误读的三块地形。</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="head"><h3>一、Passkey 为什么能挡住实时钓鱼，又挡不住什么</h3><span class="tag spec">WebAuthn</span></div>
+      <p>实时钓鱼（AitM）之所以有效，是因为它让用户在「看起来对、其实不对」的页面上完成认证，然后把结果中继到真实站点。TOTP、短信、推送都拦不住它——这些凭据本身不携带「我在哪个站点使用」的信息。</p>
+      <p>WebAuthn 的关键是把两件事绑死：<strong>私钥留在认证器里</strong>（钓鱼站拿不到可复制的秘密），<strong>签名覆盖源站信息</strong>（<code>rpIdHash</code> 与 <code>clientDataJSON.origin</code>）。钓鱼域名发出的 challenge，即使被转发到真实站点，签名也对不上——浏览器只会在 <code>rp.id</code> 匹配时交出凭据。</p>
+      <p><strong>它挡不住的部分同样明确：</strong>账号恢复、会话 Cookie 窃取、IdP 侧被攻破、以及用户在自己设备上被骗授权。Passkey 保护的是「认证这一秒」，不是整条链。</p>
+      
+<figure>
+<svg viewBox="0 0 980 330" role="img" aria-labelledby="f3t f3d" xmlns="http://www.w3.org/2000/svg">
+<title id="f3t">WebAuthn 的注册与认证</title>
+<desc id="f3d">左栏注册：服务端发 challenge，认证器生成密钥对，返回公钥与证明；右栏认证：服务端发 challenge，认证器用私钥签名，服务端验签并核对 origin 与计数器。</desc>
+<rect width="980" height="330" fill="#fff"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+<rect x="20" y="20" width="455" height="290" rx="10" fill="#f8fbf9" stroke="#cfe0d5"/>
+<rect x="505" y="20" width="455" height="290" rx="10" fill="#f8fafc" stroke="#cfdae6"/>
+<text x="42" y="50" font-size="14" font-weight="700" fill="#35694a">注册：生成一对新密钥</text>
+<text x="527" y="50" font-size="14" font-weight="700" fill="#1f3a5f">认证：用私钥签一个挑战</text>
+<g font-size="12" fill="#41454d">
+<text x="42" y="82">1. 服务端发 challenge + rp.id + user.id</text>
+<text x="42" y="108">2. 认证器要求生物识别 / PIN 解锁</text>
+<text x="42" y="134">3. 生成密钥对，私钥留在安全区</text>
+<text x="42" y="160">4. 返回 attestation + clientDataJSON</text>
+<text x="42" y="186">5. 服务端存 credential ID / 公钥 / 计数</text>
+<text x="42" y="232" fill="#35694a" font-weight="600">关键：私钥从不出设备</text>
+<text x="42" y="256" fill="#6f747d">钓鱼站拿不到可用凭据——它没有对应私钥。</text>
+
+<text x="527" y="82">1. 服务端发新 challenge</text>
+<text x="527" y="108">2. 认证器选对应 credential</text>
+<text x="527" y="134">3. 对 authData ‖ SHA256(clientData) 签名</text>
+<text x="527" y="160">4. 返回签名 + origin + 计数器</text>
+<text x="527" y="186">5. 服务端验签、验 rpIdHash、验 origin</text>
+<text x="527" y="232" fill="#1f3a5f" font-weight="600">关键：签名绑定源站</text>
+<text x="527" y="256" fill="#6f747d">换了域名，浏览器不会把凭据交给它。</text>
+</g>
+<g stroke="#b9c9be" stroke-width="1" stroke-dasharray="3 3"><line x1="42" y1="206" x2="452" y2="206"/></g>
+<g stroke="#bfcbd9" stroke-width="1" stroke-dasharray="3 3"><line x1="527" y1="206" x2="937" y2="206"/></g>
+</g>
+</svg>
+<figcaption>图 3　WebAuthn 的两条流程。抗钓鱼不是靠「多一步验证」，而是靠密码学上把私钥和源站绑死：钓鱼域名拿到的 challenge 签名，在真实站点验不过。</figcaption>
+</figure>
+
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="head"><h3>二、Golden SAML 为什么难防：签名者就是身份源</h3><span class="tag case">案例 c1 / c6</span></div>
+      <p>普通伪造是「冒充用户」，Golden SAML 是「冒充 IdP」。攻击者拿到 ADFS 的 token 签名证书后，可以离线为任意用户、任意权限签发断言，所有 SP 都会验签通过——因为签名确实是真的。</p>
+      <p>这类攻击的检测几乎不可能靠单条日志：登录来自正常 IP、正常时间、MFA 已完成（因为不需要 MFA）。可用的信号只有行为层面的<strong>不一致</strong>：同一 IdP 突然出现大量新设备、断言签发量与登录量对不上、某个账号在极短时间内从不可能的两地登录。</p>
+      <p>所以防御重心在「事前」：签名证书与 DKM 进 HSM、双人审批、最小权限、把 ADFS 服务器当成域控级别资产。Storm-0558 是同一逻辑的变体——密钥泄露只是前半段，后半段是接受端没校验 <code>issuer</code>。</p>
+    </div>
+
+    <div class="card">
+      <div class="head"><h3>三、为什么「缩短会话」比「再加一层 MFA」更划算</h3><span class="tag warn">算一笔账</span></div>
+      <p>假设 1 万个账号，定向钓鱼每次成功率为 3%，会话有效期为 30 天。攻击者只要在整个月里持续投放，命中期望是 300 个账号，而每个被钓中的会话在这 30 天里每天都能用——有效攻击面是 <strong>300 × 30 = 9,000 账号·天</strong>。</p>
+      <p>把会话缩到 12 小时、并加入设备绑定后，同样的 300 次命中只能在半天内有效，且换设备即失效：有效攻击面降到 <strong>300 × 0.5 ≈ 150 账号·天</strong>，相差 60 倍。再叠一层可中继的 MFA，只会把成功率从 3% 压到 2%，量级完全不能比。</p>
+      <p>这就是为什么 Google 做 DBSC、微软做 Token Protection 与 CAE：<strong>它们不是在提高「登录难度」，而是在压缩「登录之后」的价值。</strong></p>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <p class="kicker">07 · 落地</p>
+    <h2>180 天：从「有 MFA」到「有身份边界」</h2>
+    <p class="lead">不追求一次换完，按风险倒排。每一阶段都有可验收的产出，而不是「上线了某个产品」。</p>
+
+    <div class="road">
+      <div class="card">
+        <h3><span class="num">0–30 天</span>摸清家底</h3>
+        <ul class="tight">
+          <li>资产清单：所有 IdP、所有能登录的入口（含 VPN、堡垒机、SaaS 管理台、客服系统）。</li>
+          <li>标出没有 MFA 的入口，按「能碰到多少数据」排序。</li>
+          <li>导出全部长期令牌 / API key / OAuth 授权，标记无主与过期项。</li>
+          <li>产出：一张「身份攻击面」表 + 前 10 个必须本周修的点。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="num">31–90 天</span>堵住大洞</h3>
+        <ul class="tight">
+          <li>全量 MFA 覆盖远程入口与管理后台；关闭遗留协议（SMTP AUTH、Basic、NTLMv1）。</li>
+          <li>管理员、财务、IT 服务台换成 Passkey 或硬件密钥。</li>
+          <li>会话寿命统一收敛；登出与改密强制吊销。</li>
+          <li>产出：无 MFA 入口数 = 0；高价值账号抗钓鱼覆盖率 ≥ 90%。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="num">91–180 天</span>加检测与恢复</h3>
+        <ul class="tight">
+          <li>把 IdP 配置变更、federation、证书、企业应用授权纳入告警。</li>
+          <li>恢复流程重做：冷却期 + 原设备通知 + 双人审批 + 全量审计。</li>
+          <li>做一次「身份红队」：钓鱼中继、MFA 疲劳、客服社工、令牌重放各演练一次。</li>
+          <li>产出：四类攻击的检测规则与演练报告。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout ok">
+      <div class="label">验收标准</div>
+      <p>不要用「部署了 X」当里程碑。可验收的指标只有四个：<strong>无 MFA 入口数、抗钓鱼认证覆盖率、会话平均寿命、从发现异常到吊销会话的分钟数</strong>。最后一个尤其重要——它决定了前三个指标在真实攻击里还剩多少价值。</p>
+    </div>
+  </div>
+</section>
+
+<section id="checklist">
+  <div class="wrap">
+    <p class="kicker">08 · 自查</p>
+    <h2>12 条，勾完就知道自己在哪一档</h2>
+    <p class="lead">这些条目按「被攻破的频率」排序，不是按实现难度。勾选状态存在本机浏览器里，不会上传；隐私模式下刷新即重置。</p>
+
+    <div class="progressline">
+      <div class="progressbar" aria-hidden="true"><span id="chkBar"></span></div>
+      <span class="count" id="chkCount">0 / 12</span>
+    </div>
+    <ul class="checks"><li><input type="checkbox" id="chk1" data-check><label for="chk1">所有能登录的入口都上了 MFA，包括客服与运维后台<span class="why">identity 事件里最常见的入口是「没人记得它存在」的系统。</span></label></li><li><input type="checkbox" id="chk2" data-check><label for="chk2">管理员与高权限账号使用抗钓鱼认证（Passkey/安全密钥）<span class="why">管理员一旦被 AitM 钓鱼，等于整个租户被接管。</span></label></li><li><input type="checkbox" id="chk3" data-check><label for="chk3">OAuth 应用与企业授权有白名单与定期清理<span class="why">同意钓鱼不需要密码，授权一次可以长期有效。</span></label></li><li><input type="checkbox" id="chk4" data-check><label for="chk4">所有断言校验 iss / aud / exp / nonce（或 InResponseTo）<span class="why">Storm-0558 的核心就是接受端少校验了一项。</span></label></li><li><input type="checkbox" id="chk5" data-check><label for="chk5">redirect_uri 精确匹配，授权码流强制 PKCE<span class="why">RFC 9700 已把这两条列为基线。</span></label></li><li><input type="checkbox" id="chk6" data-check><label for="chk6">会话 Cookie 有 HttpOnly/Secure/SameSite，登录后轮换<span class="why">会话是攻击者最想要的资产，Cookie 配置是第一道物理隔离。</span></label></li><li><input type="checkbox" id="chk7" data-check><label for="chk7">会话与令牌寿命经过设计，而非默认值<span class="why">默认值往往是为了体验，不是为风险。</span></label></li><li><input type="checkbox" id="chk8" data-check><label for="chk8">登出、改密、权限回收会立即吊销全部会话<span class="why">不吊销等于「改了密码但攻击者还在里面」。</span></label></li><li><input type="checkbox" id="chk9" data-check><label for="chk9">账号恢复流程与登录同等强度，且有冷却期与通知<span class="why">MGM 与 Caesars 都是从客服开始的。</span></label></li><li><input type="checkbox" id="chk10" data-check><label for="chk10">对象级授权在服务端统一校验，越权测试进 CI<span class="why">认证正确不代表授权正确，IDOR 是最常见的业务漏洞。</span></label></li><li><input type="checkbox" id="chk11" data-check><label for="chk11">IdP 配置、证书、federation 变更纳入高危告警<span class="why">Cloudflare 事件里攻击者创建了新的 IdP 来持久化。</span></label></li><li><input type="checkbox" id="chk12" data-check><label for="chk12">做过一次针对身份的演练：钓鱼中继 / 疲劳 / 客服社工 / 令牌重放<span class="why">没演练过的流程，在真实事件里通常第一次就失效。</span></label></li></ul>
+    <p class="small" style="margin-top:12px">低于 6 条：先把远程入口与管理后台的 MFA 补齐。6–9 条：优先级是抗钓鱼认证与会话寿命。10 条以上：把精力转到检测、恢复演练与 IdP 变更审计。</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>方法与来源</h2>
+    <p class="small" style="max-width:80ch">本报告的技术描述依据公开规范与厂商文档；案例事实来自公开披露与媒体报道，数字可能随后续披露修订，引用时请以官方通报为准。文中不含可直接复用的攻击代码或钓鱼套件配置。</p>
+    <ul>
+      <li><span class="tag spec">协议规范</span> <a href="https://www.rfc-editor.org/rfc/rfc9700.html" target="_blank" rel="noopener noreferrer">RFC 9700 — Best Current Practice for OAuth 2.0 Security</a>（2025-01）</li>
+      <li><span class="tag spec">协议规范</span> <a href="https://www.rfc-editor.org/rfc/rfc6749.html" target="_blank" rel="noopener noreferrer">RFC 6749 — The OAuth 2.0 Authorization Framework</a>、<a href="https://www.rfc-editor.org/rfc/rfc7636.html" target="_blank" rel="noopener noreferrer">RFC 7636 — PKCE</a>、<a href="https://www.rfc-editor.org/rfc/rfc9449.html" target="_blank" rel="noopener noreferrer">RFC 9449 — DPoP</a></li>
+      <li><span class="tag spec">协议规范</span> <a href="https://openid.net/specs/openid-connect-core-1_0.html" target="_blank" rel="noopener noreferrer">OpenID Connect Core 1.0</a>、<a href="https://www.w3.org/TR/webauthn-3/" target="_blank" rel="noopener noreferrer">W3C Web Authentication Level 3</a>、<a href="https://docs.oasis-open.org/security/saml/v2.0/" target="_blank" rel="noopener noreferrer">OASIS SAML 2.0</a></li>
+      <li><span class="tag spec">协议规范</span> <a href="https://pages.nist.gov/800-63-4/sp800-63b.html" target="_blank" rel="noopener noreferrer">NIST SP 800-63B — Digital Identity Guidelines（2025-08）</a></li>
+      <li><span class="tag vendor">厂商文档</span> <a href="https://developers.google.com/identity/protocols/oauth2" target="_blank" rel="noopener noreferrer">Google Identity — OAuth 2.0</a>、<a href="https://developer.apple.com/sign-in-with-apple/" target="_blank" rel="noopener noreferrer">Sign in with Apple</a>、<a href="https://learn.microsoft.com/entra/identity/" target="_blank" rel="noopener noreferrer">Microsoft Entra ID</a>、<a href="https://developers.facebook.com/docs/facebook-login/" target="_blank" rel="noopener noreferrer">Facebook Login</a></li>
+      <li><span class="tag vendor">厂商文档</span> <a href="https://developers.weixin.qq.com/doc/" target="_blank" rel="noopener noreferrer">微信开放文档</a>、<a href="https://opendocs.alipay.com/open/" target="_blank" rel="noopener noreferrer">支付宝开放平台文档</a></li>
+      <li><span class="tag case">公开案例</span> 案例来源：SolarWinds/UNC2452（2020）、Okta 支持系统事件（2023）、Microsoft Storm-0558（2023）、Cloudflare 事件披露（2023）、CISA 与各厂商事件通报；具体数字见各段引用处。</li>
+    </ul>
+    <p class="footnote">本页为单文件离线报告，图表为内联 SVG，无外部依赖。生成于 2026 年。所有建议需按组织自身风险、合规要求与业务约束裁剪，不构成合规认证或法律意见。</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* progress + scrollspy -------------------------------------------------- */
+  var progress = document.querySelector(".progress");
+  var links = Array.prototype.slice.call(document.querySelectorAll(".nav a"));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+
+  function onScroll() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  if ("IntersectionObserver" in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.removeAttribute("aria-current"); });
+        var hit = links.find(function (l) { return l.getAttribute("href") === "#" + e.target.id; });
+        if (hit) hit.setAttribute("aria-current", "true");
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+
+  /* provider tabs --------------------------------------------------------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('#providers [role="tab"]'));
+  var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute("aria-controls")); });
+
+  function selectTab(index, focus) {
+    tabs.forEach(function (t, i) {
+      var on = i === index;
+      t.setAttribute("aria-selected", String(on));
+      t.setAttribute("tabindex", on ? "0" : "-1");
+      if (panels[i]) panels[i].hidden = !on;
+    });
+    if (focus) tabs[index].focus();
+  }
+  if (tabs.length) {
+    selectTab(0, false);
+    tabs.forEach(function (t, i) {
+      t.addEventListener("click", function () { selectTab(i, false); });
+      t.addEventListener("keydown", function (e) {
+        var next = null;
+        if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
+        if (e.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+        if (e.key === "Home") next = 0;
+        if (e.key === "End") next = tabs.length - 1;
+        if (next !== null) { e.preventDefault(); selectTab(next, true); }
+      });
+    });
+  }
+
+  /* generic sort ---------------------------------------------------------- */
+  Array.prototype.forEach.call(document.querySelectorAll("table.sortable"), function (table) {
+    var tbody = table.tBodies[0];
+    var heads = Array.prototype.slice.call(table.tHead.rows[0].cells);
+    heads.forEach(function (th, index) {
+      var btn = th.querySelector("button");
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var dir = th.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+        heads.forEach(function (o) { o.removeAttribute("aria-sort"); });
+        th.setAttribute("aria-sort", dir);
+        var numeric = th.getAttribute("data-sort") === "num";
+        var rows = Array.prototype.slice.call(tbody.rows);
+        rows.sort(function (a, b) {
+          var ac = a.cells[index], bc = b.cells[index];
+          var av = ac ? (ac.getAttribute("data-v") || ac.textContent.trim()) : "";
+          var bv = bc ? (bc.getAttribute("data-v") || bc.textContent.trim()) : "";
+          var r;
+          if (numeric) {
+            var an = parseFloat(av), bn = parseFloat(bv);
+            if (isNaN(an) && isNaN(bn)) r = 0;
+            else if (isNaN(an)) r = 1;
+            else if (isNaN(bn)) r = -1;
+            else r = an - bn;
+          } else { r = av.localeCompare(bv, "zh-Hans-CN"); }
+          return dir === "ascending" ? r : -r;
+        });
+        rows.forEach(function (row) { tbody.appendChild(row); });
+      });
+    });
+  });
+
+  /* filters --------------------------------------------------------------- */
+  function wireFilter(scopeId, rowsSelector, countId, emptyId, searchId, resetId) {
+    var scope = document.getElementById(scopeId);
+    if (!scope) return;
+    var chips = Array.prototype.slice.call(scope.querySelectorAll(".chip"));
+    var search = document.getElementById(searchId);
+    var count = document.getElementById(countId);
+    var empty = document.getElementById(emptyId);
+    var reset = document.getElementById(resetId);
+    var rows = Array.prototype.slice.call(document.querySelectorAll(rowsSelector));
+    var stage = "all";
+
+    function apply() {
+      var q = (search.value || "").trim().toLowerCase();
+      var shown = 0;
+      rows.forEach(function (row) {
+        var okStage = stage === "all" || row.getAttribute("data-stage") === stage;
+        var okText = !q || row.textContent.toLowerCase().indexOf(q) !== -1;
+        row.hidden = !(okStage && okText);
+        if (!row.hidden) shown += 1;
+      });
+      count.textContent = String(shown);
+      empty.hidden = shown > 0;
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        chips.forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
+        chip.setAttribute("aria-pressed", "true");
+        stage = chip.getAttribute("data-stage");
+        apply();
+      });
+    });
+    if (search) search.addEventListener("input", apply);
+    if (reset) {
+      reset.addEventListener("click", function () {
+        search.value = "";
+        stage = "all";
+        chips.forEach(function (c) { c.setAttribute("aria-pressed", String(c.getAttribute("data-stage") === "all")); });
+        apply();
+        search.focus();
+      });
+    }
+  }
+
+  wireFilter("attacks", "#attackTable tbody tr", "atkCount", "atkEmpty", "atkSearch", "atkReset");
+  wireFilter("cases", ".tl > li", "caseCount", "caseEmpty", "caseSearch", "caseReset");
+
+  /* checklist ------------------------------------------------------------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("[data-check]"));
+  if (boxes.length) {
+    var bar = document.getElementById("chkBar");
+    var label = document.getElementById("chkCount");
+    var KEY = "acct-checks-v1";
+    var saved = {};
+    try { saved = JSON.parse(window.localStorage.getItem(KEY) || "{}") || {}; } catch (err) { saved = {}; }
+
+    function render() {
+      var done = boxes.filter(function (b) { return b.checked; }).length;
+      bar.style.width = (done / boxes.length * 100) + "%";
+      label.textContent = done + " / " + boxes.length;
+      boxes.forEach(function (b) {
+        var li = b.closest("li");
+        if (li) li.classList.toggle("done", b.checked);
+      });
+    }
+
+    boxes.forEach(function (box, i) {
+      if (saved[box.id]) box.checked = true;
+      box.addEventListener("change", function () {
+        var state = {};
+        boxes.forEach(function (b) { state[b.id] = b.checked; });
+        try { window.localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) { /* file:// may block */ }
+        render();
+      });
+    });
+    render();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 逆向工程工作室 · 20 个工具全景图（含核实说明）</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#16181d; --muted:#5d6470;
+    --line:#e2e5ea; --line-strong:#c9ced6;
+    --accent:#1f6feb; --accent-soft:#e8f0fe;
+    --ok:#137a3f; --ok-soft:#e6f4ec;
+    --warn:#9a5b00; --warn-soft:#fdf1dd;
+    --bad:#a3261f; --bad-soft:#fbe9e7;
+    --idle:#4b5563; --idle-soft:#eef0f3;
+    --radius:10px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono); font-size:.88em; background:#eef1f5; padding:.12em .38em; border-radius:4px}
+  h1,h2,h3{line-height:1.3; letter-spacing:-.01em}
+  h2{font-size:22px; margin:0 0 6px}
+  h3{font-size:16px; margin:22px 0 8px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 22px}
+  header.top{
+    background:linear-gradient(180deg,#0d1320 0%,#182231 100%);
+    color:#e9edf5; padding:34px 0 28px; border-bottom:1px solid #0b0f16;
+  }
+  header.top .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#8fa3c4}
+  header.top h1{font-size:30px; margin:10px 0 8px; color:#fff}
+  header.top p{margin:0; color:#aebbd0; max-width:860px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; padding:5px 10px; border-radius:999px;
+    background:rgba(255,255,255,.08); color:#d8e2f2; border:1px solid rgba(255,255,255,.12);
+  }
+  .chip b{color:#fff; font-weight:600}
+
+  .layout{display:grid; grid-template-columns:224px minmax(0,1fr); gap:34px; align-items:start; padding:26px 0 50px}
+  nav.side{position:sticky; top:18px; font-size:13.5px}
+  nav.side .nav-title{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px 10px}
+  nav.side a{
+    display:block; padding:7px 10px; border-radius:7px; color:var(--muted);
+    border-left:2px solid transparent;
+  }
+  nav.side a:hover{background:#eceff4; color:var(--ink); text-decoration:none}
+  nav.side a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  nav.side a .c{font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:4px}
+  nav.side a.active .c{color:var(--accent)}
+  .nav-note{margin:14px 10px 0; font-size:12px; color:var(--muted); line-height:1.5}
+
+  main{min-width:0}
+  section{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px 26px; margin-bottom:18px; scroll-margin-top:16px}
+  section[hidden]{display:none}
+  .sec-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+  .sec-num{font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:5px}
+  .sec-head h2{flex:1 1 auto}
+  .sec-count{font-family:var(--mono); font-size:12px; color:var(--muted)}
+  .lede{color:var(--muted); margin:2px 0 14px}
+
+  .callout{border-radius:8px; padding:12px 14px; margin:14px 0; border:1px solid; font-size:14px}
+  .callout.ok{background:var(--ok-soft); border-color:#bfe3cd; color:#0d4f2a}
+  .callout.warn{background:var(--warn-soft); border-color:#f0d6a8; color:#5f3800}
+  .callout.bad{background:var(--bad-soft); border-color:#f0c3bf; color:#7c1a15}
+  .callout.info{background:var(--accent-soft); border-color:#c3d9fb; color:#14407f}
+  .callout b{font-weight:700}
+  .callout p{margin:4px 0}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+  .stat{border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:#fbfcfd}
+  .stat .big{font-size:23px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums}
+  .stat .big small{font-size:12px; font-weight:500; color:var(--muted)}
+  .stat p{margin:2px 0 0; font-size:12.5px; color:var(--muted)}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    margin:0 0 14px; padding:12px 14px; background:#fbfcfd;
+    border:1px solid var(--line); border-radius:var(--radius);
+  }
+  .search-wrap{position:relative; flex:1 1 260px; min-width:200px}
+  .search{
+    width:100%; padding:9px 34px 9px 12px; border:1px solid var(--line-strong);
+    border-radius:7px; font:inherit; font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  .search:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+  .search-clear{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    border:0; background:transparent; color:var(--muted); font-size:15px;
+    cursor:pointer; padding:2px 6px; border-radius:5px; line-height:1;
+  }
+  .search-clear:hover{background:#eceff4; color:var(--ink)}
+  .search-clear[hidden]{display:none}
+  .filters{display:flex; gap:6px; flex-wrap:wrap}
+  .filters button{
+    font:inherit; font-size:12.5px; padding:6px 11px; border-radius:999px; cursor:pointer;
+    background:#fff; border:1px solid var(--line-strong); color:var(--muted);
+  }
+  .filters button:hover{border-color:var(--accent); color:var(--accent)}
+  .filters button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+  .toggles{display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+  .toggles label{display:inline-flex; gap:6px; align-items:center; cursor:pointer}
+  .toggles input[type=checkbox]{width:15px; height:15px; accent-color:var(--accent); cursor:pointer; margin:0}
+  .toggles select{
+    font:inherit; font-size:12.5px; padding:5px 8px; border-radius:6px;
+    border:1px solid var(--line-strong); background:#fff; color:var(--ink);
+  }
+  .resultbar{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin:0 0 12px}
+  .resultbar b{color:var(--ink); font-variant-numeric:tabular-nums}
+
+  /* ---------- tool cards ---------- */
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px}
+  .tool{
+    border:1px solid var(--line); border-radius:9px; padding:14px 15px 12px;
+    background:#fff; display:flex; flex-direction:column; gap:6px; min-width:0;
+  }
+  .tool[hidden]{display:none}
+  .tool:hover{border-color:var(--line-strong); box-shadow:0 2px 10px rgba(16,22,34,.05)}
+  .tool-top{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .idx{
+    font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); border-radius:5px; padding:2px 6px; flex:0 0 auto;
+  }
+  .tool h3{font-size:15.5px; margin:0; flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
+  .tool h3 small{display:block; font-weight:400; font-size:11.5px; color:var(--muted); font-family:var(--mono); letter-spacing:0}
+  .stars{
+    font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    white-space:nowrap; font-variant-numeric:tabular-nums;
+  }
+  .tagline{font-size:13.5px; margin:0; color:var(--ink)}
+  .badges{display:flex; gap:5px; flex-wrap:wrap}
+  .badge{display:inline-block; font-size:11px; padding:1px 7px; border-radius:999px; white-space:nowrap; font-weight:600; border:1px solid}
+  .badge.ok{background:var(--ok-soft); color:var(--ok); border-color:#bfe3cd}
+  .badge.warn{background:var(--warn-soft); color:var(--warn); border-color:#f0d6a8}
+  .badge.idle{background:var(--idle-soft); color:var(--idle); border-color:var(--line-strong)}
+  .badge.info{background:var(--accent-soft); color:var(--accent); border-color:#c3d9fb}
+  .tool details{margin-top:2px; border-top:1px dashed var(--line); padding-top:8px}
+  .tool summary{
+    cursor:pointer; font-size:12.5px; color:var(--muted); list-style:none;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .tool summary::-webkit-details-marker{display:none}
+  .tool summary::before{content:"▸"; font-size:10px; color:var(--accent)}
+  .tool details[open] summary::before{content:"▾"}
+  .tool summary:hover{color:var(--accent)}
+  .tool details .body{font-size:12.5px; color:var(--muted); margin-top:6px}
+  .tool details .body q{font-style:italic; color:var(--ink); quotes:none}
+  .tool details .body p{margin:4px 0}
+  .tool-foot{display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px; margin-top:auto; padding-top:6px}
+  .tool-foot a{font-family:var(--mono); font-size:11.5px; overflow-wrap:anywhere}
+
+  .empty{padding:22px; text-align:center; color:var(--muted); font-size:13.5px; border:1px dashed var(--line-strong); border-radius:8px}
+  .empty button{font:inherit; font-size:13px; margin-top:8px; padding:6px 12px; border-radius:7px; cursor:pointer; border:1px solid var(--line-strong); background:#fff; color:var(--ink)}
+  .empty button:hover{border-color:var(--accent); color:var(--accent)}
+
+  /* ---------- pipeline ---------- */
+  .flow{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin:14px 0 6px; list-style:none; padding:0}
+  .flow li{
+    position:relative; border:1px solid var(--line); border-radius:8px; padding:12px 10px 10px;
+    background:#fbfcfd; margin:0; min-width:0;
+  }
+  .flow li:not(:last-child)::after{
+    content:"→"; position:absolute; right:-9px; top:50%; transform:translateY(-50%);
+    color:var(--line-strong); font-size:13px; background:var(--panel); z-index:1; padding:0 2px;
+  }
+  .flow .step-n{font-family:var(--mono); font-size:11px; color:var(--accent); font-weight:700}
+  .flow b{display:block; font-size:13.5px; margin:2px 0 4px}
+  .flow span{font-size:11.5px; color:var(--muted); display:block; line-height:1.5}
+  .flow .who{margin-top:6px; font-family:var(--mono); font-size:10.5px; color:var(--accent); opacity:.9}
+
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:8px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:680px}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:#f1f3f6; font-size:12px; letter-spacing:.04em; color:var(--muted); font-weight:600; white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafbfc}
+  td .name{font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:600}
+
+  .steps{list-style:none; padding:0; margin:10px 0; counter-reset:s}
+  .steps li{position:relative; padding:10px 0 10px 40px; border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{
+    counter-increment:s; content:counter(s);
+    position:absolute; left:0; top:10px; width:24px; height:24px; border-radius:50%;
+    background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps li b{display:block; font-size:14px}
+  .steps li span{color:var(--muted); font-size:13.5px}
+
+  footer{padding:0 0 50px; color:var(--muted); font-size:12.5px; text-align:center}
+  footer p{margin:4px 0}
+
+  @media (max-width:1000px){
+    .flow{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .flow li::after{display:none}
+    .grid4{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr; gap:16px}
+    nav.side{position:static; display:flex; flex-wrap:wrap; gap:4px; padding:0 0 6px}
+    nav.side .nav-title{display:none}
+    nav.side a{border-left:0; border:1px solid var(--line); padding:5px 9px; font-size:12.5px}
+    nav.side a.active{border-color:var(--accent)}
+    .nav-note{display:none}
+    .grid2,.grid3{grid-template-columns:1fr}
+    .cards{grid-template-columns:1fr}
+    header.top h1{font-size:24px}
+    section{padding:18px 16px}
+  }
+  @media (max-width:620px){
+    .flow{grid-template-columns:1fr 1fr}
+    .grid4{grid-template-columns:1fr 1fr}
+  }
+  @media print{
+    nav.side,.toolbar,.search-clear,.empty button{display:none}
+    body{background:#fff; font-size:12px}
+    section{break-inside:avoid; border-color:#ddd; box-shadow:none}
+    .layout{display:block}
+    .tool details{display:none}
+    a{color:var(--ink)}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">工具全景图 / 已核实版本</div>
+    <h1>AI 逆向工程工作室 · 20 个工具</h1>
+    <p>把“二进制 → 理解 → 重建 → 验证”这条流水线拆成 5 组，逐个列出仓库、官方简介与核实状态。核心是把 AI Agent 挂在 MCP 上，让它驱动反编译器和调试器，而不是人肉点点点。</p>
+    <div class="meta">
+      <span class="chip">条目 <b>20</b></span>
+      <span class="chip">分组 <b>5</b></span>
+      <span class="chip">已核实仓库 <b>17</b></span>
+      <span class="chip">核实时间 <b>2026-11-01</b></span>
+      <span class="chip">数据源 <b>GitHub API</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+  <nav class="side" aria-label="页面导航">
+    <p class="nav-title">目录</p>
+    <a href="#overview">总览与结论 <span class="c">0</span></a>
+    <a href="#pipeline">运行逻辑 <span class="c">→</span></a>
+    <a href="#core">核心 Core <span class="c">4</span></a>
+    <a href="#mobile">移动与应用 <span class="c">4</span></a>
+    <a href="#binary">二进制与低级 <span class="c">4</span></a>
+    <a href="#runtime">网络与运行时 <span class="c">4</span></a>
+    <a href="#rebuild">重建与验证 <span class="c">4</span></a>
+    <a href="#picking">场景选型 <span class="c">表</span></a>
+    <a href="#caveats">核实口径 <span class="c">!</span></a>
+    <p class="nav-note">◉ 标记 = 已用 GitHub API 核对存在性；◐ = 文档/方法论，非独立仓库；○ = 未核实或建议自行复核。</p>
+  </nav>
+
+  <main>
+
+    <!-- ================= 0 总览 ================= -->
+    <section id="overview">
+      <div class="sec-head">
+        <span class="sec-num">00</span>
+        <h2>总览：这套组合到底在解决什么</h2>
+      </div>
+      <p class="lede">一句话：用 MCP 把“静态反编译 + 动态调试 + 抓包 + 符号执行”缝成一个 Agent 可调用的接口，把逆向从手工活变成可重复的流水线。</p>
+
+      <div class="grid4">
+        <div class="stat"><div class="big">20</div><p>个条目，其中 18 个是可直接用的工具/清单，2 个是方法论</p></div>
+        <div class="stat"><div class="big">3</div><p>个 Agent 接入点：REA、GhidraMCP、ida-pro-mcp</p></div>
+        <div class="stat"><div class="big">17</div><p>条 GitHub 链接已验证返回 200（2026-11-01）</p></div>
+        <div class="stat"><div class="big">1</div><p>处数据需自行复核：REA 的 Star 数异常高</p></div>
+      </div>
+
+      <h3>三条结论</h3>
+      <ol>
+        <li><b>真正的“新东西”只有一层：MCP 桥。</b>Ghidra、Frida、jadx、radare2 这些已存在十年以上，变化在于 Agent 能直接调用它们并把证据串起来。没有桥，这套清单就只是一份传统逆向工具箱。</li>
+        <li><b>REA 是中枢，也是单点依赖。</b>它把 Ghidra / IDA / Hopper / Kuna 都当成“provider”调用，自己负责编排、证据记录和报告。换掉它，GhidraMCP + ida-pro-mcp 可以拼出简化版，但编排和证据链要你自己写。</li>
+        <li><b>“重建 + 神谕验证”是方法论，不是仓库。</b>原清单第 19、20 项在 REA 里对应的是 guided workflows（6 个）和 reconstruction 相关的覆盖度/义务台账文档，并没有一个叫 <code>SPEC.md → Oracle → Retry</code> 的官方模块。</li>
+      </ol>
+
+      <div class="callout info">
+        <b>阅读建议：</b>先看下面“运行逻辑”，再按“场景选型”表找自己那条线，最后用分组里的卡片核对仓库。搜索框可以按名字、语言、作者、中文说明一起搜。
+      </div>
+    </section>
+
+    <!-- ================= 运行逻辑 ================= -->
+    <section id="pipeline">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2>运行逻辑：六段流水线</h2>
+      </div>
+      <p class="lede">这是你给的原始框架，我保留结构，但把每一段对应的真实工具和核实状态标了出来。</p>
+
+      <ol class="flow">
+        <li><span class="step-n">01</span><b>取得样本</b><span>APK / exe / dll / Mach-O / JS 包</span><div class="who">Apktool · REA</div></li>
+        <li><span class="step-n">02</span><b>静态铺开</b><span>反编译成可读代码与结构</span><div class="who">Ghidra · jadx · ILSpy</div></li>
+        <li><span class="step-n">03</span><b>定位机制</b><span>找关键函数、协议、校验</span><div class="who">radare2 · rizin · angr</div></li>
+        <li><span class="step-n">04</span><b>动态确认</b><span>Hook、断点、抓包看真实行为</span><div class="who">Frida · x64dbg · mitmproxy</div></li>
+        <li><span class="step-n">05</span><b>写成规格</b><span>把观察结果落成可执行的描述</span><div class="who">REA 报告 / 自行维护</div></li>
+        <li><span class="step-n">06</span><b>重建 + 验证</b><span>按规格重写，跑对照测试收敛</span><div class="who">方法论（见项 20）</div></li>
+      </ol>
+
+      <h3>原始链路 vs 核实后的说法</h3>
+      <div class="table-scroll">
+        <table>
+          <caption class="sr-only">原始框架与核实结论对照</caption>
+          <thead>
+            <tr><th scope="col">原始表述</th><th scope="col">核实结论</th><th scope="col">状态</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>二进制 → REA → SPEC.md → 重建 → 神谕 → 重试</td>
+              <td>REA 确实提供“调查 → 证据 → 报告”的闭环，文档里有 reconstruction coverage / obligation ledgers / readiness 验证；但 <code>SPEC.md</code>、<code>Oracle</code> 这两个名字属于通用的 clean-room 工程实践，REA 未以此命名。</td>
+              <td><span class="badge warn">部分成立</span></td>
+            </tr>
+            <tr>
+              <td>REA 流程（现成调查提示）随 REA 提供</td>
+              <td>成立。REA 通过 MCP 的 prompts 能力暴露 <b>6 个</b> provider-neutral 调查工作流，另有 <code>rea guided-workflows</code> 与 <code>search_guidance</code>。文档：<code>docs/mcp-prompts.md</code>。</td>
+              <td><span class="badge ok">已核实</span></td>
+            </tr>
+            <tr>
+              <td>REA 是“一个 MCP 连接所有东西”</td>
+              <td>基本成立，措辞偏营销。官方描述是“用 agent 逆向任何东西”；分析能力靠 provider 组合（Hopper / Ghidra / IDA / Kuna + 内置静态解析），并非所有工具都在同一个进程里。</td>
+              <td><span class="badge ok">已核实</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <b>别把流水线当流水线：</b>第 5→6 段是整个链条最薄的一环。静态 + 动态只能给你“证据”，把它变成可重建的规格需要人写判断。任何声称全自动到“完美匹配”的说法都应打折。
+      </div>
+    </section>
+
+    <!-- ================= 工具目录 + 过滤 ================= -->
+    <section id="catalog" aria-labelledby="catalog-h">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2 id="catalog-h">工具目录</h2>
+      </div>
+      <p class="lede">20 个条目按原始分组排列。用搜索和筛选收窄，卡片顺序可切换（默认按原编号）。</p>
+
+      <div class="toolbar" role="search">
+        <div class="search-wrap">
+          <label for="q" class="sr-only">搜索工具</label>
+          <input id="q" class="search" type="search" placeholder="搜索：jadx / 反编译 / 抓包 / Python / morluto…" autocomplete="off">
+          <button class="search-clear" id="q-clear" type="button" aria-label="清空搜索" hidden>✕</button>
+        </div>
+        <div class="filters" role="group" aria-label="按分组筛选">
+          <button type="button" class="f-btn" data-group="all" aria-pressed="true">全部</button>
+          <button type="button" class="f-btn" data-group="core" aria-pressed="false">核心</button>
+          <button type="button" class="f-btn" data-group="mobile" aria-pressed="false">移动</button>
+          <button type="button" class="f-btn" data-group="binary" aria-pressed="false">二进制</button>
+          <button type="button" class="f-btn" data-group="runtime" aria-pressed="false">网络/运行时</button>
+          <button type="button" class="f-btn" data-group="rebuild" aria-pressed="false">重建/验证</button>
+        </div>
+        <div class="toggles">
+          <label><input type="checkbox" id="only-verified"> 只看已核实链接</label>
+          <label for="sort">排序</label>
+          <select id="sort">
+            <option value="id">原编号</option>
+            <option value="stars">按 Star 数</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="resultbar">
+        <span aria-live="polite" id="count-live">显示 <b id="count">20</b> / 20 个条目</span>
+        <span>◉ 已核实 · ◐ 文档/方法论 · ○ 待复核</span>
+      </div>
+
+      <!-- ---------- 核心 ---------- -->
+      <section id="core" class="group" data-group="core" style="padding:0;border:0;margin:0 0 18px;background:transparent">
+        <div class="sec-head">
+          <span class="sec-num">A</span>
+          <h2>核心 Core</h2>
+          <span class="sec-count">4 项 · 把工具挂到 Agent 上的那一层</span>
+        </div>
+        <p class="lede">中枢 + 三大反编译/调试后端。除了 Ghidra 免费，其余都涉及商业授权或需要自行搭环境。</p>
+        <div class="cards">
+
+          <article class="tool" data-id="1" data-group="core" data-stars="419645" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">01</span>
+              <h3>REA <small>morluto/rea · TypeScript</small></h3>
+              <span class="stars">★ 419,645</span>
+            </div>
+            <p class="tagline">中枢：让 Agent 通过一个 MCP 驱动原生二进制、.NET、JS/Electron 与网页分析。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge info">MCP 中枢</span><span class="badge idle">CLI + MCP</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>Reverse engineer anything with agents, from app behavior down to native binaries.</q></p>
+                <p>文档主线：本地运行分析、每条结论附证据与局限；原生分析可复用已有的 Hopper / Ghidra / IDA / Kuna；JS 静态分析无需原生引擎。MCP 侧另有 6 个引导式调查工作流。</p>
+                <p><b>注意：</b>Star 数远高于同类仓库数倍，与项目实际影响力不匹配，建议自行复核该数值。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/morluto/rea" target="_blank" rel="noopener noreferrer">github.com/morluto/rea ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="2" data-group="core" data-stars="96876" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">02</span>
+              <h3>Ghidra <small>NSA · Java</small></h3>
+              <span class="stars">★ 96,876</span>
+            </div>
+            <p class="tagline">免费反编译与 SRE 框架，难看但能打的行业基准。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">GUI + headless</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>Ghidra is a software reverse engineering (SRE) framework.</q></p>
+                <p>支持 headless 批处理与脚本扩展，这也是它能被 MCP 桥接的前提。代价是 JVM 内存占用大、启动慢。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/NationalSecurityAgency/ghidra" target="_blank" rel="noopener noreferrer">github.com/NationalSecurityAgency/ghidra ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="3" data-group="core" data-stars="11695" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">03</span>
+              <h3>GhidraMCP <small>LaurieWired · Java</small></h3>
+              <span class="stars">★ 11,695</span>
+            </div>
+            <p class="tagline">让 Agent 直接操作 Ghidra：反编译、改名、查引用。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge info">MCP 桥</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>MCP Server for Ghidra.</q></p>
+                <p>典型的“插件 + 本地 HTTP + MCP 包装”结构，需要先装 Ghidra 再装本插件。桥接层能力受限于它暴露的方法集，不等于完整 Ghidra 脚本能力。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/LaurieWired/GhidraMCP" target="_blank" rel="noopener noreferrer">github.com/LaurieWired/GhidraMCP ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="4" data-group="core" data-stars="13278" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">04</span>
+              <h3>ida-pro-mcp <small>mrexodia · Python</small></h3>
+              <span class="stars">★ 13,278</span>
+            </div>
+            <p class="tagline">把商业版 IDA Pro 接到语言模型上。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge info">MCP 桥</span><span class="badge warn">需 IDA 授权</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>AI-powered reverse engineering assistant that bridges IDA Pro with language models through MCP.</q></p>
+                <p><b>成本提示：</b>IDA Pro 是商业软件，个人授权价格不低；这条线的门槛不在 MCP，在许可证。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/mrexodia/ida-pro-mcp" target="_blank" rel="noopener noreferrer">github.com/mrexodia/ida-pro-mcp ↗</a></div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ---------- 移动与应用 ---------- -->
+      <section id="mobile" class="group" data-group="mobile" style="padding:0;border:0;margin:0 0 18px;background:transparent">
+        <div class="sec-head">
+          <span class="sec-num">B</span>
+          <h2>移动与应用 Mobile &amp; Apps</h2>
+          <span class="sec-count">4 项 · Android 与 .NET</span>
+        </div>
+        <p class="lede">这一组是“拿到可读代码”的最短路径：APK 拆包 → 反编译 → Hook 验证；.NET 走 ILSpy / dnSpyEx。</p>
+        <div class="cards">
+
+          <article class="tool" data-id="5" data-group="mobile" data-stars="51455" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">05</span>
+              <h3>jadx <small>skylot · Java</small></h3>
+              <span class="stars">★ 51,455</span>
+            </div>
+            <p class="tagline">DEX → Java 源码，带 GUI 和反混淆选项，Android 静态分析默认起点。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">GUI + CLI</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>Dex to Java decompiler.</q></p>
+                <p>可以直接打开 APK，省掉先 unzip 的步骤；反编译失败的方法会退回 smali 视图。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/skylot/jadx" target="_blank" rel="noopener noreferrer">github.com/skylot/jadx ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="6" data-group="mobile" data-stars="26907" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">06</span>
+              <h3>Apktool <small>iBotPeaches · Java</small></h3>
+              <span class="stars">★ 26,907</span>
+            </div>
+            <p class="tagline">APK 拆到接近源码级资源，改完还能重新打包签名。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">CLI</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>A tool for reverse engineering Android apk files.</q></p>
+                <p>改 <code>AndroidManifest.xml</code>、资源、smali 的主力工具；重打包后需要自行处理签名校验与完整性检查。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/iBotPeaches/Apktool" target="_blank" rel="noopener noreferrer">github.com/iBotPeaches/Apktool ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="7" data-group="mobile" data-stars="22596" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">07</span>
+              <h3>Frida <small>frida · Meson</small></h3>
+              <span class="stars">★ 22,596</span>
+            </div>
+            <p class="tagline">动态插桩：运行时 Hook 任意函数，看真实入参和返回值。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge warn">检测风险</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p>官方仓库描述为：<q>Main repo for hosting release binaries</q>（发布二进制的主仓），源码分散在 frida-gum 等子项目。</p>
+                <p>主力场景：绕过 SSL Pinning 前先确认它 hook 了哪个 TrustManager；也常用于 dump 内存里的解密后数据。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/frida/frida" target="_blank" rel="noopener noreferrer">github.com/frida/frida ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="8" data-group="mobile" data-stars="26908" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">08</span>
+              <h3>ILSpy <small>icsharpcode · C#</small></h3>
+              <span class="stars">★ 26,908</span>
+            </div>
+            <p class="tagline">.NET 反编译器，跨平台，可回写 PDB、看 ReadyToRun。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">GUI + 库</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>.NET Decompiler with support for PDB generation, ReadyToRun, Metadata (&amp;more) - cross-platform!</q></p>
+                <p>ILSpy 只读，适合“看懂”；需要改逻辑回写就用 dnSpyEx（见项 14）。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/icsharpcode/ILSpy" target="_blank" rel="noopener noreferrer">github.com/icsharpcode/ILSpy ↗</a></div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ---------- 二进制与低级 ---------- -->
+      <section id="binary" class="group" data-group="binary" style="padding:0;border:0;margin:0 0 18px;background:transparent">
+        <div class="sec-head">
+          <span class="sec-num">C</span>
+          <h2>二进制与低级 Binary &amp; Low-level</h2>
+          <span class="sec-count">4 项 · 反汇编、调试、格式、求解</span>
+        </div>
+        <p class="lede">这组是老牌工具的主场。真正决定成败的是调试器与反汇编器的组合，而不是新鲜度。</p>
+        <div class="cards">
+
+          <article class="tool" data-id="9" data-group="binary" data-stars="25237" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">09</span>
+              <h3>radare2 <small>radareorg · C</small></h3>
+              <span class="stars">★ 25,237</span>
+            </div>
+            <p class="tagline">UNIX 风格的逆向框架与命令行工具集，脚本化能力强。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">CLI</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>UNIX-like reverse engineering framework and command-line toolset.</q></p>
+                <p>学习曲线陡峭，但适合批处理与自动化；配 <code>r2pipe</code> 可从脚本驱动，也是 Agent 化的常见底座。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/radareorg/radare2" target="_blank" rel="noopener noreferrer">github.com/radareorg/radare2 ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="10" data-group="binary" data-stars="50145" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">10</span>
+              <h3>x64dbg <small>x64dbg · C++</small></h3>
+              <span class="stars">★ 50,145</span>
+            </div>
+            <p class="tagline">Windows 用户态调试器的事实标准，插件生态大。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge warn">仅 Windows</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>An open-source user mode debugger for Windows. Optimized for reverse engineering and malware analysis.</q></p>
+                <p>多进程、内核态场景需要换 WinDbg；x64dbg 管的是用户态那一半。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/x64dbg/x64dbg" target="_blank" rel="noopener noreferrer">github.com/x64dbg/x64dbg ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="11" data-group="binary" data-stars="55699" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">11</span>
+              <h3>ImHex <small>WerWolv · C++</small></h3>
+              <span class="stars">★ 55,699</span>
+            </div>
+            <p class="tagline">带模式语言的十六进制编辑器，逆向时用它破未知二进制结构。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">GUI</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>A Hex Editor for Reverse Engineers, Programmers and people who value their retinas when working at 3 AM.</q></p>
+                <p>Pattern Language 可以把未知格式写成可复用的结构描述——这一点在固件、私有协议、存档文件上特别省时间。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/WerWolv/ImHex" target="_blank" rel="noopener noreferrer">github.com/WerWolv/ImHex ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="12" data-group="binary" data-stars="9276" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">12</span>
+              <h3>angr <small>angr · Python</small></h3>
+              <span class="stars">★ 9,276</span>
+            </div>
+            <p class="tagline">符号执行：不用手工推，直接让求解器算“什么输入能到那个分支”。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">库</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>A powerful and user-friendly binary analysis platform!</q></p>
+                <p>适合 CTF 式的小函数求解与校验逻辑还原；面对真实大程序时路径爆炸，通常需要先手工裁剪范围。核心求解靠 z3。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/angr/angr" target="_blank" rel="noopener noreferrer">github.com/angr/angr ↗</a></div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ---------- 网络与运行时 ---------- -->
+      <section id="runtime" class="group" data-group="runtime" style="padding:0;border:0;margin:0 0 18px;background:transparent">
+        <div class="sec-head">
+          <span class="sec-num">D</span>
+          <h2>网络与运行时 Network &amp; Runtime</h2>
+          <span class="sec-count">4 项 · 抓包、调试、以及两条替代路线</span>
+        </div>
+        <p class="lede">静态看完必须验证真实行为，这一组负责“跑起来看”。注意 rizin 与 raddebugger 属于替代/补充，不是并列必需项。</p>
+        <div class="cards">
+
+          <article class="tool" data-id="13" data-group="runtime" data-stars="46550" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">13</span>
+              <h3>mitmproxy <small>mitmproxy · Python</small></h3>
+              <span class="stars">★ 46,550</span>
+            </div>
+            <p class="tagline">可 TLS 解密的交互式 HTTP 代理，抓包改包一把梭。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">CLI + Web</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>An interactive TLS-capable intercepting HTTP proxy for penetration testers and software developers.</q></p>
+                <p>现代 App 大多有证书固定，需要配合 Frida 或其他手段绕过 pinning，否则只能看到 TLS 握手失败。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/mitmproxy/mitmproxy" target="_blank" rel="noopener noreferrer">github.com/mitmproxy/mitmproxy ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="14" data-group="runtime" data-stars="11388" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">14</span>
+              <h3>dnSpyEx <small>dnSpyEx · C#</small></h3>
+              <span class="stars">★ 11,388</span>
+            </div>
+            <p class="tagline">dnSpy 的社区续命版：边调试边改 .NET 程序集。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge warn">非原版</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>Unofficial revival of the well known .NET debugger and assembly editor, dnSpy</q></p>
+                <p>原 dnSpy 已停止维护，这条链接指向社区分支 dnSpyEx。使用前建议确认目标框架版本是否被支持。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/dnspyex/dnSpy" target="_blank" rel="noopener noreferrer">github.com/dnspyex/dnSpy ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="15" data-group="runtime" data-stars="4090" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">15</span>
+              <h3>rizin <small>rizinorg · C</small></h3>
+              <span class="stars">★ 4,090</span>
+            </div>
+            <p class="tagline">radare2 的分支，代码更整洁、API 更规范，配套 Cutter GUI。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">CLI + 库</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p>官方描述与 radare2 完全一致：<q>UNIX-like reverse engineering framework and command-line toolset.</q>（fork 保留原描述）</p>
+                <p>生态与插件数量不如 radare2，但脚本接口更好用。两者选一即可，不必都装。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/rizinorg/rizin" target="_blank" rel="noopener noreferrer">github.com/rizinorg/rizin ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="16" data-group="runtime" data-stars="8739" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">16</span>
+              <h3>raddebugger <small>EpicGames · C</small></h3>
+              <span class="stars">★ 8,739</span>
+            </div>
+            <p class="tagline">Epic 开源的现代原生调试器，多进程、带可视化。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">GUI</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>A native, user-mode, multi-process, graphical debugger.</q></p>
+                <p>“Epic Games 开发”这个说法准确；但它是较新的项目，成熟度与 x64dbg 的插件生态不在一个量级，定位更像现代替代品而非必装。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/EpicGames/raddebugger" target="_blank" rel="noopener noreferrer">github.com/EpicGames/raddebugger ↗</a></div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ---------- 重建与验证 ---------- -->
+      <section id="rebuild" class="group" data-group="rebuild" style="padding:0;border:0;margin:0 0 18px;background:transparent">
+        <div class="sec-head">
+          <span class="sec-num">E</span>
+          <h2>重建与验证 Rebuild &amp; Verify</h2>
+          <span class="sec-count">4 项 · 2 个清单 + 2 个方法论</span>
+        </div>
+        <p class="lede">这一组不是工具，是“去哪找工具”和“按什么流程走”。原清单里这部分的链接最需要打问号，下面逐条标了状态。</p>
+        <div class="cards">
+
+          <article class="tool" data-id="17" data-group="rebuild" data-stars="370" data-verified="0">
+            <div class="tool-top">
+              <span class="idx">17</span>
+              <h3>awesome-ai-reverse-engineering <small>搜索词 · 非唯一仓库</small></h3>
+              <span class="stars">★ 370（代表仓库）</span>
+            </div>
+            <p class="tagline">“AI 逆向”相关清单的总称，GitHub 上有多个同名/近名仓库。</p>
+            <div class="badges">
+              <span class="badge warn">○ 待复核</span><span class="badge idle">清单</span>
+            </div>
+            <details>
+              <summary>核实结果与补充</summary>
+              <div class="body">
+                <p>原清单写的是“122 个仓库，全都评分”，但没有给出确定仓库。检索结果里星数最高的是 <code>AIshihzong/awesome-reverse-engineer-anything</code>（约 370★），另有 <code>zhuyansen/awesome-ai-reverse-engineering</code>（约 28★）等。</p>
+                <p>这类清单的条目数和评分随时间变化很快，“122 个仓库”这个数字不建议引用。</p>
+              </div>
+            </details>
+            <div class="tool-foot">
+              <a href="https://github.com/search?q=awesome-ai-reverse-engineering&amp;type=repositories" target="_blank" rel="noopener noreferrer">GitHub 搜索该关键词 ↗</a>
+            </div>
+          </article>
+
+          <article class="tool" data-id="18" data-group="rebuild" data-stars="1512" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">18</span>
+              <h3>awesome-reverse-engineering <small>morluto · Python</small></h3>
+              <span class="stars">★ 1,512</span>
+            </div>
+            <p class="tagline">REA 作者维护的资源清单，覆盖二进制、App、固件、格式、协议。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge idle">清单</span>
+            </div>
+            <details>
+              <summary>官方简介与补充</summary>
+              <div class="body">
+                <p><q>Curated reverse-engineering tools and learning resources for binaries, apps, firmware, formats, and protocols.</q></p>
+                <p>相比第 17 项，这个是确定存在的单一仓库，链接可直接用。</p>
+              </div>
+            </details>
+            <div class="tool-foot"><a href="https://github.com/morluto/awesome-reverse-engineering" target="_blank" rel="noopener noreferrer">github.com/morluto/awesome-reverse-engineering ↗</a></div>
+          </article>
+
+          <article class="tool" data-id="19" data-group="rebuild" data-stars="0" data-verified="1">
+            <div class="tool-top">
+              <span class="idx">19</span>
+              <h3>REA Workflows <small>文档 · docs/mcp-prompts.md</small></h3>
+              <span class="stars">随 REA 提供</span>
+            </div>
+            <p class="tagline">6 个内置调查工作流，不是独立仓库，而是 REA 里的 prompts。</p>
+            <div class="badges">
+              <span class="badge ok">◉ 已核实</span><span class="badge warn">◐ 非仓库</span>
+            </div>
+            <details>
+              <summary>核实结果与补充</summary>
+              <div class="body">
+                <p>通过 MCP 的 prompts 能力暴露，另有 <code>guided_workflows</code> 工具（<code>action: list / render</code>）与 CLI <code>rea guided-workflows</code>。还可用 <code>search_guidance</code> 在已安装的指导包里按关键词查章节。</p>
+                <p>关键限制：渲染提示只返回指导文本，本身不分析目标、不改变会话状态。</p>
+              </div>
+            </details>
+            <div class="tool-foot">
+              <a href="https://github.com/morluto/rea/blob/main/docs/mcp-prompts.md" target="_blank" rel="noopener noreferrer">docs/mcp-prompts.md ↗</a>
+            </div>
+          </article>
+
+          <article class="tool" data-id="20" data-group="rebuild" data-stars="0" data-verified="0">
+            <div class="tool-top">
+              <span class="idx">20</span>
+              <h3>Clean-room loop <small>方法论 · SPEC / Oracle / 迭代</small></h3>
+              <span class="stars">—</span>
+            </div>
+            <p class="tagline">“按规格重写 → 对照验证 → 不匹配就重试”的闭环，属于通用工程实践。</p>
+            <div class="badges">
+              <span class="badge warn">◐ 方法论</span><span class="badge bad">无官方模块</span>
+            </div>
+            <details>
+              <summary>核实结果与补充</summary>
+              <div class="body">
+                <p>REA 里有相关的实质内容：reconstruction coverage、reconstruction obligation ledgers、reconstruction readiness 验证（<code>npm run verify:readiness</code>），以及“证据 + 局限”的报告格式。但<b>没有</b>一个官方叫 <code>SPEC.md</code> 或 <code>Oracle</code> 的模块。</p>
+                <p>把它理解为：<b>这是你要自己设计的那一层</b>，REA 提供原料（证据链）和验证夹具，不提供“完美匹配”的保证。</p>
+              </div>
+            </details>
+            <div class="tool-foot">
+              <a href="https://github.com/morluto/rea/blob/main/docs/reconstruction-readiness.md" target="_blank" rel="noopener noreferrer">docs/reconstruction-readiness.md ↗</a>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <div class="empty" id="empty" hidden>
+        <p>没有匹配的条目。</p>
+        <button type="button" id="reset">清空筛选条件</button>
+      </div>
+
+    </section>
+
+    <!-- ================= 场景选型 ================= -->
+    <section id="picking">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2>场景选型：别把 20 个都装上</h2>
+      </div>
+      <p class="lede">按目标挑最小组合。装全套的代价是环境冲突、许可证成本和一堆用不上的 UI。</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">你要做的事</th><th scope="col">最小组合</th><th scope="col">加什么会更省事</th><th scope="col">坑</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>搞清某个 App 的功能怎么实现</td>
+              <td class="name">REA</td>
+              <td>目标平台的 provider（Hopper / Ghidra / IDA）</td>
+              <td>REA 需要本地分析引擎，纯 MCP 不分析</td>
+            </tr>
+            <tr>
+              <td>Android APK 静态 + 动态</td>
+              <td class="name">jadx · Apktool · Frida</td>
+              <td>mitmproxy 看接口</td>
+              <td>重打包后的签名校验、SSL Pinning</td>
+            </tr>
+            <tr>
+              <td>.NET 桌面程序，要改逻辑</td>
+              <td class="name">ILSpy · dnSpyEx</td>
+              <td>REA 的 managed code 分析</td>
+              <td>混淆与 AOT/ReadyToRun 会打断反编译</td>
+            </tr>
+            <tr>
+              <td>Windows 原生 exe 调试</td>
+              <td class="name">x64dbg + Ghidra</td>
+              <td>raddebugger 试新版体验</td>
+              <td>防调试、内核态、驱动层它管不了</td>
+            </tr>
+            <tr>
+              <td>未知二进制格式 / 固件</td>
+              <td class="name">ImHex + radare2 / rizin</td>
+              <td>angr 求解校验字段</td>
+              <td>模式语言要自己写，先备份原始样本</td>
+            </tr>
+            <tr>
+              <td>“这段校验怎么算的”</td>
+              <td class="name">Ghidra 反编译 + angr</td>
+              <td>Frida 在运行时打印中间值</td>
+              <td>路径爆炸，必须先把函数范围切小</td>
+            </tr>
+            <tr>
+              <td>给现有 Agent 加逆向能力</td>
+              <td class="name">GhidraMCP 或 ida-pro-mcp</td>
+              <td>REA 做编排与证据报告</td>
+              <td>桥接层暴露的方法集决定能力上限</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= 核实口径 ================= -->
+    <section id="caveats">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2>核实口径与风险提示</h2>
+      </div>
+
+      <h3>怎么核实的</h3>
+      <ul>
+        <li>17 条仓库链接逐条调用 GitHub API 确认存在（HTTP 200），Star 数与官方简介在同一天抓取，时间戳见页头。</li>
+        <li>第 17 项的链接原文是“自己搜”，已改为搜索结果页并附检索到的代表仓库，标为待复核。</li>
+        <li>第 19、20 项不是独立仓库，已替换为实际存在的文档路径，并把原始说法与新证据的差异写在卡片里。</li>
+      </ul>
+
+      <h3>为什么有几条要打折</h3>
+      <ul>
+        <li><b>Star 数不等于质量。</b>REA 的 41.9 万星与同类仓库（Ghidra 约 9.7 万）不在一个量级，异常度足够高，建议自己去仓库页面确认一眼。</li>
+        <li><b>“一个 MCP 连接所有东西”是营销措辞。</b>实际是 MCP + provider 架构，能力取决于装了哪些 provider。</li>
+        <li><b>“全部自动、验证到完美匹配”没有依据。</b>REA 自己的文档明确写了报告验证不等于行为等价性证明。</li>
+      </ul>
+
+      <div class="callout bad">
+        <b>法律边界先划清：</b>这些工具在自有软件、授权测试、互操作性研究、恶意样本分析里是正当的；用于破解他人付费软件、绕过 DRM、窃取数据或规避技术保护措施，在多数法域都可能违法。clean-room 重建也要注意版权与竞业约定——工具中立，用途不中立。
+      </div>
+
+      <div class="callout warn">
+        <b>操作前：</b>样本先做只读副本与哈希记录；涉及真机 Hook 时用隔离设备；抓包只针对自己有权测试的流量；别把生产凭证留在分析环境里。
+      </div>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <p>20 个条目 · 5 个分组 · GitHub 数据抓取于 2026-11-01 · 单文件离线可用</p>
+  <p>本页为工具清单与核实记录，不构成对任何工具的推荐或合规背书。</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".tool"));
+  var q = document.getElementById("q");
+  var qClear = document.getElementById("q-clear");
+  var count = document.getElementById("count");
+  var live = document.getElementById("count-live");
+  var empty = document.getElementById("empty");
+  var reset = document.getElementById("reset");
+  var onlyVerified = document.getElementById("only-verified");
+  var sortSel = document.getElementById("sort");
+  var fBtns = Array.prototype.slice.call(document.querySelectorAll(".f-btn"));
+  var groups = Array.prototype.slice.call(document.querySelectorAll(".group"));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll("nav.side a"));
+
+  var state = { group: "all" };
+
+  // 建立搜索索引（来自已渲染的文本，保持内容在 HTML 里）
+  cards.forEach(function (c) {
+    c.dataset.index = c.textContent.replace(/\s+/g, " ").toLowerCase();
+  });
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+
+    cards.forEach(function (c) {
+      var okGroup = state.group === "all" || c.dataset.group === state.group;
+      var okVerified = !onlyVerified.checked || c.dataset.verified === "1";
+      var okTerm = !term || c.dataset.index.indexOf(term) !== -1;
+      var visible = okGroup && okVerified && okTerm;
+      c.hidden = !visible;
+      if (visible) { shown++; }
+    });
+
+    groups.forEach(function (g) {
+      var any = g.querySelectorAll(".tool:not([hidden])").length > 0;
+      g.hidden = !any;
+    });
+
+    count.textContent = String(shown);
+    live.setAttribute("aria-live", "polite");
+    empty.hidden = shown !== 0;
+    qClear.hidden = term === "";
+  }
+
+  function sortCards() {
+    var mode = sortSel.value;
+    Array.prototype.forEach.call(document.querySelectorAll(".cards"), function (grid) {
+      var items = Array.prototype.slice.call(grid.children);
+      items.sort(function (a, b) {
+        if (mode === "stars") {
+          return Number(b.dataset.stars) - Number(a.dataset.stars);
+        }
+        return Number(a.dataset.id) - Number(b.dataset.id);
+      });
+      items.forEach(function (el) { grid.appendChild(el); });
+    });
+  }
+
+  q.addEventListener("input", apply);
+  qClear.addEventListener("click", function () {
+    q.value = "";
+    q.focus();
+    apply();
+  });
+  onlyVerified.addEventListener("change", apply);
+  sortSel.addEventListener("change", function () { sortCards(); apply(); });
+
+  fBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      state.group = btn.dataset.group;
+      fBtns.forEach(function (b) {
+        b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+      });
+      apply();
+    });
+  });
+
+  reset.addEventListener("click", function () {
+    q.value = "";
+    onlyVerified.checked = false;
+    state.group = "all";
+    fBtns.forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.group === "all" ? "true" : "false");
+    });
+    apply();
+  });
+
+  // 目录高亮
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) { return; }
+        navLinks.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id);
+        });
+      });
+    }, { rootMargin: "-15% 0px -70% 0px", threshold: 0 });
+    groups.concat(Array.prototype.slice.call(
+      document.querySelectorAll("#overview, #pipeline, #picking, #caveats")
+    )).forEach(function (el) { obs.observe(el); });
+  }
+
+  apply();
+})();
+</script>
+</body>
+</html>
