@@ -1,0 +1,86 @@
+[
+  {
+    "id": "legacy-code",
+    "name": "代码阅读与遗留系统改造",
+    "books": ["working-effectively-legacy-code", "refactoring"],
+    "methods": ["接缝（Seam）", "特征测试（Characterization Test）", "Sprout / Wrap Method", "代码坏味", "小步重构"],
+    "practice": "给一个没有测试的函数补 3 条特征测试，再用 Extract Function 拆出一段，保持测试全绿。"
+  },
+  {
+    "id": "naming-modules",
+    "name": "命名、函数与模块边界",
+    "books": ["clean-code", "code-complete", "philosophy-software-design"],
+    "methods": ["有意义命名", "小函数 / 单一职责", "深模块（Deep Module）", "信息隐藏", "复杂度症状"],
+    "practice": "选一个 80 行函数，按意图拆成 3 个不超过 20 行的函数，并重命名其中的临时变量。"
+  },
+  {
+    "id": "unit-testing",
+    "name": "单元测试与测试设计",
+    "books": ["tdd-by-example", "working-effectively-legacy-code", "code-complete"],
+    "methods": ["红-绿-重构", "三角测量（Triangulate）", "特征测试", "等价类 / 边界值"],
+    "practice": "用 TDD 写一个金额计算器：先写失败测试，再做最小实现，最后重构；补 3 个边界用例。"
+  },
+  {
+    "id": "refactoring",
+    "name": "重构",
+    "books": ["refactoring", "tdd-by-example", "working-effectively-legacy-code"],
+    "methods": ["代码坏味", "Extract / Move / Inline", "Replace Conditional with Polymorphism", "测试保护下的小步提交"],
+    "practice": "选一个 code smell，只做一个重构动作，跑测试，提交；连续做 5 次，每次可回滚。"
+  },
+  {
+    "id": "debugging",
+    "name": "调试与缺陷预防",
+    "books": ["code-complete", "working-effectively-legacy-code"],
+    "methods": ["防御式编程", "断言（Assertion）", "二分定位", "先写失败测试"],
+    "practice": "对一个真实 bug 先写能复现的失败测试，再修复；保留测试并补一条断言。"
+  },
+  {
+    "id": "code-review",
+    "name": "代码审查",
+    "books": ["software-engineering-at-google", "code-complete"],
+    "methods": ["小 CL / 小 PR", "审查清单", "可读性标准", "行为反馈而非风格争论"],
+    "practice": "把一次 500 行 PR 拆成 5 个小于 100 行的 CL，并为每个 CL 写一句审查目标。"
+  },
+  {
+    "id": "requirements-domain",
+    "name": "需求与领域建模",
+    "books": ["pressman-software-engineering", "domain-driven-design", "mythical-man-month"],
+    "methods": ["需求获取与用例", "统一语言（Ubiquitous Language）", "限界上下文", "上下文映射", "概念完整性"],
+    "practice": "给一个业务写 1 页统一语言表（术语、定义、反例）和 1 张上下文边界图。"
+  },
+  {
+    "id": "design-architecture",
+    "name": "系统设计与架构",
+    "books": ["clean-architecture", "domain-driven-design", "philosophy-software-design", "design-patterns"],
+    "methods": ["依赖规则（Dependency Rule）", "端口与适配器", "限界上下文", "深模块", "模式词汇与取舍"],
+    "practice": "画一张依赖方向图，标出 3 个可替换边界，并为其中一个边界写 ADR（背景 / 选项 / 权衡）。"
+  },
+  {
+    "id": "estimation",
+    "name": "估算与排期",
+    "books": ["mythical-man-month", "pragmatic-programmer", "accelerate"],
+    "methods": ["布鲁克斯定律", "概念完整性", "曳光弹（Tracer Bullet）", "前置时间（Lead Time）"],
+    "practice": "把 6 周项目拆成 3 个 2 周可交付切片，记录每个切片的实际前置时间与偏差。"
+  },
+  {
+    "id": "delivery",
+    "name": "持续集成与交付",
+    "books": ["continuous-delivery", "accelerate", "devops-handbook"],
+    "methods": ["部署流水线", "构建一次、多处部署", "部署与发布分离", "主干开发", "DORA 四项指标"],
+    "practice": "给一个仓库加 CI：每次提交跑单测与构建，失败阻断合并；连续 4 周记录部署频率和变更失败率。"
+  },
+  {
+    "id": "reliability",
+    "name": "线上可靠性与故障处理",
+    "books": ["site-reliability-engineering", "phoenix-project", "devops-handbook"],
+    "methods": ["SLI / SLO / 错误预算", "无责复盘", "减少 Toil", "三步工作法"],
+    "practice": "为一个服务写 1 个 SLI、1 个 SLO 和错误预算策略；用一次真实故障做无责复盘。"
+  },
+  {
+    "id": "team-culture",
+    "name": "团队协作与工程文化",
+    "books": ["peopleware", "team-topologies", "mythical-man-month"],
+    "methods": ["团队自治", "专注时间 / 办公环境", "四种团队类型", "三种交互模式", "沟通路径"],
+    "practice": "画一张团队交互图，标出 3 个高摩擦接口，并为每个接口约定一种交互模式。"
+  }
+]

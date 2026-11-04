@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12-Factor Agents 原理分析 · 生产级 Agent 的工程原则</title>
+<meta name="description" content="对 humanlayer/12-factor-agents 的深度分析：Agent 四部件、12 条原则、上下文工程、暂停/恢复、事件溯源、微 Agent 与落地清单。">
+<style>
+:root{
+  --bg:#f4f1e8; --paper:#fffdf8; --ink:#15181d; --muted:#5f6670;
+  --navy:#0c1a2b; --navy2:#12263a; --accent:#c2410c; --accent-soft:#fbe9df;
+  --teal:#0f766e; --teal-soft:#e3f3ef; --gold:#d99a06; --gold-soft:#fbf1cf;
+  --line:#ddd6c7; --line-strong:#c9c0ad;
+  --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.72;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.87em;background:#efece2;padding:.12em .36em;border-radius:4px;word-break:break-word}
+h1,h2,h3,h4{line-height:1.28;letter-spacing:-.015em}
+h2{font-size:23px;margin:0 0 8px}
+h3{font-size:16.5px;margin:18px 0 6px}
+h4{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:5px 0}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;padding:8px 12px;z-index:100}
+.skip:focus{left:8px;top:8px}
+
+.topbar{background:#0b1622;color:#dfe7e3;border-bottom:1px solid #223142}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;letter-spacing:.01em;font-size:13.5px}
+.brand:hover{text-decoration:none}
+.brand .mark{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--accent);color:#fff;font-family:var(--mono);font-size:11px;font-weight:800}
+.topnav{display:flex;gap:15px;font-size:13px;flex-wrap:wrap}
+.topnav a{color:#b9c7c2}
+.topnav a:hover{color:#fff;text-decoration:none}
+
+.hero{background:linear-gradient(180deg,#0b1622 0%,#11263a 100%);color:#eef3f0;padding:48px 0 42px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:36px 36px;pointer-events:none}
+.hero:after{content:"12";position:absolute;right:4%;bottom:-60px;font-family:var(--mono);font-size:300px;line-height:1;color:rgba(194,65,12,.12);font-weight:800;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.kicker{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#e6a07e}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:36px;align-items:start}
+.hero h1{font-size:52px;margin:12px 0 8px;color:#fff;letter-spacing:-.04em;line-height:1.05}
+.hero .en{font-family:var(--mono);font-size:13px;color:#9fb2ac;margin:0 0 12px}
+.hero .lede{color:#c3d0cb;max-width:760px;font-size:16.5px;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.075);color:#d6e2de;border:1px solid rgba(255,255,255,.14)}
+.chip b{color:#fff;font-weight:650}
+.chip.hot{background:rgba(194,65,12,.18);border-color:rgba(194,65,12,.5);color:#ffd7c2}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:9px 14px;font-size:13.5px;border:1px solid rgba(255,255,255,.18);color:#e9f1ee;background:rgba(255,255,255,.06)}
+.btn:hover{text-decoration:none;background:rgba(255,255,255,.12)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.btn.primary:hover{background:#a8380a}
+.hero-card{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:16px 18px}
+.hero-card .hc-title{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#9fb2ac;margin-bottom:10px}
+.hero-card .hs{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.hero-card .hs:last-child{border-bottom:0}
+.hero-card .hs b{display:block;color:#fff;font-size:14px;font-weight:650}
+.hero-card .hs span{display:block;color:#a9bcb5;font-size:12px;margin-top:1px}
+
+.layout{display:grid;grid-template-columns:232px minmax(0,1fr);gap:34px;align-items:start;padding:30px 0 64px}
+nav.toc{position:sticky;top:18px;font-size:13.5px}
+nav.toc .toc-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 10px}
+nav.toc a{display:block;padding:7px 10px;border-radius:7px;color:var(--muted);border-left:2px solid transparent;line-height:1.45}
+nav.toc a:hover{background:#e9e4d8;color:var(--ink);text-decoration:none}
+nav.toc a.active{background:var(--accent-soft);color:var(--accent);border-left-color:var(--accent);font-weight:650}
+.toc-note{margin:14px 10px 0;font-size:12px;color:var(--muted);line-height:1.55}
+
+main{min-width:0}
+section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px 28px;margin-bottom:18px;scroll-margin-top:16px;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+section > .sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.sec-num{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:5px}
+.lede{color:var(--muted);margin:2px 0 16px;max-width:78ch}
+
+.callout{border-radius:9px;padding:13px 15px;margin:16px 0;border:1px solid;font-size:14.2px}
+.callout.accent{background:var(--accent-soft);border-color:#f0c9b6;color:#7a2c0c}
+.callout.teal{background:var(--teal-soft);border-color:#b9ddd5;color:#0a4f47}
+.callout.gold{background:var(--gold-soft);border-color:#ecd89a;color:#6b4b00}
+.callout b{font-weight:700}
+blockquote{margin:16px 0;padding:12px 16px;border-left:3px solid var(--accent);background:#faf6ee;color:#3d3a33;font-size:15px}
+blockquote p{margin:0}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{border:1px solid var(--line);border-radius:9px;padding:15px 16px;background:#fbf9f2}
+.card h3{margin:0 0 6px;font-size:15.5px}
+.card p{margin:4px 0;color:var(--muted);font-size:13.8px}
+.card .num{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.05em}
+.card.dark{background:var(--navy);color:#e8eeeb;border-color:#1f3448}
+.card.dark h3{color:#fff}
+.card.dark p{color:#b8c7c2}
+.card.dark .num{color:#f0a07f}
+
+.hero-list{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:8px}
+.hero-list li{position:relative;padding-left:24px;margin:0}
+.hero-list li:before{content:"";position:absolute;left:4px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+.figure{margin:18px 0 4px;border:1px solid var(--line);border-radius:10px;background:#fbf9f2;padding:14px;overflow-x:auto}
+.figure svg{display:block;width:100%;height:auto;min-width:720px}
+.fig-hint{display:none;font-size:12px;color:var(--muted);margin-bottom:8px}
+.figcap{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.figcap b{color:var(--ink)}
+
+.codebox{background:#0d1720;color:#dfe9e4;border-radius:10px;margin:14px 0 0;overflow:hidden;border:1px solid #1d2b36}
+.codebar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#111e28;border-bottom:1px solid #22313d;font-size:12px;color:#9fb5ad}
+.codebar .lang{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
+.copy{border:1px solid #35484b;background:#1a292c;color:#d7e4df;border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit}
+.copy:hover{background:#24383b}
+.copy:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+pre{margin:0;padding:16px;overflow:auto;font-family:var(--mono);font-size:12.8px;line-height:1.62;tab-size:2}
+pre code{background:none;padding:0;font-size:inherit;color:inherit;white-space:pre}
+
+.explorer{margin-top:4px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 12px}
+.search{flex:1 1 280px;min-width:230px;position:relative}
+.search input{width:100%;border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:10px 12px 10px 36px;font:inherit;font-size:14px;color:var(--ink)}
+.search input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 4px}
+.fbtn{border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+.fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:650}
+.fbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-size:12.5px;color:var(--muted);margin:2px 0 14px}
+.factors{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.factor{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:9px;padding:15px 16px;background:#fffdf8;min-width:0}
+.factor[data-group="context"]{border-left-color:var(--teal)}
+.factor[data-group="runtime"]{border-left-color:#7c5cbf}
+.factor[data-group="collaboration"]{border-left-color:var(--gold)}
+.factor[data-group="scope"]{border-left-color:#2f6f9f}
+.factor[hidden]{display:none}
+.f-head{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:10px;align-items:start}
+.f-num{font-family:var(--mono);font-size:22px;color:var(--accent);line-height:1.2;font-weight:700}
+.factor[data-group="context"] .f-num{color:var(--teal)}
+.factor[data-group="runtime"] .f-num{color:#6d4fa8}
+.factor[data-group="collaboration"] .f-num{color:#9a6b00}
+.factor[data-group="scope"] .f-num{color:#2f6f9f}
+.f-title{font-weight:700;font-size:15.5px;margin:0;letter-spacing:-.01em}
+.f-en{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:2px 0 0;line-height:1.35}
+.f-group{font-size:10.5px;padding:2px 7px;border-radius:999px;background:#f1ede2;color:var(--muted);white-space:nowrap}
+.f-one{font-size:13.8px;color:#3d3a33;margin:10px 0 12px;font-weight:550}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid var(--line);padding-top:10px}
+.f-grid p{margin:0;font-size:12.8px;color:var(--muted);line-height:1.55}
+.f-grid h4{font-size:10px;margin-bottom:3px}
+.f-do{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.8px;color:#3d3a33}
+.f-do b{color:var(--accent)}
+.factor[data-group="context"] .f-do b{color:var(--teal)}
+.factor[data-group="runtime"] .f-do b{color:#6d4fa8}
+.factor[data-group="collaboration"] .f-do b{color:#9a6b00}
+.factor[data-group="scope"] .f-do b{color:#2f6f9f}
+
+.specs{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+.specs th,.specs td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.specs th{width:26%;color:var(--muted);font-weight:600;background:#faf7ef}
+.specs tr:last-child th,.specs tr:last-child td{border-bottom:0}
+.specs td{font-size:13.8px}
+
+.checklist{display:grid;gap:9px;margin:14px 0 0}
+.check{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fbf9f2;font-size:13.8px}
+.check input{margin-top:4px;width:16px;height:16px;accent-color:var(--accent);flex:none}
+.check span{min-width:0}
+.progress{height:8px;background:#e8e2d4;border-radius:999px;overflow:hidden;margin:14px 0 6px}
+.progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#e07a3f);transition:width .25s ease}
+.progress-label{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted)}
+.reset{border:1px solid var(--line-strong);background:#fff;color:var(--muted);border-radius:7px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+.reset:hover{border-color:var(--accent);color:var(--accent)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
+.pager a{flex:1;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:var(--paper);color:var(--ink)}
+.pager a:hover{border-color:var(--accent);text-decoration:none}
+.pager .dir{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block}
+.pager .nm{font-weight:650;color:var(--accent)}
+.pager .right{text-align:right}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.fact{background:var(--teal)}
+.dot.judge{background:var(--accent)}
+.dot.time{background:var(--gold)}
+
+.footer{border-top:1px solid var(--line);background:#ece7db;padding:26px 0;color:var(--muted);font-size:13px}
+.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.footer a{color:var(--accent)}
+
+.noscript{background:var(--gold-soft);border:1px solid #ecd89a;color:#6b4b00;padding:10px 12px;border-radius:8px;font-size:13px;margin:10px 0}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;gap:18px}
+  nav.toc{position:static;order:-1;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px}
+  nav.toc a{display:inline-block;border-left:0;border-bottom:2px solid transparent;padding:5px 8px}
+  nav.toc a.active{border-left:0;border-bottom-color:var(--accent)}
+  .toc-note{display:none}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-card{max-width:460px}
+  .hero:after{font-size:220px;right:2%}
+}
+@media (max-width:760px){
+  .hero h1{font-size:36px}
+  .grid2,.grid3,.grid4,.factors{grid-template-columns:1fr}
+  .f-grid{grid-template-columns:1fr}
+  section{padding:20px 17px}
+  .hero{padding:34px 0 30px}
+  .specs th{width:36%}
+  .pager{flex-direction:column}
+  .pager .right{text-align:left}
+  .topnav{gap:11px}
+  .f-head{grid-template-columns:40px minmax(0,1fr)}
+  .f-group{display:none}
+  .fig-hint{display:block}
+}
+@media print{
+  .topbar,.hero-actions,.controls,.copy,.pager,nav.toc,.reset{display:none!important}
+  body{background:#fff}
+  .layout{display:block}
+  section{break-inside:avoid;border-color:#ccc;box-shadow:none}
+  .hero{background:#fff;color:#000;padding:0 0 12px}
+  .hero h1,.hero .lede,.hero .en,.hero .kicker{color:#000}
+  .hero-card{background:#fff;border-color:#ccc}
+  .hero-card .hs b,.hero-card .hs span{color:#000}
+  .factor{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark">12F</span><span>ENGINEERING NOTES</span></a>
+    <nav class="topnav" aria-label="页面导航">
+      <a href="#thesis">结论</a>
+      <a href="#why">问题</a>
+      <a href="#model">四部件</a>
+      <a href="#factors">12 原则</a>
+      <a href="#critique">评估</a>
+      <a href="#adopt">落地</a>
+      <a href="#sources">来源</a>
+    </nav>
+  </div>
+</header>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="kicker">GitHub Research · Agent Engineering</div>
+        <h1>12-Factor Agents</h1>
+        <p class="en">humanlayer/12-factor-agents · Principles for building reliable LLM applications</p>
+        <p class="lede">一份把 Agent 当“软件”而不是“魔法”来造的生产级原则。它的核心不是让 LLM 接管整张流程图，而是把 LLM 缩小成确定性 DAG 里的一个判断节点。</p>
+        <div class="meta">
+          <span class="chip hot"><b>26,970</b> Stars</span>
+          <span class="chip"><b>2,023</b> Forks</span>
+          <span class="chip">创建 <b>2025-03-30</b></span>
+          <span class="chip">最近 push <b>2025-09-21</b></span>
+          <span class="chip">代码 <b>Apache-2.0</b></span>
+          <span class="chip">内容 <b>CC BY-SA 4.0</b></span>
+        </div>
+        <div class="hero-actions">
+          <a class="btn primary" href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">打开 GitHub ↗</a>
+          <a class="btn" href="https://github.com/humanlayer/12-factor-agents/blob/main/README.md" target="_blank" rel="noopener">原文 README ↗</a>
+          <a class="btn" href="#factors">直接看 12 条</a>
+        </div>
+      </div>
+      <aside class="hero-card" aria-label="报告速览">
+        <div class="hc-title">报告速览</div>
+        <div class="hs"><b>Agents are mostly software</b><span>不是“prompt + 一袋工具 + 无限循环”</span></div>
+        <div class="hs"><b>Prompt / Switch / Context / Loop</b><span>作者拆出的四个基本部件</span></div>
+        <div class="hs"><b>Tool selection ↔ execution</b><span>最值得暂停、审批、恢复的窗口</span></div>
+        <div class="hs"><b>3–10 steps, max ~20</b><span>一个小而专注的 Agent 的经验边界</span></div>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="本页目录">
+    <p class="toc-title">本页目录</p>
+    <a href="#thesis">结论先行</a>
+    <a href="#why">它要解决什么问题</a>
+    <a href="#model">Agent 的四个部件</a>
+    <a href="#factors">12 条原则</a>
+    <a href="#deep">四个关键机制</a>
+    <a href="#critique">批判性评估</a>
+    <a href="#adopt">落地路线与自检</a>
+    <a href="#appendix">附录：第 13 条</a>
+    <a href="#sources">来源与方法</a>
+    <p class="toc-note">仓库快照：2026-11-04<br>原文最近更新：2025-09-21<br>中文为意译，术语保留英文</p>
+  </nav>
+
+  <main id="main">
+    <section id="thesis">
+  <div class="sec-head"><span class="sec-num">01</span><h2>结论先行：它到底在主张什么</h2></div>
+  <p class="lede">如果只记一句话：好的 Agent 不是“给模型一个目标，让它自己循环到完成”，而是“确定性的软件流程 + 在关键节点让 LLM 做判断”。</p>
+  <div class="grid2">
+        <div class="card dark"><div class="num">THESIS 1</div><h3>问题不在模型不够强</h3><p>把整张 DAG 交给 LLM，会让步数、上下文和分支爆炸；10–20 轮后模型开始迷路、重复错误，70–80% 的质量墙很难靠“再调调 prompt”突破。</p></div>
+        <div class="card dark"><div class="num">THESIS 2</div><h3>答案是把 Agent 缩小</h3><p>把 Agent 做成 DAG 里的一个节点：只处理 3–10 步的窄任务，负责解析自然语言、选择下一步、生成结构化参数；流程、权限、重试、审计仍由代码掌握。</p></div>
+        <div class="card"><div class="num">THESIS 3</div><h3>四个部件，而不是一个框架</h3><p><b>prompt</b>（怎么问）、<b>switch</b>（怎么处理意图）、<b>context</b>（给模型看什么）、<b>loop</b>（何时继续/暂停）。四者都由你拥有。</p></div>
+        <div class="card"><div class="num">THESIS 4</div><h3>12 条是“原则”，不是 SDK</h3><p>它不提供运行时，也不保证效果；它是一套可逐条落地的工程约束，适合嵌进已有产品，而不是 greenfield 重写。</p></div>
+      </div>
+      <blockquote><p>“Agents, at least the good ones, don’t follow the ‘here’s your prompt, here’s a bag of tools, loop until you hit the goal’ pattern. Rather, they are comprised of mostly just software.”<br><span style="color:#7a7468;font-size:13px">— 原文 README</span></p></blockquote>
+      <div class="callout accent"><b>一句话版本：</b>LLM 负责“下一步做什么”，代码负责“怎么做、什么时候停、出了事谁负责”。12 条原则几乎都在服务这个分工。</div>
+</section>
+
+    <section id="why">
+  <div class="sec-head"><span class="sec-num">02</span><h2>它要解决什么问题：从“扔掉 DAG”到“回到 DAG”</h2></div>
+  <p class="lede">这份指南的起点不是技术炫技，而是一个很具体的产品困境：demo 很惊艳，但离“敢给客户用”总差最后 20%。</p>
+  <div class="grid3">
+        <div class="card"><div class="num">STEP 1</div><h3>软件本来就是 DAG</h3><p>流程图、Airflow / Prefect / Dagster 这类编排器，本质都是“节点 + 边 + 可观测性 + 重试”。确定性是工程可靠性的来源。</p></div>
+        <div class="card"><div class="num">STEP 2</div><h3>Agent 的承诺：扔掉 DAG</h3><p>给模型一个目标 + 一组工具，让它实时决定路径。理论上少写代码、能恢复错误、还能发现新解法。</p></div>
+        <div class="card"><div class="num">STEP 3</div><h3>现实：循环会失焦</h3><p>步数越多，上下文越长；模型开始重复同一种错误。作者观察到，超过 10–20 轮后，很多 Agent 就变成“看起来在干活”的混乱循环。</p></div>
+      </div>
+      <div class="figure"><div class="fig-hint">← 左右滑动查看完整流程图 →</div><svg viewBox="0 0 980 430" role="img" aria-labelledby="dagTitle dagDesc">
+<title id="dagTitle">确定性 DAG 中的微 Agent</title>
+<desc id="dagDesc">上方是确定性流程：PR 合并、部署 staging、端到端测试、微 Agent 处理生产部署、生产端到端测试、完成或回滚。下方是微 Agent 内部循环：上下文、LLM、结构化下一步、switch、人工审批/工具、事件日志。</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b8171"/></marker>
+  <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c2410c"/></marker>
+  <marker id="arrowTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/></marker>
+</defs>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <text x="24" y="26" fill="#5f6670" font-size="11" letter-spacing="1.4">DETERMINISTIC DAG</text>
+  <g>
+    <rect x="24" y="48" width="132" height="58" rx="8" fill="#fffdf8" stroke="#c9c0ad"/>
+    <text x="90" y="74" text-anchor="middle" fill="#15181d" font-size="13" font-weight="600">PR 合并</text>
+    <text x="90" y="92" text-anchor="middle" fill="#5f6670" font-size="11">deterministic</text>
+    <path d="M156 77 H188" stroke="#8b8171" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="190" y="48" width="132" height="58" rx="8" fill="#fffdf8" stroke="#c9c0ad"/>
+    <text x="256" y="74" text-anchor="middle" fill="#15181d" font-size="13" font-weight="600">部署 staging</text>
+    <text x="256" y="92" text-anchor="middle" fill="#5f6670" font-size="11">deterministic</text>
+    <path d="M322 77 H354" stroke="#8b8171" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="356" y="48" width="132" height="58" rx="8" fill="#fffdf8" stroke="#c9c0ad"/>
+    <text x="422" y="74" text-anchor="middle" fill="#15181d" font-size="13" font-weight="600">端到端测试</text>
+    <text x="422" y="92" text-anchor="middle" fill="#5f6670" font-size="11">deterministic</text>
+    <path d="M488 77 H520" stroke="#8b8171" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="522" y="38" width="190" height="78" rx="10" fill="#fbe9df" stroke="#c2410c" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <text x="617" y="66" text-anchor="middle" fill="#7a2c0c" font-size="13.5" font-weight="700">Micro Agent</text>
+    <text x="617" y="84" text-anchor="middle" fill="#7a2c0c" font-size="11.5">生产部署 + 人工审批</text>
+    <text x="617" y="101" text-anchor="middle" fill="#a85a36" font-size="10.5">5–10 steps</text>
+    <path d="M712 77 H744" stroke="#c2410c" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <rect x="746" y="48" width="132" height="58" rx="8" fill="#fffdf8" stroke="#c9c0ad"/>
+    <text x="812" y="74" text-anchor="middle" fill="#15181d" font-size="13" font-weight="600">生产 e2e</text>
+    <text x="812" y="92" text-anchor="middle" fill="#5f6670" font-size="11">deterministic</text>
+    <path d="M878 77 H910" stroke="#8b8171" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="912" y="48" width="46" height="58" rx="8" fill="#e3f3ef" stroke="#0f766e"/>
+    <text x="935" y="74" text-anchor="middle" fill="#0a4f47" font-size="11.5" font-weight="600">完成</text>
+    <text x="935" y="91" text-anchor="middle" fill="#0a4f47" font-size="10">/回滚</text>
+  </g>
+  <text x="24" y="158" fill="#5f6670" font-size="11" letter-spacing="1.4">INSIDE THE MICRO AGENT</text>
+  <g>
+    <rect x="60" y="184" width="150" height="58" rx="8" fill="#fffdf8" stroke="#0f766e"/>
+    <text x="135" y="209" text-anchor="middle" fill="#0a4f47" font-size="12.5" font-weight="600">事件日志 / 上下文</text>
+    <text x="135" y="226" text-anchor="middle" fill="#5f6670" font-size="10.5">thread events</text>
+    <path d="M210 213 H250" stroke="#0f766e" stroke-width="1.6" marker-end="url(#arrowTeal)"/>
+    <rect x="252" y="184" width="120" height="58" rx="8" fill="#fffdf8" stroke="#0f766e"/>
+    <text x="312" y="209" text-anchor="middle" fill="#0a4f47" font-size="12.5" font-weight="600">LLM</text>
+    <text x="312" y="226" text-anchor="middle" fill="#5f6670" font-size="10.5">next step?</text>
+    <path d="M372 213 H412" stroke="#0f766e" stroke-width="1.6" marker-end="url(#arrowTeal)"/>
+    <rect x="414" y="184" width="150" height="58" rx="8" fill="#fffdf8" stroke="#0f766e"/>
+    <text x="489" y="209" text-anchor="middle" fill="#0a4f47" font-size="12.5" font-weight="600">结构化 next step</text>
+    <text x="489" y="226" text-anchor="middle" fill="#5f6670" font-size="10.5">intent + params</text>
+    <path d="M564 213 H604" stroke="#0f766e" stroke-width="1.6" marker-end="url(#arrowTeal)"/>
+    <rect x="606" y="184" width="120" height="58" rx="8" fill="#fffdf8" stroke="#0f766e"/>
+    <text x="666" y="209" text-anchor="middle" fill="#0a4f47" font-size="12.5" font-weight="600">switch</text>
+    <text x="666" y="226" text-anchor="middle" fill="#5f6670" font-size="10.5">your control flow</text>
+    <path d="M726 213 H766" stroke="#0f766e" stroke-width="1.6" marker-end="url(#arrowTeal)"/>
+    <rect x="768" y="184" width="152" height="58" rx="8" fill="#fffdf8" stroke="#0f766e"/>
+    <text x="844" y="209" text-anchor="middle" fill="#0a4f47" font-size="12.5" font-weight="600">工具 / 人工审批</text>
+    <text x="844" y="226" text-anchor="middle" fill="#5f6670" font-size="10.5">side effects</text>
+    <path d="M844 242 V286 H135 V242" fill="none" stroke="#0f766e" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrowTeal)"/>
+    <text x="490" y="304" text-anchor="middle" fill="#5f6670" font-size="11">结果写回事件日志，再进入下一轮；高风险动作在 switch 处暂停</text>
+  </g>
+  <g>
+    <rect x="24" y="340" width="956" height="66" rx="9" fill="#fbf9f2" stroke="#ddd6c7"/>
+    <text x="44" y="366" fill="#15181d" font-size="12.5" font-weight="600">关键不是“让 LLM 拥有整张图”，而是让它在图的一个节点里做判断。</text>
+    <text x="44" y="387" fill="#5f6670" font-size="12">确定性代码负责流程、权限、重试、审计；LLM 负责解析自然语言、选择下一步、生成结构化参数。</text>
+  </g>
+</g>
+</svg><div class="figcap"><b>图 1：</b>LLM 只占确定性 DAG 的一个节点。上方是代码掌握的流程；下方是微 Agent 内部的“上下文 → LLM → 结构化 next step → switch → 工具/审批 → 事件日志”循环。图是概念示意，不是原文插图。</div></div>
+      <div class="callout gold"><b>80% 质量墙：</b>很多团队能靠框架快速到 70–80%，但客户面向的功能需要更高。继续往上走，往往要反向拆框架的 prompt、flow、状态管理——于是又回到自己写。</div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="card"><h3>框架给了什么</h3><p>快速起步、内置 prompt、工具抽象、社区示例。适合验证想法，但黑盒会隐藏真正送进模型的 token，调优和排障都变难。</p></div>
+        <div class="card"><h3>框架拿走了什么</h3><p>对 prompt、context、control flow 的精确控制；以及把 Agent 嵌进现有产品（而不是重写一个 Agent 产品）的路径。</p></div>
+      </div>
+      <blockquote><p>“Most of the products out there billing themselves as ‘AI Agents’ are not all that agentic. A lot of them are mostly deterministic code, with LLM steps sprinkled in at just the right points to make the experience truly magical.”<br><span style="color:#7a7468;font-size:13px">— 原文 README</span></p></blockquote>
+</section>
+
+    <section id="model">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Agent 的四个部件：把“智能”拆成可测试的零件</h2></div>
+  <p class="lede">作者把 Agent 还原成四个部件。理解这四个部件，比记住 12 条原则更重要，因为 12 条几乎都是它们的展开。</p>
+  <div class="grid4">
+        <div class="card"><div class="num">PART 1</div><h3>Prompt</h3><p>告诉模型怎么行为、有哪些“工具”。输出是描述下一步的 JSON。</p></div>
+        <div class="card"><div class="num">PART 2</div><h3>Switch</h3><p>根据 JSON 的 intent 决定：执行、暂停、重试、升级人工。</p></div>
+        <div class="card"><div class="num">PART 3</div><h3>Context</h3><p>累积的事件日志：用户消息、工具调用、结果、错误、人工响应。</p></div>
+        <div class="card"><div class="num">PART 4</div><h3>Loop</h3><p>直到模型输出终止意图；但循环边界由你的代码控制。</p></div>
+      </div>
+      <div class="codebox">
+  <div class="codebar"><span class="lang">python</span><button class="copy" type="button">复制</button></div>
+  <pre><code>initial_event = {"message": "..."}
+thread = [initial_event]
+
+while True:
+    next_step = await llm.determine_next_step(thread)
+
+    if next_step.intent == "done_for_now":
+        return next_step.message
+
+    if next_step.intent == "request_human_input":
+        save(thread + [next_step])
+        notify_human(next_step)
+        return  # 暂停，等待 webhook 恢复
+
+    result = await execute(next_step)   # 确定性代码
+    thread.append(next_step)
+    thread.append({"type": next_step.intent + "_result", "data": result})</code></pre>
+</div>
+      <h3>从“循环”到“reducer”</h3>
+      <p>如果把每个事件都写进日志，Agent 就可以看成一个 fold：</p>
+      <div class="codebox">
+  <div class="codebar"><span class="lang">text</span><button class="copy" type="button">复制</button></div>
+  <pre><code># 概念模型：Agent 是事件日志上的 fold
+state_0 = initial_state()
+state_1 = reduce(state_0, event_1)
+state_2 = reduce(state_1, event_2)
+...
+state_n = reduce(state_{n-1}, event_n)
+
+# 事件可以是：
+#   user_message / llm_next_step / tool_result / error
+#   human_input_requested / human_response / done
+
+# 暂停 = 保存事件日志；恢复 = 从日志重建 state
+# fork  = 复制前 k 个事件，得到一条新的分支</code></pre>
+</div>
+      <div class="callout teal"><b>为什么这个视角有用：</b>暂停 = 保存日志；恢复 = 重放日志；fork = 复制前缀；调试 = 看完整事件序列；UI = 把日志投影成人能读的界面。它把“Agent 状态”从框架内部拿出来，变成你自己的数据。</div>
+</section>
+
+    <section id="factors">
+  <div class="sec-head"><span class="sec-num">04</span><h2>12 条原则：一张可筛选的工程清单</h2></div>
+  <p class="lede">按“表示 / 上下文 / 运行时 / 协作 / 边界”分组。搜索匹配标题、英文名与正文；筛选只影响显示，不改变内容。</p>
+  <div class="explorer">
+        <noscript><div class="noscript">JavaScript 已禁用：下方仍会显示全部 12 条原则，但搜索与筛选不可用。</div></noscript>
+        <div class="controls">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+            <input id="q" type="search" placeholder="搜索原则、关键词，例如 context、审批、reducer" aria-label="搜索原则">
+          </div>
+        </div>
+        <div class="chips" role="group" aria-label="按层筛选"><button class="fbtn" type="button" data-group="all" aria-pressed="true">全部 12</button>
+<button class="fbtn" type="button" data-group="representation" aria-pressed="false">表示层 2</button>
+<button class="fbtn" type="button" data-group="context" aria-pressed="false">上下文层 3</button>
+<button class="fbtn" type="button" data-group="runtime" aria-pressed="false">运行时层 4</button>
+<button class="fbtn" type="button" data-group="collaboration" aria-pressed="false">协作层 2</button>
+<button class="fbtn" type="button" data-group="scope" aria-pressed="false">边界层 1</button></div>
+        <p class="count" id="count">显示 12 / 12 条原则</p>
+        <div class="factors"><article class="factor" data-group="representation" data-search="01 自然语言 → 工具调用 natural language to tool calls llm 的职责是把模糊意图翻译成确定的 json 动作；执行交给代码。 输入是自然语言，输出是 &lt;code&gt;{intent, parameters}&lt;/code&gt; 这样的结构化对象；确定性代码用 switch 执行。模型不直接产生副作用，避免把“决策”和“执行”绑死。 让模型在自然语言里“顺便”执行；把 tool call 与内部函数一比一绑定；不校验参数就交给下游。 定义窄 intent 联合类型；参数 schema 校验；未知 intent 走兜底；把执行结果写回事件流。 表示层">
+  <div class="f-head">
+    <div class="f-num">01</div>
+    <div><h3 class="f-title">自然语言 → 工具调用</h3><p class="f-en">Natural Language to Tool Calls</p></div>
+    <span class="f-group">表示层</span>
+  </div>
+  <p class="f-one">LLM 的职责是把模糊意图翻译成确定的 JSON 动作；执行交给代码。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>输入是自然语言，输出是 <code>{intent, parameters}</code> 这样的结构化对象；确定性代码用 switch 执行。模型不直接产生副作用，避免把“决策”和“执行”绑死。</p></div>
+    <div><h4>反模式</h4><p>让模型在自然语言里“顺便”执行；把 tool call 与内部函数一比一绑定；不校验参数就交给下游。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>定义窄 intent 联合类型；参数 schema 校验；未知 intent 走兜底；把执行结果写回事件流。</div>
+</article>
+<article class="factor" data-group="context" data-search="02 自己拥有提示词 own your prompts 不要把 prompt 外包给框架黑盒；prompt 是一等代码。 prompt 是应用逻辑与模型之间的主接口，应该像代码一样版本化、测试、评审、灰度。框架的 role / goal / personality 抽象方便起步，但会隐藏实际送进模型的 token。 prompt 藏在框架内部；只改自然语言不改输出 schema；没有 prompt 版本与 eval。 prompt 与代码同仓；模板变量显式；记录 prompt hash；用 eval 驱动迭代。 上下文层">
+  <div class="f-head">
+    <div class="f-num">02</div>
+    <div><h3 class="f-title">自己拥有提示词</h3><p class="f-en">Own your prompts</p></div>
+    <span class="f-group">上下文层</span>
+  </div>
+  <p class="f-one">不要把 prompt 外包给框架黑盒；prompt 是一等代码。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>Prompt 是应用逻辑与模型之间的主接口，应该像代码一样版本化、测试、评审、灰度。框架的 role / goal / personality 抽象方便起步，但会隐藏实际送进模型的 token。</p></div>
+    <div><h4>反模式</h4><p>Prompt 藏在框架内部；只改自然语言不改输出 schema；没有 prompt 版本与 eval。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>Prompt 与代码同仓；模板变量显式；记录 prompt hash；用 eval 驱动迭代。</div>
+</article>
+<article class="factor" data-group="context" data-search="03 自己拥有上下文窗口 own your context window 上下文不是“消息数组”，而是你为模型精心构造的工作集。 llm 是无状态函数；输入质量决定输出。上下文包括指令、rag、历史、工具结果、记忆和输出格式。标准 chat 消息只是默认值，可以自定义 xml / yaml / 单条 user message 来提高信息密度。 无脑 append 全部历史；把原始错误、敏感数据全塞进去；指望模型自己忽略噪音。 写事件→文本的序列化函数；按 token 预算裁剪；隐藏已解决的错误；过滤敏感字段；把“下一步”写进 prompt。 上下文层">
+  <div class="f-head">
+    <div class="f-num">03</div>
+    <div><h3 class="f-title">自己拥有上下文窗口</h3><p class="f-en">Own your context window</p></div>
+    <span class="f-group">上下文层</span>
+  </div>
+  <p class="f-one">上下文不是“消息数组”，而是你为模型精心构造的工作集。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>LLM 是无状态函数；输入质量决定输出。上下文包括指令、RAG、历史、工具结果、记忆和输出格式。标准 chat 消息只是默认值，可以自定义 XML / YAML / 单条 user message 来提高信息密度。</p></div>
+    <div><h4>反模式</h4><p>无脑 append 全部历史；把原始错误、敏感数据全塞进去；指望模型自己忽略噪音。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>写事件→文本的序列化函数；按 token 预算裁剪；隐藏已解决的错误；过滤敏感字段；把“下一步”写进 prompt。</div>
+</article>
+<article class="factor" data-group="representation" data-search="04 工具只是结构化输出 tools are just structured outputs 工具调用不是魔法，就是模型输出一段可解析的 json。 llm 决定“做什么”，代码决定“怎么做”；同一个 intent 可以有同步、异步、审批、重试等不同执行策略。这层解耦让你能换执行器而不改模型。 认为模型“调用”了函数就必须执行同名函数；tool schema 与内部 api 一比一绑定；忽略 json mode / function calling / constrained decoding 的差异。 用判别联合定义 next step；schema 校验；非法输出兜底；执行结果作为新事件。 表示层">
+  <div class="f-head">
+    <div class="f-num">04</div>
+    <div><h3 class="f-title">工具只是结构化输出</h3><p class="f-en">Tools are just structured outputs</p></div>
+    <span class="f-group">表示层</span>
+  </div>
+  <p class="f-one">工具调用不是魔法，就是模型输出一段可解析的 JSON。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>LLM 决定“做什么”，代码决定“怎么做”；同一个 intent 可以有同步、异步、审批、重试等不同执行策略。这层解耦让你能换执行器而不改模型。</p></div>
+    <div><h4>反模式</h4><p>认为模型“调用”了函数就必须执行同名函数；tool schema 与内部 API 一比一绑定；忽略 JSON mode / function calling / constrained decoding 的差异。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>用判别联合定义 next step；schema 校验；非法输出兜底；执行结果作为新事件。</div>
+</article>
+<article class="factor" data-group="runtime" data-search="05 统一执行状态与业务状态 unify execution state and business state 尽量让“走到哪一步”从事件日志里推导出来，而不是维护两套状态。 execution state（当前步、等待、重试）往往只是 business state（发生过什么）的元数据。统一成一份事件日志后，状态可序列化、可调试、可恢复、可 fork。 数据库一套状态、内存一套状态、框架一套状态；恢复时对不上；把 session id / 密钥塞进上下文。 单一 thread / event log；事件类型显式；不能进上下文的东西放外部；用投影生成 ui。 运行时层">
+  <div class="f-head">
+    <div class="f-num">05</div>
+    <div><h3 class="f-title">统一执行状态与业务状态</h3><p class="f-en">Unify execution state and business state</p></div>
+    <span class="f-group">运行时层</span>
+  </div>
+  <p class="f-one">尽量让“走到哪一步”从事件日志里推导出来，而不是维护两套状态。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>Execution state（当前步、等待、重试）往往只是 business state（发生过什么）的元数据。统一成一份事件日志后，状态可序列化、可调试、可恢复、可 fork。</p></div>
+    <div><h4>反模式</h4><p>数据库一套状态、内存一套状态、框架一套状态；恢复时对不上；把 session id / 密钥塞进上下文。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>单一 thread / event log；事件类型显式；不能进上下文的东西放外部；用投影生成 UI。</div>
+</article>
+<article class="factor" data-group="runtime" data-search="06 用简单 api 启动 / 暂停 / 恢复 launch/pause/resume with simple apis agent 是程序，就应该能启动、查询、暂停、恢复、停止。 长任务、人工审批、外部事件都要求暂停；恢复不应依赖 orchestrator 深耦合。最关键的暂停点是在“工具选择”和“工具执行”之间。 用 &lt;code&gt;while...sleep&lt;/code&gt; 阻塞等审批；进程重启就从头开始；暂停只存在内存里。 start / status / pause / resume / stop api；持久化 thread；webhook 恢复；幂等键。 运行时层">
+  <div class="f-head">
+    <div class="f-num">06</div>
+    <div><h3 class="f-title">用简单 API 启动 / 暂停 / 恢复</h3><p class="f-en">Launch/Pause/Resume with simple APIs</p></div>
+    <span class="f-group">运行时层</span>
+  </div>
+  <p class="f-one">Agent 是程序，就应该能启动、查询、暂停、恢复、停止。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>长任务、人工审批、外部事件都要求暂停；恢复不应依赖 orchestrator 深耦合。最关键的暂停点是在“工具选择”和“工具执行”之间。</p></div>
+    <div><h4>反模式</h4><p>用 <code>while...sleep</code> 阻塞等审批；进程重启就从头开始；暂停只存在内存里。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>start / status / pause / resume / stop API；持久化 thread；webhook 恢复；幂等键。</div>
+</article>
+<article class="factor" data-group="collaboration" data-search="07 用工具调用联系人类 contact humans with tool calls 把“问人”建模成一种结构化 intent，而不是特殊分支。 模型默认要在“纯文本”与“结构化 json”之间做高 stakes 的首 token 选择。可以始终输出 json，用 &lt;code&gt;request_human_input&lt;/code&gt; / &lt;code&gt;done_for_now&lt;/code&gt; 表达意图，人类响应也是事件。 把人工审批写成 if/else 特例；不记录谁、何时、以什么方式批准；用自由文本解析审批结果。 requesthumaninput schema（问题、上下文、urgency、format、choices）；通知走 slack / email / sms；响应写回 thread；权限与审计。 协作层">
+  <div class="f-head">
+    <div class="f-num">07</div>
+    <div><h3 class="f-title">用工具调用联系人类</h3><p class="f-en">Contact humans with tool calls</p></div>
+    <span class="f-group">协作层</span>
+  </div>
+  <p class="f-one">把“问人”建模成一种结构化 intent，而不是特殊分支。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>模型默认要在“纯文本”与“结构化 JSON”之间做高 stakes 的首 token 选择。可以始终输出 JSON，用 <code>request_human_input</code> / <code>done_for_now</code> 表达意图，人类响应也是事件。</p></div>
+    <div><h4>反模式</h4><p>把人工审批写成 if/else 特例；不记录谁、何时、以什么方式批准；用自由文本解析审批结果。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>RequestHumanInput schema（问题、上下文、urgency、format、choices）；通知走 Slack / Email / SMS；响应写回 thread；权限与审计。</div>
+</article>
+<article class="factor" data-group="runtime" data-search="08 自己拥有控制流 own your control flow 不要让框架决定循环；用你自己的 switch / 状态机决定何时继续、暂停、升级。 不同工具需要不同控制语义：同步继续、异步暂停、人工审批、重试、压缩、限流。拥有控制流才能插入这些策略，也才能在工具执行前拦截。 一个 &lt;code&gt;while(true)&lt;/code&gt; 跑所有工具；把高风险操作和查询混在一个循环；没有最大步数 / 预算。 按 intent 分支；同步 / 异步分离；最大步数、超时、预算；可中断；日志与 trace。 运行时层">
+  <div class="f-head">
+    <div class="f-num">08</div>
+    <div><h3 class="f-title">自己拥有控制流</h3><p class="f-en">Own your control flow</p></div>
+    <span class="f-group">运行时层</span>
+  </div>
+  <p class="f-one">不要让框架决定循环；用你自己的 switch / 状态机决定何时继续、暂停、升级。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>不同工具需要不同控制语义：同步继续、异步暂停、人工审批、重试、压缩、限流。拥有控制流才能插入这些策略，也才能在工具执行前拦截。</p></div>
+    <div><h4>反模式</h4><p>一个 <code>while(true)</code> 跑所有工具；把高风险操作和查询混在一个循环；没有最大步数 / 预算。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>按 intent 分支；同步 / 异步分离；最大步数、超时、预算；可中断；日志与 trace。</div>
+</article>
+<article class="factor" data-group="context" data-search="09 把错误压缩进上下文 compact errors into context window 工具失败不是终点；把错误变成模型可读的事件，让它自我修复。 好模型能读错误并调整下一次调用；但要限制连续错误次数，避免 spin。错误表示可以重构、裁剪、脱敏，不必把原始 stack trace 永久留在上下文里。 把完整 stack trace 永久塞进上下文；无限重试；错误后不重置计数器。 error 事件 + 格式化；连续错误阈值（如 3）；超限升级人工；成功后折叠 / 清空错误；错误分类。 上下文层">
+  <div class="f-head">
+    <div class="f-num">09</div>
+    <div><h3 class="f-title">把错误压缩进上下文</h3><p class="f-en">Compact Errors into Context Window</p></div>
+    <span class="f-group">上下文层</span>
+  </div>
+  <p class="f-one">工具失败不是终点；把错误变成模型可读的事件，让它自我修复。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>好模型能读错误并调整下一次调用；但要限制连续错误次数，避免 spin。错误表示可以重构、裁剪、脱敏，不必把原始 stack trace 永久留在上下文里。</p></div>
+    <div><h4>反模式</h4><p>把完整 stack trace 永久塞进上下文；无限重试；错误后不重置计数器。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>error 事件 + 格式化；连续错误阈值（如 3）；超限升级人工；成功后折叠 / 清空错误；错误分类。</div>
+</article>
+<article class="factor" data-group="scope" data-search="10 小而专注的 agent small, focused agents 一个 agent 只做一件事：3–10 步，最多约 20 步。 任务越大 → 步数越多 → 上下文越长 → 越容易迷路。把 agent 当作确定性 dag 里的一个节点，而不是整个系统；llm 只在需要判断的边界处出现。 一个 agent 接管整个业务流程；用 prompt 让模型“记住所有规则”；把多 agent 当规模化的默认答案。 按职责拆；每个 agent 有清晰输入 / 输出事件；用 dag 编排；只在边界处用 llm；监控步数与上下文。 边界层">
+  <div class="f-head">
+    <div class="f-num">10</div>
+    <div><h3 class="f-title">小而专注的 Agent</h3><p class="f-en">Small, Focused Agents</p></div>
+    <span class="f-group">边界层</span>
+  </div>
+  <p class="f-one">一个 Agent 只做一件事：3–10 步，最多约 20 步。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>任务越大 → 步数越多 → 上下文越长 → 越容易迷路。把 Agent 当作确定性 DAG 里的一个节点，而不是整个系统；LLM 只在需要判断的边界处出现。</p></div>
+    <div><h4>反模式</h4><p>一个 Agent 接管整个业务流程；用 prompt 让模型“记住所有规则”；把多 Agent 当规模化的默认答案。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>按职责拆；每个 Agent 有清晰输入 / 输出事件；用 DAG 编排；只在边界处用 LLM；监控步数与上下文。</div>
+</article>
+<article class="factor" data-group="collaboration" data-search="11 从任何地方触发，去用户所在的地方 trigger from anywhere, meet users where they are 让 agent 从 slack、email、sms、webhook、cron 触发，并回到同一渠道。 用户不在你的 ui 里；agent 要像数字同事一样出现在工作发生的地方。外部事件也是 thread 的输入，回复应走原渠道。 只做聊天框；要求用户登录你的后台；把触发渠道与 agent 逻辑耦合。 渠道适配器 → 统一事件；thread id 关联；回复走原渠道；身份 / 权限映射。 协作层">
+  <div class="f-head">
+    <div class="f-num">11</div>
+    <div><h3 class="f-title">从任何地方触发，去用户所在的地方</h3><p class="f-en">Trigger from anywhere, meet users where they are</p></div>
+    <span class="f-group">协作层</span>
+  </div>
+  <p class="f-one">让 Agent 从 Slack、Email、SMS、Webhook、Cron 触发，并回到同一渠道。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>用户不在你的 UI 里；Agent 要像数字同事一样出现在工作发生的地方。外部事件也是 thread 的输入，回复应走原渠道。</p></div>
+    <div><h4>反模式</h4><p>只做聊天框；要求用户登录你的后台；把触发渠道与 Agent 逻辑耦合。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>渠道适配器 → 统一事件；thread id 关联；回复走原渠道；身份 / 权限映射。</div>
+</article>
+<article class="factor" data-group="runtime" data-search="12 把 agent 做成无状态 reducer make your agent a stateless reducer &lt;code&gt;new_state = reduce(state, event)&lt;/code&gt;；agent 是事件日志上的 fold。 作者自己说这条“mostly just for fun”，是概念模型：把 llm 调用、工具执行、人工响应都视为事件，状态由 reducer 计算。它让测试、回放、fork 变得自然。 把“无状态”理解成没有数据库；忽略工具副作用；不做幂等。 事件溯源；纯 reducer + 副作用边界；幂等键；可回放；快照。 运行时层">
+  <div class="f-head">
+    <div class="f-num">12</div>
+    <div><h3 class="f-title">把 Agent 做成无状态 reducer</h3><p class="f-en">Make your agent a stateless reducer</p></div>
+    <span class="f-group">运行时层</span>
+  </div>
+  <p class="f-one"><code>new_state = reduce(state, event)</code>；Agent 是事件日志上的 fold。</p>
+  <div class="f-grid">
+    <div><h4>原理</h4><p>作者自己说这条“mostly just for fun”，是概念模型：把 LLM 调用、工具执行、人工响应都视为事件，状态由 reducer 计算。它让测试、回放、fork 变得自然。</p></div>
+    <div><h4>反模式</h4><p>把“无状态”理解成没有数据库；忽略工具副作用；不做幂等。</p></div>
+  </div>
+  <div class="f-do"><b>落地：</b>事件溯源；纯 reducer + 副作用边界；幂等键；可回放；快照。</div>
+</article></div>
+      </div>
+</section>
+
+    <section id="deep">
+  <div class="sec-head"><span class="sec-num">05</span><h2>四个关键机制：这份指南真正的“原理”</h2></div>
+  <p class="lede">12 条原则里，有四件事反复出现：上下文工程、暂停/恢复、事件溯源、Agent 边界。把它们吃透，剩下的都是组合。</p>
+  <h3>5.1 上下文工程：不是“把历史拼起来”</h3>
+      <p>原文的关键判断是：LLM 是无状态函数，上下文是输入；标准 chat 消息只是默认格式。你可以把整段历史压成 XML / YAML / 单条 user message，用更高的信息密度表达同一件事。</p>
+      <div class="codebox">
+  <div class="codebar"><span class="lang">text</span><button class="copy" type="button">复制</button></div>
+  <pre><code># 标准 chat 格式：每条消息一个 role，结构化信息被拆散
+[
+  {"role": "system", "content": "You are a deployment assistant..."},
+  {"role": "user", "content": "Can you deploy the backend?"},
+  {"role": "assistant", "tool_calls": [{"name": "list_git_tags", "arguments": "{}"}]},
+  {"role": "tool", "name": "list_git_tags", "content": "{\"tags\": [...]}"}
+]
+
+# 自定义上下文：把“发生了什么”压成高密度的事件块
+&lt;slack_message&gt;
+  From: @alex  Channel: #deployments
+  Text: Can you deploy the latest backend to production?
+&lt;/slack_message&gt;
+
+&lt;list_git_tags_result&gt;
+  tags:
+    - {name: v1.2.3, commit: abc123}
+    - {name: v1.2.2, commit: def456}
+&lt;/list_git_tags_result&gt;
+
+what's the next step?</code></pre>
+</div>
+      <p>三个直接推论：<b>信息密度</b>（同样信息更少 token）、<b>错误折叠</b>（已解决的错误不必一直留在窗口里）、<b>安全过滤</b>（不该给模型的敏感字段在构造上下文时就删掉）。</p>
+
+      <h3>5.2 暂停/恢复：最值钱的窗口在“选完工具、还没执行”</h3>
+      <p>作者说这是他向所有 Agent 框架提的第一需求：能在工具<b>选择</b>和工具<b>执行</b>之间中断，恢复后继续。没有这个窗口，只有三种选择：阻塞 sleep、只让 Agent 做低风险研究、或者“yolo”直接执行。</p>
+      <div class="codebox">
+  <div class="codebar"><span class="lang">python</span><button class="copy" type="button">复制</button></div>
+  <pre><code># 工具选择与工具执行之间，是最有价值的暂停点
+next_step = await llm.determine_next_step(thread)   # 模型说：deploy_backend(tag=v1.2.3)
+thread.append(next_step)
+save(thread)                                        # 持久化，进程可以退出
+
+await request_human_approval(next_step)             # 发 Slack / Email
+return                                              # 不执行，等 webhook
+
+# 之后：webhook 带着 thread_id 回来
+thread = load(thread_id)
+thread.append({"type": "human_response", "data": {"approved": True, "by": "alex"}})
+result = await execute(next_step)                   # 现在才真正执行
+thread.append({"type": "deploy_backend_result", "data": result})</code></pre>
+</div>
+      <p>这也是 human-in-the-loop 能真正落地的前提：审批不是 UI 弹窗，而是事件日志里的一条 <code>human_response</code>；执行器在恢复后重新读取它，再决定是否产生副作用。</p>
+
+      <h3>5.3 事件溯源：状态是日志的投影</h3>
+      <p>Factor 5 与 12 的组合，本质是 event sourcing：不要同时维护“当前步骤”和“业务历史”两套状态；让 thread / event log 成为唯一事实来源。这样暂停、恢复、回放、fork、审计都变成同一套操作。</p>
+      <div class="callout gold"><b>但要注意：</b>“无状态 reducer”是概念模型，不是“没有副作用”。工具会发邮件、改数据库、部署服务；生产系统仍需要幂等键、去重、补偿事务和权限边界。作者自己也说 Factor 12 “mostly just for fun”。</div>
+
+      <h3>5.4 Agent 边界：3–10 步，最多约 20 步</h3>
+      <p>Factor 10 是整套方法的安全阀：任务越大，步数越多，上下文越长，模型越容易失焦。把 Agent 限制在窄领域，不是为了“架构好看”，而是为了让上下文可控、让 eval 可做、让失败可恢复。</p>
+      <p>原文也回答了“模型变强后还需要吗”：需要。模型变强可能让单个 Agent 处理更多步骤，但“有意识地控制范围、只在质量可维持的地方扩张”仍然是工程原则。</p>
+</section>
+
+    <section id="critique">
+  <div class="sec-head"><span class="sec-num">06</span><h2>批判性评估：哪些是洞见，哪些是经验</h2></div>
+  <p class="lede">这份指南的影响力很大，但它不是论文、不是 benchmark，也不是框架。读的时候要区分“可验证的机制”和“作者的经验判断”。</p>
+  <div class="grid2">
+        <div class="card"><div class="num">STRENGTHS</div><h3>它说对了什么</h3><ul>
+          <li><b>把 Agent 还原成软件：</b>prompt / switch / context / loop 四部件，语言无关、框架无关。</li>
+          <li><b>抓住生产化的真问题：</b>暂停、审批、恢复、审计、错误恢复，而不是只追 benchmark。</li>
+          <li><b>可增量落地：</b>不必重写产品，可以把微 Agent 嵌进现有 DAG。</li>
+          <li><b>与成熟工程范式对齐：</b>事件溯源、工作流编排、幂等、可观测性都能直接复用。</li>
+        </ul></div>
+        <div class="card"><div class="num">LIMITS</div><h3>它没有证明什么</h3><ul>
+          <li><b>证据是经验性的：</b>“100+ 创始人”和个人实践，不是对照实验；没有量化“用了 12 条就提升多少”。</li>
+          <li><b>不是正式规范：</b>12 条有重叠（5/6/8/12 都在讲状态与控制），边界并不正交。</li>
+          <li><b>假设你能控制 prompt/context：</b>托管 Agent API、闭源 Agent 产品未必给你这个权限。</li>
+          <li><b>把复杂度转移了：</b>微 Agent 让单个上下文变简单，但编排、持久化、幂等、权限会变复杂。</li>
+          <li><b>人审有成本：</b>审批延迟、审批疲劳、值班安排，都是产品问题，不是加个工具就能解决。</li>
+          <li><b>时效性：</b>仓库最近 push 在 2025-09；MCP、Agent SDK、托管运行时之后又演进了，例子会显得旧。</li>
+        </ul></div>
+      </div>
+      <h3>和常见方案对比</h3>
+      <table class="specs"><tbody>
+        <tr><th>方案</th><th>控制力</th><th>上手速度</th><th>最适合</th></tr>
+        <tr><td>全自主 loop</td><td>低</td><td>快</td><td>demo、研究、低风险任务</td></tr>
+        <tr><td>Agent 框架</td><td>中</td><td>快</td><td>快速原型、标准场景</td></tr>
+        <tr><td>12-Factor Agents</td><td>高</td><td>中</td><td>生产级、需要审批/审计/恢复的产品</td></tr>
+        <tr><td>纯 DAG + LLM 节点</td><td>最高</td><td>慢</td><td>流程稳定、强合规、强可观测</td></tr>
+      </tbody></table>
+      <div class="callout accent"><b>编辑判断：</b>12-Factor Agents 最合适的定位不是“替代框架”，而是“框架之前/之后的设计检查表”。如果你已经有一个能跑的 Agent，它帮你找生产化缺口；如果你还没开始，它帮你避免把整个产品押在“无限循环”上。</div>
+</section>
+
+    <section id="adopt">
+  <div class="sec-head"><span class="sec-num">07</span><h2>落地路线：从一条窄流程开始</h2></div>
+  <p class="lede">不要一次改造整个系统。选一个 5–10 步、有人审、可回放的流程，把 12 条原则压进去，再复制。</p>
+  <div class="grid2">
+        <div>
+          <h3>五步落地</h3>
+          <ol>
+            <li><b>选流程：</b>找一条边界清晰、失败可恢复、确实需要 LLM 判断的流程（部署审批、工单分诊、内容审核）。</li>
+            <li><b>定事件：</b>先把输入、intent、result、error、human response 定义成事件 schema。</li>
+            <li><b>拿回三件套：</b>prompt 模板、context 构造器、switch/控制流，全部放进自己的代码。</li>
+            <li><b>加暂停与审批：</b>在工具执行前落库、发通知、等 webhook；执行器要幂等。</li>
+            <li><b>加 eval 与回放：</b>用完整 thread 做回归；记录步数、错误率、人工介入率、成本。</li>
+          </ol>
+        </div>
+        <div>
+          <h3>不建议的做法</h3>
+          <ul>
+            <li>把 12 条当成“必须全上”的成熟度模型；先做 1/3/4/8 就能获得大部分收益。</li>
+            <li>为了“agentic”而让模型做本可以确定性完成的事（见附录 13）。</li>
+            <li>没有幂等和权限边界，就给 Agent 高风险写操作。</li>
+            <li>用多 Agent 掩盖单个 Agent 的上下文问题。</li>
+          </ul>
+        </div>
+      </div>
+      <h3>自检清单</h3>
+      <div class="progress"><i id="bar"></i></div>
+      <div class="progress-label"><span id="bar-label">0 / 12 项已具备</span><button class="reset" type="button" id="reset">重置</button></div>
+      <div class="checklist"><label class="check"><input type="checkbox"><span>我能用一句话说清这个 Agent 的单一职责</span></label>
+<label class="check"><input type="checkbox"><span>每个 next step 都是可校验的结构化对象</span></label>
+<label class="check"><input type="checkbox"><span>Prompt 在我的仓库里，有版本、有 eval</span></label>
+<label class="check"><input type="checkbox"><span>上下文由我构造，不是无脑 append 历史</span></label>
+<label class="check"><input type="checkbox"><span>工具执行与模型决策解耦，可以换执行器</span></label>
+<label class="check"><input type="checkbox"><span>执行状态可以从事件日志恢复</span></label>
+<label class="check"><input type="checkbox"><span>支持暂停/恢复，尤其是工具执行前</span></label>
+<label class="check"><input type="checkbox"><span>人工审批是结构化事件，有谁/何时/何种权限</span></label>
+<label class="check"><input type="checkbox"><span>控制流由我掌握，有最大步数、超时、预算</span></label>
+<label class="check"><input type="checkbox"><span>错误会进入上下文，但有重试上限和升级路径</span></label>
+<label class="check"><input type="checkbox"><span>Agent 能在用户所在渠道触发并回复</span></label>
+<label class="check"><input type="checkbox"><span>我能回放一次完整 thread，定位每一步</span></label></div>
+</section>
+
+    <section id="appendix">
+  <div class="sec-head"><span class="sec-num">08</span><h2>附录：第 13 条——预取你确定需要的上下文</h2></div>
+  <p class="lede">严格说它不是 12 条之一，而是“honorable mention”。但它很能体现整套方法的取向：能确定性做的，就别让模型多跑一轮。</p>
+  <p>原文的判断很直接：如果你已经知道模型大概率会调用工具 X，就直接把它需要的数据取好、放进上下文，让模型专注于“怎么用这些结果”，而不是先输出一个 <code>list_git_tags</code> 的 intent 再等一轮。</p>
+      <div class="codebox">
+  <div class="codebar"><span class="lang">python</span><button class="copy" type="button">复制</button></div>
+  <pre><code># 不要让模型先请求一个你几乎肯定需要的数据
+git_tags = await fetch_git_tags()          # 确定性预取
+thread.append({"type": "list_git_tags_result", "data": git_tags})
+
+next_step = await determine_next_step(thread)
+# prompt 里已经包含 tags，模型只需要决定 deploy 哪个 tag</code></pre>
+</div>
+      <blockquote><p>“If you already know what tools you’ll want the model to call, just call them DETERMINISTICALLY and let the model do the hard part of figuring out how to use their outputs.”<br><span style="color:#7a7468;font-size:13px">— Appendix: Factor 13</span></p></blockquote>
+      <div class="callout teal"><b>边界：</b>预取适合高频、只读、便宜的数据；如果数据贵、时效敏感、或模型不一定需要，保留工具调用更合适。它不是“把所有东西硬编码”，而是“别为了 agentic 而浪费一轮”。</div>
+</section>
+
+    <section id="sources">
+  <div class="sec-head"><span class="sec-num">09</span><h2>来源、方法与标注</h2></div>
+  <p class="lede">本页是对公开仓库的二次分析，不是原文翻译。事实来自仓库；评价与“落地建议”是编辑判断。</p>
+  <div class="grid2">
+        <div class="card"><h3>主要来源</h3><ul>
+          <li><a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener">humanlayer/12-factor-agents</a>（GitHub）</li>
+          <li><a href="https://github.com/humanlayer/12-factor-agents/blob/main/README.md" target="_blank" rel="noopener">README.md</a></li>
+          <li>content/factor-01 … factor-12、brief-history-of-software.md、appendix-13-pre-fetch.md</li>
+          <li><a href="https://12factor.net/" target="_blank" rel="noopener">The Twelve-Factor App</a>（命名与方法论的源头）</li>
+          <li><a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">Anthropic: Building Effective Agents</a>（对照阅读）</li>
+        </ul></div>
+        <div class="card"><h3>数据与许可</h3><ul>
+          <li>GitHub 元数据快照：2026-11-04；Stars 26,970、Forks 2,023、open issues 28。</li>
+          <li>仓库创建 2025-03-30，最近 push 2025-09-21。</li>
+          <li>代码 Apache-2.0；内容 CC BY-SA 4.0（以仓库 README 为准）。</li>
+          <li>本页中文为意译与解读；直接引用保留英文原文并标注出处。</li>
+        </ul></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot fact"></i>事实：仓库 README / GitHub 元数据</span>
+        <span><i class="dot judge"></i>判断：编辑分析，已尽量与事实分开</span>
+        <span><i class="dot time"></i>时效：Stars、日期、生态会变化</span>
+      </div>
+      <div class="callout gold"><b>读法：</b>“12 条原则”与“四个机制”尽量贴着原文；“批判性评估”“落地路线”和对比表是编辑判断，不构成官方结论。原文是一份经验性指南，不是经过对照实验验证的规范。</div>
+</section>
+
+    <div class="pager">
+      <a href="https://github.com/humanlayer/12-factor-agents" target="_blank" rel="noopener"><span class="dir">原始仓库</span><span class="nm">humanlayer/12-factor-agents ↗</span></a>
+      <a class="right" href="https://github.com/humanlayer/12-factor-agents/blob/main/content/brief-history-of-software.md" target="_blank" rel="noopener"><span class="dir">继续读</span><span class="nm">A Brief History of Software ↗</span></a>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="wrap">
+    <span>12-Factor Agents 原理分析 · 单文件 HTML · 无 CDN</span>
+    <span>事实快照 2026-11-04 · 原文最近更新 2025-09-21</span>
+  </div>
+</footer>
+<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.factor'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.fbtn'));
+  var group = 'all';
+
+  function matches(el){
+    var text = (el.getAttribute('data-search') || '').toLowerCase();
+    var term = (q && q.value || '').trim().toLowerCase();
+    if (term && text.indexOf(term) === -1) return false;
+    if (group !== 'all' && el.getAttribute('data-group') !== group) return false;
+    return true;
+  }
+  function apply(){
+    var n = 0;
+    cards.forEach(function(el){ var ok = matches(el); el.hidden = !ok; if (ok) n++; });
+    if (count) count.textContent = '显示 ' + n + ' / ' + cards.length + ' 条原则';
+  }
+  if (q) q.addEventListener('input', apply);
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      group = btn.getAttribute('data-group');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      apply();
+    });
+  });
+  apply();
+})();
+
+(function(){
+  var toc = document.querySelectorAll('nav.toc a[href^="#"]');
+  if (!('IntersectionObserver' in window) || !toc.length) return;
+  var map = {};
+  toc.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) {
+        toc.forEach(function(a){ a.classList.remove('active'); });
+        var a = map[e.target.id];
+        if (a) a.classList.add('active');
+      }
+    });
+  }, {rootMargin: '-12% 0px -72% 0px', threshold: 0});
+  document.querySelectorAll('main section[id]').forEach(function(s){ obs.observe(s); });
+})();
+
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('.copy');
+  if (!btn) return;
+  var box = btn.closest('.codebox');
+  var code = box ? box.querySelector('code') : null;
+  if (!code) return;
+  var text = code.innerText;
+  function done(ok){
+    var old = btn.textContent;
+    btn.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(function(){ btn.textContent = old; }, 1400);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+  } else {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); done(true);
+    } catch (err) { done(false); }
+  }
+});
+
+(function(){
+  var items = Array.prototype.slice.call(document.querySelectorAll('.check input'));
+  var bar = document.getElementById('bar');
+  var label = document.getElementById('bar-label');
+  var reset = document.getElementById('reset');
+  if (!items.length || !bar || !label) return;
+  function update(){
+    var n = items.filter(function(x){ return x.checked; }).length;
+    bar.style.width = (n / items.length * 100) + '%';
+    label.textContent = n + ' / ' + items.length + ' 项已具备';
+  }
+  items.forEach(function(x){ x.addEventListener('change', update); });
+  if (reset) reset.addEventListener('click', function(){ items.forEach(function(x){ x.checked = false; }); update(); });
+  update();
+})();
+</script>
+</body>
+</html>
