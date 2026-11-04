@@ -6,7 +6,7 @@
 | --- | --- |
 | [`Agents/agent-workbench/`](Agents/agent-workbench/index.html) | Agent 工作台设计方案（OpenCode × Pi）；[公众号文章分析（含 17 张原文配图）](Agents/agent-workbench/wechat-agent-automation-analysis.html) |
 | [`Agents/agents-hub/`](Agents/agents-hub/index.html) | AI Agent 全景：68 个产品与各自优点，含 18 个消费级助手与用量数据（2026-10） |
-| [`Agents/Tools/`](Agents/Tools/index.html) | Agent 工具调研：Orca、OpenCode、Hermes、Pi、Goose、OpenHands、agent-desktop、ECC、T3 Code、cmux、herdr、Paseo、Orchestrator.inc、CoreSpeed Tie、Mainplane、PraisonAI、oh-my-pi、CLI-Anything 等（20 篇） |
+| [`Agents/Tools/`](Agents/Tools/index.html) | Agent 工具调研：27 篇，按 coding / general / orchestration / workspace / computer-use / remote / harness / voice 分目录 |
 | [`Agents/FreeAPI/`](Agents/FreeAPI/index.html) | FreeLLMAPI 拆解 + [免费 LLM API 项目地图](Agents/FreeAPI/ecosystem.html)（9router、OmniRoute、LiteLLM 等 13 个） |
 | [`date-ops/`](date-ops/index.html) | 约会运营手册：从匹配到线下的系统设计，含漏斗计算器与聊天打分器 |
 | [`MCP/mcp-hub/`](MCP/mcp-hub/index.html) | MCP Hub 导航：目录、市场与网关汇总（2026-10） |

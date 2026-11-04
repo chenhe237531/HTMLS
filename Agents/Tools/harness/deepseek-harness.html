@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="把开发任务丢进沙箱自主执行的 agent 平台：Canvas + SDK + Agent Server。">
-<title>OpenHands · Agent 工具调研</title>
+<meta name="description" content="DeepSeek Harness 使用与架构：插件化 agent harness、子代理、安装与适用场景。">
+<title>DeepSeek Harness · Agent 工具调研</title>
 <style>
 :root{
   --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;--ink:#191a1d;--ink-2:#3d4047;
@@ -226,93 +226,93 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <body>
 <a class="skip" href="#main">跳到正文</a>
 <header class="topbar"><div class="topbar-in">
-<a class="brand" href="../../README.md">HTMLS<span>/</span>AI</a>
+<a class="brand" href="../../../README.md">HTMLS<span>/</span>AI</a>
 <nav class="topnav" aria-label="站内导航">
-<a href="./index.html">工具索引</a>
-<a href="../agents-hub/index.html">Agent 全景</a>
+<a href="../index.html">工具索引</a>
+<a href="../../agents-hub/index.html">Agent 全景</a>
 <button type="button" data-print>打印</button>
 <button type="button" data-theme-toggle aria-pressed="false">深色</button>
 </nav>
 </div></header>
 <main id="main" class="wrap">
 <section class="hero">
-<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>自治 / 沙箱 Agent</span></p>
-<h1>OpenHands</h1>
-<p class="lede">把开发任务丢进沙箱自主执行的 agent 平台：Canvas + SDK + Agent Server。</p>
-<div class="pills"><span class="pill"><b>类型</b>自治 / 沙箱 Agent</span><span class="pill"><b>界面</b>Agent Canvas（浏览器）/ CLI / SDK / REST API</span><span class="pill"><b>许可证</b>MIT（主仓库）</span><span class="pill"><b>最新</b>v1.34.0 · 2026-10-27</span><span class="pill"><b>调研</b>2026-10-31</span></div>
+<p class="eyebrow"><span>TOOL DOSSIER</span><span class="sep">/</span><span>Agent Harness / 插件化</span></p>
+<h1>DeepSeek Harness</h1>
+<p class="lede">DeepSeek 开源的 agent harness（dsh）：<b>一切皆插件</b>。模型、工具、技能、会话、沙箱、存储、调度、循环和界面都能替换与重组。</p>
+<div class="pills"><span class="pill"><b>类型</b>Agent Harness / 桌面 + Web</span><span class="pill"><b>内核</b>Cordis 插件内核</span><span class="pill"><b>许可证</b>MIT</span><span class="pill"><b>状态</b>开发者预览</span><span class="pill"><b>调研</b>2026-10-31</span></div>
 <div class="verdict">
-<div class="v-card yes"><h2>适合</h2><ul><li>需要沙箱内自治执行完整开发任务的人</li><li>想用 SDK/Server 构建内部 agent 平台的人</li><li>有 Docker 与算力预算、接受较重运维的人</li></ul></div>
-<div class="v-card no"><h2>不适合</h2><ul><li>日常只做小步结对编辑的人</li><li>资源紧张、不能跑 Docker 的机器</li><li>要求完全确定性成本的人</li></ul></div>
+<div class="v-card yes"><h2>适合</h2><ul><li>想把 agent 的每一层拆开、替换、重组</li><li>需要 Web/桌面工作台 + 子代理 + 多模型</li><li>愿意接受预览期的不兼容变更并参与生态</li></ul></div>
+<div class="v-card no"><h2>不适合</h2><ul><li>需要稳定、长期兼容的生产底座</li><li>不想审查第三方插件代码</li><li>只想在终端里快速改代码（用编码 agent 更直接）</li></ul></div>
 </div>
 </section>
 <div class="layout">
-<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#cost">05 模型与成本</a></li><li><a href="#strengths">06 优势</a></li><li><a href="#limits">07 限制与风险</a></li><li><a href="#compare">08 与同类差异</a></li><li><a href="#fit">09 适用判断</a></li><li><a href="#derivatives">10 衍生项目：GUI / Web / 手机</a></li><li><a href="#ecosystem">11 社区与玩友生态</a></li><li><a href="#sources">12 来源与口径</a></li></ol>
+<aside class="toc" aria-label="本文目录"><p class="toc-title">目录</p><ol><li><a href="#what">01 定位与事实</a></li><li><a href="#capabilities">02 核心能力</a></li><li><a href="#how">03 工作方式</a></li><li><a href="#install">04 安装与首次运行</a></li><li><a href="#plugins">05 插件与子代理</a></li><li><a href="#uses">06 使用场景</a></li><li><a href="#strengths">07 优势</a></li><li><a href="#limits">08 限制与风险</a></li><li><a href="#compare">09 与同类差异</a></li><li><a href="#fit">10 适用判断</a></li><li><a href="#sources">11 来源与口径</a></li></ol>
 <div class="toc-note">事实性陈述对应文末来源；适用性与风险判断标为推断，不构成统一 benchmark。</div></aside>
 <article>
 <section id="what" class="sec">
 <div class="sec-head"><span class="sec-no">01</span><h2>定位与事实</h2></div>
-<div class="callout"><p><b>一句话：</b>OpenHands 是“agent 的作业系统”：任务在隔离环境里跑，Canvas 看过程，SDK 把 agent 嵌进你自己的系统。</p></div><p>OpenHands 不是单个 CLI，而是一套软件工程 agent 平台：浏览器控制中心 Agent Canvas、Python/TS SDK、REST/WebSocket Agent Server 和沙箱执行环境。它适合把“整件任务”交给 agent，而不是逐步结对。</p><ul class="fact-list"><li>主仓库 MIT；v1.34.0（2026-10-27）；GitHub 92,377 stars；生态内各仓库有各自许可。<span class="ref">[4]</span></li><li>组件：Agent Canvas（浏览器控制中心）、Software Agent SDK、Agent Server、Automation Server、Sandbox Server。<span class="ref">[1]</span></li><li>本地安装推荐 <code>uv tool install openhands --python 3.12</code>，再 <code>openhands serve</code>；也提供 Docker 一体化命令。<span class="ref">[2]</span></li><li>沙箱隔离执行；可选本地、Docker、Kubernetes/远程后端；Cloud/Enterprise 是商业服务。<span class="ref">[1][3]</span></li><li>Canvas 可运行 OpenHands 自带 agent，也可接 Claude Code、Codex、Pi、OpenCode 等第三方 agent。<span class="ref">[5]</span></li><li>旧版 Local GUI 已弃用，当前浏览器客户端是 Agent Canvas。<span class="ref">[1]</span></li></ul>
+<div class="callout"><p><b>一句话：</b>DeepSeek Harness 不是“一个更强的聊天框”，而是一套可拆装的 agent 运行时：把模型、工具、技能、会话、沙箱、存储、循环和 UI 全部做成插件。</p></div>
+<p>它由 DeepSeek AI 开源，基于 Cordis 的“一切皆插件”架构。官方把它定位为 agent harness 开发者的底座：你可以直接使用 Web/桌面工作台，也可以把其中的模型、工具或子代理替换成自己的实现。</p>
+<ul class="fact-list"><li>MIT；仓库创建于 2026-08；当前为 <b>developer preview</b>，官方明确提示会有不兼容变更。<span class="ref">[1]</span></li><li>Web UI 默认起在 <code>http://127.0.0.1:3080</code>；也提供桌面端下载。<span class="ref">[1][2]</span></li><li>运行方式：<code>npx @deepseek-ai/dsh web</code>，或从源码构建后 <code>pnpm dsh web</code>。<span class="ref">[1]</span></li><li>核心能力都以插件形式存在：模型、工具、技能、会话、沙箱、存储、循环、调度、UI。<span class="ref">[2]</span></li><li>子代理是一等能力：同进程新开/分叉、ACP、Codex、Claude Code、dsh SDK 都可作为子代理后端。<span class="ref">[3]</span></li><li>插件通过 npm 分发，仓库打 <code>dsh-plugin</code> topic 便于发现。<span class="ref">[1]</span></li><li>文档与安全说明：<a href="https://deepseek-harness.github.io/deepseek-harness/" target="_blank" rel="noopener noreferrer">文档站</a>、仓库内 <code>SAFETY.md</code>。<span class="ref">[1][2]</span></li></ul>
 </section>
 <section id="capabilities" class="sec">
 <div class="sec-head"><span class="sec-no">02</span><h2>核心能力</h2></div>
-<div class="grid"><div class="cap"><h3>Agent Canvas</h3><p>浏览器控制中心：启动会话、看事件流、管理多个 agent/任务。</p></div><div class="cap"><h3>沙箱执行</h3><p>默认把 agent 放进容器/远程环境，能跑 shell、改文件、开浏览器。</p></div><div class="cap"><h3>SDK</h3><p>Python/TS/REST API 构建自定义 agent，复用工具、会话、workspace。</p></div><div class="cap"><h3>Agent Server</h3><p>通过 REST/WebSocket 暴露执行能力；可跑在 Docker/Kubernetes。</p></div><div class="cap"><h3>多 agent</h3><p>Canvas 可接 OpenHands 与第三方 agent，适合做统一控制面。</p></div><div class="cap"><h3>自托管</h3><p>本地/自建后端；Cloud/Enterprise 只是可选商业路径。</p></div></div>
+<div class="grid"><div class="cap"><h3>一切皆插件</h3><p>模型、工具、技能、会话、沙箱、存储、调度、循环、界面都是可替换插件；换实现不改上层。</p></div><div class="cap"><h3>Web + 桌面</h3><p>一条命令起 Web UI；也提供桌面应用，适合把 agent 当工作台而不是终端命令。</p></div><div class="cap"><h3>子代理家族</h3><p>支持同进程新开、从历史分叉、ACP、Codex、Claude Code 与 dsh SDK 子代理；可发消息、打断、列状态。</p></div><div class="cap"><h3>模型适配层</h3><p>统一的 LLM 调用接口；仓库包含 DeepSeek 路由与 pi-ai 适配，模型可替换。</p></div><div class="cap"><h3>可组合循环</h3><p>agent loop、调度、后台任务都是插件；可以按任务定制，而不是接受固定流程。</p></div><div class="cap"><h3>开放生态</h3><p>MIT；插件走 npm；官方给出插件开发文档与示例，社区可发布自己的插件包。</p></div></div>
 </section>
 <section id="how" class="sec">
 <div class="sec-head"><span class="sec-no">03</span><h2>工作方式</h2></div>
-<ol class="steps"><li><b>装 uv</b><br><code>uv</code> 管理隔离环境；确认 Docker Desktop/Engine 可用。</li><li><b>安装并启动</b><br><code>uv tool install openhands --python 3.12</code>，再 <code>openhands serve</code>。</li><li><b>配模型</b><br>在设置里选 provider/model/key；不存在的模型可手填兼容端点。</li><li><b>跑任务</b><br>在 Canvas 新建会话，给目标与验收标准；agent 在沙箱里执行。</li><li><b>审结果</b><br>看事件流/终端/浏览器；合并产出或让 agent 继续修复。</li></ol>
+<ol class="steps"><li><b>启动</b><br>用 npx 起 Web UI，或安装桌面端；默认地址 <code>127.0.0.1:3080</code>。</li><li><b>接模型</b><br>使用 DeepSeek 账号/API Key，或通过模型插件接其他 provider。</li><li><b>装插件</b><br>按需安装工具、技能、沙箱、存储、调度插件；也可以自己写。</li><li><b>派子代理</b><br>把任务交给子代理；可接 Codex / Claude Code / ACP / dsh SDK。</li><li><b>替换与发布</b><br>替换任意一层实现，把改动打成 npm 包，标注 <code>dsh-plugin</code>。</li></ol>
 </section>
 <section id="install" class="sec">
 <div class="sec-head"><span class="sec-no">04</span><h2>安装与首次运行</h2></div>
-<div class="cmd"><div class="cmd-head"><span>uv（推荐）</span><button type="button" data-copy="uv tool install openhands --python 3.12
-openhands serve">复制</button></div><pre><code>uv tool install openhands --python 3.12
-openhands serve</code></pre><p class="cmd-note">会自动检查 Docker、拉镜像并启动 GUI；<code>--mount-cwd</code> 可挂当前目录。</p></div><div class="cmd"><div class="cmd-head"><span>Docker 一体化</span><button type="button" data-copy="docker run -it --rm --pull=always
-  -v /var/run/docker.sock:/var/run/docker.sock
-  -v ~/.openhands:/.openhands -p 3000:3000
-  docker.openhands.dev/openhands/openhands:1.8">复制</button></div><pre><code>docker run -it --rm --pull=always
-  -v /var/run/docker.sock:/var/run/docker.sock
-  -v ~/.openhands:/.openhands -p 3000:3000
-  docker.openhands.dev/openhands/openhands:1.8</code></pre><p class="cmd-note">命令较长，完整参数以官方 local-setup 文档为准；不要把 docker.sock 暴露给不受信任的 agent。</p></div><div class="cmd"><div class="cmd-head"><span>Agent Canvas</span><button type="button" data-copy="npm install -g @openhands/agent-canvas
-agent-canvas">复制</button></div><pre><code>npm install -g @openhands/agent-canvas
-agent-canvas</code></pre><p class="cmd-note">Canvas 可独立运行；不加沙箱时 agent 直接访问宿主机文件系统，谨慎使用。</p></div><h3 class="sub">常用命令与路径</h3><div class="cmd-grid"><div class="use"><code>uv tool install openhands --python 3.12</code><p>隔离安装 CLI/服务端；需要 Docker 才能跑沙箱。</p></div><div class="use"><code>openhands serve</code><p>启动本地 GUI/Agent Server，自动检查 Docker 并拉镜像。</p></div><div class="use"><code>openhands serve --mount-cwd</code><p>把当前目录挂进沙箱；只对你信任的仓库使用。</p></div><div class="use"><code>npm install -g @openhands/agent-canvas &amp;&amp; agent-canvas</code><p>单独启动 Agent Canvas；不加沙箱时 agent 直接访问宿主机。</p></div><div class="use"><code>docker run ... ghcr.io/openhands/agent-canvas:1.34.0</code><p>Docker 一体化启动；挂载 PROJECTS_PATH 和 ~/.openhands。</p></div><div class="use"><code>openhands --help</code><p>查看当前版本的 CLI 子命令；版本迭代快，以本机帮助为准。</p></div></div>
+<div class="cmd"><div class="cmd-head"><span>npm 直接运行</span><button type="button" data-copy="npx @deepseek-ai/dsh web">复制</button></div><pre><code>npx @deepseek-ai/dsh web</code></pre><p class="cmd-note">默认启动 Web UI 并打开浏览器；SSH 场景只打印地址。加 <code>--no-open</code> 可不自动打开。</p></div>
+<div class="cmd"><div class="cmd-head"><span>从源码构建</span><button type="button" data-copy="git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build
+pnpm dsh web">复制</button></div><pre><code>git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build
+pnpm dsh web</code></pre><p class="cmd-note">需要 Node.js 与 pnpm；<code>pnpm run build</code> 生成构建产物，之后 <code>pnpm dsh web</code> 直接复用。</p></div>
+<div class="cmd"><div class="cmd-head"><span>开发模式</span><button type="button" data-copy="pnpm run dev:web">复制</button></div><pre><code>pnpm run dev:web</code></pre><p class="cmd-note">一个终端里构建、启动并在源码变更时重建客户端；桌面端开发看仓库 <code>make help</code>。</p></div>
+<div class="callout"><p><b>先读安全说明：</b>仓库要求运行前阅读 <code>SAFETY.md</code>。插件可以执行代码、访问文件与网络，默认按启动用户权限运行，不是安全沙箱。</p></div>
 </section>
-<section id="cost" class="sec">
-<div class="sec-head"><span class="sec-no">05</span><h2>模型与成本</h2></div>
-<div class="two"><div class="panel"><h3>软件</h3><p>主仓库 MIT；SDK、Canvas、Agent Server 等生态仓库各自许可，商用前逐仓库确认。</p></div><div class="panel"><h3>使用</h3><p>按 LLM provider 计费；Docker/VM/GPU 是你的算力成本；Cloud/Enterprise 是可选商业服务。</p></div></div><p>通过 LiteLLM 接任意模型，含 Claude、OpenAI、Qwen、Devstral 等。自治任务会反复读文件/命令输出，token 消耗通常高于结对工具。</p>
+<section id="plugins" class="sec">
+<div class="sec-head"><span class="sec-no">05</span><h2>插件与子代理</h2></div>
+<p>这是它和普通编码 agent 最大的区别：能力不是写死的，而是按包组合。官方仓库里的 <code>packages/subagent</code> 就是一组可替换的委派后端。</p>
+<div class="table-wrap"><table><thead><tr><th>子代理后端</th><th>作用</th><th>适合</th></tr></thead><tbody><tr><td><b>spawn-in-process</b></td><td>在进程内新开一个干净的子代理</td><td>隔离上下文、快速并行</td></tr><tr><td><b>fork-in-process</b></td><td>从父代理已完成历史分叉</td><td>需要继承上下文再分头探索</td></tr><tr><td><b>ACP</b></td><td>通过 Agent Client Protocol 接外部 agent</td><td>复用支持 ACP 的编辑器/代理</td></tr><tr><td><b>Codex</b></td><td>通过官方 app-server 协议跑真实 Codex 子进程</td><td>已有 Codex 工作流</td></tr><tr><td><b>Claude Code</b></td><td>通过官方 Agent SDK 跑 Claude Code 子进程</td><td>已有 Claude Code 工作流</td></tr><tr><td><b>dsh SDK</b></td><td>把另一套 Harness 作为子代理进程</td><td>多 harness 编排</td></tr></tbody></table></div>
+<p>插件开发从仓库的 <code>docs/development.md</code> 与 <code>docs/architecture.md</code> 开始；发布时给仓库加 <code>dsh-plugin</code> topic，社区即可检索。</p>
+</section>
+<section id="uses" class="sec">
+<div class="sec-head"><span class="sec-no">06</span><h2>使用场景</h2></div>
+<div class="grid"><div class="cap"><h3>日常与办公</h3><p>整理文件、分析数据、写文档、做幻灯片；用桌面端当常驻工作台。</p></div><div class="cap"><h3>编码任务</h3><p>在 Web/桌面里跑长任务，把 Codex/Claude Code 作为子代理干活。</p></div><div class="cap"><h3>自定义 Harness</h3><p>替换沙箱、存储、调度、循环，做面向特定行业的 agent 运行时。</p></div><div class="cap"><h3>多代理编排</h3><p>用子代理家族把侦察、实现、审查分给不同后端，保留独立上下文。</p></div><div class="cap"><h3>插件产品</h3><p>把团队能力打包成插件，通过 npm 分发给其他 dsh 用户。</p></div><div class="cap"><h3>研究与实验</h3><p>快速替换模型与工具，对比不同 harness 组合的行为。</p></div></div>
 </section>
 <section id="strengths" class="sec">
-<div class="sec-head"><span class="sec-no">06</span><h2>优势</h2></div>
-<div class="panel"><ul class="list pos"><li>真正的沙箱自治：能跑命令、看错误、迭代，适合“整件任务”而不是一问一答。</li><li>控制面完整：Canvas 看过程，SDK/Server 便于集成与自动化。</li><li>自托管友好：本地、Docker、Kubernetes；不强制用云。</li><li>可接第三方 agent，适合做统一实验/评测/运营面板。</li><li>开源且模型无关，方便做内部平台。</li></ul></div>
+<div class="sec-head"><span class="sec-no">07</span><h2>优势</h2></div>
+<div class="panel"><ul class="list pos"><li>组合性极强：从模型到 UI 都能换，适合做“自己的 agent 产品”。</li><li>子代理不是附属功能，而是一组可替换后端，能直接接 Codex/Claude Code。</li><li>Web + 桌面双形态，比纯终端工具更适合非工程任务与演示。</li><li>MIT，插件生态开放，能自己发布与分发。</li><li>官方把架构、开发、安全文档放在仓库里，便于二次开发。</li><li>DeepSeek 持续推进，迭代速度快、插件面广。</li></ul></div>
 </section>
 <section id="limits" class="sec">
-<div class="sec-head"><span class="sec-no">07</span><h2>限制与风险</h2></div>
-<div class="panel"><ul class="list neg"><li>重：Docker、镜像、内存/磁盘开销明显高于 CLI；首次启动慢。</li><li>自治越强，token 与时间越不可控；需要预算、超时和验收标准。</li><li>配置面大：Docker、模型、沙箱、网络、凭据都要管。</li><li>生态仓库许可不统一，不能假设整个项目都是 MIT。</li><li>旧 Local GUI 已弃用，照着旧教程会踩空。</li><li>默认强隔离不等于零风险：挂载目录、docker.sock、网络访问都要收紧。</li></ul></div>
+<div class="sec-head"><span class="sec-no">08</span><h2>限制与风险</h2></div>
+<div class="panel"><ul class="list neg"><li><b>开发者预览</b>：官方明确会有不兼容变更，不适合作为稳定生产底座。</li><li>插件可执行代码并影响 agent 行为，第三方插件有供应链风险。</li><li>默认不是安全沙箱：权限、隔离、审计要自己通过插件/部署补齐。</li><li>需要 Node/pnpm 与构建链；桌面端与 Web 端能力可能不完全一致。</li><li>“一切插件”意味着排障面更大：出问题要在模型、插件、会话、沙箱之间定位。</li><li>生态年轻，插件质量与文档完整度参差；关键路径要自己验证。</li></ul></div>
 </section>
 <section id="compare" class="sec">
-<div class="sec-head"><span class="sec-no">08</span><h2>与同类差异</h2></div>
-<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>Orca</b></td><td>Orca 是人在环的并行控制台；OpenHands 是把任务交给沙箱自主跑。一个偏审阅，一个偏执行。</td></tr><tr><td><b>Goose</b></td><td>Goose 是 MCP 原生的通用 agent；OpenHands 专注软件工程与沙箱执行。</td></tr><tr><td><b>Hermes</b></td><td>Hermes 是通用常驻助手；OpenHands 专注软件工程与沙箱执行。</td></tr></tbody></table></div>
+<div class="sec-head"><span class="sec-no">09</span><h2>与同类差异</h2></div>
+<div class="table-wrap"><table><thead><tr><th>对照</th><th>关键差异</th></tr></thead><tbody><tr><td><b>OpenCode</b></td><td>OpenCode 是带电池的终端编码 agent；dsh 是插件化 harness + 工作台，范围更宽、可替换性更强。</td></tr><tr><td><b>Pi</b></td><td>两者都强调可扩展；Pi 是极小终端内核 + TypeScript 包，dsh 提供 Web/桌面、DeepSeek 模型与更完整的子代理后端。</td></tr><tr><td><b>Goose</b></td><td>Goose 以 MCP 扩展与 recipes 为中心；dsh 把模型、循环、沙箱、UI 也纳入插件体系。</td></tr><tr><td><b>Comma</b></td><td>Comma 是面向个人/团队的 sessionless 助理产品；dsh 是给开发者搭 harness 的底座，二者目标不同。</td></tr></tbody></table></div>
 </section>
 <section id="fit" class="sec">
-<div class="sec-head"><span class="sec-no">09</span><h2>适用判断</h2></div>
-<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你想把 issue/任务丢给沙箱，过一段时间收结果。</li><li>你需要 SDK/Server 把 agent 嵌进内部平台。</li><li>你有 Docker 与足够内存/磁盘，愿意做隔离配置。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你只想轻量结对改代码。</li><li>你的机器只有 8GB 内存且不愿跑 Docker。</li><li>你不能接受自治带来的 token 波动。</li></ul></div></div>
+<div class="sec-head"><span class="sec-no">10</span><h2>适用判断</h2></div>
+<div class="two"><div class="panel"><h3>建议安装</h3><ul class="list pos"><li>你要做自己的 agent 工作台，而不是只用现成编码工具。</li><li>你需要把 Codex/Claude Code/外部 ACP agent 编进统一系统。</li><li>你愿意跟预览版一起迭代，并能审查插件代码。</li></ul></div><div class="panel"><h3>建议跳过</h3><ul class="list neg"><li>你要的是稳定、可承诺兼容性的企业平台。</li><li>你只需要终端里快速改代码。</li><li>你无法接受插件执行代码带来的安全边界。</li></ul></div></div>
 </section>
-
-<section id="derivatives" class="sec">
-<div class="sec-head"><span class="sec-no">10</span><h2>衍生项目：GUI / Web / 手机</h2></div>
-<div class="eco-grid"><div class="eco-group"><h3>官方入口</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Agent Canvas</a><span class="badge official">官方</span></div><p>浏览器控制中心：会话、事件流、多后端、自动化。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/" target="_blank" rel="noopener noreferrer">OpenHands CLI</a><span class="badge official">官方</span></div><p>终端入口，适合脚本和本地快速任务。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/sdk" target="_blank" rel="noopener noreferrer">OpenHands SDK</a><span class="badge official">官方</span></div><p>Python/TS/REST API，构建自定义 agent、工具和 workspace。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/overview/introduction" target="_blank" rel="noopener noreferrer">Agent Server</a><span class="badge official">官方</span></div><p>REST/WebSocket 暴露执行能力，可跑 Docker/Kubernetes。</p></li><li><div class="eco-head"><a href="https://openhands.dev/" target="_blank" rel="noopener noreferrer">Cloud / Enterprise</a><span class="badge official">官方</span></div><p>托管/企业版，提供托管执行、协作、审计和预算管理。</p></li></ul></div><div class="eco-group"><h3>Web / 手机</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Agent Canvas（响应式 Web）</a><span class="badge official">官方</span></div><p>浏览器使用；手机宽度有移动导航。截至调研未见官方独立原生 App。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/openhands/usage/run-openhands/local-setup" target="_blank" rel="noopener noreferrer">自托管 Canvas</a><span class="badge official">官方</span></div><p>本地/Docker/远程后端；手机浏览器可访问你自己的实例。</p></li><li><div class="eco-head"><a href="https://openhands.dev/" target="_blank" rel="noopener noreferrer">OpenHands Cloud</a><span class="badge official">官方</span></div><p>不想运维沙箱时用托管服务；商业化入口。</p></li></ul></div><div class="eco-group"><h3>扩展与自动化</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">OpenHands/extensions</a><span class="badge official">官方</span></div><p>公开扩展注册表：skills、plugins、Canvas Apps；截至 2026-10 约 82 个扩展。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">Canvas Apps</a><span class="badge official">官方</span></div><p>把仪表盘/内部工具嵌进 Canvas；启用会在浏览器上下文执行受信 JS。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Automations</a><span class="badge official">官方</span></div><p>定时/事件驱动的 agent 任务，可接 Slack、GitHub、Linear。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">第三方 agent</a><span class="badge official">官方</span></div><p>Canvas 可接 Claude Code、Codex、Gemini、Pi、OpenCode 等 ACP agent。</p></li></ul></div><div class="eco-group"><h3>社区与集成</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.openhands.dev/community" target="_blank" rel="noopener noreferrer">OpenHands Community</a><span class="badge official">官方</span></div><p>社区 call、活动、贡献入口。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">Slack / GitHub / Linear / Notion</a><span class="badge official">官方</span></div><p>自动化与通知集成；具体可用性取决于版本和部署。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">旧名 OpenDevin</a><span class="badge community">社区</span></div><p>OpenHands 的旧称；搜旧教程时注意 API/界面已变。</p></li></ul></div></div><div class="note">OpenHands 的“衍生项目”主要是官方拆分出来的组件（Canvas、SDK、Agent Server、Extensions），而不是社区另做一套 GUI；移动端截至调研未见官方原生 App，通常用手机浏览器访问自托管 Canvas。</div>
-</section>
-<section id="ecosystem" class="sec">
-<div class="sec-head"><span class="sec-no">11</span><h2>社区与玩友生态</h2></div>
-<div class="eco-grid"><div class="eco-group"><h3>扩展注册表</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">Skills / Plugins / Apps</a><span class="badge official">官方</span></div><p>一个仓库管理三类扩展；skills 是说明，plugins 带 hooks/scripts，Apps 提供 Canvas 界面。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/extensions" target="_blank" rel="noopener noreferrer">82 extensions</a><span class="badge official">官方</span></div><p>截至 2026-10 的注册表规模：71 skills + 11 plugins；数量会变。</p></li><li><div class="eco-head"><a href="https://docs.openhands.dev/" target="_blank" rel="noopener noreferrer">Marketplace</a><span class="badge official">官方</span></div><p>Canvas 内浏览/安装/启用插件；企业可做私有市场。</p></li></ul></div><div class="eco-group"><h3>自动化玩法</h3><ul class="eco-list"><li><div class="eco-head"><b>Issue → PR</b><span class="badge official">官方</span></div><p>用 automation 把 GitHub issue 变成分支、实现、测试和 PR。</p></li><li><div class="eco-head"><b>定时报告</b><span class="badge official">官方</span></div><p>按 cron 跑报告并推送到 Slack/Notion 等。</p></li><li><div class="eco-head"><b>多沙箱并发</b><span class="badge official">官方</span></div><p>每个会话独立 Docker 容器，适合并行任务。</p></li><li><div class="eco-head"><b>SDK 嵌入</b><span class="badge official">官方</span></div><p>把 agent 能力嵌进自己的平台/IDE/聊天机器人。</p></li></ul></div><div class="eco-group"><h3>社区</h3><ul class="eco-list"><li><div class="eco-head"><a href="https://www.openhands.dev/community" target="_blank" rel="noopener noreferrer">Community calls</a><span class="badge official">官方</span></div><p>定期社区电话，更新路线图、答疑。</p></li><li><div class="eco-head"><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">GitHub</a><span class="badge official">官方</span></div><p>源码、issue、release；主仓库 MIT，生态仓库各自许可。</p></li><li><div class="eco-head"><b>Cloud / Enterprise</b><span class="badge official">官方</span></div><p>商业支持、托管执行、审计和预算；不是开源版必需。</p></li></ul></div></div><div class="note">生态仓库的许可证不统一，商用前逐仓库确认。Canvas Apps 会在浏览器上下文执行受信 JavaScript，并可能带着当前 Agent Server 的认证请求；只装你审计过的 App。</div>
-</section>
-
 <section id="sources" class="sec">
-<div class="sec-head"><span class="sec-no">12</span><h2>来源与口径</h2></div>
-<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方文档、仓库与 release 为准；GitHub star 与最新 release 通过 GitHub API 于同日读取。未做统一性能/成本 benchmark，文中“适合/不适合”和风险判断属于推断。</div><ol class="sources"><li><a href="https://docs.openhands.dev/overview/introduction" target="_blank" rel="noopener noreferrer">OpenHands Docs · Introduction</a><span class="src-note">Canvas、SDK、Agent Server、Sandbox Server 与许可边界。</span></li><li><a href="https://docs.openhands.dev/openhands/usage/run-openhands/local-setup" target="_blank" rel="noopener noreferrer">OpenHands · Local setup</a><span class="src-note">uv/Docker 安装、系统要求、模型配置。</span></li><li><a href="https://docs.openhands.dev/sdk" target="_blank" rel="noopener noreferrer">OpenHands SDK</a><span class="src-note">Python/REST API、工具、workspace、模型无关。</span></li><li><a href="https://github.com/OpenHands/OpenHands" target="_blank" rel="noopener noreferrer">OpenHands/OpenHands</a><span class="src-note">MIT、Canvas、Docker/多沙箱方案。</span></li><li><a href="https://github.com/OpenHands/software-agent-sdk" target="_blank" rel="noopener noreferrer">OpenHands/software-agent-sdk</a><span class="src-note">SDK/Agent Server 仓库与版本信息。</span></li></ol><p class="fine">本报告为独立调研，与工具厂商无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
+<div class="sec-head"><span class="sec-no">11</span><h2>来源与口径</h2></div>
+<div class="note"><b>口径：</b>调研日期 2026-10-31；事实以官方仓库 README、文档与官网为准；“适合/不适合”和风险判断属于推断，未做统一性能 benchmark。</div><ol class="sources"><li><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener noreferrer">deepseek-ai/deepseek-harness</a><span class="src-note">MIT、开发者预览、npx/源码运行、插件 topic、子代理包、Cordis。</span></li><li><a href="https://www.deepseek.com/harness/en" target="_blank" rel="noopener noreferrer">DeepSeek Harness 官网</a><span class="src-note">一切皆插件、Web/桌面、Cordis、下载入口。</span></li><li><a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent" target="_blank" rel="noopener noreferrer">packages/subagent</a><span class="src-note">in-process、fork、ACP、Codex、Claude Code、dsh SDK 子代理。</span></li><li><a href="https://deepseek-harness.github.io/deepseek-harness/" target="_blank" rel="noopener noreferrer">官方文档</a><span class="src-note">快速开始、开发指南、架构文档。</span></li></ol><p class="fine">本报告为独立调研，与 DeepSeek 无隶属关系。报告文本采用 CC BY 4.0；所引用工具的名称、商标与代码仍归其各自权利人，许可证以对应仓库为准。</p>
 </section>
-<div class="pager"><a href="./goose.html">← Goose</a><a href="./index.html">返回工具索引 →</a></div>
+<div class="pager"><a href="../coding/pi.html">← Pi</a><a href="../general/comma.html">Comma →</a></div>
 </article>
 </div>
 </main>
+
 <script>
 (function(){
   var root=document.documentElement;

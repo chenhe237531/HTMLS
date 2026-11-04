@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Cua 的 Driver/Spaces/SDK/Bench 分层、无障碍树动作、后台输入、权限与许可证分析。">
+<title>Cua · 工具分析（2026-11）</title>
+<style>
+:root{
+  --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
+  --ink:#191a1d;--ink-2:#3d4047;--muted:#6d7078;
+  --line:#e1dbcf;--line-2:#cfc7b8;
+  --accent:#24518a;--accent-soft:#e7eef8;
+  --amber:#92560f;--amber-soft:#f8ecda;
+  --green:#1e6449;--green-soft:#e3efe8;
+  --red:#9a3230;--red-soft:#f8e7e5;
+  --code:#171a20;--code-ink:#ece8de;
+  --shadow:0 1px 2px rgba(25,26,29,.05),0 14px 36px -26px rgba(25,26,29,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.75 var(--sans);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--ink)}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:60}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(18px,4vw,40px)}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(245,242,234,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1120px;margin:0 auto;padding:9px clamp(18px,4vw,40px);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar .back{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hero{padding:clamp(32px,6vw,64px) 0 28px;border-bottom:1px solid var(--line)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.eyebrow .sep{color:var(--line-2)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,6vw,60px);line-height:1.08;letter-spacing:-.02em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent);font-size:.62em;line-height:1.2;display:inline-block;margin-top:6px}
+.lede{max-width:50em;margin:0 0 20px;font-size:clamp(16.5px,2vw,18.5px);line-height:1.75;color:var(--ink-2)}
+.pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.verdict{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.v-card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow)}
+.v-card h2{font-family:var(--sans);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;margin:0 0 7px;color:var(--green)}
+.v-card.no h2{color:var(--red)}
+.v-card ul{margin:0;padding-left:17px;font-size:14px;color:var(--ink-2)}
+.v-card li{margin:3px 0}
+.layout{display:grid;grid-template-columns:212px minmax(0,1fr);gap:clamp(22px,4vw,50px);align-items:start;padding:32px 0 64px}
+.layout>*{min-width:0}
+.toc{position:sticky;top:70px;font-size:12.5px}
+.toc-title{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 0 4px 11px;margin-left:-1px;border-left:2px solid transparent;color:var(--muted);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.toc-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.6}
+article{min-width:0}
+section{margin:0 0 48px;scroll-margin-top:82px}
+.sec-head{display:flex;align-items:baseline;gap:11px;border-bottom:1px solid var(--line-2);padding-bottom:8px;margin-bottom:16px}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--amber)}
+h2{font-family:var(--serif);font-size:clamp(22px,2.8vw,28px);line-height:1.3;margin:0;letter-spacing:-.01em}
+h3{font-size:14.5px;margin:22px 0 6px}
+p{margin:0 0 13px}
+.sub{color:var(--muted);font-size:14px;margin:-6px 0 16px}
+ul,ol{margin:0 0 14px;padding-left:1.25em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+pre{margin:0 0 14px;padding:13px 15px;overflow:auto;background:var(--code);color:var(--code-ink);border-radius:11px;font:12.5px/1.65 var(--mono);border:1px solid #2b3039}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:inherit}
+.callout{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;margin:0 0 16px;box-shadow:var(--shadow);font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#e8d3b4}
+.callout.bad{background:var(--red-soft);border-color:#eccdca}
+.callout.good{background:var(--green-soft);border-color:#cbe2d6}
+.callout .t{display:block;font-weight:700;color:var(--ink);margin-bottom:4px;font-size:13px}
+.callout p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 16px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px}
+.panel h3{margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--ink-2)}
+.panel li{margin:5px 0}
+.panel.pos ul li::marker{color:var(--green)}
+.panel.neg ul li::marker{color:var(--red)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface);margin:0 0 16px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px;line-height:1.6}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink)}
+.yes{color:var(--green);font-weight:600}
+.no{color:var(--red);font-weight:600}
+.mid{color:var(--amber);font-weight:600}
+.steps{margin:0 0 14px;padding-left:20px}
+.steps li{margin:0 0 9px;color:var(--ink-2)}
+.steps b{color:var(--ink)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13.5px;margin:0 0 14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;color:var(--ink-2)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-right:4px;vertical-align:1px}
+.tag.fact{color:var(--accent);background:var(--accent-soft)}
+.tag.infer{color:var(--amber);background:var(--amber-soft)}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:11px 14px;border-radius:0 9px 9px 0;font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.note b{color:var(--ink)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:0 0 12px;overflow:hidden}
+summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--amber);margin-right:7px}
+details[open]>summary::before{content:"−"}
+details .body{padding:0 14px 12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+details .body>*:first-child{margin-top:10px}
+.sources{font-size:13px;color:var(--ink-2)}
+.sources li{margin:6px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .toc{position:static;order:2;border-top:1px solid var(--line);padding-top:14px}
+  .toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:0}
+  .toc a{border-left:0;padding:3px 0}
+  .toc-note{display:none}
+  .verdict{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  h1{font-size:31px}
+  .kv{grid-template-columns:1fr;gap:0 0}
+  .kv dt{margin-top:6px}
+  .toc ol{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  .topbar,.progress,.toc{display:none!important}
+  body{background:#fff;font-size:10.5pt}
+  .layout{display:block;padding:0}
+  .wrap{max-width:none;padding:0}
+  .hero{padding-top:0}
+  section{page-break-inside:auto;margin-bottom:22px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f2f2f2;color:#111;border-color:#ddd}
+  a{color:inherit;text-decoration:none}
+  .callout,.panel,.v-card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<header class="topbar"><div class="in">
+<a class="back" href="../index.html">← 工具调研</a>
+<span class="crumb">Tools / Cua</span>
+<span class="date">2026-11-01 · 单文件离线</span>
+</div></header>
+<main id="main" class="wrap">
+<section class="hero">
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>Computer-Use 基础设施</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>Cua<br><em>给 Agent 一台真电脑，而不是一张截图</em></h1>
+<p class="lede">Cua 不是一个 Agent，而是「让 Agent 能用电脑」的工具层：Driver 把原生 App 与浏览器变成可观察、可操作的目标；Spaces/SDK 提供 VM 与沙箱；Bench 提供评测与轨迹。它最强的地方是「语义定位 + 可验证动作」，最容易被忽略的是许可证分层。</p>
+<div class="pills">
+<span class="pill"><b>MIT</b>（核心）</span>
+<span class="pill">Rust / Python / TS</span>
+<span class="pill"><b>3.15 万</b> star</span>
+<span class="pill">macOS / Windows / Linux</span>
+<span class="pill">Spaces 为 FSL</span>
+</div>
+<div class="verdict">
+<div class="v-card"><h2>适合</h2><ul>
+<li>Agent 需要操作原生桌面应用，而不是只会开网页</li>
+<li>想要无障碍树 + 截图双通道、元素 token 与动作验证</li>
+<li>需要可复现的 VM/沙箱与 computer-use 评测</li>
+</ul></div>
+<div class="v-card no"><h2>不适合</h2><ul>
+<li>只做网页自动化；Browser Use/Playwright 更直接</li>
+<li>不能接受 Spaces 的 FSL 或可选 AGPL 感知扩展</li>
+<li>不愿处理 macOS 辅助功能/录屏权限与平台差异</li>
+</ul></div></div>
+</section>
+<div class="layout">
+<aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
+<li><a href="#s01">01 · 它是什么</a></li>
+<li><a href="#s02">02 · 为什么需要它</a></li>
+<li><a href="#s03">03 · 运作方式：Driver 的观察与动作</a></li>
+<li><a href="#s04">04 · Spaces 与 SDK：给 Agent 一台可重置的电脑</a></li>
+<li><a href="#s05">05 · 强项</a></li>
+<li><a href="#s06">06 · 边界与代价</a></li>
+<li><a href="#s07">07 · 许可证与安全</a></li>
+<li><a href="#s08">08 · 和谁比</a></li>
+<li><a href="#s09">09 · 结论</a></li>
+<li><a href="#s10">10 · 核验与来源</a></li>
+</ol><div class="toc-note">第 8 节拆许可证：核心 MIT，Spaces/Driver Bench 是 FSL，感知扩展是 AGPL。</div></aside>
+<article>
+<section id="s01">
+<div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
+<p class="sub">Computer-use 的「驱动 + 沙箱 + 评测」三层，不是单个 Agent。</p>
+
+<p>Cua 的官方口号是 <b>Give AI agents computers they can use</b>。它把 computer-use 拆成可组合的部件：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>部件</th><th>作用</th><th>形态</th></tr></thead>
+<tbody>
+<tr><td><b>Cua Driver</b></td><td>观察并操作原生 App 与浏览器；无障碍树 + 截图；后台输入</td><td>CLI / MCP / SDK</td></tr>
+<tr><td><b>Cua Spaces</b></td><td>给 Agent 完整桌面：macOS VM 或 Linux/Omarchy 镜像</td><td>macOS App（FSL）</td></tr>
+<tr><td><b>Lume</b></td><td>Apple Silicon 上的本地 macOS/Linux VM</td><td>CLI</td></tr>
+<tr><td><b>Cua SDK / CLI</b></td><td>沙箱、镜像、本地运行时、Spaces 的统一 API</td><td>Rust / Python / TS</td></tr>
+<tr><td><b>CUA-S1</b></td><td>小型、专用的 computer-use 决策模型</td><td>研究发布 + HF 权重</td></tr>
+<tr><td><b>Cua Bench</b></td><td>任务、评测、轨迹导出</td><td>CLI / Python</td></tr>
+</tbody></table></div>
+<p>关键区别：Cua <b>不替你选择和运行模型</b>。模型与 Agent 循环由你的 harness 负责；Cua 负责「电脑这一侧」的观察、动作、沙箱与评测。</p>
+
+</section>
+<section id="s02">
+<div class="sec-head"><span class="sec-no">02</span><h2>为什么需要它</h2></div>
+<p class="sub">「截图 + 坐标点击」在真实桌面里不够可靠。</p>
+
+<ul>
+  <li><b>像素脆弱：</b>分辨率、缩放、主题、窗口位置一变，坐标就漂。</li>
+  <li><b>不可验证：</b>点击发出去了，但应用有没有真的改变？截图 Agent 很难确认。</li>
+  <li><b>抢焦点：</b>传统自动化会移动鼠标、切前台，人就没法同时工作。</li>
+  <li><b>权限与隔离：</b>让 Agent 操作真机需要清晰的权限边界；训练/评测又需要可重置的 VM。</li>
+  <li><b>平台差异：</b>macOS Accessibility、Windows UIA、Linux AT-SPI 三套语义，自己抹平成本很高。</li>
+</ul>
+<div class="callout"><span class="t">Cua 的答案</span><p>优先用无障碍树定位元素（带 token），截图只用于确认与兜底；动作分级升级；每个动作报告「确认 / 不可验证 / 疑似无效」。</p></div>
+
+</section>
+<section id="s03">
+<div class="sec-head"><span class="sec-no">03</span><h2>运作方式：Driver 的观察与动作</h2></div>
+<p class="sub">这是它和「截屏 + 坐标」方案最本质的区别。</p>
+
+<p>Cua Driver 把自己定位为 computer-use Agent 的 <b>UI 层</b>：模型 → harness → Driver（MCP/CLI/SDK）→ 系统无障碍与输入 → 应用。</p>
+<ol class="steps">
+  <li><b>观察：</b><code>get_window_state(pid, window_id)</code> 一次返回该窗口的无障碍树 + 截图；树给出角色、标签与每个元素的 <code>element_token</code>，截图告诉你「是哪一个」。</li>
+  <li><b>定位：</b>每个输入动作必须指定目标：窗口 + 元素 token，或窗口 + 像素，或桌面 + 屏幕坐标。目标不明确会在发送前失败。</li>
+  <li><b>动作阶梯：</b>元素 + 后台（可验证）→ 像素 + 后台 → 浏览器走 DOM/CDP → 最后才前台重试。</li>
+  <li><b>验证：</b>响应返回 <code>effect</code>（confirmed / unverifiable / suspected_noop / partial / refused）与 <code>escalation</code>；只有无障碍回读能标 <code>verified</code>。</li>
+  <li><b>后台优先：</b>不抬窗、不移真实指针、不切前台；Agent 有自己的光标覆盖层。</li>
+</ol>
+<pre><code># 安装 Driver（macOS/Linux）
+/bin/bash -c "$(curl -fsSL https://cua.ai/driver/install.sh)"
+
+# 连接 Agent（MCP stdio）
+cua-driver mcp
+
+# 或让 Agent 通过 CLI 调用
+cua-driver call ...</code></pre>
+<div class="note"><b>为什么这很重要：</b>「动作已送达」不等于「界面已改变」。Driver 把这两件事分开报告，Agent 才知道该重试、换路径还是停下。</div>
+
+</section>
+<section id="s04">
+<div class="sec-head"><span class="sec-no">04</span><h2>Spaces 与 SDK：给 Agent 一台可重置的电脑</h2></div>
+<p class="sub">真机操作与隔离环境是两种需求，Cua 两条都提供。</p>
+
+<ul>
+  <li><b>Spaces：</b>每个 Space 是一台 macOS VM（本地 Apple Silicon）或 Linux/Omarchy 镜像；可跑在你的 Mac、其他机器或自己的 AWS/GCP/Modal 账户。</li>
+  <li><b>Teleport：</b>把已登录的 Chrome/Slack 等应用「传送」进 Space，仍保持登录；会话存 Cua Keyvault，加密在本机，需你批准才进入 Space。</li>
+  <li><b>Multiplayer：</b>你和 Agent 同时看同一桌面，各有光标；你可以随时接管。</li>
+  <li><b>SDK/CLI：</b><code>cua sb create ubuntu --name dev</code> 创建 gVisor 容器沙箱；Python/TS/Rust 同一套 API；也可连自己的机器（<code>cua host setup</code>）。</li>
+  <li><b>Bench：</b>建任务、跑参考解、验证 reward、导出轨迹，用于训练与评测。</li>
+</ul>
+<pre><code>cua sb create ubuntu --name dev
+cua sb exec dev uname -a
+cua sb screenshot dev
+cua sb rm dev</code></pre>
+
+</section>
+<section id="s05">
+<div class="sec-head"><span class="sec-no">05</span><h2>强项</h2></div>
+<p class="sub">它把「可靠操作」与「可隔离运行」拆开，各自做深。</p>
+
+<div class="panel pos"><ul>
+  <li><b>双通道观察：</b>无障碍树给语义与 token，截图给视觉确认；比纯像素稳。</li>
+  <li><b>可验证动作：</b>报告 effect 与升级建议，而不是「已点击」。</li>
+  <li><b>后台执行：</b>在支持的平台不抢焦点，人可以继续工作。</li>
+  <li><b>跨平台语义：</b>macOS Accessibility / Windows UIA / Linux AT-SPI 收在同一套工具下。</li>
+  <li><b>隔离环境：</b>Spaces/VM/gVisor 沙箱，适合不可信任务与评测。</li>
+  <li><b>评测与轨迹：</b>Cua Bench + CUA-S1，能做可复现实验，而不只是 demo。</li>
+</ul></div>
+
+</section>
+<section id="s06">
+<div class="sec-head"><span class="sec-no">06</span><h2>边界与代价</h2></div>
+<p class="sub">平台差异、权限与许可证，是落地前必须算的三笔账。</p>
+
+<div class="panel neg"><ul>
+  <li><b>平台差异真实存在：</b>Wayland 下原始后台按键会被拒绝；某些工具包拒绝合成后台事件；Windows daemon 必须跑在交互式会话，不能是 Session 0。</li>
+  <li><b>权限：</b>macOS 需要 Accessibility 与 Screen Recording；授权绑定到「负责的应用身份」，不是可执行路径。</li>
+  <li><b>Spaces 门槛：</b>要求 macOS 26+；VM 占磁盘/内存；云上运行要自己的账户。</li>
+  <li><b>复杂度：</b>Driver、Spaces、SDK、Bench 是四套概念；只做网页自动化会被抽象压过。</li>
+  <li><b>许可证分层：</b>核心 MIT，但 Spaces/Driver Bench 是 FSL，感知扩展是 AGPL；商业分发要逐目录确认。</li>
+  <li><b>废弃包：</b>官方明确 <code>cuabot</code> 有已知安全问题，要求停止使用并卸载。</li>
+</ul></div>
+
+</section>
+<section id="s07">
+<div class="sec-head"><span class="sec-no">07</span><h2>许可证与安全</h2></div>
+<p class="sub">这是 Cua 最容易被误读的部分，单独拆开。</p>
+
+<dl class="kv">
+  <dt>MIT</dt><dd>cua SDK（Python/TS/Swift/Kotlin）、<code>cua</code> CLI/daemon、Cua Driver、Lume，以及仓库中未特别标注的部分。</dd>
+  <dt>FSL-1.1-MIT</dt><dd>Cua Spaces（App、cua-spacesd、Keyvault、teleport、Volume、流媒体）与 Cua Driver Bench；可自用/自托管，但不能提供竞争性托管服务；每个 release 两年后转 MIT。</dd>
+  <dt>AGPL 风险</dt><dd>可选的 <code>cua-perception</code> 扩展包含 AGPL-3.0 的 OmniParser 检测器；不分发/不通过网络提供通常没问题，但商用前必须让法务确认。</dd>
+  <dt>权限模式</dt><dd>Driver 支持 standard（默认，无提示）、bounded（只允许清单内工具/资源）、unrestricted（需显式危险标志）。模式在启动时固定。</dd>
+  <dt>隔离</dt><dd>Spaces/VM/沙箱把「不可信任务」与真机分开；Teleport 需你批准，Keyvault 加密在本机。</dd>
+  <dt>历史记录</dt><dd>macOS 预览版的 Computer History 只存元数据白名单，不存截图、输入、剪贴板、路径、URL。</dd>
+</dl>
+<div class="callout bad"><span class="t">别把「MIT 仓库」当成「全部 MIT」</span><p>如果你的产品要分发 Spaces 或以托管服务形式提供，FSL 与 AGPL 条款会直接约束你。先读 <code>legal/LICENSING.md</code>，再决定用哪一层。</p></div>
+
+</section>
+<section id="s08">
+<div class="sec-head"><span class="sec-no">08</span><h2>和谁比</h2></div>
+<p class="sub">Cua 与 Browser Use 不是替代关系，而是不同层。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>项目</th><th>层次</th><th>观察方式</th><th>隔离</th><th>最适合</th></tr></thead>
+<tbody>
+<tr><td><b>Cua</b></td><td>Driver + 沙箱 + 评测</td><td>无障碍树 + 截图 + 元素 token</td><td class="yes">VM / gVisor / Spaces</td><td>原生 App、跨平台、可评测</td></tr>
+<tr><td>Browser Use</td><td>浏览器 Agent 库</td><td>DOM + 截图</td><td class="mid">本地/云浏览器</td><td>网页长尾任务</td></tr>
+<tr><td>UI-TARS Desktop</td><td>多模态 Agent 栈</td><td>视觉为主</td><td class="mid">本地</td><td>GUI 操作与模型实验</td></tr>
+<tr><td>OmniParser</td><td>屏幕解析</td><td>视觉解析为区域</td><td class="no">无</td><td>给自建 Agent 加视觉定位</td></tr>
+<tr><td>Playwright</td><td>浏览器自动化</td><td>DOM/选择器</td><td class="mid">浏览器上下文</td><td>稳定、可测试的网页流程</td></tr>
+</tbody></table></div>
+
+</section>
+<section id="s09">
+<div class="sec-head"><span class="sec-no">09</span><h2>结论</h2></div>
+
+<div class="callout good"><span class="t">推荐路径</span><p>先只装 Cua Driver，接一个 Agent，跑「打开计算器 → 6×7 → 验证 42」这类有明确读回的任务；确认权限、后台输入与 effect 语义。需要隔离时再加 Spaces 或 SDK 沙箱；需要评测时再上 Bench。不要一上来把四层全装。</p></div>
+<p>它适合认真做 computer-use 的团队：要跨应用、要可验证、要可重置环境。只做网页自动化的话，Browser Use 或 Playwright 的路径更短。</p>
+
+</section>
+<section id="s10">
+<div class="sec-head"><span class="sec-no">10</span><h2>核验与来源</h2></div>
+
+<ul class="sources">
+  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/trycua/cua" target="_blank" rel="noopener noreferrer">trycua/cua</a>；Rust；约 31,551 star（2026-11-01 API）；核心 MIT，Spaces/Driver Bench 为 FSL-1.1-MIT。</li>
+  <li><a href="https://github.com/trycua/cua/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：Spaces、Driver、Lume、SDK/CLI、CUA-S1、Bench、许可证。</li>
+  <li><a href="https://github.com/trycua/cua/blob/main/libs/cua-driver/README.md" target="_blank" rel="noopener noreferrer">Cua Driver README</a>：MCP/CLI/SDK、权限模式、感知扩展、Computer History。</li>
+  <li><a href="https://cua.ai/docs/cua-driver/concepts/how-cua-driver-works" target="_blank" rel="noopener noreferrer">How Cua Driver works</a>：无障碍树 + 截图、element_token、动作阶梯、effect 与平台限制。</li>
+  <li><a href="https://github.com/trycua/cua/blob/main/legal/LICENSING.md" target="_blank" rel="noopener noreferrer">LICENSING.md</a>：MIT/FSL/AGPL 的目录级边界。</li>
+  <li><span class="tag infer">推断</span> 「比纯像素稳」是机制推断；具体任务成功率需在你的应用与平台上复测。</li>
+</ul>
+
+</section>
+<footer><span>Cua · 分析于 2026-11-01</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+</article></div></main>
+<script>(function(){var p=document.getElementById("progress");if(!p)return;function u(){var h=document.documentElement;var m=h.scrollHeight-h.clientHeight;p.style.width=(m>0?Math.min(100,Math.max(0,h.scrollTop/m*100)):0)+"%";}addEventListener("scroll",u,{passive:true});u();})();</script>
+</body></html>
