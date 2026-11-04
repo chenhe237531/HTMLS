@@ -11,6 +11,7 @@
 | [`Invest/date-ops/`](Invest/date-ops/index.html) | 约会运营手册：从匹配到线下的系统设计，含漏斗计算器与聊天打分器 |
 | [`Agents/MCP/mcp-hub/`](Agents/MCP/mcp-hub/index.html) | MCP Hub 导航：目录、市场与网关汇总（2026-10） |
 | [`Agents/MCP/mcp-guide/`](Agents/MCP/mcp-guide/index.html) | 怎么选 MCP：从需求到验证的选型教程 |
+| [`Agents/MCP/agent-management/`](Agents/MCP/agent-management/index.html) | 本机 Agent 的 MCP 与 Skill 管理：19 个开源项目，运行 / 配置 / 内容三层与选型组合（2026-11） |
 | [`Agents/MCP/interop-protocols/`](Agents/MCP/interop-protocols/index.html) | Agent 互操作协议图谱：MCP 之外的 13 个协议、优劣与趋势 |
 | [`Agents/MCP/interop-protocols/x402/`](Agents/MCP/interop-protocols/x402/index.html) | x402 深度解析：按请求付费的 HTTP 支付协议、流程、生态与风险 |
 | [`Agents/MCP/interop-protocols/ap2/`](Agents/MCP/interop-protocols/ap2/index.html) | AP2 深度解析：代理支付的授权凭证、两种模式与现状 |
@@ -36,6 +37,8 @@
 | [`SoftwareEngineering/kimi/`](SoftwareEngineering/kimi/index.html) | Kimi 开源图谱：MoonshotAI 42 个公开仓库 + Mooncake 逐项分析，每项一页（2026-11） |
 | [`SoftwareEngineering/DeepSeek/`](SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html) | DeepSeek 开源全景：46 个官方仓库的分层地图、逐项分析与时间线（2026-10 快照） |
 | [`SoftwareEngineering/puter-reports/`](SoftwareEngineering/puter-reports/puter-analysis-report.html) | Puter 平台分析与 [Everything 51 个应用全景](SoftwareEngineering/puter-reports/everything-apps-report.html)（2026-11） |
+
+| [`BigModel/`](BigModel/index.html) | 主流大模型调研：评测方法、AA v5 综合/分项排名、16 个模型的价格与性价比、月成本估算器（2026-11） |
 
 ## 约定
 
