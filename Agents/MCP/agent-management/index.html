@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="本机 Agent 的 MCP 与 Skill 管理开源项目地图：HarnessKit、Rulesync、Ruler、OpenPackage、MCPM、MCPHub、1MCP、ToolHive、skills CLI、Skills Manager、ASM 等 19 个项目。">
+<meta name="color-scheme" content="light">
+<title>本机 Agent 的 MCP 与 Skill 管理 · 开源项目地图（2026-11）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-line:#2c313a;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.8 var(--sans);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1100px 560px at 84% -6%,rgba(43,79,158,.08),transparent 60%),radial-gradient(900px 480px at 2% 4%,rgba(154,87,18,.06),transparent 55%),var(--paper)}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:auto;padding:30px 18px 26px 26px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,254,251,.72),rgba(255,254,251,.35));backdrop-filter:blur(6px)}
+.brand{display:flex;gap:11px;align-items:flex-start;margin-bottom:26px}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:0 0 auto;position:relative;background:linear-gradient(140deg,var(--accent),#101a34);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.brand-mark::after{content:"";position:absolute;inset:8px;border:2px solid #f5f2e8;border-radius:5px;border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-12deg)}
+.brand-title{font-family:var(--serif);font-size:17px;line-height:1.25}
+.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.toc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.toc a{display:grid;grid-template-columns:24px 1fr;gap:6px;align-items:baseline;padding:6px 9px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:13.2px;line-height:1.5;border:1px solid transparent}
+.toc a .no{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.toc a:hover{background:#fff;border-color:var(--line);color:var(--ink)}
+.toc a[aria-current="true"]{background:var(--accent-soft);border-color:#cfd9f3;color:var(--accent);font-weight:600}
+.toc a[aria-current="true"] .no{color:var(--accent)}
+.side-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.65}
+.side-foot b{color:var(--ink-2);font-weight:600}
+
+main{min-width:0;padding:44px clamp(22px,5vw,64px) 90px;max-width:1080px}
+.hero{margin-bottom:50px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 16px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(38px,5.4vw,60px);line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 24px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:29px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:13px;font-family:var(--sans);color:var(--muted);margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:5px}
+
+section{scroll-margin-top:24px;margin-bottom:60px}
+.sec-head{display:flex;gap:14px;align-items:baseline;border-bottom:1px solid var(--line-strong);padding-bottom:10px;margin-bottom:24px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+h2{font-family:var(--serif);font-size:clamp(24px,3vw,31px);line-height:1.3;letter-spacing:-.01em;margin:0}
+h3{font-size:17.5px;line-height:1.5;margin:32px 0 12px}
+h4{font-size:14px;margin:20px 0 6px;color:var(--ink-2);letter-spacing:.02em}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.3em}
+li{margin:4px 0}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.87em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.lead-in{font-size:16.5px;color:var(--ink-2);max-width:52em}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:16px 18px;margin:20px 0;font-size:14.2px;color:var(--ink-2)}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#eccdcc;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:3px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:16px 0 20px;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.2px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fdfcf8}
+
+.code{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden;border:1px solid #242a33;background:var(--code-bg)}
+.code-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--code-line);background:#1d2128}
+.code-head .file{font-family:var(--mono);font-size:11.5px;color:#9aa3b0}
+.copy{margin-left:auto;appearance:none;border:1px solid #39404b;background:#242a33;color:#c9d1db;font:inherit;font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer}
+.copy:hover{background:#2e3541;color:#fff}
+.copy:focus-visible{outline:2px solid #8aa4e8;outline-offset:2px}
+.code pre{margin:0;padding:14px 16px;overflow-x:auto;color:var(--code-ink);font-family:var(--mono);font-size:12.6px;line-height:1.75;tab-size:2}
+.code code{background:none;border:0;padding:0;white-space:pre}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.fstep{appearance:none;text-align:left;font:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
+.fstep:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.fstep[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fstep .n{font-family:var(--mono);font-size:10.5px;color:var(--amber)}
+.fstep .s{display:block;font-size:12.5px;font-weight:600;line-height:1.35;margin-top:2px}
+.flow-note{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+
+.steps{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.steps::before{content:"";position:absolute;left:13px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--line-strong),var(--line))}
+.steps li{position:relative;padding:0 0 18px 44px}
+.steps li::before{content:"";position:absolute;left:7px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.steps b{display:block;font-size:14.5px;margin-bottom:1px}
+.steps .when{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.03em}
+.steps p{margin:2px 0 0;font-size:13.2px;color:var(--ink-2)}
+
+.calc{display:grid;gap:10px;margin:16px 0}
+.calc-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.calc label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted)}
+.calc input{font:inherit;font-size:13.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);min-width:0}
+.calc input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.calc-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:6px}
+.calc-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper)}
+.calc-box .k{font-size:11.5px;color:var(--muted)}
+.calc-box .v{font-family:var(--serif);font-size:22px;line-height:1.2;margin-top:2px}
+.calc-box .v small{font-size:11px;font-family:var(--sans);color:var(--muted);margin-left:3px}
+
+footer{border-top:1px solid var(--line-strong);padding-top:18px;color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.top-btn{position:fixed;right:20px;bottom:20px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;justify-content:center}
+.top-btn.show{display:flex}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 18px 12px}
+  .brand{margin-bottom:12px}
+  .toc{flex-direction:row;overflow-x:auto;gap:2px;padding-bottom:4px}
+  .toc a{white-space:nowrap;grid-template-columns:auto 1fr;padding:5px 10px}
+  .side-foot{display:none}
+  main{padding:32px 20px 72px}
+  h1{font-size:clamp(34px,9vw,48px)}
+  .flow{grid-template-columns:1fr 1fr}
+  .calc-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .sidebar,.progress,.top-btn,.copy{display:none!important}
+  .app{display:block}
+  main{max-width:none;padding:0}
+  section{margin-bottom:24px}
+  .card,.code,table,.fstep{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+  h1{font-size:28pt}
+}
+</style>
+<style>
+.toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:0 0 10px}
+.toolbar label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.toolbar input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:9px;padding:8px 10px;min-width:250px}
+.toolbar input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chip{font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.result-line{font-size:12px;color:var(--muted);margin:0 0 8px}
+.repo-table td:first-child{min-width:150px}
+.repo-table td:first-child a{font-weight:600}
+.repo-table .num{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.repo-table .upd{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.empty{border:1px dashed var(--line-strong);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.project h4{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.project .tiny{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.project .use{font-size:12.5px;color:var(--muted);margin-top:8px}
+.project .code pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media (min-width:900px){.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+code{white-space:normal;overflow-wrap:break-word}
+@media (max-width:640px){
+  .toolbar{display:grid;grid-template-columns:1fr}
+  .toolbar input{width:100%;min-width:0}
+  .repo-table{min-width:0}
+  .repo-table th:nth-child(2),.repo-table td:nth-child(2),
+  .repo-table th:nth-child(3),.repo-table td:nth-child(3),
+  .repo-table th:nth-child(4),.repo-table td:nth-child(4),
+  .repo-table th:nth-child(6),.repo-table td:nth-child(6){display:none}
+}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.checks li{display:flex;gap:10px;align-items:flex-start;font-size:13.8px;color:var(--ink-2);padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.checks input{margin-top:4px;accent-color:var(--accent);width:15px;height:15px;flex:0 0 auto}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;font-family:var(--mono)}
+.badge.verified{color:var(--green);border-color:#cfe3d8;background:var(--green-soft)}
+.badge.claim{color:var(--amber);border-color:#ecd4b4;background:var(--amber-soft)}
+.badge.infer{color:var(--accent);border-color:#cfd9f3;background:var(--accent-soft)}
+.badge.bad{color:#b3261e;border-color:#efc9c5;background:#fbeceb}
+.clean{list-style:none;padding-left:0}
+.clean li{margin:7px 0}
+.project .code code{white-space:pre-wrap;overflow-wrap:anywhere}
+@media (min-width:900px){.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div>
+      <div class="brand-title">MCP × Skills</div>
+      <div class="brand-sub">本机 Agent · 2026-11</div>
+    </div>
+  </div>
+  <nav aria-label="目录">
+    <ul class="toc" id="toc">
+      <li><a href="#s01"><span class="no">01</span><span>问题</span></a></li>
+      <li><a href="#s02"><span class="no">02</span><span>三层模型</span></a></li>
+      <li><a href="#s03"><span class="no">03</span><span>项目总表</span></a></li>
+      <li><a href="#s04"><span class="no">04</span><span>一站式</span></a></li>
+      <li><a href="#s05"><span class="no">05</span><span>MCP 运行</span></a></li>
+      <li><a href="#s06"><span class="no">06</span><span>Skill 分发</span></a></li>
+      <li><a href="#s07"><span class="no">07</span><span>轻量工具</span></a></li>
+      <li><a href="#s08"><span class="no">08</span><span>怎么选</span></a></li>
+      <li><a href="#s09"><span class="no">09</span><span>七个坑</span></a></li>
+      <li><a href="#s10"><span class="no">10</span><span>落地清单</span></a></li>
+      <li><a href="#s11"><span class="no">11</span><span>趋势</span></a></li>
+      <li><a href="#s12"><span class="no">12</span><span>来源</span></a></li>
+    </ul>
+  </nav>
+  <div class="side-foot">
+    19 个开源项目<br>
+    3 层管理模型<br>
+    GitHub API · 2026-11-03<br>
+    单文件 · 离线
+  </div>
+</aside>
+
+<main id="main">
+  <header class="hero">
+    <p class="eyebrow"><span class="dot"></span>Local-first<span class="dot"></span>MCP × Skills</p>
+    <h1>让所有 Agent<br>共用一套 <em>MCP</em> 与 <em>Skill</em></h1>
+    <p class="lede">你装了 Claude Code、Codex、Cursor、OpenCode……每个都有一套 MCP 配置和 skills 目录。真正难的不是装 server，而是让它们不漂移。这份地图把 19 个项目拆成三层：运行、配置、内容。</p>
+    <div class="meta-row">
+      <span class="pill">项目 <b>19 个开源仓库</b></span>
+      <span class="pill">管理 <b>MCP / Skills / Rules</b></span>
+      <span class="pill">范围 <b>本机 + 自托管</b></span>
+      <span class="pill">数据 <b>GitHub API · 2026-11-03</b></span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">19</div><div class="l">本次收录的开源项目</div></div>
+      <div class="kpi"><div class="n">79</div><div class="l">skills CLI 支持的 Agent 数</div></div>
+      <div class="kpi"><div class="n">56</div><div class="l">Skills Manager 支持的工具数</div></div>
+      <div class="kpi"><div class="n">3</div><div class="l">运行 / 配置 / 内容三层</div></div>
+    </div>
+  </header>
+
+  <section id="s01" aria-labelledby="h01">
+    <div class="sec-head"><span class="sec-no">01</span><h2 id="h01">问题不在 MCP，而在配置漂移</h2></div>
+    <p class="lead-in">MCP 解决的是「Agent 怎么连工具」；本机管理的难点是「同一套工具，怎么让 N 个 Agent 都连对」。装一个 server 只要一条命令，维护 N 份配置却会持续消耗注意力。</p>
+
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card">
+        <h4 style="margin-top:0">格式分裂</h4>
+        <p class="small" style="margin:0">Claude 用 <code>.mcp.json</code>，Cursor 用 <code>.cursor/mcp.json</code>，Codex 用 <code>config.toml</code>，OpenCode 用 <code>opencode.json</code>。JSON、JSONC、TOML 各有各的转义。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">目录分裂</h4>
+        <p class="small" style="margin:0">Skills 可能落在 <code>.claude/skills</code>、<code>.agents/skills</code>、<code>.cursor/skills</code>、<code>.opencode/skills</code>；项目级与全局级又是两套路径。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">生命周期分裂</h4>
+        <p class="small" style="margin:0">MCP 有更新、卸载、密钥轮换；Skills 有版本、来源、上下文占用。没有清单时，没人知道哪台机器上装了什么。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <span class="t">统一管理的最小定义</span>
+      一套可版本化的 <b>source of truth</b>，能重复生成各 Agent 的配置，能在写入前 diff、失败后回滚，并且能回答「这个 MCP / Skill 从哪来、装到了哪、谁在用」。
+    </div>
+  </section>
+
+  <section id="s02" aria-labelledby="h02">
+    <div class="sec-head"><span class="sec-no">02</span><h2 id="h02">先分清三层，再选工具</h2></div>
+    <p>很多对比把「网关」「配置同步」「技能市场」混在一起。它们解决的问题不同，叠用可以，但不能让两个工具同时写同一个文件。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>层</th><th>解决什么</th><th>代表项目</th><th>什么时候需要</th></tr></thead>
+        <tbody>
+          <tr><td><b>运行层</b></td><td>启动、隔离、聚合、鉴权 MCP server；给客户端一个稳定端点</td><td>MCPHub、MetaMCP、1MCP、ToolHive、Docker MCP Gateway</td><td>server 多、客户端多、要共享或审计</td></tr>
+          <tr><td><b>配置层</b></td><td>生成 / 同步 / 导入各 Agent 的 MCP、rules、skills 配置</td><td>Rulesync、Ruler、Caliber、OpenPackage、HarnessKit、vsync、mcpick</td><td>多 Agent、配置漂移、想配置即代码</td></tr>
+          <tr><td><b>内容层</b></td><td>分发 skills、rules、commands，管理版本与来源</td><td>skills CLI、Skills Manager、ASM、ai-agent-skills</td><td>技能复用、团队共享、控制上下文成本</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">最常见的翻车方式</span>
+      同时用 Rulesync 和 Ruler 生成同一批文件，或者让两个 Skills Manager 各自建符号链接。结果不是「双保险」，而是互相覆盖、链接指向旧版本。选一个写入者，其他工具只读。
+    </div>
+  </section>
+
+  <section id="s03" aria-labelledby="h03">
+    <div class="sec-head"><span class="sec-no">03</span><h2 id="h03">19 个项目总表</h2></div>
+    <p>按「一站式 / 配置 / 运行 / Skill / 轻量」筛选，或搜索项目名与关键词。Star 与最近更新来自 GitHub API（2026-11-03），只作活跃度参考，不代表质量。</p>
+
+    <div class="toolbar">
+      <label for="repo-search">搜索<input id="repo-search" type="search" placeholder="项目、客户端、MCP、skills…" autocomplete="off"></label>
+    </div>
+    <div class="chips" id="layer-chips" role="group" aria-label="按层筛选">
+      <button class="chip" type="button" data-layer="all" aria-pressed="true">全部</button>
+      <button class="chip" type="button" data-layer="allinone" aria-pressed="false">一站式</button>
+      <button class="chip" type="button" data-layer="config" aria-pressed="false">配置</button>
+      <button class="chip" type="button" data-layer="runtime" aria-pressed="false">运行</button>
+      <button class="chip" type="button" data-layer="skill" aria-pressed="false">Skill</button>
+      <button class="chip" type="button" data-layer="light" aria-pressed="false">轻量</button>
+    </div>
+    <p class="result-line" id="repo-count" aria-live="polite">19 个项目</p>
+
+    <div class="table-wrap">
+      <table class="repo-table" id="repo-table">
+        <thead><tr><th>项目</th><th>层</th><th>形态</th><th>覆盖</th><th>客户端</th><th>许可</th><th>Star</th><th>更新</th></tr></thead>
+        <tbody>
+          <tr data-layer="allinone" data-search="harnesskit 一站式 gui web cli skills mcp plugins hooks audit 17 agents apache">
+            <td><a href="https://github.com/RealZST/HarnessKit" target="_blank" rel="noopener">HarnessKit</a></td><td>一站式</td><td>GUI / Web / CLI</td><td>Skills、MCP、Plugins、Hooks、配置</td><td>17 个 Agent</td><td>Apache-2.0</td><td class="num">480</td><td class="upd">11-01</td>
+          </tr>
+          <tr data-layer="config" data-search="rulesync 配置 cli rules mcp skills commands subagents 50 agents mit typescript">
+            <td><a href="https://github.com/dyoshikawa/rulesync" target="_blank" rel="noopener">Rulesync</a></td><td>配置</td><td>CLI</td><td>Rules、MCP、Skills、Commands、Subagents</td><td>50+ 工具/标准</td><td>MIT</td><td class="num">1,582</td><td class="upd">11-04</td>
+          </tr>
+          <tr data-layer="config" data-search="ruler 配置 cli rules mcp skills subagents 25 agents mit">
+            <td><a href="https://github.com/intellectronica/ruler" target="_blank" rel="noopener">Ruler</a></td><td>配置</td><td>CLI</td><td>Rules、MCP、Skills（实验）、Subagents</td><td>25+ Agent</td><td>MIT</td><td class="num">2,957</td><td class="upd">10-28</td>
+          </tr>
+          <tr data-layer="config" data-search="caliber ai-setup 配置 cli skills rules plugins mcp hooks 5 agents mit">
+            <td><a href="https://github.com/caliber-ai-org/ai-setup" target="_blank" rel="noopener">Caliber</a></td><td>配置</td><td>CLI</td><td>Skills、Rules、Plugins、MCP、Hooks</td><td>5 个 Agent</td><td>MIT</td><td class="num">1,311</td><td class="upd">09-24</td>
+          </tr>
+          <tr data-layer="config" data-search="openpackage opkg 配置 包管理 rules commands agents skills mcp apache">
+            <td><a href="https://github.com/enulus/OpenPackage" target="_blank" rel="noopener">OpenPackage</a></td><td>配置</td><td>CLI</td><td>Rules、Commands、Agents、Skills、MCP</td><td>6+ 平台</td><td>Apache-2.0</td><td class="num">616</td><td class="upd">05-29</td>
+          </tr>
+          <tr data-layer="runtime" data-search="mcpm mcpm.sh 运行 包管理 profiles registry 10 clients mit">
+            <td><a href="https://github.com/pathintegral-institute/mcpm.sh" target="_blank" rel="noopener">MCPM</a></td><td>运行</td><td>CLI</td><td>MCP 包管理、Profiles、路由、共享</td><td>10+ 客户端</td><td>MIT</td><td class="num">1,021</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="runtime" data-search="mcphub 运行 网关 控制面 auth oauth groups docker apache">
+            <td><a href="https://github.com/samanhappy/mcphub" target="_blank" rel="noopener">MCPHub</a></td><td>运行</td><td>Server / Web</td><td>MCP 网关、鉴权、分组、健康检查</td><td>任意 MCP client</td><td>Apache-2.0</td><td class="num">2,630</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="runtime" data-search="metamcp 运行 聚合 命名空间 中间件 docker postgres mit">
+            <td><a href="https://github.com/metatool-ai/metamcp" target="_blank" rel="noopener">MetaMCP</a></td><td>运行</td><td>Server / Web</td><td>MCP 聚合、命名空间、中间件</td><td>任意 MCP client</td><td>MIT</td><td class="num">2,749</td><td class="upd">06-22 <span class="badge claim">放缓</span></td>
+          </tr>
+          <tr data-layer="runtime" data-search="1mcp 运行 聚合 cli 模式 预设 过滤 apache">
+            <td><a href="https://github.com/1mcp-app/agent" target="_blank" rel="noopener">1MCP</a></td><td>运行</td><td>CLI / Server</td><td>MCP 聚合、CLI 模式、预设、过滤</td><td>Codex / Claude / Cursor 等</td><td>Apache-2.0</td><td class="num">526</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="runtime" data-search="toolhive 运行 容器 registry gateway kubernetes 审计 apache">
+            <td><a href="https://github.com/stacklok/toolhive" target="_blank" rel="noopener">ToolHive</a></td><td>运行</td><td>CLI / Desktop / K8s</td><td>MCP 容器运行时、Registry、Gateway</td><td>多客户端</td><td>Apache-2.0</td><td class="num">2,324</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="runtime" data-search="docker mcp gateway 运行 容器 profiles secrets oauth mit">
+            <td><a href="https://github.com/docker/mcp-gateway" target="_blank" rel="noopener">Docker MCP Gateway</a></td><td>运行</td><td>Docker CLI</td><td>MCP 容器、Profiles、Secrets</td><td>Docker Desktop 客户端</td><td>MIT</td><td class="num">1,622</td><td class="upd">10-26</td>
+          </tr>
+          <tr data-layer="runtime" data-search="contextforge ibm 运行 联邦 registry proxy 治理 a2a rest apache">
+            <td><a href="https://github.com/IBM/mcp-context-forge" target="_blank" rel="noopener">ContextForge</a></td><td>运行</td><td>Server / K8s</td><td>MCP/A2A/REST 联邦、治理、可观测</td><td>企业 / 多集群</td><td>Apache-2.0</td><td class="num">4,749</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="skill" data-search="skills vercel 技能 安装 市场 79 agents mit">
+            <td><a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">skills CLI</a></td><td>Skill</td><td>CLI</td><td>Skills 安装、更新、搜索、市场</td><td>79 个 Agent</td><td>MIT</td><td class="num">37,993</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="skill" data-search="skills manager xingkongliang 技能 gui 库 预设 多端同步 56 tools mit">
+            <td><a href="https://github.com/xingkongliang/skills-manager" target="_blank" rel="noopener">Skills Manager</a></td><td>Skill</td><td>GUI</td><td>Skills 库、预设、符号链接、备份</td><td>56 个工具</td><td>MIT</td><td class="num">7,225</td><td class="upd">11-03</td>
+          </tr>
+          <tr data-layer="skill" data-search="skills manager jiweiyeah 技能 gui cli symlink 32 tools mit skm">
+            <td><a href="https://github.com/jiweiyeah/Skills-Manager" target="_blank" rel="noopener">Skills Manager（jiweiyeah）</a></td><td>Skill</td><td>GUI / CLI</td><td>Skills 库、符号链接、启用/禁用</td><td>32 个工具</td><td>MIT</td><td class="num">1,054</td><td class="upd">09-10</td>
+          </tr>
+          <tr data-layer="skill" data-search="asm agent skill manager 技能 cli tui 审计 token 21 providers mit">
+            <td><a href="https://github.com/luongnv89/asm" target="_blank" rel="noopener">ASM</a></td><td>Skill</td><td>CLI / TUI</td><td>Skills 安装、审计、Token 驻留分析</td><td>21 个 Provider</td><td>MIT</td><td class="num">965</td><td class="upd">11-01</td>
+          </tr>
+          <tr data-layer="skill" data-search="ai-agent-skills 技能 库 打包 cli tui 任意 agent skills mit">
+            <td><a href="https://github.com/MoizIbnYousaf/ai-agent-skills" target="_blank" rel="noopener">ai-agent-skills</a></td><td>Skill</td><td>CLI / TUI</td><td>技能库、打包、策展工作流</td><td>任意 Agent Skills</td><td>MIT</td><td class="num">1,157</td><td class="upd">09-21</td>
+          </tr>
+          <tr data-layer="light" data-search="vsync 轻量 配置 同步 skills mcp agents commands 4 tools mit">
+            <td><a href="https://github.com/nicepkg/vsync" target="_blank" rel="noopener">vsync</a></td><td>轻量 / 配置</td><td>CLI</td><td>Skills、MCP、Agents、Commands 同步</td><td>4 个工具</td><td>MIT</td><td class="num">63</td><td class="upd">01-27 <span class="badge claim">低活跃</span></td>
+          </tr>
+          <tr data-layer="light" data-search="mcpick 轻量 配置 mcp skills 9 clients tui mcp server mit">
+            <td><a href="https://github.com/spences10/mcpick" target="_blank" rel="noopener">mcpick</a></td><td>轻量 / 配置</td><td>CLI / TUI / MCP Server</td><td>MCP 配置、Skills、密钥脱敏</td><td>9 个客户端</td><td>MIT</td><td class="num">96</td><td class="upd">11-03</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="empty" id="repo-empty" hidden>没有匹配的项目，换个关键词或重置筛选。</p>
+  </section>
+  <section id="s04" aria-labelledby="h04">
+    <div class="sec-head"><span class="sec-no">04</span><h2 id="h04">一站式：一个工具管多类资产</h2></div>
+    <p>如果你不想拼 3 个工具，先看这一组。它们都能同时碰 MCP、Skills、Rules，差异在「谁做 source of truth」和「界面是 CLI 还是 GUI」。</p>
+
+    <div class="grid g2">
+      <div class="card project">
+        <h4>HarnessKit <span class="badge verified">最像「控制台」</span></h4>
+        <p class="small">统一管理 17 个 Agent 的 Skills、MCP、Plugins、Hooks、Agent-first CLI，以及 Configs / Memory / Rules / Subagents。内置 18 条静态规则的安全审计、Trust Score、skills.sh 与 Smithery 市场，支持桌面（macOS/Windows）和本地 Web / CLI。</p>
+        <p class="use">适合：想一眼看清「每个 Agent 装了什么」并直接启用/禁用的人。</p>
+        <div class="code"><div class="code-head"><span class="file">start</span></div><pre><code># 先运行仓库里的 install.sh
+hk serve   # http://localhost:7070</code></pre></div>
+        <p class="small">注意：项目较新（480 Star），Linux 走 Web 模式；审计是启发式，不是沙箱。</p>
+        <p class="small"><a href="https://github.com/RealZST/HarnessKit" target="_blank" rel="noopener">github.com/RealZST/HarnessKit →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Rulesync <span class="badge verified">配置即代码</span></h4>
+        <p class="small">把 rules、MCP、skills、commands、subagents、hooks 写成统一的 <code>.rulesync/</code>，再生成到 50+ 工具。支持从现有配置 <code>import</code>，也支持 <code>convert --from cursor --to copilot,claudecode</code> 直接转换；有 global 模式。</p>
+        <p class="use">适合：团队要把 Agent 配置纳入 Git、做 code review 的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npm install -g rulesync
+rulesync init
+rulesync generate --targets "*" --features "*"</code></pre></div>
+        <p class="small">注意：目标越多，格式差异越多；第一次生成前先 commit，逐项看 diff。</p>
+        <p class="small"><a href="https://github.com/dyoshikawa/rulesync" target="_blank" rel="noopener">github.com/dyoshikawa/rulesync →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Ruler <span class="badge verified">老牌规则分发</span></h4>
+        <p class="small">以 <code>.ruler/AGENTS.md</code> 和 <code>ruler.toml</code> 为源，向 Claude Code、Cursor、Copilot、Codex、OpenCode、Gemini CLI 等 25+ Agent 分发 rules、MCP、skills（实验）和 subagents。支持 <code>ruler init --global</code> 做全局配置。</p>
+        <p class="use">适合：主要痛点是「规则和 MCP 到处复制」、想用成熟 CLI 的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npm install -g @intellectronica/ruler
+ruler init
+ruler apply</code></pre></div>
+        <p class="small">注意：skills 仍标实验；MCP 写入会 merge，默认不覆盖原生配置。</p>
+        <p class="small"><a href="https://github.com/intellectronica/ruler" target="_blank" rel="noopener">github.com/intellectronica/ruler →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Caliber <span class="badge claim">偏上下文工程</span></h4>
+        <p class="small">在 Claude Code、Cursor、Codex、OpenCode、Copilot 之间同步 skills、rules、plugins、MCP；用 hooks 保持配置新鲜，提供 <code>caliber score</code> 检查路径/命令是否真实，以及 Jev 压缩。所有写入先展示 diff 并备份。</p>
+        <p class="use">适合：已经在用 Claude Code / Cursor，想把「配置 + 上下文维护」一起自动化的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npx @rely-ai/caliber bootstrap
+caliber sync --status</code></pre></div>
+        <p class="small">注意：只覆盖 5 个 Agent；部分能力要自带模型 key。</p>
+        <p class="small"><a href="https://github.com/caliber-ai-org/ai-setup" target="_blank" rel="noopener">github.com/caliber-ai-org/ai-setup →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>OpenPackage <span class="badge infer">包管理思路</span></h4>
+        <p class="small">把 rules、commands、agents、skills、MCP 打包成可安装资源，<code>opkg install</code> 从 GitHub、Git URL、本地目录或 Claude Plugin 安装，并按目标平台转换目录与格式；支持全局 <code>-g</code> 和指定 <code>--platforms</code>。</p>
+        <p class="use">适合：想把「一套团队配置」当 npm 包分发、版本化的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npm install -g opkg
+opkg install gh@owner/repo --platforms claudecode cursor opencode</code></pre></div>
+        <p class="small">注意：最近更新较慢（2026-05）；平台覆盖以 README 表格为准。</p>
+        <p class="small"><a href="https://github.com/enulus/OpenPackage" target="_blank" rel="noopener">github.com/enulus/OpenPackage →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s05" aria-labelledby="h05">
+    <div class="sec-head"><span class="sec-no">05</span><h2 id="h05">MCP：包管理、网关与容器</h2></div>
+    <p>这一层不是「同步配置文件」，而是让 MCP server 真正跑起来、被复用、被治理。先问自己：你是想「装一次，写到各客户端」，还是「客户端都连一个端点」？</p>
+
+    <div class="grid g2">
+      <div class="card project">
+        <h4>MCPM <span class="badge verified">包管理器</span></h4>
+        <p class="small">全局安装一次 MCP server，用 profiles 组织，再 <code>mcpm client edit</code> 写入 Claude Desktop、Cursor、Windsurf、VS Code、Cline、Goose、OpenCode 等客户端。含 registry 搜索、更新、直接运行、隧道分享。</p>
+        <p class="use">适合：本机多个客户端、想「装一次到处用」的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>brew install mcpm
+# 或 curl -sSL https://mcpm.sh/install | bash
+mcpm search github
+mcpm install github
+mcpm client edit claude-desktop</code></pre></div>
+        <p class="small">注意：安装脚本来自网络；企业环境先审计脚本与 registry 来源。</p>
+        <p class="small"><a href="https://github.com/pathintegral-institute/mcpm.sh" target="_blank" rel="noopener">github.com/pathintegral-institute/mcpm.sh →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>MCPHub <span class="badge verified">自托管控制面</span></h4>
+        <p class="small">把本地与远程 MCP server 接进来，按 server / group 暴露为稳定端点；支持 SSE、Streamable HTTP、stdio，内置 OAuth 2.0、Bearer、每用户凭证、日志、健康检查、MCP Apps 代理。Docker 一条命令起。</p>
+        <p class="use">适合：多客户端共享一组 server，且需要账号与权限的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>docker run -p 3000:3000 -v ./data:/app/data \
+  -e ADMIN_PASSWORD='change-me' samanhappy/mcphub</code></pre></div>
+        <p class="small">注意：这是长期运行的服务，别把无鉴权端点暴露到公网。</p>
+        <p class="small"><a href="https://github.com/samanhappy/mcphub" target="_blank" rel="noopener">github.com/samanhappy/mcphub →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>MetaMCP <span class="badge claim">聚合 + 中间件</span></h4>
+        <p class="small">把多个 MCP server 聚合成一个 MetaMCP server，用 namespace 分组、endpoint 暴露，支持 API Key / OAuth、SSE / Streamable HTTP / OpenAPI，并可在请求/响应上挂中间件。Docker Compose + Postgres。</p>
+        <p class="use">适合：需要「按项目/团队切命名空间」、想改工具描述与注解的人。</p>
+        <p class="small">注意：README 明确提到维护有延迟，最近更新 2026-06；新项目优先看 MCPHub / 1MCP。</p>
+        <p class="small"><a href="https://github.com/metatool-ai/metamcp" target="_blank" rel="noopener">github.com/metatool-ai/metamcp →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>1MCP <span class="badge verified">Agent 友好运行时</span></h4>
+        <p class="small"><code>1mcp serve</code> 聚合多个 server；CLI 模式让 Agent 按 <code>instructions → inspect → run</code> 渐进发现工具，避免一次性把全部 schema 塞进上下文。支持 presets、过滤、stdio proxy，以及 Codex / Claude / Cursor 的 <code>cli-setup</code>。</p>
+        <p class="use">适合：工具很多、想降低上下文占用，又不想自己写网关的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npm install -g @1mcp/agent
+1mcp mcp add context7 -- npx -y @upstash/context7-mcp
+1mcp serve</code></pre></div>
+        <p class="small">注意：默认开启匿名遥测，可用 <code>1mcp telemetry disable</code> 关闭。</p>
+        <p class="small"><a href="https://github.com/1mcp-app/agent" target="_blank" rel="noopener">github.com/1mcp-app/agent →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>ToolHive <span class="badge infer">企业级容器运行时</span></h4>
+        <p class="small">每个 MCP server 跑在隔离容器里，提供 Registry、Gateway、Kubernetes Operator、SSO/OIDC、审计与 OpenTelemetry；桌面 UI + CLI 可把受管 server 一键接入 Claude Desktop、Cursor、VS Code。定位是平台团队的生产级控制面。</p>
+        <p class="use">适合：要自托管、要审计与策略、已有 Docker/Podman 或 K8s 的团队。</p>
+        <p class="small">注意：比本地 CLI 重；先确认容器运行时与网络策略。</p>
+        <p class="small"><a href="https://github.com/stacklok/toolhive" target="_blank" rel="noopener">github.com/stacklok/toolhive →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Docker MCP Gateway <span class="badge verified">Docker 原生</span></h4>
+        <p class="small">Docker Desktop MCP Toolkit 的底层 CLI：用 profile 组织多个 server，统一由 Gateway 暴露；server 跑容器，secrets 交给 Docker Desktop，支持 OAuth、动态发现、调用追踪。客户端连同一套 Gateway 配置。</p>
+        <p class="use">适合：已经重度使用 Docker Desktop、想最小化额外服务的人。</p>
+        <p class="small">注意：依赖 Docker Desktop 4.59+；CI/无 Desktop 环境要额外配置。</p>
+        <p class="small"><a href="https://github.com/docker/mcp-gateway" target="_blank" rel="noopener">github.com/docker/mcp-gateway →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>ContextForge <span class="badge infer">联邦与治理</span></h4>
+        <p class="small">IBM 开源，把 MCP、A2A、REST/gRPC 联邦成一个端点，提供 registry、proxy、限流、鉴权、缓存、插件、分布式追踪；支持 PyPI、Docker、Kubernetes 多集群。</p>
+        <p class="use">适合：企业已有多个团队/集群，需要统一目录与治理，而不是个人本机管理。</p>
+        <p class="small">注意：启动必须配置 JWT / 加密密钥，部署复杂度明显高于本地 CLI。</p>
+        <p class="small"><a href="https://github.com/IBM/mcp-context-forge" target="_blank" rel="noopener">github.com/IBM/mcp-context-forge →</a></p>
+      </div>
+    </div>
+  </section>
+  <section id="s06" aria-labelledby="h06">
+    <div class="sec-head"><span class="sec-no">06</span><h2 id="h06">Skill：安装、同步与上下文预算</h2></div>
+    <p>Skills 不是「装得越多越好」。每个已启用 Skill 的描述都会进入 Agent 的上下文；真正的管理目标是「同一份技能，按 Agent 需要分发，并且知道它占了多少 token」。</p>
+
+    <div class="grid g2">
+      <div class="card project">
+        <h4>skills CLI <span class="badge verified">生态默认入口</span></h4>
+        <p class="small">Vercel Labs 的 <code>npx skills</code>，支持 79 个 Agent。可以从 GitHub 仓库、skills.sh 市场安装，默认装到当前项目，<code>-g</code> 装到全局；含搜索、列表、更新、删除、初始化。</p>
+        <p class="use">适合：大多数人的第一步，尤其是 Claude Code / Codex / Cursor / OpenCode。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npx skills add owner/repo
+npx skills add owner/repo -g
+npx skills list</code></pre></div>
+        <p class="small">注意：默认收集匿名遥测，可用 <code>DISABLE_TELEMETRY=1</code> 关闭。</p>
+        <p class="small"><a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">github.com/vercel-labs/skills →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Skills Manager（xingkongliang） <span class="badge verified">桌面库</span></h4>
+        <p class="small">一个中心库（默认 <code>~/.skills-manager</code>）管理 56 个工具的 skills：全局 / 项目 / Agent 三种工作区、Presets 批量启停、符号链接或复制、来源与更新追踪、GitHub 备份与多设备同步，支持 macOS / Windows / Linux。</p>
+        <p class="use">适合：技能很多、需要可视化管理与跨机器同步的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>brew install --cask skills-manager</code></pre></div>
+        <p class="small">注意：Preset 应用是一次性复制，不是实时同步；备份不含 secrets。</p>
+        <p class="small"><a href="https://github.com/xingkongliang/skills-manager" target="_blank" rel="noopener">github.com/xingkongliang/skills-manager →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>Skills Manager（jiweiyeah） <span class="badge verified">轻量 + CLI</span></h4>
+        <p class="small">Tauri 桌面应用 + <code>skm</code> CLI，用符号链接把一份技能同步到 32 个工具；支持按工具启用/禁用、市场、命令面板、中英双语。CLI 可 <code>adopt</code> 已有技能、<code>doctor</code> 检查、<code>fix</code> 修复。</p>
+        <p class="use">适合：想用 CLI/无头机器管理，又想要 GUI 兜底的人。</p>
+        <p class="small">注意：与上一款同名但不同项目；Windows 上优先 junction，失败才复制。</p>
+        <p class="small"><a href="https://github.com/jiweiyeah/Skills-Manager" target="_blank" rel="noopener">github.com/jiweiyeah/Skills-Manager →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>ASM <span class="badge infer">审计与 token</span></h4>
+        <p class="small">Agent-first CLI/TUI，覆盖 21 个 provider、约 6,962 个技能。除安装/搜索外，提供 <code>asm audit</code> 安全扫描、重复/语义重叠检查，以及 <code>asm stats --tokens</code> 看每个技能驻留上下文与正文的 token 成本。</p>
+        <p class="use">适合：技能装多了、上下文变贵，想量化并清理的人。</p>
+        <div class="code"><div class="code-head"><span class="file">install</span></div><pre><code>npm install -g agent-skill-manager
+asm list --json
+asm stats --tokens</code></pre></div>
+        <p class="small">注意：目录规模来自其 registry；安装前仍要看来源与权限。</p>
+        <p class="small"><a href="https://github.com/luongnv89/asm" target="_blank" rel="noopener">github.com/luongnv89/asm →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>ai-agent-skills <span class="badge claim">策展型技能库</span></h4>
+        <p class="small">不是「装完就走」的通用管理器，而是带 shelves、provenance、notes 的策展库 + CLI/TUI：可以建自己的团队技能库、批量导入、生成文档、分享给同事。兼容任意 Agent Skills 的 Agent。</p>
+        <p class="use">适合：想维护「小而准」的团队技能集，而不是追逐市场全量的人。</p>
+        <p class="small">注意：最近更新 2026-09；生态默认入口仍是 skills CLI。</p>
+        <p class="small"><a href="https://github.com/MoizIbnYousaf/ai-agent-skills" target="_blank" rel="noopener">github.com/MoizIbnYousaf/ai-agent-skills →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s07" aria-labelledby="h07">
+    <div class="sec-head"><span class="sec-no">07</span><h2 id="h07">轻量/新兴：小而准的同步器</h2></div>
+    <p>这两个项目规模不大，但把「一个配置源，同步到多个客户端」做得足够直接。适合先试水，不建议作为唯一备份方案。</p>
+
+    <div class="grid g2">
+      <div class="card project">
+        <h4>vsync <span class="badge claim">低活跃</span></h4>
+        <p class="small">选一个工具作为 source of truth，把 Skills、MCP、Agents、Commands 同步到 Claude Code、Cursor、OpenCode、Codex。支持 diff 预览、safe / prune 两种模式、JSONC/TOML 转换、原子写入与 manifest 哈希。</p>
+        <p class="use">适合：4 个客户端以内、想要「一条命令 + 先看 diff」的人。</p>
+        <p class="small">注意：最近更新 2026-01；新项目优先看 Rulesync / HarnessKit。</p>
+        <p class="small"><a href="https://github.com/nicepkg/vsync" target="_blank" rel="noopener">github.com/nicepkg/vsync →</a></p>
+      </div>
+
+      <div class="card project">
+        <h4>mcpick <span class="badge verified">Agent 可调用</span></h4>
+        <p class="small">面向 9 个客户端的 MCP 配置管理器：list / enable / disable / add / doctor，输出前对 env 与 headers 做密钥脱敏；还能以 MCP server 模式运行，让 Agent 通过工具调用管理配置；也支持安装 portable skills。</p>
+        <p class="use">适合：想让 Agent 自己排查「为什么这个 MCP 没连上」的人。</p>
+        <p class="small">注意：skills 子命令依赖已认证的 <code>gh</code>；项目很新（96 Star）。</p>
+        <p class="small"><a href="https://github.com/spences10/mcpick" target="_blank" rel="noopener">github.com/spences10/mcpick →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s08" aria-labelledby="h08">
+    <div class="sec-head"><span class="sec-no">08</span><h2 id="h08">怎么选：四套组合</h2></div>
+    <p>不要按 Star 选，按「你有几个 Agent、是否要纳入 Git、是否需要审计」选。以下组合都假设只有一个写入者，其余工具只读。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h4 style="margin-top:0">A. 个人最小可用</h4>
+        <p class="small">1–2 个 Agent、10 个以内 MCP。用 MCPM 装 server，用 skills CLI 装技能，不引入网关。</p>
+        <p class="small"><b>组合：</b>MCPM + <code>npx skills</code></p>
+        <p class="small"><b>优点：</b>命令少、可逆；<b>代价：</b>没有统一审计，换机要重跑。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">B. 多 Agent + Git</h4>
+        <p class="small">5 个以上 Agent，配置要 code review。用 Rulesync 或 Ruler 做 source of truth，OpenPackage/ASM 管内容分发。</p>
+        <p class="small"><b>组合：</b>Rulesync + OpenPackage（或 ASM）</p>
+        <p class="small"><b>优点：</b>可版本化、可回滚；<b>代价：</b>第一次映射格式要花时间。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">C. 桌面可视化</h4>
+        <p class="small">不想背命令、想看见每个 Agent 的实际状态。用 HarnessKit 做总控；只想管技能就用 Skills Manager。</p>
+        <p class="small"><b>组合：</b>HarnessKit（或 Skills Manager + MCPM）</p>
+        <p class="small"><b>优点：</b>发现/启停/审计直观；<b>代价：</b>GUI 项目较新，先小范围验证。</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0">D. 团队 / 企业</h4>
+        <p class="small">要共享、鉴权、审计与多集群。用 ToolHive 或 ContextForge 做运行控制面，Docker Gateway 做容器隔离，配置仍用 Rulesync 进仓库。</p>
+        <p class="small"><b>组合：</b>ToolHive / ContextForge + Docker Gateway + Rulesync</p>
+        <p class="small"><b>优点：</b>可治理；<b>代价：</b>运维成本高，不适合单人本机。</p>
+      </div>
+    </div>
+
+    <h3>一个可落地的最小流程</h3>
+    <div class="code">
+      <div class="code-head"><span class="file">bootstrap.sh · 只选一个写入者</span></div>
+      <pre><code># 1) MCP：装一次，写到各客户端
+brew install mcpm
+mcpm install github
+mcpm client edit claude-desktop
+
+# 2) Skills：默认项目级；-g 才全局
+npx skills add owner/repo -g
+
+# 3) 配置即代码：Rulesync 或 Ruler 二选一
+npm install -g rulesync
+rulesync init
+rulesync generate --targets "*" --features "*"
+
+# 4) 写入前先备份；写入后只读校验
+git add -A && git commit -m "chore: sync agent configs"</code></pre>
+    </div>
+    <p class="small">如果第 3 步已经用 HarnessKit/Ruler 管 MCP，不要再让 Rulesync 写同一批 MCP 文件；把其中一个降级为只读审查。</p>
+  </section>
+  <section id="s09" aria-labelledby="h09">
+    <div class="sec-head"><span class="sec-no">09</span><h2 id="h09">七个坑</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>坑</th><th>表现</th><th>怎么避免</th></tr></thead>
+        <tbody>
+          <tr><td><b>双写入者</b></td><td>Rulesync 与 Ruler 同时生成同一份 MCP 配置，字段互相覆盖</td><td>只保留一个写入者；其他工具只读或只做审计</td></tr>
+          <tr><td><b>全局 / 项目混淆</b></td><td>Skill 装到全局，项目级 Agent 看不到；或反过来污染所有仓库</td><td>先看目标 Agent 的 discovery 顺序；默认项目级，明确需要才 <code>-g</code></td></tr>
+          <tr><td><b>符号链接 vs 复制</b></td><td>链接能自动更新但换机/Windows 易断；复制可移植但会漂移</td><td>本机用链接，团队分发用复制 + 版本号；Windows 先测 junction</td></tr>
+          <tr><td><b>密钥进了配置</b></td><td>MCP 的 <code>env</code> / <code>headers</code> 带 token，被 commit 或截图</td><td>用 <code>from_env</code> / secret manager；提交前扫描；输出脱敏</td></tr>
+          <tr><td><b>破坏性同步</b></td><td><code>prune</code> / 覆盖模式删掉了手改配置</td><td>先 dry-run / diff；备份目录；第一次只开 safe 模式</td></tr>
+          <tr><td><b>上下文税</b></td><td>装了 50 个 Skill，描述常驻，真正用到的没几个</td><td>按项目启用；用 ASM <code>stats --tokens</code> 或手动审计；定期清理</td></tr>
+          <tr><td><b>供应链</b></td><td>第三方 Skill / MCP 执行 shell、读文件、发网络请求</td><td>看源码与权限；优先固定 commit/tag；用容器或审计工具隔离</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout bad">
+      <span class="t">一条硬规则</span>
+      任何会「写配置」的工具，第一次运行都必须能导出 diff 和备份。没有回滚路径的自动化，不叫管理，叫赌博。
+    </div>
+  </section>
+
+  <section id="s10" aria-labelledby="h10">
+    <div class="sec-head"><span class="sec-no">10</span><h2 id="h10">本机落地清单</h2></div>
+    <p>按顺序做，先盘点再自动化。清单只做自检，不替代你对具体 Agent 的验证。</p>
+    <ul class="checks" id="checklist">
+      <li><input type="checkbox" id="c1"><label for="c1">列出本机所有 Agent，以及它们各自的全局 / 项目配置路径。</label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">导出当前 MCP 配置与 skills 清单，存一份可回滚的备份。</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">选定唯一 source of truth：一个目录、一个工具、或一个网关。</label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">确认 MCP 配置里没有明文密钥；需要密钥的改用环境变量或 secret manager。</label></li>
+      <li><input type="checkbox" id="c5"><label for="c5">先用 dry-run / diff 模式跑一次，确认只改预期文件。</label></li>
+      <li><input type="checkbox" id="c6"><label for="c6">只挑一个 Agent 做灰度，重启后验证 MCP 能连、Skill 能被发现。</label></li>
+      <li><input type="checkbox" id="c7"><label for="c7">检查全局 / 项目作用域，避免把项目技能写成全局污染。</label></li>
+      <li><input type="checkbox" id="c8"><label for="c8">量化上下文成本：工具 schema 与 skill 描述占了多少 token。</label></li>
+      <li><input type="checkbox" id="c9"><label for="c9">把配置纳入 Git 或定期备份，并写清回滚命令。</label></li>
+      <li><input type="checkbox" id="c10"><label for="c10">设定更新节奏：MCP / Skill 升级前先看 changelog 与权限变化。</label></li>
+    </ul>
+    <p class="small" id="checkNote" aria-live="polite">已完成 0 / 10 项。</p>
+  </section>
+
+  <section id="s11" aria-labelledby="h11">
+    <div class="sec-head"><span class="sec-no">11</span><h2 id="h11">趋势判断</h2></div>
+    <div class="grid g3">
+      <div class="card"><h4 style="margin-top:0">标准在收敛</h4><p class="small" style="margin:0"><code>AGENTS.md</code> 与 Agent Skills 规范（<code>SKILL.md</code>）正在成为跨工具的最小公约数；「一个技能目录，多 Agent 读取」会越来越常见。</p></div>
+      <div class="card"><h4 style="margin-top:0">运行层在合并</h4><p class="small" style="margin:0">MCP 从「每个客户端各配一份」转向「一个本地/自托管网关 + 鉴权 + 观测」；1MCP、MCPHub、ToolHive 代表三种不同重量级。</p></div>
+      <div class="card"><h4 style="margin-top:0">管理在左移</h4><p class="small" style="margin:0">配置即代码、安装前审计、token 预算会变成默认能力；「能装」不再够，「知道装了什么、占了多少」才是卖点。</p></div>
+    </div>
+    <div class="callout">
+      <span class="t">本文判断</span>
+      单人本机的最优解通常不是「一个大而全的平台」，而是「一个配置写入者 + 一个技能分发器 + 可选的运行网关」。先减少写入者，再谈自动化。
+    </div>
+  </section>
+
+  <section id="s12" aria-labelledby="h12">
+    <div class="sec-head"><span class="sec-no">12</span><h2 id="h12">来源与口径</h2></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>证据等级</th><th>含义</th><th>本文中的例子</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge verified">公开可核验</span></td><td>GitHub 仓库、README、API 元数据</td><td>Star、许可证、最近更新、安装命令、支持列表</td></tr>
+          <tr><td><span class="badge claim">项目自述</span></td><td>项目 README 的功能声明，未独立复现</td><td>「支持 79 个 Agent」「审计 18 条规则」「6,962 个技能」</td></tr>
+          <tr><td><span class="badge infer">本文推断</span></td><td>基于功能与活跃度的判断</td><td>适用场景、组合建议、风险与趋势</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>主要来源</h3>
+    <ul class="clean">
+      <li>项目仓库与 README：<a href="https://github.com/RealZST/HarnessKit" target="_blank" rel="noopener">HarnessKit</a> · <a href="https://github.com/dyoshikawa/rulesync" target="_blank" rel="noopener">Rulesync</a> · <a href="https://github.com/intellectronica/ruler" target="_blank" rel="noopener">Ruler</a> · <a href="https://github.com/caliber-ai-org/ai-setup" target="_blank" rel="noopener">Caliber</a> · <a href="https://github.com/enulus/OpenPackage" target="_blank" rel="noopener">OpenPackage</a></li>
+      <li>MCP 运行层：<a href="https://github.com/pathintegral-institute/mcpm.sh" target="_blank" rel="noopener">MCPM</a> · <a href="https://github.com/samanhappy/mcphub" target="_blank" rel="noopener">MCPHub</a> · <a href="https://github.com/metatool-ai/metamcp" target="_blank" rel="noopener">MetaMCP</a> · <a href="https://github.com/1mcp-app/agent" target="_blank" rel="noopener">1MCP</a> · <a href="https://github.com/stacklok/toolhive" target="_blank" rel="noopener">ToolHive</a> · <a href="https://github.com/docker/mcp-gateway" target="_blank" rel="noopener">Docker MCP Gateway</a> · <a href="https://github.com/IBM/mcp-context-forge" target="_blank" rel="noopener">ContextForge</a></li>
+      <li>Skill 层：<a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">skills</a> · <a href="https://github.com/xingkongliang/skills-manager" target="_blank" rel="noopener">Skills Manager</a> · <a href="https://github.com/jiweiyeah/Skills-Manager" target="_blank" rel="noopener">Skills Manager（skm）</a> · <a href="https://github.com/luongnv89/asm" target="_blank" rel="noopener">ASM</a> · <a href="https://github.com/MoizIbnYousaf/ai-agent-skills" target="_blank" rel="noopener">ai-agent-skills</a></li>
+      <li>轻量工具：<a href="https://github.com/nicepkg/vsync" target="_blank" rel="noopener">vsync</a> · <a href="https://github.com/spences10/mcpick" target="_blank" rel="noopener">mcpick</a></li>
+      <li>规范与目录：<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol</a> · <a href="https://agentskills.io/" target="_blank" rel="noopener">Agent Skills</a> · <a href="https://skills.sh/" target="_blank" rel="noopener">skills.sh</a></li>
+      <li>Star、许可证与最近更新：GitHub REST API，读取于 2026-11-03；数字会变化，以仓库为准。</li>
+    </ul>
+
+    <div class="callout bad">
+      <span class="t">免责声明</span>
+      本文是开源项目地图与选型分析，不构成安全认证或采购建议。第三方 MCP / Skill 可能执行代码、访问文件与网络；安装前请阅读源码、许可证与权限说明，并先在隔离环境验证。
+    </div>
+  </section>
+
+  <footer>
+    <p>本机 Agent 的 MCP 与 Skill 管理 · 2026-11-03 · 单文件离线报告</p>
+    <p class="small">19 个 GitHub 项目；Star 数为报告日快照。功能描述来自项目 README，未做统一 benchmark；组合建议属于本文推断。</p>
+  </footer>
+</main>
+</div>
+
+<button class="top-btn" id="topBtn" aria-label="回到顶部">↑</button>
+
+<script>
+(function () {
+  "use strict";
+  var docEl = document.documentElement;
+  var progress = document.getElementById("progress");
+  var topBtn = document.getElementById("topBtn");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var linkById = {};
+  links.forEach(function (a) { linkById[a.getAttribute("href").slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll("main section"));
+
+  function setActive(id) {
+    links.forEach(function (a) { a.removeAttribute("aria-current"); });
+    if (linkById[id]) { linkById[id].setAttribute("aria-current", "true"); }
+  }
+
+  function onScroll() {
+    var max = docEl.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+    if (progress) { progress.style.width = pct.toFixed(2) + "%"; }
+    if (topBtn) { topBtn.classList.toggle("show", window.scrollY > 600); }
+    var current = sections.length ? sections[0].id : "";
+    sections.forEach(function (s) {
+      if (s.getBoundingClientRect().top <= 150) { current = s.id; }
+    });
+    setActive(current);
+  }
+
+  if (topBtn) {
+    topBtn.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  var rows = Array.prototype.slice.call(document.querySelectorAll("#repo-table tbody tr"));
+  var chips = Array.prototype.slice.call(document.querySelectorAll("#layer-chips .chip"));
+  var search = document.getElementById("repo-search");
+  var count = document.getElementById("repo-count");
+  var empty = document.getElementById("repo-empty");
+  var layer = "all";
+
+  function applyFilter() {
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (row) {
+      var okLayer = layer === "all" || row.getAttribute("data-layer") === layer;
+      var hay = (row.getAttribute("data-search") || "") + " " + row.textContent;
+      var okText = !q || hay.toLowerCase().indexOf(q) !== -1;
+      var show = okLayer && okText;
+      row.hidden = !show;
+      if (show) { shown += 1; }
+    });
+    count.textContent = shown + " 个项目";
+    empty.hidden = shown > 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      layer = chip.getAttribute("data-layer");
+      chips.forEach(function (c) { c.setAttribute("aria-pressed", c === chip ? "true" : "false"); });
+      applyFilter();
+    });
+  });
+  search.addEventListener("input", applyFilter);
+  applyFilter();
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  var note = document.getElementById("checkNote");
+  function check() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    note.textContent = "已完成 " + n + " / " + boxes.length + " 项。" +
+      (n === boxes.length ? " 可以开始灰度上线。" : " 建议按顺序完成。");
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", check); });
+  check();
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+})();
+</script>
+</body>
+</html>
