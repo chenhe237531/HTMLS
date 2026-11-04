@@ -29,6 +29,7 @@
 | [`AgentsTeam/race-condition/`](AgentsTeam/race-condition/index.html) | Google Race Condition 拆解：1000 agent 马拉松、0 LLM 调用技巧与复现方案 |
 | [`Agents/Skills/skill-atlas/`](Agents/Skills/skill-atlas/index.html) | Skill Atlas：MiniMax Code 团队 17 个 Skill 逐篇拆解（自包含，可单独发布） |
 | [`Agents/Skills/skills-hub/`](Agents/Skills/skills-hub/index.html) | Skills Hub 地图：12 个 Skills 市场 / 目录 / 仓库 / CLI 的汇总与选型清单 |
+| [`Agents/Skills/reverse-skill/`](Agents/Skills/reverse-skill/index.html) | reverse-skill 拆解：44 条路由、43 个技能模块、scope/证据契约与 178 条回归用例（2026-11 快照，含路由试跑） |
 | [`Invest/Hackathons/`](Invest/Hackathons/index.html) | AI 黑客松：8 个找赛平台地图 + [商业逻辑分析](Invest/Hackathons/business.html) |
 | [`Video/课代表立正/`](Video/课代表立正/index.html) | B站 UP「课代表立正」投稿索引：804 条视频的标题、发布日期、播放量、时长、分区、简介概述，支持主题 / 形式 / 年份筛选（2026-10 抓取） |
 | [`Video/课代表立正/topics.html`](Video/课代表立正/topics.html) | 同频道的分类与资料整理：10 个主题、6 种内容形式、32 本书、45 位访谈嘉宾、87 条站外链接 |
@@ -57,6 +58,7 @@ python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_ht
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Agents/agent-workbench/wechat-agent-automation-analysis.html"
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Agents/Tools/index.html"
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Agents/Skills/skill-atlas/index.html"
+python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Agents/Skills/reverse-skill/index.html"
 for f in "$PWD"/Video/课代表立正/*.html; do
   python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$f"
 done

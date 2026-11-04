@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reverse-skill 拆解：把逆向经验做成 44 条路由的 AI 技能包</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#14171c; --muted:#5b6472;
+    --line:#e1e5ea; --line-strong:#c7cdd6;
+    --accent:#155e9c; --accent-2:#0b7d7d; --accent-soft:#e7f0f9;
+    --ok:#116b3a; --ok-soft:#e4f3ea;
+    --warn:#8a5300; --warn-soft:#fbf0dc;
+    --bad:#98221b; --bad-soft:#fbe8e6;
+    --idle:#4b5563; --idle-soft:#eef1f4;
+    --radius:12px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:18px}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono); font-size:.87em; background:#edf0f4; padding:.12em .38em; border-radius:4px; overflow-wrap:anywhere}
+  h1,h2,h3{line-height:1.32; letter-spacing:-.012em}
+  h2{font-size:23px; margin:0 0 4px}
+  h3{font-size:16.5px; margin:24px 0 8px}
+  h4{font-size:14px; margin:18px 0 6px; color:var(--muted); letter-spacing:.02em}
+  p{margin:9px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:5px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+  .skip{position:absolute;left:-999px;top:8px;background:#fff;padding:8px 14px;border-radius:8px;z-index:99}
+  .skip:focus{left:8px}
+
+  .wrap{max-width:1200px; margin:0 auto; padding:0 22px}
+
+  /* ---------- header ---------- */
+  header.top{
+    background:
+      radial-gradient(900px 320px at 12% -20%, rgba(56,189,248,.20), transparent 60%),
+      radial-gradient(700px 300px at 88% 0%, rgba(20,184,166,.16), transparent 60%),
+      linear-gradient(180deg,#0a1220 0%,#111c2e 100%);
+    color:#e9eef6; padding:38px 0 30px; border-bottom:1px solid #08101c;
+  }
+  header.top .kicker{font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:#8fa6c4}
+  header.top h1{font-size:clamp(24px,3.4vw,33px); margin:12px 0 10px; color:#fff; max-width:960px}
+  header.top .lead{margin:0; color:#b3c1d4; max-width:900px; font-size:15.5px}
+  header.top .lead b{color:#e6eefb; font-weight:600}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:18px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; padding:5px 11px; border-radius:999px;
+    background:rgba(255,255,255,.07); color:#d6e2f3; border:1px solid rgba(255,255,255,.12);
+  }
+  .chip b{color:#fff; font-weight:600}
+  .chip .dot{width:6px;height:6px;border-radius:50%;background:#38bdf8; display:inline-block}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid; grid-template-columns:226px minmax(0,1fr); gap:36px; align-items:start; padding:26px 0 56px}
+  nav.side{position:sticky; top:16px; font-size:13px}
+  nav.side .nav-title{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 8px 10px}
+  nav.side a{
+    display:block; padding:6px 10px; border-radius:7px; color:var(--muted);
+    border-left:2px solid transparent; line-height:1.45;
+  }
+  nav.side a:hover{background:#eef1f5; color:var(--ink); text-decoration:none}
+  nav.side a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  nav.side .sub{font-size:11.5px; color:#8a929e; padding:10px 10px 0}
+
+  main{min-width:0}
+  section{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 28px 30px; margin:0 0 20px; box-shadow:var(--shadow);
+  }
+  section > .eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-2); font-weight:700}
+  section h2{margin-top:4px}
+  .section-lead{color:var(--muted); margin:2px 0 16px; max-width:86ch}
+
+  /* ---------- primitives ---------- */
+  .grid{display:grid; gap:14px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .box{border:1px solid var(--line); border-radius:10px; padding:14px 16px; background:#fcfcfd}
+  .box h3{margin:0 0 6px; font-size:14.5px}
+  .box p{margin:4px 0; font-size:13.8px; color:#3b4350}
+  .box .n{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+
+  .stat{background:#fbfcfd; border:1px solid var(--line); border-radius:10px; padding:12px 14px}
+  .stat .v{font-size:23px; font-weight:700; letter-spacing:-.02em; line-height:1.2}
+  .stat .k{font-size:12px; color:var(--muted); margin-top:2px}
+  .stat .note{font-size:11.5px; color:#7a8290; margin-top:4px}
+
+  .callout{border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0}
+  .callout p{margin:3px 0}
+  .callout.warn{border-left-color:#c07a00; background:var(--warn-soft)}
+  .callout.bad{border-left-color:#b3372c; background:var(--bad-soft)}
+  .callout.ok{border-left-color:#177a45; background:var(--ok-soft)}
+  .callout .t{font-weight:700; font-size:13px; letter-spacing:.02em; display:block; margin-bottom:2px}
+
+  blockquote{margin:14px 0; padding:12px 18px; border-left:3px solid var(--line-strong); color:#39414d; background:#fafbfc; font-size:14.5px}
+  blockquote p{margin:0}
+  blockquote cite{display:block; margin-top:6px; font-size:12px; color:var(--muted); font-style:normal}
+
+  .tag{display:inline-block; font-size:10.5px; line-height:1.5; padding:0 6px; border-radius:4px; vertical-align:1px; margin-right:4px; border:1px solid transparent; white-space:nowrap}
+  .t-quote{background:#eef3fb; color:#23538f; border-color:#d6e2f3}
+  .t-obs{background:#e8f4f2; color:#0a6a62; border-color:#cfe9e5}
+  .t-inf{background:#f7f0e3; color:#8a5a08; border-color:#eddfc4}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px; margin:10px 0}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:#fafbfc; position:sticky; top:0; z-index:1}
+  tbody tr:hover{background:#fafcfe}
+  td.num{font-family:var(--mono); color:var(--muted); font-size:12px; width:38px}
+  .nowrap{white-space:nowrap}
+
+  /* ---------- pipeline ---------- */
+  .pipe{display:grid; gap:10px; margin:16px 0 6px}
+  .pipe-step{display:grid; grid-template-columns:34px minmax(0,1fr); gap:12px; align-items:start; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#fcfcfd}
+  .pipe-step .idx{width:26px;height:26px;border-radius:50%;background:#0f2742;color:#dff1ff;display:grid;place-items:center;font-size:12px;font-family:var(--mono)}
+  .pipe-step h3{margin:0 0 2px; font-size:14px; color:var(--ink); letter-spacing:0}
+  .pipe-step p{margin:0; font-size:13.5px; color:#414a58}
+  .pipe-step code{font-size:12px}
+  .pipe-step.gate{border-color:#e7c98c; background:#fffaf0}
+  .pipe-step.gate .idx{background:#8a5300}
+
+  /* ---------- route table ---------- */
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin:16px 0 8px}
+  .field{display:flex; flex-direction:column; gap:4px; min-width:240px; flex:1 1 280px}
+  .field label{font-size:11.5px; color:var(--muted); letter-spacing:.04em}
+  input[type=search], input[type=text]{
+    width:100%; font:inherit; font-size:14px; padding:8px 11px; border:1px solid var(--line-strong);
+    border-radius:8px; background:#fff; color:var(--ink);
+  }
+  input[type=search]::placeholder, input[type=text]::placeholder{color:#98a0ac}
+  .btn{
+    font:inherit; font-size:13px; padding:7px 13px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--line-strong); background:#fff; color:var(--ink);
+  }
+  .btn:hover{background:#f2f5f9}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  .btn.primary:hover{background:#114b7d}
+  .btn[aria-pressed=true]{background:#0f2742; border-color:#0f2742; color:#fff}
+  .filters{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px}
+  .filters .btn{font-size:12px; padding:5px 10px}
+  .count{font-size:12.5px; color:var(--muted); margin-left:auto; padding-bottom:8px}
+  .table-wrap{overflow:auto; border:1px solid var(--line); border-radius:10px; max-height:640px}
+  .route-table{margin:0; min-width:760px}
+  .route-table thead th{background:#f7f9fb}
+  .route-table td{padding:9px 10px}
+  .route-table .id{font-family:var(--mono); font-size:12.5px; font-weight:700; color:#0f2742; width:52px}
+  .route-table .skill{font-family:var(--mono); font-size:12px; color:#2c4a6b; overflow-wrap:anywhere}
+  .route-table details summary{cursor:pointer; color:var(--accent); font-size:12.5px; list-style:none; white-space:nowrap}
+  .route-table details summary::-webkit-details-marker{display:none}
+  .route-table details summary::before{content:"+"; font-family:var(--mono); font-size:12px; color:#7c8b9c; margin-right:5px; display:inline-block}
+  .route-table details summary:hover{text-decoration:underline}
+  .route-table details[open] summary::before{content:"−"}
+  .kw{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; max-width:520px}
+  .kw code{font-size:10.5px; background:#eef2f7; color:#33465c; padding:2px 5px; border-radius:4px; white-space:normal; word-break:break-word}
+  .kw .ex{background:#fdf0ee; color:#8d2a22}
+  .kw .all{background:#eef7f0; color:#1c6b3d}
+  .empty{padding:26px 16px; text-align:center; color:var(--muted); font-size:14px; display:none}
+  .empty.show{display:block}
+
+  /* ---------- simulator ---------- */
+  .sim{background:linear-gradient(180deg,#f7fbff,#fbfcfd); border:1px solid #d8e4f0; border-radius:12px; padding:16px 18px; margin:18px 0 6px}
+  .sim h3{margin:0 0 2px; font-size:15.5px}
+  .sim .hint{font-size:12.5px; color:var(--muted); margin:0 0 10px}
+  .sim-row{display:flex; gap:8px; flex-wrap:wrap}
+  .sim-row input{flex:1 1 320px}
+  .samples{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px}
+  .samples button{font-size:12px; padding:4px 9px; border-radius:999px; border:1px solid #cfe0ef; background:#fff; color:#22527d; cursor:pointer}
+  .samples button:hover{background:#eaf4fd}
+  .sim-out{margin-top:12px; display:grid; gap:8px}
+  .res{border:1px solid var(--line); background:#fff; border-radius:9px; padding:10px 12px; display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:10px; align-items:center}
+  .res .rid{font-family:var(--mono); font-weight:700; font-size:13px; color:#0f2742}
+  .res .rl{font-size:13.5px; font-weight:600}
+  .res .rs{font-family:var(--mono); font-size:11.5px; color:#48617a; overflow-wrap:anywhere}
+  .res .score{font-family:var(--mono); font-size:11.5px; color:var(--muted); text-align:right; white-space:nowrap}
+  .res.primary{border-color:#9fc7e8; box-shadow:inset 3px 0 0 var(--accent)}
+  .res-note{font-size:12px; color:var(--muted)}
+  .res-note b{color:var(--ink)}
+
+  /* ---------- module cards ---------- */
+  .mods{display:grid; gap:12px; grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:14px}
+  .mod{border:1px solid var(--line); border-radius:10px; padding:13px 15px; background:#fcfcfd}
+  .mod .mh{display:flex; align-items:baseline; gap:8px; justify-content:space-between}
+  .mod h3{margin:0; font-size:14px}
+  .mod .cnt{font-size:11.5px; color:var(--muted); white-space:nowrap}
+  .mod p{font-size:12.5px; color:#4a5361; margin:5px 0 8px}
+  .mod .mchips{display:flex; flex-wrap:wrap; gap:4px}
+  .mod .mchips span{font-family:var(--mono); font-size:10.5px; background:#eef2f7; border-radius:4px; padding:2px 5px; color:#33465c}
+
+  /* ---------- code ---------- */
+  .code{position:relative; margin:10px 0 4px; background:#0e1724; border-radius:10px; border:1px solid #0a111c; overflow:hidden}
+  .code pre{margin:0; padding:13px 14px; overflow:auto; color:#dbe7f5; font-family:var(--mono); font-size:12.5px; line-height:1.65}
+  .code pre code{background:transparent; color:inherit; padding:0; border-radius:0; font-size:inherit; overflow-wrap:normal; white-space:pre}
+  .code .copy{position:absolute; top:7px; right:7px; font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,.10); color:#cfe0f2; border:1px solid rgba(255,255,255,.18); cursor:pointer}
+  .code .copy:hover{background:rgba(255,255,255,.2)}
+  .code .copy.done{background:#146c46; border-color:#146c46; color:#fff}
+  .code .cap{display:block; padding:6px 14px; background:#0a121d; color:#7e93ab; font-size:11px; letter-spacing:.06em; text-transform:uppercase; border-bottom:1px solid #16233a}
+
+  /* ---------- verdict ---------- */
+  .verdict{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .verdict .box.good{border-color:#cfe7d8; background:#f7fcf9}
+  .verdict .box.caution{border-color:#eddfc4; background:#fffdf7}
+  .list-tight li{margin:4px 0; font-size:13.8px}
+
+  footer{border-top:1px solid var(--line); background:#fff; padding:26px 0 34px; color:var(--muted); font-size:12.5px}
+  footer p{margin:6px 0}
+  .srclist{font-size:12.5px}
+  .srclist code{font-size:11.5px}
+
+  @media (max-width:1020px){
+    .layout{grid-template-columns:1fr; gap:18px}
+    nav.side{position:static; order:-1; display:none}
+    .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:760px){
+    body{font-size:14.5px}
+    section{padding:20px 17px 24px; border-radius:10px}
+    .g2,.g3,.mods,.verdict{grid-template-columns:1fr}
+    .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    header.top{padding:26px 0 22px}
+    .count{margin-left:0; padding-bottom:0}
+    .res{grid-template-columns:56px minmax(0,1fr); }
+    .res .score{grid-column:2; text-align:left}
+  }
+  @media print{
+    header.top{background:#fff !important; color:#000}
+    header.top h1,header.top .lead,header.top .kicker{color:#000}
+    .chip{color:#000; border-color:#bbb; background:#fff}
+    nav.side,.sim,.copy,.filters,.controls{display:none !important}
+    .layout{display:block}
+    section{box-shadow:none; break-inside:avoid; border-color:#bbb}
+    .table-wrap{max-height:none; overflow:visible}
+    .route-table{min-width:0}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">开源项目拆解 · AI Agent 基建 · 2026-11</div>
+    <h1>reverse-skill：把“逆向经验”做成 44 条路由的 AI 技能包</h1>
+    <p class="lead">它本身不干逆向的苦力活。它做的是<b>分诊</b>：先判断这活属于 APK、二进制、前端 JS 还是 CTF，再把 AI 送进对应的 <code>SKILL.md</code>，顺手检查工具装没装、授权有没有、证据留没留。</p>
+    <div class="meta">
+      <span class="chip"><span class="dot"></span><b>43,949</b> stars</span>
+      <span class="chip"><b>6,512</b> forks</span>
+      <span class="chip"><b>MIT</b> 主许可</span>
+      <span class="chip">release <b>v1.0.1</b></span>
+      <span class="chip"><b>44</b> 条路由 · <b>43</b> 个技能模块</span>
+      <span class="chip"><b>178</b> 条回归用例</span>
+      <span class="chip">快照 <b>2026-11-01</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="side" aria-label="目录">
+    <p class="nav-title">目录</p>
+    <a href="#summary">摘要与结论</a>
+    <a href="#what">1 · 它是什么</a>
+    <a href="#flow">2 · 执行链</a>
+    <a href="#routing">3 · 44 条路由</a>
+    <a href="#sim">4 · 路由试跑</a>
+    <a href="#modules">5 · 模块地图</a>
+    <a href="#ops">6 · 授权与证据契约</a>
+    <a href="#tools">7 · 工具自举</a>
+    <a href="#quality">8 · 质量门</a>
+    <a href="#safety">9 · 安全与合规</a>
+    <a href="#start">10 · 上手</a>
+    <a href="#verdict">11 · 客观评价</a>
+    <a href="#sources">12 · 核实与来源</a>
+    <p class="sub">标注：<span class="tag t-quote">原文</span> 引用 · <span class="tag t-obs">观察</span> 读取 · <span class="tag t-inf">推断</span> 判断</p>
+  </nav>
+
+  <main id="main">
+
+    <!-- ============ 摘要 ============ -->
+    <section id="summary">
+      <div class="eyebrow">摘要</div>
+      <h2>一句话：给 AI 装一个“资深逆向工程师的分诊台”</h2>
+      <p class="section-lead">当你说“帮我看看这个 APK 的签名”或“这网站的加密参数怎么来的”，模型缺的不是智力，而是<strong>该走哪条路</strong>和<strong>哪些事不能做</strong>。reverse-skill 把这两件事写成了可校验的文件。</p>
+
+      <div class="grid g3">
+        <div class="box">
+          <h3>它是什么</h3>
+          <p>面向 AI 编码客户端的<strong>技能路由包</strong>：路由层选 PRIMARY，契约层管授权，技能层给方法论，工具层给真实路径，经验层回收教训。</p>
+          <p class="n">RULES.md → routing.json → SKILL.md → tool-index</p>
+        </div>
+        <div class="box">
+          <h3>它凭什么值 4 万星</h3>
+          <p>把 AI 三个高频失败模式——“不会选工具”“同一个坑反复踩”“不知不觉越权”——变成文件契约、硬门禁和 <strong>178 条</strong>路由回归用例。</p>
+          <p class="n">client-neutral · Windows + Ubuntu CI</p>
+        </div>
+        <div class="box">
+          <h3>它不能给你什么</h3>
+          <p>不是一键逆向平台，不是沙箱，也不是漏洞利用工具集。约束靠<strong>指令与文件</strong>，不靠技术隔离；真授权与真边界仍由人负责。</p>
+          <p class="n">dual-use · 合规责任在用户</p>
+        </div>
+      </div>
+
+      <div class="callout ok">
+        <span class="t">读这份报告的三个结论</span>
+        <p><b>1.</b> 它的核心创新不在“技能多”，而在<strong>路由 + 契约 + 回归测试</strong>三件套：路由是单一 JSON，契约是硬门禁，测试让改路由这件事可被验证。</p>
+        <p><b>2.</b> 真正的差异化是 <strong>scope.md 与 Evidence→Finding→Path</strong>：先证明你有权打，再要求结论能追溯到证据。这在同类 skill 包里很少见。</p>
+        <p><b>3.</b> 它仍然是<strong>提示词级治理</strong>。43 个模块、42 个 CTF 子技能、几十个 MCP，靠“别预加载、只读 PRIMARY”的自律；没有进程级隔离。</p>
+      </div>
+
+      <div class="grid g4" style="margin-top:16px">
+        <div class="stat"><div class="v">44</div><div class="k">条路由规则</div><div class="note">R0–R45，R42/R43 未启用</div></div>
+        <div class="stat"><div class="v">43</div><div class="k">个技能模块目录</div><div class="note">INDEX 收录 45 条（含 2 个子技能）</div></div>
+        <div class="stat"><div class="v">26</div><div class="k">个 bootstrap 能力</div><div class="note">22 个可自动装，4 个手动</div></div>
+        <div class="stat"><div class="v">38</div><div class="k">条 field-journal 记录</div><div class="note">21 个真实项目 + 17 个种子</div></div>
+      </div>
+    </section>
+
+    <!-- ============ 1 它是什么 ============ -->
+    <section id="what">
+      <div class="eyebrow">01 · 定位</div>
+      <h2>“Skill 路由包”，不是“红队操作系统”</h2>
+      <p class="section-lead">仓库里有一份很罕见的自我约束文件 <code>skills/ops/IDENTITY.md</code>：明确列出“我们做什么”和“我们故意不做什么”。这决定了它的形态——一堆 Markdown、几个 PowerShell/Bash 脚本、零数据库、零 UI。</p>
+
+      <blockquote>
+        <p>“When an AI agent encounters an APK, a binary, frontend JS encryption, a CTF challenge, or a pentesting target, this package routes it to the right methodology, checks available tools, and executes a repeatable workflow instead of guessing commands.”</p>
+        <cite><span class="tag t-quote">原文</span>README.md · About</cite>
+      </blockquote>
+
+      <h3>它解决的问题（原文四条，摘译）</h3>
+      <ol>
+        <li>AI 不知道该用 jadx、apktool、Frida、IDA 还是 BurpSuite；</li>
+        <li>APK、ELF、JS、PCAP、CTF 各需要完全不同的打法；</li>
+        <li>工具、MCP 服务、脚本散落在不同机器上；</li>
+        <li>同样的错误反复出现，因为经验没有被复用。</li>
+      </ol>
+
+      <h3>它刻意不做的事</h3>
+      <table>
+        <thead><tr><th style="width:46%">Z3r0（红队平台）有</th><th>reverse-skill 的选择</th></tr></thead>
+        <tbody>
+          <tr><td>React 作战台、FastAPI 控制面</td><td>不做。终端 + AI 客户端即可</td></tr>
+          <tr><td>PostgreSQL 证据库、LightRAG 服务</td><td>不做。Markdown 文件 + 哈希字段</td></tr>
+          <tr><td>Docker 主机池 / noVNC 代理</td><td>不做。最多文档推荐可选沙箱 profile</td></tr>
+          <tr><td>多 Agent 进程运行时</td><td>不做。只给“角色 → skill”映射与交接协议</td></tr>
+        </tbody>
+      </table>
+      <p><span class="tag t-obs">观察</span>这是它能在任何一台装了 Node/Java/Python 的机器上跑起来的原因：部署就是 <code>git clone</code>。</p>
+
+      <h3>五层结构</h3>
+      <table>
+        <thead><tr><th style="width:14%">层</th><th style="width:28%">关键文件</th><th>职责</th></tr></thead>
+        <tbody>
+          <tr><td><b>路由层</b></td><td><code>RULES.md</code> · <code>skills/config/routing.json</code> · <code>master-route.*</code></td><td>把任务 hint 映射成一个 PRIMARY 模块；路由表的唯一事实源是 JSON</td></tr>
+          <tr><td><b>契约层</b></td><td><code>skills/ops/scope-contract.md</code> · <code>role-map.md</code> · <code>evidence-finding-path.md</code></td><td>授权、角色、时间线、证据链的硬性字段</td></tr>
+          <tr><td><b>技能层</b></td><td><code>skills/&lt;module&gt;/SKILL.md</code> × 43</td><td>每个模块一个工作流：ACTION REQUIRED → 适用面 → 工具 → 步骤 → 验收</td></tr>
+          <tr><td><b>工具层</b></td><td><code>tool-index.md</code> · <code>bootstrap-manifest.json</code> · <code>scripts/*</code></td><td>本机真实路径、按需安装、版本与哈希固定</td></tr>
+          <tr><td><b>经验层</b></td><td><code>skills/field-journal/</code> · <code>references/</code></td><td>脱敏复盘、可复用打法、社区 skill 索引</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="t">一个值得注意的设计</span>
+        <p>它把“越狱（jailbreak）”这类歧义词写进了 <code>exclude</code> 规则：<code>越狱</code> 默认归 iOS 侧，但如果 hint 里同时出现 <code>模型/提示词/LLM/prompt</code>，就排除掉，交给 <code>llm-security</code>。这类小规则是它区别于“关键词表”的地方。</p>
+      </div>
+    </section>
+
+    <!-- ============ 2 执行链 ============ -->
+    <section id="flow">
+      <div class="eyebrow">02 · 机制</div>
+      <h2>一次任务要过八道关</h2>
+      <p class="section-lead">RULES.md 把这套流程叫“行为链（behavior chain）”。关键点不是步骤多，而是<strong>顺序不可换</strong>：先路由、再建案、后动手。</p>
+
+      <div class="pipe">
+        <div class="pipe-step gate">
+          <div class="idx">0</div>
+          <div><h3>激活 + 同意门</h4><p>“读仓库不等于授权执行”。第一次产生副作用（写文件、下载、起服务、改客户端配置）前，必须披露命令与影响并拿到批准。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">1</div>
+          <div><h3>路由</h4><p><code>master-route.ps1 -Hint "..."</code> 或 <code>master-route.sh --hint "..."</code>，从 <code>routing.json</code> 算出 PRIMARY，并写出一份 <code>route-scope.md</code>（含 confidence 与 secondary 列表）。</p></div>
+        </div>
+        <div class="pipe-step gate">
+          <div class="idx">2</div>
+          <div><h3>建案 + 授权硬门</h4><p><code>case-init</code> 在分析项目里生成 <code>work/&lt;case&gt;/scope.md</code>。只有 <code>auth.status=granted</code> 且 <code>network_profile</code> 合法才允许对目标 ACT；<code>-Force</code> 也绕不过。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">3</div>
+          <div><h3>打开 PRIMARY 的 SKILL.md</h4><p>先执行文件顶部的 <code>ACTION REQUIRED</code>（读 precedent、核对适用范围、查 tool-index、缺工具走 bootstrap），再进工作流。不允许停在“我已了解”。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">4</div>
+          <div><h3>工具只认索引</h4><p><code>tool-index.md</code> 是唯一工具真相源，路径必须是绝对路径；缺工具只能从 manifest 里按能力安装，禁止猜路径、禁止 <code>curl | bash</code>。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">5</div>
+          <div><h3>执行与自检</h4><p>过程写 <code>timeline.md</code> 与 <code>workitems.md</code>；每 5 次工具调用或卡住时自检；同一方法失败 2–3 次必须换路径（静态↔动态、Java↔Native、IDA↔r2）。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">6</div>
+          <div><h3>结论三段式</h4><p><b>Evidence</b>（不可变观察，带 repro_command / hash）→ <b>Finding</b>（结论，带 severity / confidence）→ <b>Path</b>（攻击路径 / 调用链 / 解题步骤）。</p></div>
+        </div>
+        <div class="pipe-step">
+          <div class="idx">7</div>
+          <div><h3>交付与回收</h4><p><code>docs-generator</code> 出报告、<code>diagram-generator</code> 出图、<code>field-journal</code> 脱敏回写、<code>case-review --verify-hashes --strict</code> 审证据图。</p></div>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="t">为什么要有第 0 步和第 2 步</span>
+        <p>因为这套包会指挥 AI <strong>执行命令、下载二进制、连 MCP 服务</strong>。没有这两道门，一个“帮我看看这个站”就可能变成对生产环境的未授权扫描。作者把这两步写成硬门，而不是“建议”。</p>
+      </div>
+
+      <h3>真实案例：Flutter APK 去广告</h3>
+      <p><span class="tag t-quote">原文</span><code>field-journal/2026-08-20_apk-flutter-banner-ad-removal.md</code> 记录了一次完整闭环：目标是本地自有 APK（auth_basis：用户自有文件），network_profile 是“纯静态分析 + 本地构建”；先用 apktool / jadx 侦察，确认广告逻辑在 Flutter 的 <code>libapp.so</code>，再用 Blutter 还原类与字符串表，最后等长替换广告键、重打包签名、真机 logcat 验证。</p>
+      <p>最有价值的是踩坑记录：初版把 API 路径字符串也替换，真机请求 404 导致启动卡死；复盘后明确“只替换 JSON 键/插槽键，保留 API 路径”。这条经验被写进 journal，下一个类似样本可以直接少走两小时。</p>
+      <p><span class="tag t-inf">推断</span>这类“日常小活”才是路由包真正的使用场景，而不是 CTF 或红队大片。它把一次性的手艺变成了可复述、可检索的流程。</p>
+    </section>
+
+    <!-- ============ 3 路由表 ============ -->
+    <section id="routing">
+      <div class="eyebrow">03 · 路由核心</div>
+      <h2>44 条规则：先到先得，命中多者胜</h2>
+      <p class="section-lead">路由表全部在 <code>skills/config/routing.json</code>。脚本不硬编码规则，只读取 JSON；<code>MASTER-ROUTING.md</code> 的优先级表由校验脚本比对，防止文档与配置漂移。</p>
+
+      <div class="grid g2">
+        <div class="box">
+          <h3>算法（读源码确认）</h3>
+          <ol class="list-tight">
+            <li>把 hint 转小写；</li>
+            <li>逐条规则逐条 keyword 匹配 <code>must</code>；</li>
+            <li>若声明 <code>mustAll</code>，要求全部子正则命中；</li>
+            <li>若命中 <code>exclude</code>，本条作废；</li>
+            <li>每命中一条 keyword，该规则 +1 分；</li>
+            <li>按 <code>priority</code> 数组顺序取<strong>分数最高</strong>者；并列时靠前的胜出；</li>
+            <li>全不中 → 回退 <code>R0</code>（通用逆向）。</li>
+          </ol>
+        </div>
+        <div class="box">
+          <h3>置信度</h3>
+          <p><code>high</code>：只有一条规则命中；<code>medium</code>：多条规则命中，取分最高者；<code>low</code>：回退 R0（空 hint 或没有强关键词）。</p>
+          <p>这不是语义路由，而是<strong>可解释的词典路由</strong>：好处是能写回归测试、能手工改；代价是长句、多意图、口语化表达会抢路由。</p>
+          <p class="n">priority 顺序 ≠ 编号顺序：R4 排第一，R41 排倒数第三。</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="t">为什么“命中条目数”而不是“关键词出现次数”</span>
+        <p>一条规则可以有 1–3 条 keyword 条目（例如 R2 同时收 <code>ipa/objection</code>、<code>越狱</code>、<code>jailbreak+iOS 语境</code>）。因此一句同时提到 “APK 和 Frida” 的话，会优先给只有一条宽规则的 R1，而不是靠多条细分条目加分的其他规则。理解这一点，才能解释它偶尔的“抢路由”。</p>
+      </div>
+
+      <div class="controls">
+        <div class="field">
+          <label for="route-search">搜索规则（ID / 模块 / 识别信号 / 关键词）</label>
+          <input id="route-search" type="search" placeholder="例如：frida、固件、report、R14" autocomplete="off">
+        </div>
+        <button class="btn" id="route-reset" type="button">重置</button>
+      </div>
+      <div class="filters" role="group" aria-label="按领域筛选" id="group-filters">
+        <button class="btn" type="button" data-group="all" aria-pressed="true">全部 44</button>
+        <button class="btn" type="button" data-group="rev" aria-pressed="false">逆向 / 二进制 10</button>
+        <button class="btn" type="button" data-group="mob" aria-pressed="false">移动 / 客户端 5</button>
+        <button class="btn" type="button" data-group="web" aria-pressed="false">Web / API / 自动化 3</button>
+        <button class="btn" type="button" data-group="fw" aria-pressed="false">固件 / 硬件 / 无线 5</button>
+        <button class="btn" type="button" data-group="red" aria-pressed="false">红队 / 渗透 / 基础设施 10</button>
+        <button class="btn" type="button" data-group="blue" aria-pressed="false">蓝队 / 取证 / 情报 4</button>
+        <button class="btn" type="button" data-group="gov" aria-pressed="false">审计 / 供应链 / AI 3</button>
+        <button class="btn" type="button" data-group="ops" aria-pressed="false">交付 / 流程 4</button>
+      </div>
+      <p class="count" id="route-count" aria-live="polite">显示 44 / 44 条</p>
+
+      <div class="table-wrap">
+        <table class="route-table" id="route-table">
+          <caption class="sr-only">reverse-skill 的 44 条路由规则，按 priority 顺序排列</caption>
+          <thead>
+            <tr><th scope="col">序</th><th scope="col">ID</th><th scope="col">PRIMARY 模块</th><th scope="col">识别信号</th><th scope="col">关键词规则</th></tr>
+          </thead>
+          <tbody>
+            <tr data-group="rev" data-id="R4" data-search="r4 dsl vm reverse reverse-engineering/dsl-vm-reverse dsl vm / 自定义 opcode 虚拟机 dsl.?vm|fireye|opcode.?vm|custom.?vm|自定义.?虚拟机"><td class="num">1</td><td class="id">R4</td><td class="skill">reverse-engineering/dsl-vm-reverse</td><td>DSL VM / 自定义 opcode 虚拟机</td><td><details><summary>1 条关键词</summary><div class="kw"><code>dsl.?vm|fireye|opcode.?vm|custom.?vm|自定义.?虚拟机</code></div></details></td></tr>
+            <tr data-group="mob" data-id="R1" data-search="r1 apk reverse apk-reverse apk / android / smali / 加固 / pinning \bapk\b|smali|jadx|apktool|\bandroid\b|android.?reverse|安卓|反编译.?apk|apk.?加固|重打包|root.?detect|root.?检测|证书.?校验|certificate.?pinning|pinning.?绕过|签名.?校验"><td class="num">2</td><td class="id">R1</td><td class="skill">apk-reverse</td><td>APK / Android / smali / 加固 / pinning</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bapk\b|smali|jadx|apktool|\bandroid\b|android.?reverse|安卓|反编译.?apk|apk.?加固|重打包|root.?detect|root.?检测|证书.?校验|certificate.?pinning|pinning.?绕过|签名.?校验</code></div></details></td></tr>
+            <tr data-group="mob" data-id="R2" data-search="r2 mobile reverse (android+ios) mobile-reverse ios / ipa / objection / mobsf \bipa\b|ios.?reverse|objection|mobsf|mobile.?reverse|ios.?逆向 越狱 jailbreak ios|iphone|ipad|mobile|objection|ipa"><td class="num">3</td><td class="id">R2</td><td class="skill">mobile-reverse</td><td>iOS / IPA / Objection / MobSF</td><td><details><summary>3 条关键词</summary><div class="kw"><code>\bipa\b|ios.?reverse|objection|mobsf|mobile.?reverse|ios.?逆向</code><code>越狱</code><code class="ex">− 模型|提示词|llm|prompt|jailbreak|garak|红队.?ai|ai.?红队</code><code>jailbreak</code><code class="all">+ ios|iphone|ipad|mobile|objection|ipa</code></div></details></td></tr>
+            <tr data-group="web" data-id="R3" data-search="r3 js / frontend reverse js-reverse 前端签名 / js 加密 / 抓包重放 js.?reverse|webpack|cryptojs|frontend.?sign|jshook|cdp|encrypted.?param|前端.?签名|js.?逆向|加密.?参数|webpack.?逆向|抓包|http.?capture|请求.?重放|request.?replay|js.?加密|js.?解密|前端.?加密"><td class="num">4</td><td class="id">R3</td><td class="skill">js-reverse</td><td>前端签名 / JS 加密 / 抓包重放</td><td><details><summary>1 条关键词</summary><div class="kw"><code>js.?reverse|webpack|cryptojs|frontend.?sign|jshook|cdp|encrypted.?param|前端.?签名|js.?逆向|加密.?参数|webpack.?逆向|抓包|http.?capture|请求.?重放|request.?replay|js.?加密|js.?解密|前端.?加密</code></div></details></td></tr>
+            <tr data-group="mob" data-id="R30" data-search="r30 browser extension reverse browser-extension-reverse 浏览器扩展 crx / xpi browser.?extension|chrome.?extension|\bcrx\b|\bxpi\b|mv3.?extension|浏览器.?扩展|chrome.?扩展"><td class="num">5</td><td class="id">R30</td><td class="skill">browser-extension-reverse</td><td>浏览器扩展 crx / xpi</td><td><details><summary>1 条关键词</summary><div class="kw"><code>browser.?extension|chrome.?extension|\bcrx\b|\bxpi\b|mv3.?extension|浏览器.?扩展|chrome.?扩展</code></div></details></td></tr>
+            <tr data-group="mob" data-id="R31" data-search="r31 macos / mach-o reverse macos-reverse macos / mach-o / codesign macos|mach-?o|codesign|objective-?c|swift.?reverse|xpc|mac.?逆向|苹果.?桌面"><td class="num">6</td><td class="id">R31</td><td class="skill">macos-reverse</td><td>macOS / Mach-O / codesign</td><td><details><summary>1 条关键词</summary><div class="kw"><code>macos|mach-?o|codesign|objective-?c|swift.?reverse|xpc|mac.?逆向|苹果.?桌面</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R33" data-search="r33 go / rust reverse go-rust-reverse go / rust 二进制 \bgolang\b|\brustc\b|go.?binary|go.?二进|go.?语言|go.?程序|stripped.?go|gore.?sym|go.?malware|rust.?binary|go.?逆向|rust.?逆向"><td class="num">7</td><td class="id">R33</td><td class="skill">go-rust-reverse</td><td>Go / Rust 二进制</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bgolang\b|\brustc\b|go.?binary|go.?二进|go.?语言|go.?程序|stripped.?go|gore.?sym|go.?malware|rust.?binary|go.?逆向|rust.?逆向</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R5" data-search="r5 .net reverse dotnet-reverse .net / dnspy / de4dot / confuserex \.net|dnspy|de4dot|confuserex|csharp|dotnet|c#"><td class="num">8</td><td class="id">R5</td><td class="skill">dotnet-reverse</td><td>.NET / dnSpy / de4dot / ConfuserEx</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\.net|dnspy|de4dot|confuserex|csharp|dotnet|c#</code></div></details></td></tr>
+            <tr data-group="blue" data-id="R9" data-search="r9 malware analysis malware-analysis 恶意样本 / yara / 沙箱 malware|yara|virus.?sample|pe-?sieve|cape.?sandbox|恶意.?软件|病毒.?样本|木马.?分析|恶意.?样本|样本.?分析|ransomware|勒索|webshell|后门|backdoor sandbox malware|virus|恶意|木马|样本|cape|any\.run|triage"><td class="num">9</td><td class="id">R9</td><td class="skill">malware-analysis</td><td>恶意样本 / YARA / 沙箱</td><td><details><summary>2 条关键词</summary><div class="kw"><code>malware|yara|virus.?sample|pe-?sieve|cape.?sandbox|恶意.?软件|病毒.?样本|木马.?分析|恶意.?样本|样本.?分析|ransomware|勒索|webshell|后门|backdoor</code><code>sandbox</code><code class="all">+ malware|virus|恶意|木马|样本|cape|any\.run|triage</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R21" data-search="r21 protocol reverse protocol-reverse 自定义协议 / protobuf / pcap protocol.?reverse|custom.?protocol|protobuf|grpc|pcap|wireshark|pcap.?protocol|wireshark.?dissector|协议.?逆向|自定义.?协议|流量.?逆向|流量.?分析"><td class="num">10</td><td class="id">R21</td><td class="skill">protocol-reverse</td><td>自定义协议 / Protobuf / PCAP</td><td><details><summary>1 条关键词</summary><div class="kw"><code>protocol.?reverse|custom.?protocol|protobuf|grpc|pcap|wireshark|pcap.?protocol|wireshark.?dissector|协议.?逆向|自定义.?协议|流量.?逆向|流量.?分析</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R22" data-search="r22 ghidra reverse ghidra-reverse ghidra / headless / 无 ida ghidra|ghidra.?mcp|analyzeheadless|无.?ida|开源.?反编译"><td class="num">11</td><td class="id">R22</td><td class="skill">ghidra-reverse</td><td>Ghidra / headless / 无 IDA</td><td><details><summary>1 条关键词</summary><div class="kw"><code>ghidra|ghidra.?mcp|analyzeheadless|无.?ida|开源.?反编译</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R45" data-search="r45 binary ninja reverse binary-ninja-reverse binary ninja / hlil / mlil binary.?ninja|binaryninja|\bbinja\b|binary[_-]ninja[_-]mcp|hlil|mlil"><td class="num">12</td><td class="id">R45</td><td class="skill">binary-ninja-reverse</td><td>Binary Ninja / HLIL / MLIL</td><td><details><summary>1 条关键词</summary><div class="kw"><code>binary.?ninja|binaryninja|\bbinja\b|binary[_-]ninja[_-]mcp|hlil|mlil</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R6" data-search="r6 ida reverse ida-reverse ida / 反编译 / .so / jni \bida\b|decompile|disassembl|反编译|反汇编|静态.?分析.?二进制|\.so\b|\.elf\b|so.?文件|native.?分析|jni"><td class="num">13</td><td class="id">R6</td><td class="skill">ida-reverse</td><td>IDA / 反编译 / .so / JNI</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bida\b|decompile|disassembl|反编译|反汇编|静态.?分析.?二进制|\.so\b|\.elf\b|so.?文件|native.?分析|jni</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R7" data-search="r7 radare2 radare2 radare2 / r2 工具生态 radare|\br2\b r2xsql|r2mcp|r2http|radius2|r2pm|rabin2|rasm2|radiff2|rahash2|rax2"><td class="num">14</td><td class="id">R7</td><td class="skill">radare2</td><td>radare2 / r2 工具生态</td><td><details><summary>2 条关键词</summary><div class="kw"><code>radare|\br2\b</code><code>r2xsql|r2mcp|r2http|radius2|r2pm|rabin2|rasm2|radiff2|rahash2|rax2</code></div></details></td></tr>
+            <tr data-group="fw" data-id="R8" data-search="r8 firmware pentest firmware-pentest 固件 / binwalk / iot / emba firmware|binwalk|iot|emba|firmadyne|固件|路由器.?固件|嵌入式"><td class="num">15</td><td class="id">R8</td><td class="skill">firmware-pentest</td><td>固件 / binwalk / IoT / EMBA</td><td><details><summary>1 条关键词</summary><div class="kw"><code>firmware|binwalk|iot|emba|firmadyne|固件|路由器.?固件|嵌入式</code></div></details></td></tr>
+            <tr data-group="fw" data-id="R34" data-search="r34 hardware / debug interfaces hardware-security uart / jtag / 硬件调试 uart|jtag|swd|debug.?pad|flashrom|硬件.?调试|串口.?shell|芯片.?提取|usb.?逆向|usb.?设备"><td class="num">16</td><td class="id">R34</td><td class="skill">hardware-security</td><td>UART / JTAG / 硬件调试</td><td><details><summary>1 条关键词</summary><div class="kw"><code>uart|jtag|swd|debug.?pad|flashrom|硬件.?调试|串口.?shell|芯片.?提取|usb.?逆向|usb.?设备</code></div></details></td></tr>
+            <tr data-group="fw" data-id="R28" data-search="r28 ot / ics ot-ics ot / ics / scada / modbus \bot\b|\bics\b|scada|plc\b|modbus|dnp3|s7comm|purdue|工控|工业.?控制|ot/?ics"><td class="num">17</td><td class="id">R28</td><td class="skill">ot-ics</td><td>OT / ICS / SCADA / Modbus</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bot\b|\bics\b|scada|plc\b|modbus|dnp3|s7comm|purdue|工控|工业.?控制|ot/?ics</code></div></details></td></tr>
+            <tr data-group="red" data-id="R17" data-search="r17 pwn chain pwn-chain pwn / rop / 堆栈利用 \bpwn\b|rop|ret2libc|heap.?overflow|stack.?overflow|buffer.?overflow|kernel.?pwn|exploit.?dev|pwntools|栈溢出|堆溢出|格式化.?字符串"><td class="num">18</td><td class="id">R17</td><td class="skill">pwn-chain</td><td>Pwn / ROP / 堆栈利用</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bpwn\b|rop|ret2libc|heap.?overflow|stack.?overflow|buffer.?overflow|kernel.?pwn|exploit.?dev|pwntools|栈溢出|堆溢出|格式化.?字符串</code></div></details></td></tr>
+            <tr data-group="red" data-id="R16" data-search="r16 patch-diff / n-day patch-diff-exploit n-day / 补丁差分 n-?day|patch.?diff|patch.?tuesday|补丁.?差分|补丁.?分析"><td class="num">19</td><td class="id">R16</td><td class="skill">patch-diff-exploit</td><td>N-day / 补丁差分</td><td><details><summary>1 条关键词</summary><div class="kw"><code>n-?day|patch.?diff|patch.?tuesday|补丁.?差分|补丁.?分析</code></div></details></td></tr>
+            <tr data-group="red" data-id="R18" data-search="r18 edr bypass re edr-bypass-re edr / 免杀 / syscall / amsi edr|av.?bypass|syscall|amsi|etw.?patch|hell.?s.?gate|免杀|反病毒"><td class="num">20</td><td class="id">R18</td><td class="skill">edr-bypass-re</td><td>EDR / 免杀 / syscall / AMSI</td><td><details><summary>1 条关键词</summary><div class="kw"><code>edr|av.?bypass|syscall|amsi|etw.?patch|hell.?s.?gate|免杀|反病毒</code></div></details></td></tr>
+            <tr data-group="red" data-id="R24" data-search="r24 windows / ad windows-ad ad / kerberos / ad cs / ntlm active.?directory|\bad\b.?cs|bloodhound|kerberoast|as-?rep|certipy|ntlm.?relay|dc.?sync|kerberos.?攻击|ad.?证书|impacket|mimikatz|secretsdump 域.?渗透|域控"><td class="num">21</td><td class="id">R24</td><td class="skill">windows-ad</td><td>AD / Kerberos / AD CS / NTLM</td><td><details><summary>2 条关键词</summary><div class="kw"><code>active.?directory|\bad\b.?cs|bloodhound|kerberoast|as-?rep|certipy|ntlm.?relay|dc.?sync|kerberos.?攻击|ad.?证书|impacket|mimikatz|secretsdump</code><code>域.?渗透|域控</code><code class="ex">− 完整.?渗透|从外网|打到域控|attack.?chain|full.?pentest</code></div></details></td></tr>
+            <tr data-group="red" data-id="R37" data-search="r37 identity federation (saml/oidc) identity-federation saml / oidc / sso saml|oidc|openid.?connect|oauth2|sso\b|联邦.?身份|单点.?登录"><td class="num">22</td><td class="id">R37</td><td class="skill">identity-federation</td><td>SAML / OIDC / SSO</td><td><details><summary>1 条关键词</summary><div class="kw"><code>saml|oidc|openid.?connect|oauth2|sso\b|联邦.?身份|单点.?登录</code></div></details></td></tr>
+            <tr data-group="red" data-id="R23" data-search="r23 cloud / k8s cloud-k8s 云 / 容器 / k8s / imds kubernetes|\bk8s\b|container.?escape|docker.?escape|kube-?bench|cloud.?secur|imds|169\.254\.169\.254|容器.?逃逸|云.?安全|k8s.?渗透|s3|对象存储|存储桶"><td class="num">23</td><td class="id">R23</td><td class="skill">cloud-k8s</td><td>云 / 容器 / K8s / IMDS</td><td><details><summary>1 条关键词</summary><div class="kw"><code>kubernetes|\bk8s\b|container.?escape|docker.?escape|kube-?bench|cloud.?secur|imds|169\.254\.169\.254|容器.?逃逸|云.?安全|k8s.?渗透|s3|对象存储|存储桶</code></div></details></td></tr>
+            <tr data-group="red" data-id="R35" data-search="r35 database security database-security 数据库暴露 / 认证 / udf database.?secur|\bmysql\b|\bpostgres|mongodb|redis.?secur|mssql|数据库.?安全|数据库.?渗透"><td class="num">24</td><td class="id">R35</td><td class="skill">database-security</td><td>数据库暴露 / 认证 / UDF</td><td><details><summary>1 条关键词</summary><div class="kw"><code>database.?secur|\bmysql\b|\bpostgres|mongodb|redis.?secur|mssql|数据库.?安全|数据库.?渗透</code></div></details></td></tr>
+            <tr data-group="blue" data-id="R25" data-search="r25 digital forensics digital-forensics 取证 / 内存转储 / 时间线 / ir forensic|volatility|memory.?dump|plaso|timeline.?explorer|取证|内存.?转储|应急.?响应.?取证|手机.?取证|磁盘.?取证|autopsy|sleuth|encase|dump.?内存|内存.?dump|应急.?响应|incident.?response"><td class="num">25</td><td class="id">R25</td><td class="skill">digital-forensics</td><td>取证 / 内存转储 / 时间线 / IR</td><td><details><summary>1 条关键词</summary><div class="kw"><code>forensic|volatility|memory.?dump|plaso|timeline.?explorer|取证|内存.?转储|应急.?响应.?取证|手机.?取证|磁盘.?取证|autopsy|sleuth|encase|dump.?内存|内存.?dump|应急.?响应|incident.?response</code></div></details></td></tr>
+            <tr data-group="blue" data-id="R44" data-search="r44 threat intelligence / osint threat-intelligence osint / 威胁情报 / ioc \bosint\b|open.?source.?intelligence|threat.?intelligence|\bcti\b|ioc.?enrichment|indicator.?enrichment|威胁.?情报|开源.?情报|ioc.?扩充|ioc.?富化 twitter|tweet|x\.com|x.?post|推文|社交.?媒体 ioc|threat|malware|campaign|actor|phish|scam|impersonat|indicator|情报|威胁|恶意|钓鱼|诈骗|仿冒"><td class="num">26</td><td class="id">R44</td><td class="skill">threat-intelligence</td><td>OSINT / 威胁情报 / IOC</td><td><details><summary>2 条关键词</summary><div class="kw"><code>\bosint\b|open.?source.?intelligence|threat.?intelligence|\bcti\b|ioc.?enrichment|indicator.?enrichment|威胁.?情报|开源.?情报|ioc.?扩充|ioc.?富化</code><code>twitter|tweet|x\.com|x.?post|推文|社交.?媒体</code><code class="all">+ ioc|threat|malware|campaign|actor|phish|scam|impersonat|indicator|情报|威胁|恶意|钓鱼|诈骗|仿冒</code></div></details></td></tr>
+            <tr data-group="red" data-id="R36" data-search="r36 email / phishing analysis email-security 钓鱼邮件 / spf / dkim / dmarc phish|spf|dkim|dmarc|bec\b|email.?secur|钓鱼.?邮件|邮件.?安全"><td class="num">27</td><td class="id">R36</td><td class="skill">email-security</td><td>钓鱼邮件 / SPF / DKIM / DMARC</td><td><details><summary>1 条关键词</summary><div class="kw"><code>phish|spf|dkim|dmarc|bec\b|email.?secur|钓鱼.?邮件|邮件.?安全</code></div></details></td></tr>
+            <tr data-group="fw" data-id="R29" data-search="r29 wi-fi / wireless wifi-wireless wi-fi / wpa / 无线 wifi|wi-?fi|aircrack|airmon|wpa.?handshake|wireless.?pentest|无线.?渗透|wifi.?攻击"><td class="num">28</td><td class="id">R29</td><td class="skill">wifi-wireless</td><td>Wi-Fi / WPA / 无线</td><td><details><summary>1 条关键词</summary><div class="kw"><code>wifi|wi-?fi|aircrack|airmon|wpa.?handshake|wireless.?pentest|无线.?渗透|wifi.?攻击</code></div></details></td></tr>
+            <tr data-group="fw" data-id="R38" data-search="r38 rf / sdr research radio-sdr rf / sdr / 蓝牙 \bsdr\b|hackrf|rtl-?sdr|gnu.?radio|\burh\b|射频|软件.?无线电|蓝牙|bluetooth|\bble\b"><td class="num">29</td><td class="id">R38</td><td class="skill">radio-sdr</td><td>RF / SDR / 蓝牙</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bsdr\b|hackrf|rtl-?sdr|gnu.?radio|\burh\b|射频|软件.?无线电|蓝牙|bluetooth|\bble\b</code></div></details></td></tr>
+            <tr data-group="mob" data-id="R32" data-search="r32 thick client security thick-client 厚客户端 / electron / winforms thick.?client|desktop.?client|electron.?app|winforms|wpf|厚客户端|桌面.?客户端"><td class="num">30</td><td class="id">R32</td><td class="skill">thick-client</td><td>厚客户端 / Electron / WinForms</td><td><details><summary>1 条关键词</summary><div class="kw"><code>thick.?client|desktop.?client|electron.?app|winforms|wpf|厚客户端|桌面.?客户端</code></div></details></td></tr>
+            <tr data-group="gov" data-id="R26" data-search="r26 code audit / sast code-audit 代码审计 / sast / semgrep code.?audit|sast|semgrep|codeql|source.?review|白盒|代码.?审计|静态.?应用.?安全"><td class="num">31</td><td class="id">R26</td><td class="skill">code-audit</td><td>代码审计 / SAST / Semgrep</td><td><details><summary>1 条关键词</summary><div class="kw"><code>code.?audit|sast|semgrep|codeql|source.?review|白盒|代码.?审计|静态.?应用.?安全</code></div></details></td></tr>
+            <tr data-group="blue" data-id="R27" data-search="r27 threat hunting threat-hunting 威胁狩猎 / sigma / 蓝队检测 threat.?hunt|detection.?engineer|blue.?team|sigma.?rule|\bsigma\b|威胁.?狩猎|检测.?工程|蓝队.?狩猎|检测.?规则"><td class="num">32</td><td class="id">R27</td><td class="skill">threat-hunting</td><td>威胁狩猎 / Sigma / 蓝队检测</td><td><details><summary>1 条关键词</summary><div class="kw"><code>threat.?hunt|detection.?engineer|blue.?team|sigma.?rule|\bsigma\b|威胁.?狩猎|检测.?工程|蓝队.?狩猎|检测.?规则</code></div></details></td></tr>
+            <tr data-group="red" data-id="R10" data-search="r10 attack chain attack-chain 攻击链 / 内网 / 横向移动 attack.?chain|red.?team|lateral|domain.?pentest|internal.?network|full.?pentest|完整.?渗透|从外网|打到域控|红队|横向.?移动|内网.?渗透"><td class="num">33</td><td class="id">R10</td><td class="skill">attack-chain</td><td>攻击链 / 内网 / 横向移动</td><td><details><summary>1 条关键词</summary><div class="kw"><code>attack.?chain|red.?team|lateral|domain.?pentest|internal.?network|full.?pentest|完整.?渗透|从外网|打到域控|红队|横向.?移动|内网.?渗透</code></div></details></td></tr>
+            <tr data-group="red" data-id="R11" data-search="r11 pentest tools pentest-tools nmap / nuclei / sqlmap / src nmap|nuclei|sqlmap|ffuf|pentest|src.?hunt|bug.?bounty|waf.?bypass|渗透.?测试|端口.?扫描|漏洞.?扫描|目录.?爆破|sql.?注入|众测|burp|burpsuite|intruder|repeater|metasploit|hashcat|hydra|gobuster|dirsearch|提权|privilege.?escalat|安全.?评估|security.?assess|风险.?评估|risk.?assess"><td class="num">34</td><td class="id">R11</td><td class="skill">pentest-tools</td><td>Nmap / Nuclei / SQLMap / SRC</td><td><details><summary>1 条关键词</summary><div class="kw"><code>nmap|nuclei|sqlmap|ffuf|pentest|src.?hunt|bug.?bounty|waf.?bypass|渗透.?测试|端口.?扫描|漏洞.?扫描|目录.?爆破|sql.?注入|众测|burp|burpsuite|intruder|repeater|metasploit|hashcat|hydra|gobuster|dirsearch|提权|privilege.?escalat|安全.?评估|security.?assess|风险.?评估|risk.?assess</code></div></details></td></tr>
+            <tr data-group="web" data-id="R12" data-search="r12 api security api-security api / graphql / bola / oauth graphql|bola|bfla|api.?secur|接口.?安全|越权|未授权.?访问|rest.?api.?secur \boauth\b"><td class="num">35</td><td class="id">R12</td><td class="skill">api-security</td><td>API / GraphQL / BOLA / OAuth</td><td><details><summary>2 条关键词</summary><div class="kw"><code>graphql|bola|bfla|api.?secur|接口.?安全|越权|未授权.?访问|rest.?api.?secur</code><code>\boauth\b</code><code class="ex">− oauth2|oidc|saml|sso|openid|联邦|单点</code></div></details></td></tr>
+            <tr data-group="gov" data-id="R13" data-search="r13 supply chain supply-chain-security sbom / trivy / 供应链 sbom|supply.?chain|trivy|gitleaks|syft|供应链|依赖.?扫描"><td class="num">36</td><td class="id">R13</td><td class="skill">supply-chain-security</td><td>SBOM / Trivy / 供应链</td><td><details><summary>1 条关键词</summary><div class="kw"><code>sbom|supply.?chain|trivy|gitleaks|syft|供应链|依赖.?扫描</code></div></details></td></tr>
+            <tr data-group="gov" data-id="R14" data-search="r14 llm / agent security llm-security llm / prompt 注入 / agent 安全 llm|prompt.?inject|jailbreak|agent.?secur|garak|owasp.?llm|提示词.?注入|模型.?红队|模型.?越狱|llm.?越狱|提示词.?越狱|ai.?红队"><td class="num">37</td><td class="id">R14</td><td class="skill">llm-security</td><td>LLM / Prompt 注入 / Agent 安全</td><td><details><summary>1 条关键词</summary><div class="kw"><code>llm|prompt.?inject|jailbreak|agent.?secur|garak|owasp.?llm|提示词.?注入|模型.?红队|模型.?越狱|llm.?越狱|提示词.?越狱|ai.?红队</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R15" data-search="r15 binary diff / symbol migrate binary-diff bindiff / 符号迁移 / pdb bindiff|symbol.?migrat|pdb|符号.?迁移|版本.?对比"><td class="num">38</td><td class="id">R15</td><td class="skill">binary-diff</td><td>bindiff / 符号迁移 / PDB</td><td><details><summary>1 条关键词</summary><div class="kw"><code>bindiff|symbol.?migrat|pdb|符号.?迁移|版本.?对比</code></div></details></td></tr>
+            <tr data-group="web" data-id="R19" data-search="r19 browser / desktop automation browser-automation playwright / 浏览器与桌面自动化 playwright|browser.?auto|desktop.?auto|openreverse|fill.?form|浏览器.?自动化|桌面.?自动化|自动.?填表"><td class="num">39</td><td class="id">R19</td><td class="skill">browser-automation</td><td>Playwright / 浏览器与桌面自动化</td><td><details><summary>1 条关键词</summary><div class="kw"><code>playwright|browser.?auto|desktop.?auto|openreverse|fill.?form|浏览器.?自动化|桌面.?自动化|自动.?填表</code></div></details></td></tr>
+            <tr data-group="ops" data-id="R40" data-search="r40 case evidence review case-review 证据图 / 案件审查 / fixity case.?review|case.?audit|evidence.?chain|evidence.?graph|traceability|fixity.?check|证据.?链|证据.?图|可追溯性|案件.?审查|案例.?审计"><td class="num">40</td><td class="id">R40</td><td class="skill">case-review</td><td>证据图 / 案件审查 / fixity</td><td><details><summary>1 条关键词</summary><div class="kw"><code>case.?review|case.?audit|evidence.?chain|evidence.?graph|traceability|fixity.?check|证据.?链|证据.?图|可追溯性|案件.?审查|案例.?审计</code></div></details></td></tr>
+            <tr data-group="ops" data-id="R20" data-search="r20 docs generator docs-generator 报告 / writeup writeup|write.?report|generate.?report|\breport\b|写.?报告|出.?报告|渗透.?报告|逆向.?报告"><td class="num">41</td><td class="id">R20</td><td class="skill">docs-generator</td><td>报告 / writeup</td><td><details><summary>1 条关键词</summary><div class="kw"><code>writeup|write.?report|generate.?report|\breport\b|写.?报告|出.?报告|渗透.?报告|逆向.?报告</code></div></details></td></tr>
+            <tr data-group="ops" data-id="R39" data-search="r39 diagram generation diagram-generator mermaid / 架构图 / 攻击路径图 diagram|mermaid|graphviz|plantuml|flowchart|流程图|架构图|时序图|状态图|数据流图|攻击路径图|er.?图|画图|图表"><td class="num">42</td><td class="id">R39</td><td class="skill">diagram-generator</td><td>Mermaid / 架构图 / 攻击路径图</td><td><details><summary>1 条关键词</summary><div class="kw"><code>diagram|mermaid|graphviz|plantuml|flowchart|流程图|架构图|时序图|状态图|数据流图|攻击路径图|er.?图|画图|图表</code></div></details></td></tr>
+            <tr data-group="ops" data-id="R41" data-search="r41 ctf sandbox orchestrator ctf-sandbox ctf / awd / 靶场 \bctf\b|awd|靶场|比赛.?题"><td class="num">43</td><td class="id">R41</td><td class="skill">ctf-sandbox</td><td>CTF / AWD / 靶场</td><td><details><summary>1 条关键词</summary><div class="kw"><code>\bctf\b|awd|靶场|比赛.?题</code><code class="ex">− pwn|rop|栈溢出|堆溢出|ret2</code></div></details></td></tr>
+            <tr data-group="rev" data-id="R0" data-search="r0 general reverse-engineering reverse-engineering 通用逆向 / 反调试 / ollvm / 游戏 ollvm|anti-?debug|unicorn|angr|gdb|deobfuscat|控制流平坦|反调试|unity|il2cpp|游戏.?逆向|game.?reverse|anti-?cheat|反作弊 frida reverse|逆向"><td class="num">44</td><td class="id">R0</td><td class="skill">reverse-engineering</td><td>通用逆向 / 反调试 / OLLVM / 游戏</td><td><details><summary>3 条关键词</summary><div class="kw"><code>ollvm|anti-?debug|unicorn|angr|gdb|deobfuscat|控制流平坦|反调试|unity|il2cpp|游戏.?逆向|game.?reverse|anti-?cheat|反作弊</code><code>frida</code><code class="ex">− \bapk\b|smali|jadx|android|安卓</code><code>reverse|逆向</code><code class="ex">− apk|js.?reverse|ios|mobile|\.net|firmware|malware|安卓|固件|恶意|protocol|ghidra|extension|macos|mach|golang|rust|工控|厚客户端|取证|协议|扩展</code></div></details></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty" id="route-empty">没有匹配的规则。试试更短的关键词，或点“重置”。</div>
+      <p style="font-size:12.5px;color:var(--muted)"><span class="tag t-obs">观察</span>表格按 <code>priority</code> 顺序排列，表内可滚动查看全部 44 条；<code>关键词规则</code> 展开后显示原始正则。红色为 <code>exclude</code>（命中则排除），绿色为 <code>mustAll</code>（必须同时满足）。</p>
+    </section>
+
+    <!-- ============ 4 模拟器 ============ -->
+    <section id="sim">
+      <div class="eyebrow">04 · 交互</div>
+      <h2>路由试跑：给它一句话，看它把你送去哪</h2>
+      <p class="section-lead">下面这个模拟器用页面内嵌的 <code>routing.json</code> 复刻了 <code>master-route.ps1</code> 的匹配与计分逻辑（含 mustAll / exclude / priority 并列规则）。它是<strong>近似复刻</strong>，不是官方实现；真实路由还会检查技能文件是否存在并写出 route-scope.md。</p>
+
+      <div class="sim">
+        <h3>任务 hint</h3>
+        <p class="hint">中英文都行，越具体越好。试试把两个领域的词放进同一句，看它怎么抢。</p>
+        <div class="sim-row">
+          <label class="sr-only" for="sim-input">任务描述</label>
+          <input id="sim-input" type="text" placeholder="例如：帮我看下这个 APK 的证书校验怎么绕" autocomplete="off">
+          <button class="btn primary" id="sim-run" type="button">路由</button>
+        </div>
+        <div class="samples" id="sim-samples">
+          <button type="button" data-hint="offline apk 证书校验 pinning 绕过">APK 证书校验</button>
+          <button type="button" data-hint="flutter 应用 banner 广告去除 重打包">Flutter 去广告</button>
+          <button type="button" data-hint="前端 sign 参数加密 webpack 逆向">前端签名</button>
+          <button type="button" data-hint="固件 binwalk 提取 squashfs 模拟">固件提取</button>
+          <button type="button" data-hint="prompt injection 提示词注入 LLM 应用 安全测试">LLM 越狱</button>
+          <button type="button" data-hint="iOS 越狱检测绕过 frida">iOS 越狱</button>
+          <button type="button" data-hint="CVE-2026-1234 补丁差分 写 PoC">N-day 差分</button>
+          <button type="button" data-hint="把这次渗透过程写成报告和攻击路径图">报告 + 图</button>
+        </div>
+        <div class="sim-out" id="sim-out" aria-live="polite">
+          <p class="res-note">还没有输入。点上面的示例，或自己写一句。</p>
+        </div>
+      </div>
+
+      <div class="grid g3" style="margin-top:14px">
+        <div class="box"><h3>看命中数</h3><p>一个 hint 往往同时命中 3–8 条规则。真正的 PRIMARY 只看谁的分最高，所以“副驾”列表有时比结果更有信息量。</p></div>
+        <div class="box"><h3>看置信度</h3><p>只有一条命中才是 high。多规则命中说明任务本身跨域，应该按 MASTER-ROUTING 的“路径交叉”组合多个 skill。</p></div>
+        <div class="box"><h3>看回退</h3><p>全不中会落到 R0 通用逆向，并提示打开 routing.md 全表。这是设计好的“不知道就承认”，而不是硬塞。</p></div>
+      </div>
+    </section>
+
+    <!-- ============ 5 模块地图 ============ -->
+    <section id="modules">
+      <div class="eyebrow">05 · 模块</div>
+      <h2>43 个模块，按“目标物”而不是“工具”分组</h2>
+      <p class="section-lead">目录结构本身就在表达路由思想：先按目标类型分（APK / Mach-O / 固件 / Web / 云），工具只是模块里的实现细节。下面按 8 个领域归并 44 条路由，方便看覆盖面。</p>
+
+      <div class="mods">
+        <div class="mod"><div class="mh"><h3>逆向 / 二进制</h3><span class="cnt">10 条路由</span></div><p>先理解“它怎么工作”，再谈利用。覆盖 IDA、radare2、Ghidra、Binary Ninja、.NET、Go/Rust、协议与自定义 VM。</p><div class="mchips"><span>dsl-vm-reverse</span><span>go-rust-reverse</span><span>dotnet-reverse</span><span>protocol-reverse</span><span>ghidra-reverse</span><span>binary-ninja-reverse</span><span>ida-reverse</span><span>radare2</span><span>binary-diff</span><span>reverse-engineering</span></div></div>
+        <div class="mod"><div class="mh"><h3>移动 / 客户端</h3><span class="cnt">5 条路由</span></div><p>APK / IPA、浏览器扩展、macOS、厚客户端——所有跑在终端用户设备上的逻辑。</p><div class="mchips"><span>apk-reverse</span><span>mobile-reverse</span><span>browser-extension-reverse</span><span>macos-reverse</span><span>thick-client</span></div></div>
+        <div class="mod"><div class="mh"><h3>Web / API / 自动化</h3><span class="cnt">3 条路由</span></div><p>前端签名与加密参数、API / GraphQL 越权、浏览器与桌面自动化。</p><div class="mchips"><span>js-reverse</span><span>api-security</span><span>browser-automation</span></div></div>
+        <div class="mod"><div class="mh"><h3>固件 / 硬件 / 无线</h3><span class="cnt">5 条路由</span></div><p>从固件提取到 UART/JTAG，再到工控协议、Wi-Fi 与 RF/SDR。</p><div class="mchips"><span>firmware-pentest</span><span>hardware-security</span><span>ot-ics</span><span>wifi-wireless</span><span>radio-sdr</span></div></div>
+        <div class="mod"><div class="mh"><h3>红队 / 渗透 / 基础设施</h3><span class="cnt">10 条路由</span></div><p>授权渗透的主战场：侦察、利用、横向、云、AD、身份联邦、数据库、邮件。</p><div class="mchips"><span>pwn-chain</span><span>patch-diff-exploit</span><span>edr-bypass-re</span><span>windows-ad</span><span>identity-federation</span><span>cloud-k8s</span><span>database-security</span><span>email-security</span><span>attack-chain</span><span>pentest-tools</span></div></div>
+        <div class="mod"><div class="mh"><h3>蓝队 / 取证 / 情报</h3><span class="cnt">4 条路由</span></div><p>恶意样本、取证与应急响应、威胁狩猎、OSINT 与威胁情报。</p><div class="mchips"><span>malware-analysis</span><span>digital-forensics</span><span>threat-intelligence</span><span>threat-hunting</span></div></div>
+        <div class="mod"><div class="mh"><h3>审计 / 供应链 / AI</h3><span class="cnt">3 条路由</span></div><p>源码审计、供应链与 SBOM、LLM 与 Agent 安全。</p><div class="mchips"><span>code-audit</span><span>supply-chain-security</span><span>llm-security</span></div></div>
+        <div class="mod"><div class="mh"><h3>交付 / 流程</h3><span class="cnt">4 条路由</span></div><p>报告、图表、证据审查、CTF 编排——让交付物能被复核。</p><div class="mchips"><span>case-review</span><span>docs-generator</span><span>diagram-generator</span><span>ctf-sandbox</span></div></div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:10px"><span class="tag t-obs">观察</span><code>skills/</code> 下有 43 个技能模块目录；加上嵌套的 <code>reverse-engineering/dsl-vm-reverse</code> 与 <code>pentest-tools/src-hunter</code>，正好对应 INDEX 里的 45 条。另有 sidecar <code>CTF-Sandbox-Orchestrator/</code> 的 42 个子技能。</p>
+
+      <h3>几个值得单独看的模块</h3>
+      <table>
+        <thead><tr><th style="width:30%">模块</th><th>它解决的具体问题</th></tr></thead>
+        <tbody>
+          <tr><td><code>reverse-engineering/dsl-vm-reverse/</code></td><td>不是 WASM，也不是普通混淆，而是 IIFE + switch-case 的自定义 opcode 虚拟机（风控引擎、验证码、getToken）。这类目标用常规反混淆工具会走空。</td></tr>
+          <tr><td><code>case-review/</code></td><td>只读地审查一个 case 的证据图：scope 是否就绪、Evidence 能否追到 Finding、时间线有没有断档、文件哈希是否对得上。</td></tr>
+          <tr><td><code>ctf-sandbox/</code></td><td>薄壳 PRIMARY，只负责把 CTF/AWD 交给 sidecar <code>CTF-Sandbox-Orchestrator</code>（42 个子技能），避免 40 多个子技能同时挤进上下文。</td></tr>
+          <tr><td><code>llm-security/</code></td><td>把 OWASP LLM Top 10 与 Agentic Skills Top 10 落成测试流程；仓库里甚至有一份“借口反驳表”专治 AI 偷懒。</td></tr>
+          <tr><td><code>pentest-tools/src-hunter/</code></td><td>SRC / 众测的 5 阶段工作流 + 19 个攻击类 playbook，是 INDEX 里被单列的子技能。</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <span class="t">INDEX 是自动生成的</span>
+        <p><code>skills/INDEX.md</code> 由 <code>extract-summaries.ps1</code> 从每个 <code>SKILL.md</code> 的 frontmatter <code>description</code> 生成，并在 CI 里做 drift 检查。这保证了“模块摘要”不会靠人肉维护。</p>
+      </div>
+    </section>
+
+    <!-- ============ 6 ops ============ -->
+    <section id="ops">
+      <div class="eyebrow">06 · 契约</div>
+      <h2>真正让它区别于“提示词合集”的，是这四份契约</h2>
+      <p class="section-lead">技能可以抄，流程可以学，但“没有 scope 就不许动手”和“结论必须能追到证据”是这套包最硬的部分。</p>
+
+      <h3>6.1 scope.md：先证明你有权打</h3>
+      <p>每个 case 在 <code>work/&lt;case&gt;/scope.md</code> 落一份范围契约。字段名保持英文键，方便脚本校验。</p>
+      <table>
+        <thead><tr><th style="width:22%">字段</th><th>要点</th></tr></thead>
+        <tbody>
+          <tr><td><code>auth</code></td><td><code>status: granted | pending | denied</code>；<code>basis</code> 取书面合同 / 众测范围 / 公开 CTF / 自有系统 / 仅实验室；未 granted 禁止 ACT。</td></tr>
+          <tr><td><code>in_scope</code> / <code>out_of_scope</code></td><td>资产、面（web/mobile/binary/network/api）、活动（recon/reverse/exploit_validate/report）分别列清；明确排除 DoS、真实钓鱼、数据外带。</td></tr>
+          <tr><td><code>network_profile</code></td><td>四档：<code>offline</code> / <code>lab_only</code> / <code>authorized_target_only</code> / <code>unrestricted_lab</code>。</td></tr>
+          <tr><td><code>deliverables</code></td><td>report / field_journal / diagrams / timeline 各自是否要产出。</td></tr>
+          <tr><td><code>signoff</code></td><td><code>ready_for_act</code> 加四项勾选；不满足就只允许读文档与路由。</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><th>network_profile</th><th>允许</th><th>禁止</th></tr></thead>
+        <tbody>
+          <tr><td><code>offline</code></td><td>静态分析、本地文件、模拟</td><td>任意外连、公网 RPC</td></tr>
+          <tr><td><code>lab_only</code></td><td>lab / CTF 靶机网段</td><td>生产或未授权 IP</td></tr>
+          <tr><td><code>authorized_target_only</code></td><td>in_scope 列表内资产</td><td>列表外任何资产</td></tr>
+          <tr><td><code>unrestricted_lab</code></td><td>隔离实验网（需书面）</td><td>互联网生产环境</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6.2 角色表：一个人也能演一支队</h3>
+      <p><span class="tag t-obs">观察</span><code>role-map.md</code> 定义 9 个角色代号，不启动任何额外进程，只在同一会话里切换“帽子”，输出时加角色前缀便于 timeline 检索。</p>
+      <div class="grid g3">
+        <div class="box"><h3>lead</h3><p>拆任务、定 scope、阶段门控、汇总报告。</p></div>
+        <div class="box"><h3>cie → cpe → cre</h3><p>情报收集 → 渗透验证 → 逆向分析，交接靠 scope、资产列表、样本路径。</p></div>
+        <div class="box"><h3>cae / cbe / cce / llm / doc</h3><p>代码审计、蓝队取证、密码学、AI 安全、文档官。</p></div>
+      </div>
+
+      <h3>6.3 Evidence → Finding → Path</h3>
+      <p>三段式把“我说有漏洞”拆成“我观察到了什么、我据此得出什么、这条路径怎么走”。每条 Finding 至少引用 1 条 Evidence；要升级为 <code>validated</code>，建议有 2 条<strong>独立</strong>证据（最好一静一动），单条证据不得悄悄升级。</p>
+      <table>
+        <thead><tr><th style="width:16%">对象</th><th>关键字段</th></tr></thead>
+        <tbody>
+          <tr><td><b>E-nnn</b></td><td>observed_at · source_type（command/screenshot/file/log/memory/network/manual）· repro_command · content_hash · raw_excerpt（脱敏）· linked_workitem</td></tr>
+          <tr><td><b>F-nnn</b></td><td>severity · category（vuln/misconfig/design/reverse_algo/bypass）· status（candidate/validated/false_positive/accepted_risk）· evidence_ids · location · confidence</td></tr>
+          <tr><td><b>P-nnn</b></td><td>path_type（attack/callflow/solve）· start · goal · 每步 action/evidence/finding · residual_risks</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6.4 timeline：只传增量，不复制快照</h3>
+      <p><code>timeline.md</code> 只追加、不改历史。每次阶段切换写 <code>decision_delta</code>（只列真正改变后续动作的决定）与 <code>carry_forward_refs</code>（引用未变的 scope/evidence）。这解决的是长任务里“上下文越滚越大、AI 反复复述”的问题。</p>
+      <p><span class="tag t-inf">推断</span>这一条比“Evidence 链”更实用：它把“状态”和“变更”分开，读的人先看引用再叠加增量，长会话不容易漂。</p>
+    </section>
+
+    <!-- ============ 7 tools ============ -->
+    <section id="tools">
+      <div class="eyebrow">07 · 工具</div>
+      <h2>不猜路径，也不乱装</h2>
+      <p class="section-lead">工具层有两个真相源：<code>tool-index.md</code> 记录本机实际路径与版本，<code>bootstrap-manifest.json</code> 记录“允许装什么、从哪装、装哪个版本、哈希是多少”。</p>
+
+      <div class="grid g3">
+        <div class="stat"><div class="v">26</div><div class="k">manifest 能力</div><div class="note">jadx / apktool / frida / r2 / nmap / pwntools…</div></div>
+        <div class="stat"><div class="v">22</div><div class="k">可自动安装</div><div class="note">github release / pip / npm / winget / go</div></div>
+        <div class="stat"><div class="v">4</div><div class="k">必须手动</div><div class="note">jeb-pro / binaryninja / binwalk / burpsuite-mcp</div></div>
+      </div>
+
+      <h3>供应链防护写进了 manifest</h3>
+      <ul class="list-tight">
+        <li><b>固定版本</b>：jadx <code>v1.5.6</code>、apktool <code>v3.0.2</code>、frida-tools <code>14.10.4</code>、pwntools <code>4.15.0</code>、bkcrack <code>v1.8.1</code>、pnpm <code>10.24.0</code>、pipx <code>1.16.5</code>。</li>
+        <li><b>固定哈希</b>：GitHub release 资产带 <code>assetSha256</code>，例如 jadx 的 zip、apktool 的 jar。</li>
+        <li><b>只装 manifest 里的能力</b>：<code>bootstrap-reverse.* -Capability X</code>，X 不在清单里就拒绝，防止“顺手装个不明脚本”。</li>
+        <li><b>MCP 注册是 opt-in</b>：默认只准备能力，不写客户端全局配置；要注册必须显式指定 target（Claude / Codex / both）。</li>
+      </ul>
+
+      <h3>RULES.md 里列出的 MCP 服务</h3>
+      <table>
+        <thead><tr><th style="width:22%">服务</th><th style="width:18%">端口</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>idapro</td><td><code>13337–13350</code></td><td>IDA Pro 的逆向工具面，随实例递增端口</td></tr>
+          <tr><td>anything-analyzer</td><td><code>23816</code></td><td>浏览器自动化 + HTTP 抓包</td></tr>
+          <tr><td>jshookmcp</td><td>stdio</td><td>JS Hook / CDP / Network / AST</td></tr>
+          <tr><td>ghidra</td><td><code>8765</code></td><td>Ghidra 免费反编译（GUI 启动后监听）</td></tr>
+          <tr><td>burpsuite</td><td><code>9876</code></td><td>Burp 全套控制（Proxy/Intruder/Repeater/Scanner/Collaborator）</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <span class="t">一个跨平台缺口</span>
+        <p><span class="tag t-obs">观察</span>manifest 里 <code>installDir</code> 仍写成 <code>%USERPROFILE%\Tools\jadx</code> 这类 Windows 形式。虽然 README 宣称 Linux/macOS/Kali 有对等路径（<code>master-route.sh</code>、<code>bootstrap-reverse.sh</code>），但从清单看，Windows 仍是第一公民。跨平台是否完全等价，需要实机验证。</p>
+      </div>
+    </section>
+
+    <!-- ============ 8 quality ============ -->
+    <section id="quality">
+      <div class="eyebrow">08 · 质量</div>
+      <h2>改路由不是改文档，是改代码</h2>
+      <p class="section-lead">这套包最不像“提示词项目”的地方，是它给路由配了回归测试和一致性校验，并且在 Windows + Ubuntu 双平台跑 CI。</p>
+
+      <table>
+        <thead><tr><th style="width:34%">脚本</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td><code>test-routing.ps1 / .sh</code></td><td>跑 <code>routing-benchmark.json</code>，逐条比对 hint → 期望 PRIMARY，任一不符即 CI 失败</td></tr>
+          <tr><td><code>verify-routing-coherence.ps1</code></td><td>结构一致性 + 供应链 pin 门禁：未固定版本的自动安装直接判失败</td></tr>
+          <tr><td><code>smoke.ps1</code></td><td>verify + 脚本解析 + 快速路由矩阵（含中文 hint）</td></tr>
+          <tr><td><code>extract-summaries.ps1 -Check</code></td><td>INDEX.md 漂移检查；摘要只能来自 SKILL.md frontmatter</td></tr>
+          <tr><td><code>test-bootstrap-manifest.sh</code></td><td>校验 manifest 能力与安装脚本的一致性</td></tr>
+          <tr><td><code>case-review/scripts/review_case.py</code></td><td>只读审查 case：scope、Evidence、workitem、timeline、哈希 fixity</td></tr>
+          <tr><td><code>test-bash-workflow.sh</code></td><td>Linux/macOS 路径与 PowerShell 的 parity 测试</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout bad">
+        <span class="t">发现一处文档数字漂移</span>
+        <p><span class="tag t-obs">观察</span>README 的 Current status 写 <strong>175</strong> 个回归用例；Key files 写 <strong>173</strong>；而 <code>skills/tests/routing-benchmark.json</code> 实际是 <strong>178</strong> 条（其中 44 条标记 quick）。三个数字互不一致。</p>
+        <p>这说明文档里的统计还没有纳入自动校验（仓库虽有 <code>verify-doc-facts.ps1</code>）。不影响路由本身，但提醒读者：<strong>以 JSON 与脚本为准，别以 README 的统计为准</strong>。</p>
+      </div>
+
+      <h3>路由覆盖长什么样</h3>
+      <p>178 条用例里，命中最多的是 <code>R11</code> 渗透工具（14 条）、<code>R0</code> 通用逆向（11 条）、<code>R1</code> APK（8 条）、<code>R3</code> 前端 JS（7 条）。这基本对应真实使用频率：渗透、逆向、APK、JS 是四大入口。</p>
+      <div class="callout">
+        <span class="t">为什么这很重要</span>
+        <p>关键词路由最大的风险是“改一条规则，误伤十条用例”。有了 benchmark，路由变更就从“感觉更准了”变成“跑完 178 条再说”。这是它从 prompt 工程走向工程化的分水岭。</p>
+      </div>
+    </section>
+
+    <!-- ============ 9 safety ============ -->
+    <section id="safety">
+      <div class="eyebrow">09 · 边界</div>
+      <h2>安全设计：把“别乱来”写成可检查的条款</h2>
+      <p class="section-lead">这是一个双用途工具。它的安全策略不是“我们保证安全”，而是“把该问的问题提前问完，把该留的证据留下”。</p>
+
+      <div class="grid g2">
+        <div class="box">
+          <h3>四道门</h3>
+          <ol class="list-tight">
+            <li><b>激活门</b>：只读仓库不等于授权执行；首次副作用需批准。</li>
+            <li><b>范围门</b>：scope.md 的 auth + network_profile 不满足，禁止 ACT。</li>
+            <li><b>工具门</b>：只从 tool-index 取路径，只从 manifest 装能力，固定版本与哈希。</li>
+            <li><b>证据门</b>：Finding 必须引用 Evidence；validated 建议双证据；报告前跑 case-review。</li>
+          </ol>
+        </div>
+        <div class="box">
+          <h3>供应链视角（AST10 思路）</h3>
+          <p>仓库专门写了 <code>ops/skill-supply-chain.md</code>，把恶意 skill、权限过度、依赖投毒、MCP 盲信、提示注入、范围漂移、技能堆叠过载逐条对应到控制措施。</p>
+          <p>其中一条很现实：<strong>不 bulk-vendor 社区 skill 库</strong>，只维护索引与借鉴规则，避免“投毒面 + 维护成本”。</p>
+        </div>
+      </div>
+
+      <h3>许可与责任</h3>
+      <table>
+        <thead><tr><th style="width:32%">部分</th><th>许可</th></tr></thead>
+        <tbody>
+          <tr><td>reverse-skill 主体</td><td>MIT</td></tr>
+          <tr><td><code>CTF-Sandbox-Orchestrator/</code></td><td>GNU GPLv3</td></tr>
+          <tr><td>Pentest Swarm AI</td><td>AGPL-3.0，仅通过 CLI/MCP 调用，不包含源码</td></tr>
+          <tr><td>jadx / frida / nmap / burpsuite-mcp 等</td><td>各自官方许可</td></tr>
+        </tbody>
+      </table>
+      <blockquote>
+        <p>“Unauthorized access, scanning, exploitation, disruption, data acquisition, or any other use against systems without prior permission is strictly prohibited.”</p>
+        <cite><span class="tag t-quote">原文</span>README.md · Disclaimer</cite>
+      </blockquote>
+
+      <div class="callout bad">
+        <span class="t">必须说清楚的局限</span>
+        <p>这些门是<strong>提示词与文件层面的约束</strong>，不是沙箱、不是权限系统、不是网络隔离。一个不遵守指令的模型，或者一个绕过 AI 直接跑脚本的人，都能越过它们。真正的安全边界仍然来自：授权文件、隔离环境、出站管控、人工复核。</p>
+      </div>
+    </section>
+
+    <!-- ============ 10 start ============ -->
+    <section id="start">
+      <div class="eyebrow">10 · 上手</div>
+      <h2>最短可用路径</h2>
+      <p class="section-lead">下面命令来自 README / MASTER-ROUTING / README_AI。注意：首次跑 <code>refresh-tool-index</code> 会写文件，按它自己的规则，这一步应当先获得你的同意。</p>
+
+      <div class="code">
+        <span class="cap">1 · 获取与建立本机工具索引</span>
+        <button class="copy" type="button">复制</button>
+        <pre><code>git clone https://github.com/zhaoxuya520/reverse-skill.git
+cd reverse-skill
+
+# Windows
+powershell -File skills/scripts/refresh-tool-index.ps1
+# Linux / macOS
+bash skills/scripts/refresh-tool-index.sh
+# Kali
+bash kali/scripts/refresh-tool-index.sh</code></pre>
+      </div>
+
+      <div class="code">
+        <span class="cap">2 · 路由 + 建案（Linux / macOS）</span>
+        <button class="copy" type="button">复制</button>
+        <pre><code>bash skills/scripts/master-route.sh --hint "offline apk 证书校验绕过"
+bash skills/scripts/case-init.sh --hint "offline apk" \
+  --case-name my-sample --preset offline-sample --sample ./app.apk
+bash skills/scripts/case-guard.sh --case-root work/my-sample</code></pre>
+      </div>
+
+      <div class="code">
+        <span class="cap">3 · 路由 + 建案（Windows）</span>
+        <button class="copy" type="button">复制</button>
+        <pre><code>powershell -File skills/scripts/master-route.ps1 -Hint "offline apk 证书校验绕过"
+powershell -File skills/scripts/case-init.ps1 -Hint "offline apk" `
+  -CaseName my-sample -Preset offline-sample -Sample ".\app.apk"
+powershell -File skills/scripts/case-guard.ps1 -CaseRoot work\my-sample</code></pre>
+      </div>
+
+      <div class="code">
+        <span class="cap">4 · 交付前自检</span>
+        <button class="copy" type="button">复制</button>
+        <pre><code>python3 skills/case-review/scripts/review_case.py work/my-sample --verify-hashes --strict
+bash skills/scripts/test-routing.sh          # 178 条回归（含 44 条 quick）
+powershell -File skills/scripts/smoke.ps1    # verify + 解析 + 快速矩阵</code></pre>
+      </div>
+
+      <h3>客户端怎么接</h3>
+      <p>核心路由、测试、manifest、case 流程都是<strong>客户端中立</strong>的：Claude Code、Codex、Cursor、OpenCode 各自用自己的项目指令或 skill 适配器加载即可。Codex 另有可选的 <code>plugins/reverse-skill/</code> 适配插件，但它只是委托给现有路由核心，不会自动注册外部 MCP。</p>
+    </section>
+
+    <!-- ============ 11 verdict ============ -->
+    <section id="verdict">
+      <div class="eyebrow">11 · 评价</div>
+      <h2>值不值得用：看你是不是它的目标用户</h2>
+      <p class="section-lead">我的判断分三块：它做对了什么、它付出了什么代价、什么人应该绕开。</p>
+
+      <div class="verdict">
+        <div class="box good">
+          <h3>做对的五件事</h3>
+          <ul class="list-tight">
+            <li><b>单一事实源</b>：路由只在 JSON 里改，文档与脚本都被校验，避免“三份路由表互相打架”。</li>
+            <li><b>可回归</b>：178 条用例 + 双平台 CI，让“路由更准”可被证明。</li>
+            <li><b>先授权后动手</b>：scope 是硬门而不是建议，<code>-Force</code> 也绕不过。</li>
+            <li><b>证据化交付</b>：Evidence/Finding/Path + 哈希 + 可复现命令，报告能被别人复核。</li>
+            <li><b>经验会沉淀</b>：field-journal 脱敏回写 + INDEX 自动生成，越用越厚。</li>
+          </ul>
+        </div>
+        <div class="box caution">
+          <h3>付出的五个代价</h3>
+          <ul class="list-tight">
+            <li><b>关键词路由的天花板</b>：多意图长句会抢路由；靠 exclude 打补丁，规则会越来越绕。</li>
+            <li><b>上下文负担</b>：43 个模块 + 42 个 CTF 子技能 + 大量 ops 文档，必须严格“只读 PRIMARY”，否则注意力被稀释。</li>
+            <li><b>流程摩擦</b>：scope、consent、timeline、evidence、case-review，一次小活也要建案。</li>
+            <li><b>Windows 优先</b>：PowerShell 是主路径，manifest 路径仍是 Windows 形式，跨平台体验不对称。</li>
+            <li><b>软约束</b>：所有安全门都是提示词级，挡不住不听话的模型或绕过 AI 的人。</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>适合 / 不适合</h3>
+      <table>
+        <thead><tr><th style="width:50%">适合</th><th>不适合</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>安全研究员、CTF 选手、需要做授权测试的研发；已经把 Claude Code / Codex / Cursor 当主力工具的人；想给团队沉淀“打法 + 证据规范”的负责人。</td>
+            <td>想要“点一下自动逆向”的人；需要技术隔离的生产环境；没有授权、想拿它打别人系统的人；只做纯源码架构分析的人（REA 类工具或普通仓库分析更合适）。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>如果是我，会怎么用</h3>
+      <ol class="list-tight">
+        <li><b>只挂 PRIMARY</b>：把“不要预加载”当硬规矩，先跑 <code>master-route</code> 再开文件。</li>
+        <li><b>把 scope 当团队资产</b>：每次任务的授权依据、网络档、排除项都留在 <code>work/</code> 里，报告直接引用。</li>
+        <li><b>改路由前先跑 quick 集</b>：44 条 quick 用例能在几十秒内告诉你有没有误伤。</li>
+        <li><b>把 field-journal 当知识库</b>：只写“下次能复用的一条”，别写流水账；脱敏是底线。</li>
+        <li><b>不神化它</b>：它提高的是“起手正确率”和“交付可复核性”，不是漏洞发现率。</li>
+      </ol>
+
+      <div class="callout warn">
+        <span class="t">一个容易被忽略的风险</span>
+        <p>这类包会引导 AI 执行命令、下载二进制、连接本地 MCP。真正的攻击面往往不在目标，而在<strong>你给 AI 的这台机器</strong>：manifest 之外的安装、来源不明的 MCP、仓库里的 <code>.env</code> 与客户端配置。用之前先确认出站与凭据边界，比读多少 SKILL.md 都重要。</p>
+      </div>
+    </section>
+
+    <!-- ============ 12 sources ============ -->
+    <section id="sources">
+      <div class="eyebrow">12 · 核实</div>
+      <h2>这份报告的依据，以及我没做的事</h2>
+      <p class="section-lead">所有数字都来自 2026-11-01 对 GitHub API 与仓库 raw 文件的读取。仓库在持续更新，读到时可能已经变化。</p>
+
+      <table class="srclist">
+        <thead><tr><th style="width:40%">来源</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td><code>api.github.com/repos/zhaoxuya520/reverse-skill</code></td><td>stars / forks / issues / 许可 / 创建与推送时间</td></tr>
+          <tr><td><code>README.md</code></td><td>定位、状态表、场景表、关键文件、测试命令、许可与免责声明</td></tr>
+          <tr><td><code>README_AI.md</code></td><td>AI 引导流程、同意门、平台部署矩阵</td></tr>
+          <tr><td><code>RULES.md</code></td><td>行为链、工具规则、自检、借口反驳表、MCP 服务表</td></tr>
+          <tr><td><code>skills/config/routing.json</code></td><td>44 条规则、priority、关键词、mustAll、exclude</td></tr>
+          <tr><td><code>skills/scripts/master-route.ps1</code></td><td>匹配与计分逻辑、confidence 判定、回退</td></tr>
+          <tr><td><code>skills/MASTER-ROUTING.md</code> · <code>skills/routing.md</code></td><td>优先级表、三轴歧义矩阵、ops 契约入口</td></tr>
+          <tr><td><code>skills/ops/*.md</code></td><td>IDENTITY、scope 契约、角色表、Evidence 链、timeline、供应链</td></tr>
+          <tr><td><code>skills/INDEX.md</code> · <code>field-journal/_index.md</code></td><td>45 条索引、38 条经验记录（21 真实 + 17 种子）</td></tr>
+          <tr><td><code>skills/scripts/bootstrap-manifest.json</code></td><td>26 个能力、固定版本与 SHA-256、4 个手动项</td></tr>
+          <tr><td><code>skills/tests/routing-benchmark.json</code></td><td>178 条用例、44 条 quick</td></tr>
+        </tbody>
+      </table>
+
+      <h3>未核实 / 未执行</h3>
+      <ul class="list-tight">
+        <li>没有 clone 全仓，也没有运行任何脚本；所有行为描述来自源码与文档阅读，不是实机结果。</li>
+        <li>没有逐篇阅读 43 个模块的 SKILL.md 正文，模块能力描述来自 frontmatter 摘要与少量抽样（apk-reverse、MASTER-ROUTING、ops）。</li>
+        <li>没有在 Windows / Kali 实机验证 bootstrap 与 refresh 脚本的跨平台行为；相关判断标注为观察或推断。</li>
+        <li>“178 vs 175 vs 173”是读取时的实际差异；仓库更新后可能已被修正。</li>
+        <li>路由模拟器是按 <code>master-route.ps1</code> 的逻辑复刻，未处理 PowerShell 与 JS 正则方言的全部差异（本页已用到的模式在两边均可编译）。</li>
+      </ul>
+
+      <div class="callout">
+        <span class="t">页面本身的约定</span>
+        <p>单文件、离线可用：CSS/JS/数据全部内联，无 CDN、无外部字体、无网络请求。交互包括目录高亮、规则搜索与领域筛选、路由试跑、命令复制；关闭 JavaScript 时，正文与 44 条规则表仍完整可读。</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><b>reverse-skill</b> · Cybersecurity Skills Router · 作者 zhaoxuya520 · MIT（主体）· 仓库 <a href="https://github.com/zhaoxuya520/reverse-skill" rel="noopener noreferrer" target="_blank">github.com/zhaoxuya520/reverse-skill</a></p>
+    <p>本页是第三方拆解报告，不是项目官方文档；引用的原文版权归原作者，观点与推断由本报告作者负责。项目仅限合法安全研究、教学、CTF 与获得明确授权的测试。</p>
+    <p>数据快照 2026-11-01 · 单文件离线页面 · 生成于 HTMLS 仓库</p>
+  </div>
+</footer>
+
+<script type="application/json" id="route-data">{"fallback":"R0","priority":["R4","R1","R2","R3","R30","R31","R33","R5","R9","R21","R22","R45","R6","R7","R8","R34","R28","R17","R16","R18","R24","R37","R23","R35","R25","R44","R36","R29","R38","R32","R26","R27","R10","R11","R12","R13","R14","R15","R19","R40","R20","R39","R41","R0"],"routes":{"R4":{"label":"DSL VM reverse","signal":"DSL VM / 自定义 opcode 虚拟机","skill":"reverse-engineering/dsl-vm-reverse","group":"rev","keywords":[{"must":"dsl.?vm|fireye|opcode.?vm|custom.?vm|自定义.?虚拟机"}]},"R1":{"label":"APK reverse","signal":"APK / Android / smali / 加固 / pinning","skill":"apk-reverse","group":"mob","keywords":[{"must":"\\bapk\\b|smali|jadx|apktool|\\bandroid\\b|android.?reverse|安卓|反编译.?apk|apk.?加固|重打包|root.?detect|root.?检测|证书.?校验|certificate.?pinning|pinning.?绕过|签名.?校验"}]},"R2":{"label":"Mobile reverse (Android+iOS)","signal":"iOS / IPA / Objection / MobSF","skill":"mobile-reverse","group":"mob","keywords":[{"must":"\\bipa\\b|ios.?reverse|objection|mobsf|mobile.?reverse|ios.?逆向"},{"must":"越狱","exclude":"模型|提示词|llm|prompt|jailbreak|garak|红队.?ai|ai.?红队"},{"must":"jailbreak","mustAll":["ios|iphone|ipad|mobile|objection|ipa"]}]},"R3":{"label":"JS / frontend reverse","signal":"前端签名 / JS 加密 / 抓包重放","skill":"js-reverse","group":"web","keywords":[{"must":"js.?reverse|webpack|cryptojs|frontend.?sign|jshook|cdp|encrypted.?param|前端.?签名|js.?逆向|加密.?参数|webpack.?逆向|抓包|http.?capture|请求.?重放|request.?replay|js.?加密|js.?解密|前端.?加密"}]},"R30":{"label":"Browser extension reverse","signal":"浏览器扩展 crx / xpi","skill":"browser-extension-reverse","group":"mob","keywords":[{"must":"browser.?extension|chrome.?extension|\\bcrx\\b|\\bxpi\\b|mv3.?extension|浏览器.?扩展|chrome.?扩展"}]},"R31":{"label":"macOS / Mach-O reverse","signal":"macOS / Mach-O / codesign","skill":"macos-reverse","group":"mob","keywords":[{"must":"macos|mach-?o|codesign|objective-?c|swift.?reverse|xpc|mac.?逆向|苹果.?桌面"}]},"R33":{"label":"Go / Rust reverse","signal":"Go / Rust 二进制","skill":"go-rust-reverse","group":"rev","keywords":[{"must":"\\bgolang\\b|\\brustc\\b|go.?binary|go.?二进|go.?语言|go.?程序|stripped.?go|gore.?sym|go.?malware|rust.?binary|go.?逆向|rust.?逆向"}]},"R5":{"label":".NET reverse","signal":".NET / dnSpy / de4dot / ConfuserEx","skill":"dotnet-reverse","group":"rev","keywords":[{"must":"\\.net|dnspy|de4dot|confuserex|csharp|dotnet|c#"}]},"R9":{"label":"Malware analysis","signal":"恶意样本 / YARA / 沙箱","skill":"malware-analysis","group":"blue","keywords":[{"must":"malware|yara|virus.?sample|pe-?sieve|cape.?sandbox|恶意.?软件|病毒.?样本|木马.?分析|恶意.?样本|样本.?分析|ransomware|勒索|webshell|后门|backdoor"},{"must":"sandbox","mustAll":["malware|virus|恶意|木马|样本|cape|any\\.run|triage"]}]},"R21":{"label":"Protocol reverse","signal":"自定义协议 / Protobuf / PCAP","skill":"protocol-reverse","group":"rev","keywords":[{"must":"protocol.?reverse|custom.?protocol|protobuf|grpc|pcap|wireshark|pcap.?protocol|wireshark.?dissector|协议.?逆向|自定义.?协议|流量.?逆向|流量.?分析"}]},"R22":{"label":"Ghidra reverse","signal":"Ghidra / headless / 无 IDA","skill":"ghidra-reverse","group":"rev","keywords":[{"must":"ghidra|ghidra.?mcp|analyzeheadless|无.?ida|开源.?反编译"}]},"R45":{"label":"Binary Ninja reverse","signal":"Binary Ninja / HLIL / MLIL","skill":"binary-ninja-reverse","group":"rev","keywords":[{"must":"binary.?ninja|binaryninja|\\bbinja\\b|binary[_-]ninja[_-]mcp|hlil|mlil"}]},"R6":{"label":"IDA reverse","signal":"IDA / 反编译 / .so / JNI","skill":"ida-reverse","group":"rev","keywords":[{"must":"\\bida\\b|decompile|disassembl|反编译|反汇编|静态.?分析.?二进制|\\.so\\b|\\.elf\\b|so.?文件|native.?分析|jni"}]},"R7":{"label":"radare2","signal":"radare2 / r2 工具生态","skill":"radare2","group":"rev","keywords":[{"must":"radare|\\br2\\b"},{"must":"r2xsql|r2mcp|r2http|radius2|r2pm|rabin2|rasm2|radiff2|rahash2|rax2"}]},"R8":{"label":"Firmware pentest","signal":"固件 / binwalk / IoT / EMBA","skill":"firmware-pentest","group":"fw","keywords":[{"must":"firmware|binwalk|iot|emba|firmadyne|固件|路由器.?固件|嵌入式"}]},"R34":{"label":"Hardware / debug interfaces","signal":"UART / JTAG / 硬件调试","skill":"hardware-security","group":"fw","keywords":[{"must":"uart|jtag|swd|debug.?pad|flashrom|硬件.?调试|串口.?shell|芯片.?提取|usb.?逆向|usb.?设备"}]},"R28":{"label":"OT / ICS","signal":"OT / ICS / SCADA / Modbus","skill":"ot-ics","group":"fw","keywords":[{"must":"\\bot\\b|\\bics\\b|scada|plc\\b|modbus|dnp3|s7comm|purdue|工控|工业.?控制|ot/?ics"}]},"R17":{"label":"Pwn chain","signal":"Pwn / ROP / 堆栈利用","skill":"pwn-chain","group":"red","keywords":[{"must":"\\bpwn\\b|rop|ret2libc|heap.?overflow|stack.?overflow|buffer.?overflow|kernel.?pwn|exploit.?dev|pwntools|栈溢出|堆溢出|格式化.?字符串"}]},"R16":{"label":"Patch-diff / N-day","signal":"N-day / 补丁差分","skill":"patch-diff-exploit","group":"red","keywords":[{"must":"n-?day|patch.?diff|patch.?tuesday|补丁.?差分|补丁.?分析"}]},"R18":{"label":"EDR bypass RE","signal":"EDR / 免杀 / syscall / AMSI","skill":"edr-bypass-re","group":"red","keywords":[{"must":"edr|av.?bypass|syscall|amsi|etw.?patch|hell.?s.?gate|免杀|反病毒"}]},"R24":{"label":"Windows / AD","signal":"AD / Kerberos / AD CS / NTLM","skill":"windows-ad","group":"red","keywords":[{"must":"active.?directory|\\bad\\b.?cs|bloodhound|kerberoast|as-?rep|certipy|ntlm.?relay|dc.?sync|kerberos.?攻击|ad.?证书|impacket|mimikatz|secretsdump"},{"must":"域.?渗透|域控","exclude":"完整.?渗透|从外网|打到域控|attack.?chain|full.?pentest"}]},"R37":{"label":"Identity federation (SAML/OIDC)","signal":"SAML / OIDC / SSO","skill":"identity-federation","group":"red","keywords":[{"must":"saml|oidc|openid.?connect|oauth2|sso\\b|联邦.?身份|单点.?登录"}]},"R23":{"label":"Cloud / K8s","signal":"云 / 容器 / K8s / IMDS","skill":"cloud-k8s","group":"red","keywords":[{"must":"kubernetes|\\bk8s\\b|container.?escape|docker.?escape|kube-?bench|cloud.?secur|imds|169\\.254\\.169\\.254|容器.?逃逸|云.?安全|k8s.?渗透|s3|对象存储|存储桶"}]},"R35":{"label":"Database security","signal":"数据库暴露 / 认证 / UDF","skill":"database-security","group":"red","keywords":[{"must":"database.?secur|\\bmysql\\b|\\bpostgres|mongodb|redis.?secur|mssql|数据库.?安全|数据库.?渗透"}]},"R25":{"label":"Digital forensics","signal":"取证 / 内存转储 / 时间线 / IR","skill":"digital-forensics","group":"blue","keywords":[{"must":"forensic|volatility|memory.?dump|plaso|timeline.?explorer|取证|内存.?转储|应急.?响应.?取证|手机.?取证|磁盘.?取证|autopsy|sleuth|encase|dump.?内存|内存.?dump|应急.?响应|incident.?response"}]},"R44":{"label":"Threat intelligence / OSINT","signal":"OSINT / 威胁情报 / IOC","skill":"threat-intelligence","group":"blue","keywords":[{"must":"\\bosint\\b|open.?source.?intelligence|threat.?intelligence|\\bcti\\b|ioc.?enrichment|indicator.?enrichment|威胁.?情报|开源.?情报|ioc.?扩充|ioc.?富化"},{"must":"twitter|tweet|x\\.com|x.?post|推文|社交.?媒体","mustAll":["ioc|threat|malware|campaign|actor|phish|scam|impersonat|indicator|情报|威胁|恶意|钓鱼|诈骗|仿冒"]}]},"R36":{"label":"Email / phishing analysis","signal":"钓鱼邮件 / SPF / DKIM / DMARC","skill":"email-security","group":"red","keywords":[{"must":"phish|spf|dkim|dmarc|bec\\b|email.?secur|钓鱼.?邮件|邮件.?安全"}]},"R29":{"label":"Wi-Fi / wireless","signal":"Wi-Fi / WPA / 无线","skill":"wifi-wireless","group":"fw","keywords":[{"must":"wifi|wi-?fi|aircrack|airmon|wpa.?handshake|wireless.?pentest|无线.?渗透|wifi.?攻击"}]},"R38":{"label":"RF / SDR research","signal":"RF / SDR / 蓝牙","skill":"radio-sdr","group":"fw","keywords":[{"must":"\\bsdr\\b|hackrf|rtl-?sdr|gnu.?radio|\\burh\\b|射频|软件.?无线电|蓝牙|bluetooth|\\bble\\b"}]},"R32":{"label":"Thick client security","signal":"厚客户端 / Electron / WinForms","skill":"thick-client","group":"mob","keywords":[{"must":"thick.?client|desktop.?client|electron.?app|winforms|wpf|厚客户端|桌面.?客户端"}]},"R26":{"label":"Code audit / SAST","signal":"代码审计 / SAST / Semgrep","skill":"code-audit","group":"gov","keywords":[{"must":"code.?audit|sast|semgrep|codeql|source.?review|白盒|代码.?审计|静态.?应用.?安全"}]},"R27":{"label":"Threat hunting","signal":"威胁狩猎 / Sigma / 蓝队检测","skill":"threat-hunting","group":"blue","keywords":[{"must":"threat.?hunt|detection.?engineer|blue.?team|sigma.?rule|\\bsigma\\b|威胁.?狩猎|检测.?工程|蓝队.?狩猎|检测.?规则"}]},"R10":{"label":"Attack chain","signal":"攻击链 / 内网 / 横向移动","skill":"attack-chain","group":"red","keywords":[{"must":"attack.?chain|red.?team|lateral|domain.?pentest|internal.?network|full.?pentest|完整.?渗透|从外网|打到域控|红队|横向.?移动|内网.?渗透"}]},"R11":{"label":"Pentest tools","signal":"Nmap / Nuclei / SQLMap / SRC","skill":"pentest-tools","group":"red","keywords":[{"must":"nmap|nuclei|sqlmap|ffuf|pentest|src.?hunt|bug.?bounty|waf.?bypass|渗透.?测试|端口.?扫描|漏洞.?扫描|目录.?爆破|sql.?注入|众测|burp|burpsuite|intruder|repeater|metasploit|hashcat|hydra|gobuster|dirsearch|提权|privilege.?escalat|安全.?评估|security.?assess|风险.?评估|risk.?assess"}]},"R12":{"label":"API security","signal":"API / GraphQL / BOLA / OAuth","skill":"api-security","group":"web","keywords":[{"must":"graphql|bola|bfla|api.?secur|接口.?安全|越权|未授权.?访问|rest.?api.?secur"},{"must":"\\boauth\\b","exclude":"oauth2|oidc|saml|sso|openid|联邦|单点"}]},"R13":{"label":"Supply chain","signal":"SBOM / Trivy / 供应链","skill":"supply-chain-security","group":"gov","keywords":[{"must":"sbom|supply.?chain|trivy|gitleaks|syft|供应链|依赖.?扫描"}]},"R14":{"label":"LLM / Agent security","signal":"LLM / Prompt 注入 / Agent 安全","skill":"llm-security","group":"gov","keywords":[{"must":"llm|prompt.?inject|jailbreak|agent.?secur|garak|owasp.?llm|提示词.?注入|模型.?红队|模型.?越狱|llm.?越狱|提示词.?越狱|ai.?红队"}]},"R15":{"label":"Binary diff / symbol migrate","signal":"bindiff / 符号迁移 / PDB","skill":"binary-diff","group":"rev","keywords":[{"must":"bindiff|symbol.?migrat|pdb|符号.?迁移|版本.?对比"}]},"R19":{"label":"Browser / desktop automation","signal":"Playwright / 浏览器与桌面自动化","skill":"browser-automation","group":"web","keywords":[{"must":"playwright|browser.?auto|desktop.?auto|openreverse|fill.?form|浏览器.?自动化|桌面.?自动化|自动.?填表"}]},"R40":{"label":"Case evidence review","signal":"证据图 / 案件审查 / fixity","skill":"case-review","group":"ops","keywords":[{"must":"case.?review|case.?audit|evidence.?chain|evidence.?graph|traceability|fixity.?check|证据.?链|证据.?图|可追溯性|案件.?审查|案例.?审计"}]},"R20":{"label":"Docs generator","signal":"报告 / writeup","skill":"docs-generator","group":"ops","keywords":[{"must":"writeup|write.?report|generate.?report|\\breport\\b|写.?报告|出.?报告|渗透.?报告|逆向.?报告"}]},"R39":{"label":"Diagram generation","signal":"Mermaid / 架构图 / 攻击路径图","skill":"diagram-generator","group":"ops","keywords":[{"must":"diagram|mermaid|graphviz|plantuml|flowchart|流程图|架构图|时序图|状态图|数据流图|攻击路径图|er.?图|画图|图表"}]},"R41":{"label":"CTF sandbox orchestrator","signal":"CTF / AWD / 靶场","skill":"ctf-sandbox","group":"ops","keywords":[{"must":"\\bctf\\b|awd|靶场|比赛.?题","exclude":"pwn|rop|栈溢出|堆溢出|ret2"}]},"R0":{"label":"General reverse-engineering","signal":"通用逆向 / 反调试 / OLLVM / 游戏","skill":"reverse-engineering","group":"rev","keywords":[{"must":"ollvm|anti-?debug|unicorn|angr|gdb|deobfuscat|控制流平坦|反调试|unity|il2cpp|游戏.?逆向|game.?reverse|anti-?cheat|反作弊"},{"must":"frida","exclude":"\\bapk\\b|smali|jadx|android|安卓"},{"must":"reverse|逆向","exclude":"apk|js.?reverse|ios|mobile|\\.net|firmware|malware|安卓|固件|恶意|protocol|ghidra|extension|macos|mach|golang|rust|工控|厚客户端|取证|协议|扩展"}]}}}</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 目录高亮 ---------- */
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.side a[href^="#"]'));
+  var sections = navLinks.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  function setActive(id){
+    navLinks.forEach(function(a){
+      var on = a.getAttribute('href') === '#' + id;
+      a.classList.toggle('active', on);
+      if (on) { a.setAttribute('aria-current','true'); } else { a.removeAttribute('aria-current'); }
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      var visible = entries.filter(function(e){ return e.isIntersecting; })
+        .sort(function(a,b){ return a.boundingClientRect.top - b.boundingClientRect.top; });
+      if (visible.length) { setActive(visible[0].target.id); }
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ io.observe(s); });
+  }
+
+  /* ---------- 规则筛选 ---------- */
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#route-table tbody tr'));
+  var search = document.getElementById('route-search');
+  var reset = document.getElementById('route-reset');
+  var count = document.getElementById('route-count');
+  var empty = document.getElementById('route-empty');
+  var filterBtns = Array.prototype.slice.call(document.querySelectorAll('#group-filters .btn'));
+  var activeGroup = 'all';
+
+  function applyFilter(){
+    var q = (search.value || '').trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function(tr){
+      var okGroup = activeGroup === 'all' || tr.getAttribute('data-group') === activeGroup;
+      var hay = tr.getAttribute('data-search') || '';
+      var okText = !q || hay.indexOf(q) !== -1;
+      var show = okGroup && okText;
+      tr.hidden = !show;
+      if (show) { shown++; }
+    });
+    count.textContent = '显示 ' + shown + ' / ' + rows.length + ' 条';
+    empty.classList.toggle('show', shown === 0);
+  }
+  if (search) {
+    search.addEventListener('input', applyFilter);
+  }
+  if (reset) {
+    reset.addEventListener('click', function(){
+      search.value = '';
+      activeGroup = 'all';
+      filterBtns.forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-group') === 'all')); });
+      applyFilter();
+      search.focus();
+    });
+  }
+  filterBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      activeGroup = btn.getAttribute('data-group');
+      filterBtns.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      applyFilter();
+    });
+  });
+
+  /* ---------- 路由试跑 ---------- */
+  var DATA = null;
+  try { DATA = JSON.parse(document.getElementById('route-data').textContent); } catch (e) { DATA = null; }
+  var input = document.getElementById('sim-input');
+  var run = document.getElementById('sim-run');
+  var out = document.getElementById('sim-out');
+  var samples = document.getElementById('sim-samples');
+
+  function safeReg(pattern, flags){
+    try { return new RegExp(pattern, flags); } catch (e) { return null; }
+  }
+
+  function matchKeyword(kw, text){
+    var re = safeReg(kw.must, 'i');
+    if (!re || !re.test(text)) { return false; }
+    if (kw.mustAll && kw.mustAll.length) {
+      var all = kw.mustAll.every(function(p){ var r = safeReg(p, 'i'); return r ? r.test(text) : false; });
+      if (!all) { return false; }
+    }
+    if (kw.exclude) {
+      var ex = safeReg(kw.exclude, 'i');
+      if (ex && ex.test(text)) { return false; }
+    }
+    return true;
+  }
+
+  function route(hint){
+    var text = String(hint || '').toLowerCase();
+    var hits = [];
+    if (!text.trim() || !DATA) { return { hits: [], primary: null, confidence: 'low' }; }
+    DATA.priority.forEach(function(id, idx){
+      var r = DATA.routes[id];
+      if (!r) { return; }
+      var score = 0;
+      var matched = [];
+      (r.keywords || []).forEach(function(kw){
+        if (matchKeyword(kw, text)) { score++; matched.push(kw.must); }
+      });
+      if (score > 0) { hits.push({ id: id, idx: idx, score: score, matched: matched, route: r }); }
+    });
+    var primary = null;
+    var max = -1;
+    hits.forEach(function(h){ if (h.score > max) { max = h.score; primary = h; } });
+    var confidence = 'low';
+    if (primary) { confidence = hits.length === 1 ? 'high' : 'medium'; }
+    return { hits: hits, primary: primary, confidence: confidence };
+  }
+
+  function el(tag, cls, txt){
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (txt !== undefined) { n.textContent = txt; }
+    return n;
+  }
+
+  function render(){
+    if (!DATA) {
+      out.textContent = '数据未加载，无法试跑。';
+      return;
+    }
+    out.textContent = '';
+    var hint = input.value || '';
+    if (!hint.trim()) {
+      out.appendChild(el('p', 'res-note', '输入一句话，或点上面的示例。这里不会真的调用 master-route，也不会写任何文件。'));
+      return;
+    }
+    var result = route(hint);
+
+    if (!result.primary) {
+      var fb = DATA.routes[DATA.fallback] || {};
+      var p0 = el('div', 'res primary');
+      p0.appendChild(el('div', 'rid', DATA.fallback));
+      var mid = el('div');
+      mid.appendChild(el('div', 'rl', fb.signal || fb.label || '通用逆向'));
+      mid.appendChild(el('div', 'rs', fb.skill || ''));
+      p0.appendChild(mid);
+      p0.appendChild(el('div', 'score', '回退'));
+      out.appendChild(p0);
+      out.appendChild(el('p', 'res-note', '没有命中任何强关键词，回退到 ' + DATA.fallback + '，并提示打开 routing.md 全表。置信度：low。'));
+      return;
+    }
+
+    var sorted = result.hits.slice().sort(function(a,b){
+      if (b.score !== a.score) { return b.score - a.score; }
+      return a.idx - b.idx;
+    });
+    var top = sorted.slice(0, 3);
+    top.forEach(function(h, i){
+      var row = el('div', 'res' + (i === 0 ? ' primary' : ''));
+      row.appendChild(el('div', 'rid', h.id + (i === 0 ? ' ★' : '')));
+      var mid = el('div');
+      mid.appendChild(el('div', 'rl', h.route.signal || h.route.label));
+      mid.appendChild(el('div', 'rs', h.id + ' · ' + h.route.label + ' · skills/' + h.route.skill));
+      mid.appendChild(el('div', 'rs', '命中 ' + h.matched.length + ' 条关键词条目'));
+      row.appendChild(mid);
+      row.appendChild(el('div', 'score', h.score + ' 分'));
+      out.appendChild(row);
+    });
+
+    var note = el('p', 'res-note');
+    note.appendChild(document.createTextNode('PRIMARY：'));
+    var b = el('b', null, result.primary.id + ' · ' + (result.primary.route.signal || result.primary.route.label));
+    note.appendChild(b);
+    note.appendChild(document.createTextNode('；置信度 ' + result.confidence + '；共命中 ' + result.hits.length + ' 条规则。'));
+    out.appendChild(note);
+
+    if (result.confidence === 'medium') {
+      out.appendChild(el('p', 'res-note', '多规则命中说明任务跨域：按 MASTER-ROUTING 的“路径交叉”，可把副驾模块作为 secondary，而不是再开一套路由。'));
+    }
+    if (result.confidence === 'low') {
+      out.appendChild(el('p', 'res-note', '唯一命中，属于高置信；但仍需打开 PRIMARY 的 SKILL.md 核对适用范围。'));
+    }
+  }
+
+  if (DATA && run) {
+    run.addEventListener('click', render);
+    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); render(); } });
+    samples.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-hint]');
+      if (!b) { return; }
+      input.value = b.getAttribute('data-hint');
+      render();
+      input.focus();
+    });
+    render();
+  }
+
+  /* ---------- 复制命令 ---------- */
+  Array.prototype.slice.call(document.querySelectorAll('.code .copy')).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pre = btn.parentElement.querySelector('pre');
+      var text = pre ? pre.innerText : '';
+      var done = function(){
+        btn.textContent = '已复制';
+        btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = '复制'; btn.classList.remove('done'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); });
+      } else {
+        fallback(text, done);
+      }
+    });
+  });
+  function fallback(text, done){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* ignore */ }
+    document.body.removeChild(ta);
+  }
+})();
+</script>
+</body>
+</html>
