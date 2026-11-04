@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="Paseo 的本地 daemon、移动端、worktree 并行、语音与插件安全分析。">
-<title>Paseo · 工具分析（2026-11）</title>
+<meta name="description" content="Orchestrator.inc（原 Agent Orchestrator）的架构、worktree 隔离、CI 回灌、移动端与遥测分析。">
+<title>Orchestrator.inc · 工具分析（2026-11）</title>
 <style>
 :root{
   --paper:#f5f2ea;--paper-2:#ece7dc;--surface:#fffdf8;
@@ -150,212 +150,209 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:12px;color
 <a class="skip" href="#main">跳到正文</a>
 <div class="progress" id="progress" aria-hidden="true"></div>
 <header class="topbar"><div class="in">
-<a class="back" href="./index.html">← 工具调研</a>
-<span class="crumb">Tools / Paseo</span>
+<a class="back" href="../index.html">← 工具调研</a>
+<span class="crumb">Tools / Orchestrator.inc</span>
 <span class="date">2026-11-01 · 单文件离线</span>
 </div></header>
 <main id="main" class="wrap">
 <section class="hero">
-<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>跨设备 Agent 工作台</span><span class="sep">/</span><span>2026-11</span></p>
-<h1>Paseo<br><em>手机是主界面，daemon 是发动机</em></h1>
-<p class="lede">Paseo 把「在手机上监督 Agent」当作一等公民：一个本地 daemon 管理 Agent 进程，桌面、Web、iOS、Android 和 CLI 都是它的客户端。它不托管模型，也不要求把代码传到云上。</p>
+<p class="eyebrow"><span>TOOL REPORT</span><span class="sep">/</span><span>多 Agent / PR 流水线</span><span class="sep">/</span><span>2026-11</span></p>
+<h1>Orchestrator.inc<br><em>把 Agent 舰队管到 PR 合并</em></h1>
+<p class="lede">它不是「再开一个 Agent」，而是把「主 Agent 拆任务 → 多个 Worker 在独立 worktree 里并行 → CI/评审失败回灌 → 推进到可合并」串成一条可监督的流水线。代价是：它替你做了更多决策，也看到了更多数据。</p>
 <div class="pills">
 <span class="pill"><b>Apache-2.0</b></span>
-<span class="pill">TypeScript</span>
-<span class="pill"><b>2.28 万</b> star</span>
-<span class="pill">桌面 / Web / iOS / Android / CLI</span>
-<span class="pill">自托管</span>
+<span class="pill">Go</span>
+<span class="pill"><b>1.40 万</b> star</span>
+<span class="pill">macOS / Windows / Linux</span>
+<span class="pill">iOS / Android</span>
 </div>
 <div class="verdict">
 <div class="v-card"><h2>适合</h2><ul>
-<li>想用手机完整地跑、看、审批 Agent，而不是只看通知</li>
-<li>同时用 Claude Code、Codex、Copilot、OpenCode 等多个 provider</li>
-<li>希望代码与凭据留在自己的机器上</li>
+<li>一个需求要拆成多个并行子任务，且不想手工管分支</li>
+<li>希望 CI 失败、评审意见自动回到「拥有这个分支的 Agent」</li>
+<li>需要从手机看板审批与查看 PR</li>
 </ul></div>
 <div class="v-card no"><h2>不适合</h2><ul>
-<li>不愿让一台机器常开 daemon</li>
-<li>只需要终端里的单 Agent</li>
-<li>对插件供应链或移动端配对安全没有把握</li>
+<li>只做单文件小改动，拆舰队反而更慢</li>
+<li>不能接受桌面应用/本地 daemon 的资源占用</li>
+<li>对遥测或云端执行代码有硬性限制</li>
 </ul></div></div>
 </section>
 <div class="layout">
 <aside class="toc" aria-label="目录"><p class="toc-title">本文目录</p><ol>
 <li><a href="#s01">01 · 它是什么</a></li>
-<li><a href="#s02">02 · 为什么需要它</a></li>
+<li><a href="#s02">02 · 它解决的具体问题</a></li>
 <li><a href="#s03">03 · 运作方式</a></li>
 <li><a href="#s04">04 · 上手</a></li>
-<li><a href="#s05">05 · 日常用法</a></li>
+<li><a href="#s05">05 · 日常流程</a></li>
 <li><a href="#s06">06 · 强项</a></li>
 <li><a href="#s07">07 · 边界与代价</a></li>
-<li><a href="#s08">08 · 安全与隐私</a></li>
+<li><a href="#s08">08 · 安全与权限</a></li>
 <li><a href="#s09">09 · 和谁比</a></li>
 <li><a href="#s10">10 · 结论</a></li>
 <li><a href="#s11">11 · 核验与来源</a></li>
-</ol><div class="toc-note">第 7 节重点：daemon 必须在线；插件权限等于 daemon 权限。</div></aside>
+</ol><div class="toc-note">仓库已从 AgentWrapper 迁到 OrchestratorInc，产品名也改为 Orchestrator.inc。</div></aside>
 <article>
 <section id="s01">
 <div class="sec-head"><span class="sec-no">01</span><h2>它是什么</h2></div>
-<p class="sub">一个 daemon + 多个全功能客户端，不是一个聊天 App。</p>
+<p class="sub">本地桌面工作台 + 常驻 daemon + 主从 Agent 流水线。</p>
 
-<p>Paseo 官方称自己是 <b>open source agentic development environment</b>。核心是一个本地 <b>daemon</b>：它管理 Agent 进程、worktree、终端、文件、diff、PR 与浏览器。桌面端、手机、Web、CLI 都连到这个 daemon。</p>
+<p>官方定位是「run a fleet of coding agents while keeping branches, reviews, and CI failures manageable」。核心抽象只有三个：<b>主 Agent</b>（规划与拆解）、<b>Worker</b>（一个任务一个 worktree 一个 Agent）、<b>看板</b>（按状态自动分栏）。</p>
 <div class="grid2">
-  <div class="panel pos"><h3>包含</h3><ul>
-    <li>多 provider：Claude Code、Codex、Copilot、OpenCode、Pi、Antigravity、Muse Code</li>
-    <li>每个 Agent 独立 worktree；编辑器、终端、diff、PR、浏览器</li>
-    <li>iOS / Android 原生 App，功能接近桌面</li>
-    <li>语音指令、插件、CLI、TypeScript SDK</li>
+  <div class="panel pos"><h3>它负责</h3><ul>
+    <li>把需求拆成子任务并派给不同 Agent</li>
+    <li>每个 Worker 独立 Git worktree，避免互相覆盖</li>
+    <li>观察 PR、CI、评审，把失败路由回原 Worker</li>
+    <li>桌面 + 手机看板；可选云端 Worker</li>
   </ul></div>
-  <div class="panel neg"><h3>不包含</h3><ul>
-    <li>模型本身；仍用各 provider 的订阅/API</li>
-    <li>云端代码托管（默认本机执行）</li>
-    <li>强制登录；README 称无遥测、无跟踪</li>
-    <li>替你合并 PR 的自动策略</li>
+  <div class="panel neg"><h3>它不负责</h3><ul>
+    <li>模型本身（用 Claude Code、Codex 等）</li>
+    <li>替你做产品决策；主 Agent 仍可能拆错</li>
+    <li>保证自动合并安全（合并策略要自己定）</li>
+    <li>托管你的私有代码（除非选 Cloud Agents）</li>
   </ul></div>
 </div>
 
 </section>
 <section id="s02">
-<div class="sec-head"><span class="sec-no">02</span><h2>为什么需要它</h2></div>
-<p class="sub">「离开工位」不是看通知，而是能继续工作。</p>
+<div class="sec-head"><span class="sec-no">02</span><h2>它解决的具体问题</h2></div>
+<p class="sub">多 Agent 的难点不是「启动」，而是「收尾」。</p>
 
 <ul>
-  <li><b>手机端功能残缺：</b>多数工具的手机端只能看通知或发一句 prompt，不能看 diff、跑终端、切 worktree。</li>
-  <li><b>多 provider 切换：</b>Claude 规划、Codex 实现、Copilot 补测试，各自 CLI 与目录割裂。</li>
-  <li><b>并行任务互相踩：</b>多个 Agent 在同一工作区改文件，分支与依赖冲突。</li>
-  <li><b>远程连接复杂：</b>要自己解决端口、TLS、VPN；Paseo 提供可选 E2E 中继或直连。</li>
-  <li><b>语音：</b>走路/开车时用语音下任务，比在手机上打字现实。</li>
+  <li><b>分支冲突：</b>多个 Agent 在同一目录改文件，最后互相覆盖。</li>
+  <li><b>上下文切换：</b>每个 Agent 一个终端，谁在跑、谁卡住、谁等审批，全靠人记。</li>
+  <li><b>CI/评审回灌：</b>测试挂了，要把日志贴回给正确的 Agent；人工转述会丢信息。</li>
+  <li><b>合并前黑洞：</b>PR 开了之后没人跟进，分支逐渐过期。</li>
+  <li><b>离开工位：</b>审批请求在桌面上，人在外面。</li>
 </ul>
+<div class="callout"><span class="t">它的核心主张</span><p>把「Agent 的产出」当成「PR」来管理：状态由 PR/CI/评审事实推导，而不是靠 Agent 自报。</p></div>
 
 </section>
 <section id="s03">
 <div class="sec-head"><span class="sec-no">03</span><h2>运作方式</h2></div>
-<p class="sub">daemon 拥有执行环境，客户端只是不同形状的视图。</p>
+<p class="sub">Go daemon + SQLite + PTY/ACP host + worktree；显示状态是算出来的。</p>
 
 <ol class="steps">
-  <li><b>daemon：</b>本机/服务器上的 Node 进程，管理 Agent 子进程、PTY、worktree、文件与 WebSocket API。</li>
-  <li><b>provider 适配：</b>把不同 CLI 的启动、输入、输出、审批统一成 Agent 抽象。</li>
-  <li><b>客户端：</b>Expo（iOS/Android/Web）、Electron（桌面）、CLI；共用同一套会话状态。</li>
-  <li><b>连接：</b>局域网直连、TCP/Tailscale/VPN，或可选的端到端加密 relay；手机通过配对加入。</li>
-  <li><b>插件：</b>运行在 daemon 上，UI 自动出现在所有客户端；也能改 Agent 生命周期与 provider。</li>
+  <li><b>主 Agent 规划：</b>读需求，拆成可并行的子任务，为每个子任务选 Agent 与模型。</li>
+  <li><b>Worker 隔离：</b>每个任务一个 Git worktree；TUI 模式跑在 PTY/ConPTY（tmux 作为兼容/回退），Chat 模式走原生协议控制器。</li>
+  <li><b>持久事实：</b>SQLite 保存 session、活动状态、PR/CI/评审事实；展示状态（working / needs_input / ci_failed / mergeable）在读取时计算，不落库。</li>
+  <li><b>观察循环：</b>轮询 SCM 与 CI；失败、冲突、评审意见回到拥有该分支的 Worker，直到 PR 通过。</li>
+  <li><b>休眠：</b>Chat 会话在「已完成且无人查看」时可休眠，下次有工作时恢复原生会话；TUI 保持原生命周期。</li>
 </ol>
-<pre><code># 服务器/无桌面环境
-npm install -g @getpaseo/cli
-paseo
-
-# Docker
-docker run -d --name paseo -p 6767:6767   -e PASEO_PASSWORD=change-me   -v "$PWD/paseo-home:/home/paseo"   -v "$PWD:/workspace"   ghcr.io/getpaseo/paseo:latest</code></pre>
+<div class="note"><b>架构取舍：</b>把「展示状态」做成派生值，避免状态表与事实表不一致；代价是每次读取都要计算，且观察循环的延迟会影响看板新鲜度。</div>
 
 </section>
 <section id="s04">
 <div class="sec-head"><span class="sec-no">04</span><h2>上手</h2></div>
-<p class="sub">先装至少一个 Agent CLI 并登录，再装 Paseo。</p>
+<p class="sub">桌面应用自带 daemon，不需要先装 CLI；但要先把 Agent CLI 配好。</p>
 
-<pre><code># 桌面端（推荐）：paseo.sh/download
-# 或 CLI
-npm install -g @getpaseo/cli
-paseo
+<pre><code># 从官网或 GitHub Releases 下载
+# macOS (Apple silicon / Intel)、Windows、Linux AppImage/deb/rpm
+# https://orchestrator.inc/download/
 
-# 手机连接：Settings → your host → Pair Device
-# 远程 daemon
-paseo run --host workstation.local:6767 --cwd /workspace "run the full test suite"</code></pre>
-<p>CLI 的基本动作：</p>
-<pre><code>paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.5 --worktree feature-x "implement feature X"
-paseo ls
-paseo attach abc123
-paseo send abc123 "also add tests"</code></pre>
+# 打开应用，指向一个仓库
+# 应用会自动启动本地 daemon；无需单独运行 CLI</code></pre>
+<p>首次使用建议：</p>
+<ol class="steps">
+  <li>至少安装并登录 Claude Code、Codex 或 Cursor 中的一个；其它 Agent 按需装。</li>
+  <li>在设置里确认每个 Agent 的 worker / chat / reviewer 支持矩阵（不同 Agent 能力不同）。</li>
+  <li>先用一个小仓库跑「一个主 Agent + 两个 Worker」，确认 worktree 与 PR 流程。</li>
+  <li>需要手机时，在 <b>Settings → Connect Mobile</b> 扫码配对。</li>
+</ol>
 
 </section>
 <section id="s05">
-<div class="sec-head"><span class="sec-no">05</span><h2>日常用法</h2></div>
-<p class="sub">一个任务一个 worktree；手机负责审批与追问。</p>
+<div class="sec-head"><span class="sec-no">05</span><h2>日常流程</h2></div>
+<p class="sub">看板不是装饰，它是「谁需要你」的队列。</p>
 
-<ul>
-  <li><b>并行：</b>每个 Agent 在自己的 worktree 里跑，互不覆盖；桌面端并排看 diff。</li>
-  <li><b>编排：</b>Agent 可以创建 worktree、启动其他 Agent、跨 provider 对话；skills 提供 handoff / advisor / committee 三种模式。</li>
-  <li><b>手机：</b>不只是通知；可以开新 Agent、看输出、审批、切 worktree。</li>
-  <li><b>语音：</b>口述任务或讨论问题；适合手不方便输入的场景。</li>
-  <li><b>插件：</b>一次编写，桌面/Web/手机同一 UI；可加 provider、面板、命令。</li>
-</ul>
-<details><summary>E2E 中继是什么</summary><div class="body"><p>手机与 daemon 不在同一网络时，可通过官方 relay 建立加密连接；不愿用 relay 就直连 TCP、Tailscale 或其他 VPN。README 明确「不强制登录、无遥测」。</p></div></details>
+<ol class="steps">
+  <li><b>描述目标：</b>对项目主 Agent 说要做什么；它给出计划与 Worker 划分。</li>
+  <li><b>Worker 执行：</b>每个 Worker 在自己的 worktree 里写码、跑测试、开 PR；可以选结构化聊天或 Agent 自己的终端 UI。</li>
+  <li><b>看板分栏：</b>Working / Needs you / In review / Ready to merge；状态由 Agent、PR、CI、评审共同推导。</li>
+  <li><b>失败回灌：</b>CI 挂了、评审有意见、合并冲突，自动回到原 Worker，而不是让人转述。</li>
+  <li><b>审阅：</b>Reviewer Agent 可以先读每个 PR；人再做最终判断。</li>
+  <li><b>合并：</b>推进到可合并状态；是否自动合并取决于你的仓库策略与设置，不要假设它会替你按下按钮。</li>
+</ol>
+<details><summary>Cloud Agents</summary><div class="body"><p>选择「Clone to the cloud」后，Worker 跑在托管工作区，代码、worktree、Agent 都在云端；笔记本合盖也能继续。代价是私有代码离开本机，需要评估合规与凭据范围。</p></div></details>
 
 </section>
 <section id="s06">
 <div class="sec-head"><span class="sec-no">06</span><h2>强项</h2></div>
-<p class="sub">在「手机端完整度」这件事上，它比多数同类走得更远。</p>
+<p class="sub">它把「多 Agent」做成了有状态、可观察的系统。</p>
 
 <div class="panel pos"><ul>
-  <li><b>手机是完整客户端：</b>原生 iOS/Android，不是 WebView 套壳；能跑完整工作流。</li>
-  <li><b>多 provider：</b>7 种 Agent 同一界面，按任务挑模型。</li>
-  <li><b>自托管 + 隐私：</b>代码与凭据留在自己的机器；无遥测、无强制登录。</li>
-  <li><b>worktree 并行：</b>内置隔离，不靠手工复制目录。</li>
-  <li><b>可扩展：</b>插件 + CLI + TypeScript SDK，能接内部系统。</li>
-  <li><b>语音：</b>少见的「语音下达任务」实现，适合移动场景。</li>
+  <li><b>35+ Agent 支持：</b>Claude Code、Codex、Cursor、OpenCode、Aider、Copilot、Grok、Kimi、Pi、Amp、Devin、Goose 等，按任务挑。</li>
+  <li><b>worktree 隔离：</b>并行任务不共享工作区，冲突在合并阶段才暴露。</li>
+  <li><b>CI/评审闭环：</b>失败自动回灌给原 Worker，减少人工转述。</li>
+  <li><b>状态派生：</b>看板基于 PR/CI/评审事实，不靠 Agent 自报「我做完了」。</li>
+  <li><b>移动端：</b>推送、审批、开新 Worker、看 PR。</li>
+  <li><b>可选云端：</b>需要 24/7 时把 Worker 放到托管环境。</li>
 </ul></div>
 
 </section>
 <section id="s07">
 <div class="sec-head"><span class="sec-no">07</span><h2>边界与代价</h2></div>
-<p class="sub">daemon 是单点；插件是最大的信任边界。</p>
+<p class="sub">能力越大，默认收集与默认执行的范围也越大。</p>
 
 <div class="panel neg"><ul>
-  <li><b>daemon 必须在线：</b>电脑休眠/关机，手机就连不上；任务也不会在云上继续（除非你把 daemon 放服务器）。</li>
-  <li><b>provider 依赖：</b>每个 Agent CLI 要单独安装、登录、更新；版本漂移会导致行为差异。</li>
-  <li><b>插件权限很大：</b>插件运行在 daemon 上，且能出现在所有客户端；官方明确「只装可信代码」。</li>
-  <li><b>单人维护：</b>README 说由一个人构建、靠赞助；bus factor 与长期支持需要评估。</li>
-  <li><b>移动端配对：</b>relay/直连的安全依赖配对流程与网络配置；暴露到公网要加密码/VPN。</li>
-  <li><b>资源占用：</b>daemon + 多个 Agent + worktree，内存与磁盘会比单 CLI 高。</li>
+  <li><b>遥测：</b>收集有限使用与可靠性数据，含安装 ID、GitHub 用户名；登录 AO Cloud 还会含用户 ID 与邮箱。官方称不含代码、prompt、对话或凭据，可在设置中关闭。</li>
+  <li><b>云端执行：</b>Cloud Agents 会把代码与 worktree 放到托管环境；不是默认本地。</li>
+  <li><b>资源占用：</b>Electron 桌面 + Go daemon + 多个 Agent + worktree，内存与磁盘高于单 CLI。</li>
+  <li><b>主 Agent 拆错：</b>计划质量决定并行收益；拆得过细会增加协调成本。</li>
+  <li><b>合并风险：</b>多 Worker 并行会放大「各自测试通过、合并后失败」的概率；需要合并队列与回归。</li>
+  <li><b>Agent 能力矩阵不均：</b>Worker / Chat / Reviewer 的支持因 Agent 而异，不是所有组合都等价。</li>
 </ul></div>
+<div class="callout warn"><span class="t">部署建议</span><p>先把「自动合并」关掉，用 Reviewer Agent 做第一道，人做第二道；等 CI 稳定后再讨论自动化。</p></div>
 
 </section>
 <section id="s08">
-<div class="sec-head"><span class="sec-no">08</span><h2>安全与隐私</h2></div>
-<p class="sub">默认无遥测，但「能控制 daemon」等于「能控制你的开发机」。</p>
+<div class="sec-head"><span class="sec-no">08</span><h2>安全与权限</h2></div>
+<p class="sub">三个边界：本机、云端、遥测。</p>
 
 <dl class="kv">
-  <dt>遥测</dt><dd>README 声明无 telemetry、无 tracking、无强制登录。</dd>
-  <dt>连接</dt><dd>可选 E2E 加密 relay；拒绝则直连 TCP/Tailscale/VPN。Docker 示例用 <code>PASEO_PASSWORD</code> 保护 Web UI。</dd>
-  <dt>插件</dt><dd>运行在 daemon，可改 Agent 配置、环境、MCP、审批；装前读源码。</dd>
-  <dt>凭据</dt><dd>沿用各 Agent CLI 的登录态；Paseo 不额外托管模型密钥，但 daemon 能读到你账号能读的内容。</dd>
-  <dt>代码</dt><dd>默认不离开本机；使用远程 daemon 时，代码在 daemon 所在机器。</dd>
+  <dt>代码位置</dt><dd>默认在本机 worktree；Cloud Agents 会克隆到托管工作区。</dd>
+  <dt>凭据</dt><dd>沿用各 Agent CLI 的登录态；Worker 能读到你账号能读的仓库与文件。</dd>
+  <dt>遥测</dt><dd>安装 ID、GitHub 用户名；AO Cloud 登录后含账号 ID 与邮箱；可在 Settings → General → Privacy 关闭。</dd>
+  <dt>评审</dt><dd>Reviewer Agent 是「另一个模型」，不是安全边界；它也会漏。</dd>
+  <dt>合并</dt><dd>默认应保留人工批准；分支保护与 required checks 仍然要配。</dd>
 </dl>
-<div class="callout warn"><span class="t">部署建议</span><p>不要把 daemon 直接暴露在公网。用 Tailscale/WireGuard，或 relay + 强密码；手机丢失时能在 daemon 侧撤销配对。</p></div>
+<div class="callout bad"><span class="t">最容易被忽略</span><p>Worktree 隔离的是「文件」，不是「凭据」。一个 Worker 仍然能用你的 SSH key、云 token、浏览器登录态；并行越多，暴露面越大。</p></div>
 
 </section>
 <section id="s09">
 <div class="sec-head"><span class="sec-no">09</span><h2>和谁比</h2></div>
-<p class="sub">Paseo 与 T3 Code 都做远程，但一个以手机为主，一个以服务器/线程为主。</p>
+<p class="sub">都以「多 Agent」为卖点，但管理对象不同。</p>
 
 <div class="table-wrap"><table>
-<thead><tr><th>工具</th><th>主界面</th><th>执行位置</th><th>最强场景</th></tr></thead>
+<thead><tr><th>工具</th><th>管理对象</th><th>最强场景</th><th>主要代价</th></tr></thead>
 <tbody>
-<tr><td><b>Paseo</b></td><td>手机/桌面全功能</td><td>本地 daemon</td><td>移动端完整接管</td></tr>
-<tr><td>T3 Code</td><td>Web/桌面/手机</td><td>服务器</td><td>远程审阅与 PR</td></tr>
-<tr><td>cmux</td><td>macOS 终端</td><td>本机</td><td>终端组织与通知</td></tr>
-<tr><td>herdr</td><td>终端 TUI</td><td>后台 server</td><td>SSH/多机保活</td></tr>
-<tr><td>Orchestrator.inc</td><td>桌面 + 手机</td><td>本地/云端 worker</td><td>Agent 舰队到 PR</td></tr>
+<tr><td><b>Orchestrator.inc</b></td><td>任务 → Worker → PR</td><td>并行开发到合并的流水线</td><td>遥测；桌面/daemon；云端可选</td></tr>
+<tr><td>Orca</td><td>Agent 工作台</td><td>多 Agent 的终端/diff 组织</td><td>不自动管 PR 闭环</td></tr>
+<tr><td>T3 Code</td><td>线程 + 远程客户端</td><td>离开工位后审批与审阅</td><td>服务器常开；早期</td></tr>
+<tr><td>Paseo</td><td>daemon + 全端客户端</td><td>手机为中心的监督</td><td>daemon 常开；插件信任</td></tr>
+<tr><td>cmux</td><td>终端窗口</td><td>本机多 Agent 的视觉组织</td><td>仅 macOS；不管 PR</td></tr>
 </tbody></table></div>
 
 </section>
 <section id="s10">
 <div class="sec-head"><span class="sec-no">10</span><h2>结论</h2></div>
 
-<div class="callout good"><span class="t">推荐路径</span><p>把 Paseo daemon 装在一台常开 Mac/Linux 上，手机配对；先只接 Claude Code，跑通「手机发起 → 审批 → 看 diff」；再开第二个 provider 与 worktree 并行。</p></div>
-<p>如果只需要终端、不需要手机，Paseo 的重型客户端与 daemon 是额外负担；如果手机是主界面，它目前是同类里完整度最高的开源选项之一。</p>
+<div class="callout good"><span class="t">推荐路径</span><p>用一个中等仓库跑两周：主 Agent 拆 2–3 个 Worker，观察「CI 失败回灌」是否真的减少你的转述工作。若收益明显，再开手机与云端；否则退回单 Agent + 手工 worktree 更省心。</p></div>
+<p>它适合「已经把 Agent 当团队用」的人；如果还在验证单个 Agent 是否靠谱，先别上舰队。</p>
 
 </section>
 <section id="s11">
 <div class="sec-head"><span class="sec-no">11</span><h2>核验与来源</h2></div>
 
 <ul class="sources">
-  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/getpaseo/paseo" target="_blank" rel="noopener noreferrer">getpaseo/paseo</a>；TypeScript；约 22,766 star（2026-11-01 API）；README 声明 Apache-2.0（API 未返回标准 SPDX）。</li>
-  <li><a href="https://github.com/getpaseo/paseo/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：daemon、客户端、provider、插件、Docker、CLI、SDK、隐私声明。</li>
-  <li><a href="https://paseo.sh/docs/connectivity" target="_blank" rel="noopener noreferrer">Connectivity 文档</a>：relay、直连与配对。</li>
-  <li><span class="tag infer">推断</span> 「手机端完整度最高」是相对判断；未对所有客户端做逐项功能对照。</li>
+  <li><span class="tag fact">事实</span> 仓库：<a href="https://github.com/OrchestratorInc/agent-orchestrator" target="_blank" rel="noopener noreferrer">OrchestratorInc/agent-orchestrator</a>（原 AgentWrapper/agent-orchestrator 重定向至此）；Apache-2.0；Go；约 14,002 star（2026-11-01 API）。</li>
+  <li><a href="https://github.com/OrchestratorInc/agent-orchestrator/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>：主 Agent/Worker、看板、CI 回灌、35+ Agent、移动端、Cloud Agents、遥测说明。</li>
+  <li><a href="https://github.com/OrchestratorInc/agent-orchestrator/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer">docs/architecture.md</a>：Go daemon、SQLite、PTY/ACP、派生状态、休眠。</li>
+  <li><span class="tag infer">推断</span> 「合并是否自动」README 未承诺全自动；本文按「推进到可合并，人工批准」描述。</li>
 </ul>
 
 </section>
-<footer><span>Paseo · 分析于 2026-11-01</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
+<footer><span>Orchestrator.inc · 分析于 2026-11-01</span><span>事实来自公开仓库与文档；判断标注为推断</span></footer>
 </article></div></main>
 <script>(function(){var p=document.getElementById("progress");if(!p)return;function u(){var h=document.documentElement;var m=h.scrollHeight-h.clientHeight;p.style.width=(m>0?Math.min(100,Math.max(0,h.scrollTop/m*100)):0)+"%";}addEventListener("scroll",u,{passive:true});u();})();</script>
 </body></html>
