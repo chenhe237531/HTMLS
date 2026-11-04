@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TavernGym / TavernBench 分析报告 — AutoTavern 的模拟器、基准与自改进研究系统</title>
+<meta name="description" content="对南京大学与上海人工智能实验室 AutoTavern 项目的独立分析：TavernGym 模拟器的工程结构、TavernBench 基准设计、368 题评测的本地复算结果与可信度评估。">
+<meta name="color-scheme" content="light">
+<style>
+:root{
+  --ink:#1c1a16; --ink2:#48433b; --muted:#7c766c; --faint:#a8a196;
+  --bg:#faf7f1; --panel:#fffdfa; --panel2:#f3eee4; --line:#e3dbcd; --line2:#d3c9b8;
+  --amber:#a95f18; --amber-soft:#f7e9d5; --teal:#0f5f63; --teal-soft:#e0eeed;
+  --red:#a8322a; --red-soft:#f7e3e0; --green:#2f6b3f;
+  --shadow:0 1px 2px rgba(60,45,25,.05),0 8px 24px rgba(60,45,25,.06);
+  --radius:14px;
+  --maxw:1120px;
+  --serif:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(1200px 500px at 80% -10%, #f6ecdd 0%, rgba(250,247,241,0) 70%),
+                   radial-gradient(900px 400px at 0% 0%, #eaf1ef 0%, rgba(250,247,241,0) 65%);
+  background-repeat:no-repeat;
+}
+a{color:var(--teal); text-decoration:none; border-bottom:1px solid rgba(15,95,99,.28)}
+a:hover{border-bottom-color:var(--teal)}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{
+  outline:3px solid #c98a2e; outline-offset:2px; border-radius:4px;
+}
+.skip{position:absolute; left:-9999px; top:0; background:#1c1a16; color:#fff; padding:10px 16px; z-index:99}
+.skip:focus{left:8px; top:8px}
+.progress{position:fixed; top:0; left:0; height:3px; width:0; background:linear-gradient(90deg,#a95f18,#0f5f63); z-index:60}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 26px}
+
+/* ---------- header ---------- */
+.hero{padding:64px 0 30px}
+.eyebrow{font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); font-weight:600}
+h1{font-family:var(--serif); font-weight:600; font-size:clamp(30px,4.2vw,46px); line-height:1.18; margin:14px 0 16px; letter-spacing:-.01em}
+h1 .sub{display:block; font-size:clamp(16px,1.7vw,19px); color:var(--ink2); font-weight:400; margin-top:16px; line-height:1.65; max-width:40em}
+.metaline{display:flex; flex-wrap:wrap; gap:8px 10px; margin:22px 0 0; padding:0; list-style:none}
+.metaline li{font-size:13px; color:var(--ink2); background:var(--panel); border:1px solid var(--line); padding:5px 11px; border-radius:999px}
+.metaline b{color:var(--ink); font-weight:600}
+
+.verdict{margin:34px 0 0; padding:26px 28px; background:linear-gradient(180deg,#fffdf8,#f7f1e6); border:1px solid var(--line2); border-left:5px solid var(--amber); border-radius:6px 14px 14px 6px; box-shadow:var(--shadow)}
+.verdict h2{font-family:var(--sans); font-size:12.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); margin:0 0 12px}
+.verdict ol{margin:0; padding-left:22px}
+.verdict li{margin:9px 0}
+.verdict li::marker{color:var(--amber); font-weight:700}
+
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:14px; margin:34px 0 10px; padding:0; list-style:none}
+.stat{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px}
+.stat .v{font-family:var(--serif); font-size:29px; line-height:1.1; font-weight:600; letter-spacing:-.01em}
+.stat .v small{font-size:15px; color:var(--muted); font-weight:400; margin-left:3px}
+.stat .k{font-size:12.8px; color:var(--muted); margin-top:7px; line-height:1.45}
+.stat .src{margin-top:9px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky; top:0; z-index:50; background:rgba(250,247,241,.92); backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--line)}
+.nav ul{display:flex; gap:4px; margin:0; padding:9px 0; list-style:none; overflow-x:auto; scrollbar-width:none; max-width:var(--maxw); margin:0 auto; padding-left:26px; padding-right:26px}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a{white-space:nowrap; font-size:13.6px; color:var(--ink2); padding:6px 12px; border-radius:999px; border-bottom:none; display:inline-block}
+.nav a:hover{background:var(--panel2); color:var(--ink)}
+.nav a[aria-current="true"]{background:var(--ink); color:#fff}
+
+/* ---------- sections ---------- */
+section{padding:56px 0 8px; scroll-margin-top:64px}
+.kicker{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--amber); font-weight:700; margin:0 0 8px}
+h2{font-family:var(--serif); font-weight:600; font-size:clamp(25px,3.1vw,34px); line-height:1.25; margin:0 0 14px}
+h3{font-size:19px; margin:34px 0 10px; font-weight:650; letter-spacing:-.005em}
+h4{font-size:15.5px; margin:22px 0 6px; font-weight:650}
+p{margin:0 0 14px; max-width:76ch}
+.lead{font-size:18px; color:var(--ink2); max-width:70ch}
+.small{font-size:13.6px; color:var(--muted)}
+hr.sep{border:0; border-top:1px solid var(--line); margin:40px 0 0}
+
+/* ---------- tags ---------- */
+.tag{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; letter-spacing:.02em; padding:2px 8px; border-radius:999px; border:1px solid; white-space:nowrap; vertical-align:1px}
+.tag::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block}
+.tag.v{color:#1d6b4a; border-color:#bcdcc9; background:#edf7f0}
+.tag.r{color:#22556b; border-color:#c2d9e2; background:#edf4f7}
+.tag.p{color:#96551a; border-color:#e8d2b4; background:#fbf1e2}
+.tag.w{color:#8d2b24; border-color:#e7c4c0; background:#fbeceb}
+
+/* ---------- cards & grids ---------- */
+.grid{display:grid; gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(388px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow)}
+.card h3{margin:0 0 8px; font-size:17px}
+.card h3 + .small{margin-top:-4px; margin-bottom:10px}
+.card p:last-child{margin-bottom:0}
+.card .head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:6px 10px; margin-bottom:6px}
+.card .head h3{margin:0}
+
+.callout{margin:22px 0; padding:18px 20px 18px 22px; border-radius:10px; border:1px solid var(--line2); border-left:4px solid var(--teal); background:linear-gradient(180deg,#fbfdfc,#f2f7f6)}
+.callout.amber{border-left-color:var(--amber); background:linear-gradient(180deg,#fffdf8,#f9f2e6)}
+.callout.red{border-left-color:var(--red); background:linear-gradient(180deg,#fdf8f7,#f8eeec)}
+.callout .label{font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--teal); margin-bottom:6px}
+.callout.amber .label{color:var(--amber)}
+.callout.red .label{color:var(--red)}
+.callout p:last-child{margin-bottom:0}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); box-shadow:var(--shadow); margin:16px 0 8px}
+table{border-collapse:collapse; width:100%; font-size:14.2px; min-width:560px}
+caption{caption-side:top; text-align:left; padding:13px 16px 4px; font-size:12.8px; color:var(--muted)}
+th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+thead th{background:var(--panel2); font-size:12.5px; letter-spacing:.03em; color:var(--ink2); font-weight:650; position:relative; white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fbf8f1}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+td.mono,.mono{font-family:var(--mono); font-size:12.8px}
+td code{white-space:nowrap}
+th.sortable button{all:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:5px; font:inherit; color:inherit}
+th.sortable button::after{content:"↕"; font-size:11px; color:var(--faint)}
+th[aria-sort="descending"] button::after{content:"↓"; color:var(--teal)}
+th[aria-sort="ascending"] button::after{content:"↑"; color:var(--teal)}
+th.sorted{color:var(--ink)}
+.best{font-weight:700; color:var(--teal)}
+tr.agent-row{background:#f2f8f7}
+tr.agent-row:hover{background:#e9f4f2}
+tr.chance-row td{color:var(--muted); font-style:italic}
+.tblnote{font-size:12.6px; color:var(--muted); margin:6px 0 0; max-width:80ch}
+
+/* ---------- heatmap ---------- */
+.heat{font-size:13px; min-width:720px}
+.heat th{font-size:11.8px; padding:8px 6px; text-align:center; white-space:normal; line-height:1.3}
+.heat td{padding:0; border:1px solid rgba(255,253,250,.7); text-align:center}
+.heat td.sys{background:var(--panel); text-align:left; padding:8px 10px; font-size:13.4px; white-space:nowrap; border-right:1px solid var(--line)}
+.heat td.val{padding:9px 4px; font-variant-numeric:tabular-nums; font-weight:600; font-size:12.8px}
+.heattitle{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:20px 0 0}
+.heattitle h3{margin:0}
+.legend{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-left:auto}
+.legend .scale{display:flex; height:10px; width:132px; border-radius:3px; overflow:hidden; border:1px solid var(--line2)}
+.legend .scale span{flex:1}
+.viewswitch{display:inline-flex; background:var(--panel2); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px}
+.viewswitch button{all:unset; cursor:pointer; font-size:12.8px; padding:4px 12px; border-radius:999px; color:var(--ink2); font-family:var(--sans)}
+.viewswitch button[aria-selected="true"]{background:var(--panel); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); font-weight:600}
+.is-hidden{display:none !important}
+
+/* ---------- bars ---------- */
+.bars{margin:16px 0 4px; padding:0; list-style:none}
+.bars li{display:grid; grid-template-columns:minmax(120px,1.5fr) 3fr auto; gap:12px; align-items:center; padding:5px 0; font-size:13.6px}
+.bars .lbl{color:var(--ink2)}
+.bars .track{height:12px; background:var(--panel2); border-radius:3px; overflow:hidden}
+.bars .fill{height:100%; border-radius:3px; background:linear-gradient(90deg,#b57a2c,#a95f18)}
+.bars .fill.t{background:linear-gradient(90deg,#2c7a7f,#0f5f63)}
+.bars .fill.g{background:linear-gradient(90deg,#6f8c63,#3f6b36)}
+.bars .n{font-variant-numeric:tabular-nums; color:var(--ink2); font-size:12.8px; min-width:56px; text-align:right}
+
+/* ---------- details ---------- */
+details{border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:0; margin:14px 0; box-shadow:var(--shadow); overflow:hidden}
+details > summary{cursor:pointer; padding:14px 18px; font-weight:600; font-size:14.6px; list-style:none; display:flex; gap:10px; align-items:center}
+details > summary::-webkit-details-marker{display:none}
+details > summary::before{content:"+"; font-family:var(--mono); color:var(--amber); font-size:16px; width:12px}
+details[open] > summary::before{content:"–"}
+details[open] > summary{border-bottom:1px solid var(--line); background:var(--panel2)}
+details .body{padding:4px 18px 16px}
+details .body > :first-child{margin-top:12px}
+
+/* ---------- code ---------- */
+pre{background:#1f1d1a; color:#f2ece1; padding:16px 18px; border-radius:10px; overflow-x:auto; font-family:var(--mono); font-size:12.8px; line-height:1.62; margin:14px 0; border:1px solid #2d2a25}
+pre .c{color:#9d968a}
+code{font-family:var(--mono); font-size:.9em; background:#f1ece2; padding:1px 5px; border-radius:4px; border:1px solid var(--line)}
+pre code{background:none; border:0; padding:0; font-size:inherit; color:inherit}
+
+/* ---------- figures ---------- */
+figure{margin:22px 0; padding:0}
+figure svg{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+figcaption{font-size:12.8px; color:var(--muted); margin-top:8px; max-width:78ch}
+
+/* ---------- scenario tools ---------- */
+.toolbar{display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; margin:16px 0 0}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none}
+.chip{all:unset; cursor:pointer; font-size:12.8px; padding:4px 11px; border-radius:999px; border:1px solid var(--line2); background:var(--panel); color:var(--ink2); font-family:var(--sans)}
+.chip[aria-pressed="true"]{background:var(--ink); color:#fff; border-color:var(--ink)}
+.search{display:flex; align-items:center; gap:8px; margin-left:auto}
+.search label{font-size:12.8px; color:var(--muted)}
+input[type="search"]{font:inherit; font-size:13.4px; padding:6px 11px; border-radius:8px; border:1px solid var(--line2); background:var(--panel); color:var(--ink); width:190px}
+.btn{font:inherit; font-size:12.8px; padding:6px 12px; border-radius:8px; border:1px solid var(--line2); background:var(--panel); color:var(--ink2); cursor:pointer}
+.btn:hover{background:var(--panel2)}
+.empty{margin:12px 0 0; padding:14px 16px; border:1px dashed var(--line2); border-radius:10px; color:var(--muted); font-size:13.6px; background:var(--panel)}
+
+/* ---------- footer ---------- */
+footer{margin-top:64px; padding:40px 0 60px; border-top:1px solid var(--line); background:linear-gradient(180deg,rgba(243,238,228,0),#f3eee4)}
+footer h2{font-size:19px; margin-bottom:10px}
+footer ul{padding-left:20px; margin:0 0 16px}
+footer li{margin:6px 0; font-size:14px}
+.footnote{font-size:12.6px; color:var(--muted); max-width:80ch}
+
+@media (max-width:720px){
+  body{font-size:16px}
+  .hero{padding:40px 0 18px}
+  .wrap{padding:0 18px}
+  .nav ul{padding-left:18px; padding-right:18px}
+  section{padding:42px 0 4px}
+  .bars li{grid-template-columns:1fr; gap:4px}
+  .bars .n{text-align:left}
+  .legend{margin-left:0}
+  .search{margin-left:0; width:100%}
+  input[type="search"]{width:100%}
+  .verdict{padding:20px}
+}
+@media print{
+  body{background:#fff; font-size:11pt}
+  .nav,.progress,.viewswitch,.toolbar,.skip{display:none !important}
+  section{padding:18px 0 0; break-inside:auto}
+  .card,.callout,figure,table{break-inside:avoid}
+  a{color:#000; border-bottom:none}
+  .is-hidden{display:none !important}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" aria-hidden="true"></div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">代码与数据发布分析 · 2026-11-01</p>
+    <h1>TavernGym 与 TavernBench
+      <span class="sub">一篇关于"让 LLM 智能体自己造游戏、自己出题"的论文，交出了模拟器与基准两件基础设施。本文核查它们的工程结构、题目设计与 368 道评测题的本地复算结果。</span>
+    </h1>
+    <ul class="metaline">
+      <li>仓库 <b>MCG-NJU/AutoTavern</b></li>
+      <li>论文 <b>arXiv:2610.33845</b></li>
+      <li>许可 <b>MIT</b>（代码、任务、标签、作答）</li>
+      <li>引擎 <b>Rust</b> · 绑定 <b>PyO3</b> · <b>Python ≥ 3.10</b></li>
+      <li>快照 <b>211 star / 50 fork</b>（核验当日）</li>
+      <li>复算方式 <b>官方评分代码 + 发布作答</b></li>
+    </ul>
+
+    <div class="verdict">
+      <h2>三句话结论</h2>
+      <ol>
+        <li>这是近年少见的<strong>把模拟器、RL 接口、决策基准一次交齐</strong>的研究发布：7.2 万行 Rust、858 个 Rust 测试、245 维动作与精确合法掩码，工程密度明显高于同类论文附带的代码。</li>
+        <li>我用仓库自带评分代码重算 368 题：<strong>TavernAgent 玩法准确率 91.4%，最强 LLM（GPT-6 Astra）63.2%，中位耗时 0.03 s 对 8.4 s</strong>。论文的三条主结论在数据上复现。</li>
+        <li>但 91% 要连着读：它衡量"与模拟器算出的最优解一致"，而模拟器同时是训练环境。在依赖人类天梯经验的<strong>英雄 / 饰品牌选择上，TavernAgent 只有 25% 与 12.5%</strong>，低于多数 LLM。</li>
+      </ol>
+    </div>
+
+    <ul class="stats">
+      <li class="stat"><div class="v">978<small>个对象</small></div><div class="k">36.6.3 当前版本可玩内容：小兵、英雄、法术、饰品、暗月礼物、时空扭曲、7 级</div><div class="src"><span class="tag r">仓库可查</span></div></li>
+      <li class="stat"><div class="v">960<small>题</small></div><div class="k">40 个场景、8 个类别；论文主表用 368 题子集，仓库同时给出全量</div><div class="src"><span class="tag r">仓库可查</span></div></li>
+      <li class="stat"><div class="v">245<small>动作</small></div><div class="k">离散动作空间 + 逐状态精确合法掩码；观测 3,227 个特征、124 个卡位</div><div class="src"><span class="tag r">仓库可查</span></div></li>
+      <li class="stat"><div class="v">91.4<small>%</small></div><div class="k">TavernAgent 玩法准确率，12 个系统中最高；随机基线 21.8%</div><div class="src"><span class="tag v">已复算</span></div></li>
+      <li class="stat"><div class="v">0.03<small>s</small></div><div class="k">每题中位决策耗时；最强 LLM 为 8.4 s，慢 280 倍</div><div class="src"><span class="tag v">已复算</span></div></li>
+      <li class="stat"><div class="v">899<small>项测试</small></div><div class="k">858 个 Rust 测试 + 41 个 pytest；另有随机动作 fuzz 检查状态不变量</div><div class="src"><span class="tag r">仓库可查</span></div></li>
+    </ul>
+    <p class="small">阅读约定：<span class="tag v">已复算</span> 表示我在本机重算了该数字；<span class="tag r">仓库可查</span> 表示可在仓库文件中核对；<span class="tag p">论文声称</span> 表示只在论文摘要中出现、仓库没有可核验的原始数据。本报告不重复论文结论，只标注它站得住的部分与站不住的部分。</p>
+  </div>
+</header>
+
+<nav class="nav" aria-label="章节导航">
+  <ul>
+    <li><a href="#overview">项目定位</a></li>
+    <li><a href="#gym">TavernGym</a></li>
+    <li><a href="#bench">TavernBench</a></li>
+    <li><a href="#rerun">独立复算</a></li>
+    <li><a href="#trust">可信度</a></li>
+    <li><a href="#start">上手</a></li>
+    <li><a href="#fit">适用性</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+
+<section id="overview">
+  <div class="wrap">
+    <p class="kicker">01 · 项目定位</p>
+    <h2>一套系统造出来的两件基础设施</h2>
+    <p class="lead">AutoTavern 不是一个能陪你打牌的 AI，而是一套"让 LLM 研究智能体去做研究"的框架。论文问的是：智能体能不能把一个脏活从原始数据一路做到能在真实环境里跟人过招？试验田选了酒馆战棋——八人自动战斗、商店随机、信息隐藏、近千张互相作用的牌。</p>
+    <p>仓库交付的并不是论文里最抢眼的部分（打上天梯的 TavernAgent），而是支撑它的两件基础设施。这个区分在看代码前就得立住，否则"91% 超过所有 LLM"很容易被读成"这个 AI 比人打得好"。实际上它说明的是：<strong>能造出模拟器的那套流程，顺手造出了一个在模拟器里几乎不会错的策略</strong>。</p>
+
+    <div class="tablewrap"><table>
+      <caption>表 0　发布内容清单。前两行是仓库主体，后三行是论文叙事里绕不开、但没有随仓库发布的部件。</caption>
+      <thead><tr><th scope="col">组件</th><th scope="col">是什么</th><th scope="col">规模</th><th scope="col">开放状态</th></tr></thead>
+      <tbody>
+        <tr><td><strong>TavernGym</strong></td><td>酒馆战棋单人模式模拟器，含 RL 接口与批量环境</td><td>978 个当前对象 · 245 动作 · 3,227 特征 · 7.2 万行 Rust</td><td><span class="tag r">仓库可查</span> MIT</td></tr>
+        <tr><td><strong>TavernBench</strong></td><td>决策基准：题目、标签、模拟器状态、12 个系统的作答</td><td>960 题 / 40 场景 / 8 类别，评测子集 368</td><td><span class="tag r">仓库可查</span> MIT</td></tr>
+        <tr><td>TavernAgent</td><td>PPO 训练出的策略，论文中 23 个版本、天梯约 15,000 分</td><td>—</td><td><span class="tag p">论文声称</span> 权重与训练代码未发布</td></tr>
+        <tr><td>题目生成器</td><td>生成 960 题与标签的程序</td><td>—</td><td><span class="tag r">仓库可查</span> 文档明确说明不包含</td></tr>
+        <tr><td>天梯对局记录</td><td>支撑"1.60 平均名次、胜过前十玩家"的原始对局</td><td>—</td><td><span class="tag p">论文声称</span> 仓库无任何日志</td></tr>
+      </tbody>
+    </table></div>
+
+    
+<figure>
+<svg viewBox="0 0 860 250" role="img" aria-labelledby="f1t f1d" xmlns="http://www.w3.org/2000/svg">
+<title id="f1t">AutoTavern 的研究闭环</title>
+<desc id="f1d">流程图：人类设定目标与歧义裁定，研究智能体群共享类型化研究记忆，产出需通过验证门，固化为模拟器、基准与策略，再由天梯与基准反馈回流到智能体群。</desc>
+<defs>
+<marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 z" fill="#9a9285"/>
+</marker>
+</defs>
+<rect width="860" height="250" fill="#fffdfa"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+<rect x="24" y="42" width="168" height="60" rx="10" fill="#fbf1e2" stroke="#e8d2b4"/>
+<text x="108" y="68" text-anchor="middle" font-size="13" font-weight="600" fill="#7a4a12">人类研究者</text>
+<text x="108" y="87" text-anchor="middle" font-size="11.5" fill="#8a6a3f">设定目标 · 裁定歧义机制</text>
+
+<rect x="250" y="42" width="250" height="60" rx="10" fill="#eef4f3" stroke="#c2d9d7"/>
+<text x="375" y="68" text-anchor="middle" font-size="13" font-weight="600" fill="#0f5f63">LLM 研究智能体群</text>
+<text x="375" y="87" text-anchor="middle" font-size="11.5" fill="#3e6f72">共享类型化研究记忆 · 分工执行</text>
+
+<rect x="560" y="42" width="210" height="60" rx="10" fill="#f3f0ea" stroke="#ddd4c4"/>
+<text x="665" y="68" text-anchor="middle" font-size="13" font-weight="600" fill="#4a463f">验证门</text>
+<text x="665" y="87" text-anchor="middle" font-size="11.5" fill="#7c766c">每条结论须通过校验</text>
+
+<rect x="560" y="160" width="230" height="60" rx="10" fill="#eef4f3" stroke="#c2d9d7"/>
+<text x="675" y="186" text-anchor="middle" font-size="13" font-weight="600" fill="#0f5f63">产物</text>
+<text x="675" y="205" text-anchor="middle" font-size="11.5" fill="#3e6f72">TavernGym · TavernBench · TavernAgent</text>
+
+<rect x="250" y="160" width="230" height="60" rx="10" fill="#fbf1e2" stroke="#e8d2b4"/>
+<text x="365" y="186" text-anchor="middle" font-size="13" font-weight="600" fill="#7a4a12">实战与基准反馈</text>
+<text x="365" y="205" text-anchor="middle" font-size="11.5" fill="#8a6a3f">天梯排名 · 错误样例 · 回归测试</text>
+
+<g stroke="#9a9285" stroke-width="1.4" fill="none">
+<line x1="192" y1="72" x2="244" y2="72" marker-end="url(#arw)"/>
+<line x1="500" y1="72" x2="554" y2="72" marker-end="url(#arw)"/>
+<line x1="665" y1="104" x2="665" y2="154" marker-end="url(#arw)"/>
+<line x1="556" y1="190" x2="486" y2="190" marker-end="url(#arw)"/>
+<line x1="365" y1="158" x2="365" y2="108" marker-end="url(#arw)"/>
+</g>
+<text x="692" y="132" font-size="11" fill="#8b8478">固化</text>
+<text x="398" y="137" font-size="11" fill="#8b8478">回流</text>
+</g>
+</svg>
+<figcaption>图 1　论文描述的闭环：智能体不仅改进模拟器与策略，也把同一份反馈用于改进自己的研究流程。仓库发布的是闭环产物中的模拟器与基准；训练代码、权重与题目生成器未包含在内。</figcaption>
+</figure>
+
+
+    <h3>为什么要自己造模拟器</h3>
+    <div class="grid g3">
+      <div class="card">
+        <h3>规则细节没有公开来源</h3>
+        <p>暴雪只公布补丁说明，不公布完整结算顺序、池子权重、随机分布。第三方数据站（如 HearthstoneJSON）给的是卡面文本与标签，够做百科，不够做仿真。</p>
+        <p class="small">仓库的做法：卡牌数据来自客户端内容包 + 36.6.3 overlay，规则缺省值全部显式写进 <code>RulesConfig</code> 并逐字段注释。</p>
+      </div>
+      <div class="card">
+        <h3>基准需要能算出来的标签</h3>
+        <p>"这一步的最优解"没法靠人标注到 960 题的量级。只有在能跑 4,096 次战斗的模拟器里，才能把伤害期望、站位胜率、回合计划的名次期望算成数值标签。</p>
+        <p class="small">代价是标签与模拟器同源——第 5 节会把这条当作主要保留意见。</p>
+      </div>
+      <div class="card">
+        <h3>训练需要确定性接口</h3>
+        <p>PPO 要的是固定形状的观测、精确的合法动作掩码、可复现的随机流，以及足够快的批量推进。这三样凑不齐，后面的策略迭代无从谈起。</p>
+        <p class="small">批量环境 64 局并行、GIL 释放、结果与线程数无关，是为了这一条。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gym">
+  <div class="wrap">
+    <p class="kicker">02 · 模拟器</p>
+    <h2>TavernGym：把一整场八人对局做成可存档的对象</h2>
+    <p class="lead">模拟器是这套工作的地基。规则错了，基准的标签就偏，训练出来的策略也只是在拟合一个错误的游戏。所以先看它怎么保证"对"，再看它多快。</p>
+
+    
+<figure>
+<svg viewBox="0 0 860 452" role="img" aria-labelledby="f2t f2d" xmlns="http://www.w3.org/2000/svg">
+<title id="f2t">TavernGym 的六层结构</title>
+<desc id="f2d">六层自上而下：内容数据、规则引擎、卡片脚本、研究接口、Python 绑定、使用者接口。</desc>
+<rect width="860" height="452" fill="#fffdfa"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,sans-serif">
+<g>
+<rect x="24" y="16" width="812" height="56" rx="8" fill="#fbf1e2" stroke="#e8d2b4"/>
+<rect x="24" y="16" width="4" height="56" fill="#a95f18"/>
+<text x="44" y="40" font-size="13" font-weight="600" fill="#5e3c10">内容数据　cards.json</text>
+<text x="44" y="59" font-size="11.5" fill="#8a6a3f">3,983 条卡牌记录；文档统计的当前候选对象共 978 个；由 gen_carddb.py 生成，36.6.3 overlay 叠加，编译期嵌入</text>
+</g>
+<g>
+<rect x="24" y="88" width="812" height="56" rx="8" fill="#fffdfa" stroke="#e3dbcd"/>
+<rect x="24" y="88" width="4" height="56" fill="#0f5f63"/>
+<text x="44" y="112" font-size="13" font-weight="600" fill="#173f42">规则引擎与接口　约 17,300 行 Rust</text>
+<text x="44" y="131" font-size="11.5" fill="#6b665d">src/ 下除 content 外的全部模块：cards · state · engine · recruit · combat · flow · event · invariants · rng（仅依赖 serde）</text>
+</g>
+<g>
+<rect x="24" y="160" width="812" height="56" rx="8" fill="#fffdfa" stroke="#e3dbcd"/>
+<rect x="24" y="160" width="4" height="56" fill="#6f8c63"/>
+<text x="44" y="184" font-size="13" font-weight="600" fill="#2f4a2a">卡片脚本　27,283 行</text>
+<text x="44" y="203" font-size="11.5" fill="#6b665d">script.rs 的钩子表 + content/*.rs：978 个对象各一张 Script（战吼、亡语、复仇、回合钩子等）</text>
+</g>
+<g>
+<rect x="24" y="232" width="812" height="56" rx="8" fill="#fffdfa" stroke="#e3dbcd"/>
+<rect x="24" y="232" width="4" height="56" fill="#6b5a8a"/>
+<text x="44" y="256" font-size="13" font-weight="600" fill="#3f3557">研究接口　actions · obs · env · batch · bot</text>
+<text x="44" y="275" font-size="11.5" fill="#6b665d">245 个离散动作与精确合法掩码；3,227 个浮点特征 + 124 个卡牌索引；单座位环境与批量环境</text>
+</g>
+<g>
+<rect x="24" y="304" width="812" height="56" rx="8" fill="#fffdfa" stroke="#e3dbcd"/>
+<rect x="24" y="304" width="4" height="56" fill="#8a7f70"/>
+<text x="44" y="328" font-size="13" font-weight="600" fill="#4a463f">Python 绑定　PyO3 551 行 → 封装 253 行</text>
+<text x="44" y="347" font-size="11.5" fill="#6b665d">零拷贝小端字节 → numpy 数组；计算期间释放 GIL；错误转为 ValueError 而非 panic</text>
+</g>
+<g>
+<rect x="24" y="376" width="812" height="56" rx="8" fill="#eef4f3" stroke="#c2d9d7"/>
+<rect x="24" y="376" width="4" height="56" fill="#0f5f63"/>
+<text x="44" y="400" font-size="13" font-weight="600" fill="#0f5f63">使用者　Game / BattlegroundsEnv / BatchEnv</text>
+<text x="44" y="419" font-size="11.5" fill="#3e6f72">单局调试、单座位 RL、64 局并行自对弈，同一个引擎、同一份确定性状态</text>
+</g>
+<g stroke="#c9c1b3" stroke-width="1.3" fill="none">
+<line x1="430" y1="72" x2="430" y2="84" marker-end="url(#arw2)"/>
+<line x1="430" y1="144" x2="430" y2="156" marker-end="url(#arw2)"/>
+<line x1="430" y1="216" x2="430" y2="228" marker-end="url(#arw2)"/>
+<line x1="430" y1="288" x2="430" y2="300" marker-end="url(#arw2)"/>
+<line x1="430" y1="360" x2="430" y2="372" marker-end="url(#arw2)"/>
+</g>
+</g>
+<defs><marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#c9c1b3"/></marker></defs>
+</svg>
+<figcaption>图 2　TavernGym 的分层。规则与卡牌行为都在 Rust 侧，Python 只负责把固定的数组切给学习算法；同一份 Game 状态既能驱动一局，也能并行批量推进。</figcaption>
+</figure>
+
+
+    <h3>三个接口，三种用法</h3>
+    <div class="tablewrap"><table>
+      <caption>表 1　同一个引擎的三层暴露方式。选错接口是这个仓库最容易踩的坑：想训练却用了 <code>Game</code>，或想调试却开了 <code>BatchEnv</code>。</caption>
+      <thead><tr><th scope="col">接口</th><th scope="col">粒度</th><th scope="col">适合做什么</th><th scope="col">不适合</th></tr></thead>
+      <tbody>
+        <tr><td><code>Game</code></td><td>一局，八个座位都能驱动</td><td>复现对局、从存档分叉做搜索、渲染与调试、检查某个动作的规则后果</td><td>训练：单局循环没有批量化</td></tr>
+        <tr><td><code>BattlegroundsEnv</code></td><td>一个学习座位 + 七个脚本 bot</td><td>接 Gym 风格训练循环，验证观测与奖励是否正确</td><td>自对弈：只有一个座位可学</td></tr>
+        <tr><td><code>BatchEnv</code></td><td>N 局 × 任意受控座位集合</td><td>PPO 采样；<code>controlled=range(8)</code> 即自对弈；<code>save/load</code> 做同状态对比</td><td>逐步调试：错误被聚合到 <code>info["rejected"]</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>四条"高保真"的证据</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="head"><h3>信息边界与客户端一致</h3><span class="tag r">仓库可查</span></div>
+        <p>观测只编码玩家在客户端能看到的东西。对手的面板取的是<strong>上次交手时看到的那一份</strong>（<code>Game::known_board</code>），手牌和没打过的面板一律不进观测。模型因此拿不到"偷看"的捷径。</p>
+        <p class="small">这条比"特征数一样"更重要：泄漏会让离线指标虚高。source: <code>crates/taverngym/src/obs.rs</code></p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>合法性掩码是可证明完备的</h3><span class="tag r">仓库可查</span></div>
+        <p>245 个离散动作，每个状态给出精确掩码；测试 <code>every_masked_legal_action_applies</code> 断言掩码允许的每个动作都能被引擎接受，且被接受的动作确实合法。</p>
+        <p class="small">悬空动作是 RL 环境最常见的坑——策略学会了"按按钮"，环境却静默丢弃。这里有测试兜底。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>确定性可存档、可回放</h3><span class="tag r">仓库可查</span></div>
+        <p>全部随机来自单一 xoshiro256** 流（自实现，不受依赖升级影响）；<code>state_json()</code> 是精确存档，只跳过缓存；载入时用卡表指纹拒绝跨版本状态；<code>BatchEnv</code> 的结果与线程数无关。</p>
+        <p class="small">配合 <code>Game::clone</code>，可以从同一状态分叉做搜索或反事实对比，而两条分支看到的未来商店不同——这一点也写进了文档。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>自检：fuzz + 不变量 + 池守恒</h3><span class="tag r">仓库可查</span></div>
+        <p>858 个 Rust 测试（35 个测试文件）加 41 个 pytest；<code>examples/fuzz.rs</code> 随机走合法动作，每一步后检查状态不变量与卡池副本守恒。</p>
+        <p class="small">池守恒是这类卡牌模拟器最容易漏的账：卖了、合了、死了的牌要还回公共池，漏还就会出现"商店里凭空多出第 16 张"。</p>
+      </div>
+    </div>
+
+    <h3>能力与代价：规模、速度、内容覆盖</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h3>代码构成（行数）</h3>
+        <ul class="bars"><li><span class="lbl">卡片脚本 content/*.rs</span><span class="track"><span class="fill t" style="width:100.0%"></span></span><span class="n">27,283</span></li><li><span class="lbl">Rust 测试</span><span class="track"><span class="fill t" style="width:98.3%"></span></span><span class="n">26,808</span></li><li><span class="lbl">规则引擎（不含内容）</span><span class="track"><span class="fill t" style="width:63.6%"></span></span><span class="n">17,344</span></li><li><span class="lbl">TavernBench 工具</span><span class="track"><span class="fill t" style="width:5.8%"></span></span><span class="n">1,570</span></li><li><span class="lbl">PyO3 绑定</span><span class="track"><span class="fill t" style="width:2.0%"></span></span><span class="n">551</span></li><li><span class="lbl">Python 封装</span><span class="track"><span class="fill t" style="width:1.5%"></span></span><span class="n">253</span></li></ul>
+        <p class="small">测试与内容脚本合计超过引擎本身，这个比例在游戏模拟器项目里算健康：规则的正确性靠用例堆出来，而不是靠读代码读出来。</p>
+      </div>
+      <div class="card">
+        <h3>978 个对象怎么构成</h3>
+        <ul class="bars"><li><span class="lbl">小兵（1–6 级）</span><span class="track"><span class="fill g" style="width:96.4%"></span></span><span class="n">244</span></li><li><span class="lbl">饰品</span><span class="track"><span class="fill g" style="width:93.3%"></span></span><span class="n">236</span></li><li><span class="lbl">时空扭曲卡</span><span class="track"><span class="fill g" style="width:100.0%"></span></span><span class="n">253</span></li><li><span class="lbl">英雄</span><span class="track"><span class="fill g" style="width:45.8%"></span></span><span class="n">116</span></li><li><span class="lbl">酒馆法术</span><span class="track"><span class="fill g" style="width:27.7%"></span></span><span class="n">70</span></li><li><span class="lbl">暗月礼物</span><span class="track"><span class="fill g" style="width:18.6%"></span></span><span class="n">47</span></li><li><span class="lbl">7 级随从</span><span class="track"><span class="fill g" style="width:4.7%"></span></span><span class="n">12</span></li></ul>
+        <p class="small">原始卡表有 3,983 条记录（含历史版本与各种形态）；文档列出的当前候选对象合计 978 个。文档自己写明："注册在案只是覆盖，不等于规则正确。"</p>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <div class="label">速度数字的出处</div>
+      <p>论文报告单核 190–280 局/秒、5.2–7.6 万次战斗/秒，并给出测量命令 <code>cargo run --release -p taverngym --example bench</code>。我的环境没有 Rust 工具链（且本机 Python 为 3.9，低于要求的 3.10），所以<strong>没有实测这项</strong>：速度一栏全篇按 <span class="tag p">论文声称</span> 处理。要验证只需在有工具链的机器上跑一次上面那条命令。</p>
+    </div>
+
+    <details>
+      <summary>动作空间全表（245 个离散动作）</summary>
+      <div class="body">
+        <div class="tablewrap"><table>
+          <caption>表 2　动作编号区间。文档与 <code>actions.rs</code> 的断言一致（<code>assert_eq!(N_ACTIONS, 245)</code>）。</caption>
+          <thead><tr><th scope="col">编号</th><th scope="col">动作</th><th scope="col">备注</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">0 / 1 / 2 / 3</td><td>结束回合 / 刷新 / 冻结 / 升级酒馆</td><td>四个全局按钮</td></tr>
+            <tr><td class="mono">4–5</td><td>英雄技能（槽 0、1）</td><td>时空扭曲的"第二英雄技能"也走这里</td></tr>
+            <tr><td class="mono">6 / 7</td><td>暗月礼物按钮 / 取消</td><td>取消只在指向性选择时可用</td></tr>
+            <tr><td class="mono">8–15</td><td>买酒馆第 0–7 张</td><td>槽位固定 8 个；默认酒馆最多 7 张（shop_max_cards 可配到 8）</td></tr>
+            <tr><td class="mono">16–22</td><td>卖面板第 0–6 个</td><td></td></tr>
+            <tr><td class="mono">23–29</td><td>激活面板第 0–6 个</td><td>需要主动技能的小兵</td></tr>
+            <tr><td class="mono">30–45</td><td>选择待定选项 0–15</td><td>发现、指向、英雄、饰品牌都归到这里</td></tr>
+            <tr><td class="mono">46–125</td><td>手牌第 0–9 张打到面板第 0–7 位</td><td>10 × 8</td></tr>
+            <tr><td class="mono">126–195</td><td>手牌第 0–9 张磁力贴到面板第 0–6 个</td><td>10 × 7</td></tr>
+            <tr><td class="mono">196–244</td><td>面板第 0–6 个移到第 0–6 位</td><td>7 × 7</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small">观测：3,227 个 float32（全局、任务、待定选择、面板、手牌、酒馆、选项、对手公开状态与对手上次面板）+ 124 个 int32 卡牌索引（0 表示空，否则为 CardId+1）。<code>taverngym.layout()</code> 给出每块的大小，模型可以按块切片而不必硬编码偏移。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>规则假设：哪些地方是模拟器自己定的</summary>
+      <div class="body">
+        <p>文档没有把不确定性藏起来，这是加分项。可核对的有以下几类：</p>
+        <ul>
+          <li><strong>事件结算顺序</strong>：同一事件内先本侧后对手侧；本侧顺序为持续效果 → 英雄技能 → 饰品 → 任务奖励 → 奥秘 → 任务 → 面板小兵（从左到右，宿主先于附着牌）→ 手牌监听。文档明确写"服务器的完整顺序未公布，这是模拟器约定"。</li>
+          <li><strong>数值缺省</strong>：池子副本数 15/15/13/11/9/7/5、法术副本 5/7/9/11/9/7、伤害上限（5 / 第 4 回合起 10 / 第 8 回合起 15）、免费刷新次数、暗月礼物与饰品牌参数，全部作为 <code>RulesConfig</code> 字段显式给出，可改。</li>
+          <li><strong>时空扭曲</strong>：默认关闭（36.6.3 的全局系统是饰品与暗月礼物）；开启后未花完的 Chronum 丢失、两个英雄的旧条件未实现，文档逐条标了 assumption。</li>
+          <li><strong>已知的"模拟器自定"边界</strong>：嵌套超过 64 层截断并标记；特效结算与"每当你…"的双次播报顺序为约定实现。</li>
+        </ul>
+        <p class="small">这些不是缺陷列表，而是判断"这个模拟器能不能用来做你想要的实验"的关键信息。做规则研究要重算标签，做策略研究基本不受影响。</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section id="bench">
+  <div class="wrap">
+    <p class="kicker">03 · 基准</p>
+    <h2>TavernBench：960 道题的答案由模拟器算出</h2>
+    <p class="lead">基准的另一半价值在于问题设计：不是问模型"这张牌什么效果"，而是给它一个真实局面，让它预测战斗结果、排出站位、选出回合计划。答案不是人写的，是跑出来的。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>题目结构</h3>
+        <p>960 题分布在 40 个场景，每个场景针对一种决策：战斗结果预测、站位编排、出牌顺序、目标选择、英雄与饰品选择、回合规划、经济计算、规则执行。</p>
+        <p>论文主表用 <strong>368 题</strong>的固定子集：37 个场景各取 8 题，加上三个"整场景入表"的决策场景 D4（16 题）、N1（29 题）、N2（27 题）。</p>
+        <p class="small">8 × 37 + 16 + 29 + 27 = 368。仓库把 960 全量与 368 子集分开放在 <code>data/full</code> 与 <code>data/eval</code>。</p>
+      </div>
+      <div class="card">
+        <h3>标签怎么来</h3>
+        <ul class="small" style="margin:0; padding-left:18px">
+          <li>战斗题：模拟 4,096 次战斗，算胜负、伤害与斩杀风险；伤害分布场景只跑 400 次单场。</li>
+          <li>站位题：每种排列 2,048 次战斗，比较期望。</li>
+          <li>短期决策题：每个选项后各跑 1,024 次战斗，取胜率最高的选项。</li>
+          <li>回合规划题：从自然对局切出局面，每套计划打 128 局，比平均名次。</li>
+          <li>规则执行题：在模拟器里执行题干动作，输出合法动作集合。</li>
+          <li>英雄 / 饰品牌：按顶级人类玩家的统计名次选最优，不由模拟器生成。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tablewrap"><table>
+      <caption>表 3　368 题评测集的构成（本报告复算口径）。注意经济类里 E1/E2/E4/E5 是规则执行题，会计入"规则题"分数，只有 E3 算玩法题。</caption>
+      <thead><tr><th scope="col">类别</th><th scope="col">场景</th><th scope="col">题数</th><th scope="col">其中规则题</th><th scope="col">随机基线</th></tr></thead>
+      <tbody><tr><td>规则执行</td><td class="mono">R1, R2, R3, R4, R5, R6, R7</td><td class="num">56</td><td class="num">48</td><td class="num">4.8%</td></tr><tr><td>战斗结算</td><td class="mono">B1, B2, B3, B4, B5, B6</td><td class="num">48</td><td class="num">0</td><td class="num">13.2%</td></tr><tr><td>站位编排</td><td class="mono">P1, P2, P3, P4, P5</td><td class="num">40</td><td class="num">0</td><td class="num">20.0%</td></tr><tr><td>出牌顺序</td><td class="mono">O1, O2, O3, O4, O5</td><td class="num">40</td><td class="num">0</td><td class="num">20.9%</td></tr><tr><td>目标选择</td><td class="mono">T1, T2, T3, T4, T5</td><td class="num">40</td><td class="num">0</td><td class="num">25.0%</td></tr><tr><td>英雄/饰品选择</td><td class="mono">D1, D2, D3, D4, D5</td><td class="num">48</td><td class="num">0</td><td class="num">30.0%</td></tr><tr><td>回合规划</td><td class="mono">N1, N2</td><td class="num">56</td><td class="num">0</td><td class="num">25.0%</td></tr><tr><td>经济计算</td><td class="mono">E1, E2, E3, E4, E5</td><td class="num">40</td><td class="num">32</td><td class="num">12.4%</td></tr><tr><td><strong>合计</strong></td><td>40 个场景</td><td class="num"><strong>368</strong></td><td class="num"><strong>80</strong></td><td class="num">21.8% / 5.0%</td></tr></tbody></table></div>
+
+    <h3>评分方式：不是对错二值</h3>
+    <ul class="bars"><li><span class="lbl">exact：完全匹配（含列表、字母集合）</span><span class="track"><span class="fill t" style="width:100.0%"></span></span><span class="n">232</span></li><li><span class="lbl">value_json：按数值查表</span><span class="track"><span class="fill t" style="width:20.7%"></span></span><span class="n">48</span></li><li><span class="lbl">value_map_str：按选项名查表</span><span class="track"><span class="fill t" style="width:17.2%"></span></span><span class="n">40</span></li><li><span class="lbl">brier：三分类概率，Brier ≤ 0.1 才判对</span><span class="track"><span class="fill t" style="width:6.9%"></span></span><span class="n">16</span></li><li><span class="lbl">numeric_rel / numeric_abs：带容差的数值</span><span class="track"><span class="fill t" style="width:6.9%"></span></span><span class="n">16</span></li><li><span class="lbl">set：集合完全相等（规则题的合法动作集合）</span><span class="track"><span class="fill t" style="width:3.4%"></span></span><span class="n">8</span></li><li><span class="lbl">value_map：按数值查表（含容差）</span><span class="track"><span class="fill t" style="width:3.4%"></span></span><span class="n">8</span></li></ul>
+    <p class="small">细节有讲究：模拟标签带采样噪声，所以对期望名次一类的题给了 <code>tol</code>；未作答、超预算、被截断的答案一律按错误处理，不按"部分正确"给分。</p>
+
+    <h3>随机基线：0.22 与 0.05</h3>
+    <p>玩法题的随机基线是 21.8%，规则题只有 5%（多数规则题的答案是无重复的合法动作集合，盲猜几乎不可能对）。这两个数字决定了解读方式：某些模型"看起来有 20% 多"其实是没学会。</p>
+    <div class="callout">
+      <div class="label">一个直接例子</div>
+      <p>Grok 4.7 的玩法准确率是 22.5%——基本等于随机基线；它的规则题得分 78.7% 却很体面。也就是说它读得懂规则，但算不出局面。这个分裂在 12 个系统里只有它这么极端。</p>
+    </div>
+
+    <h3>两个预算约束</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h3>输出预算 4,096 token</h3>
+        <p>每题有 <code>max_output_tokens</code>（60–200），但评分把"推理在内的 4,096 token"当作统一上限，超了算错。对长推理模型这是硬约束：Grok 4.7 有 48% 的答案超预算被截断，Kimi K2.6 是 23%。</p>
+        <p class="small">复算时我用仓库的 <code>over_budget()</code> 与 <code>finish_reason</code> 判定，与官方评分一致。</p>
+      </div>
+      <div class="card">
+        <h3>实时预算 1 秒</h3>
+        <p>酒馆战棋一回合只有几十秒。评分代码把 1 秒内作答的题单独算一个"实时玩法准确率"：TavernAgent 90.2%，其余系统最高 37%（Jev 的结构化输出），多数为 0。</p>
+        <p class="small">这个指标比总准确率更能说明"能不能真的接管游戏"。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="rerun">
+  <div class="wrap">
+    <p class="kicker">04 · 独立复算</p>
+    <h2>我把 368 × 12 份作答重算了一遍</h2>
+    <p class="lead">复算范围限于评分：标签、题目、12 个系统的作答记录都在仓库里，官方评分代码只有标准库依赖，因此任何人都能独立重跑。下面是结果，以及论文没写、但从数据里能看出来的东西。</p>
+
+    <div class="callout">
+      <div class="label">方法与限制</div>
+      <p>使用仓库自带的 <code>tavernbench/report.py</code>、<code>score.py</code>、<code>chance.py</code> 与 <code>data/eval</code> 下的题目、标签；作答取自 <code>results/eval/*</code> 与 <code>results/tools/*</code>。逐题判定（包括 4,096 token 预算、截断、缺题算错）完全走官方逻辑。</p>
+      <p><strong>没做的事</strong>：模拟器未构建（本机无 Rust 工具链，Python 3.9 < 要求的 3.10），所以没有实测吞吐、也没有用模拟器重算标签。表 1 的分数可直接与论文对照；速度与"标签是否仍然成立"不在本次复算范围内。</p>
+    </div>
+
+    <div class="tablewrap"><table class="sortable" id="resultsTable">
+<caption>表 1　12 个系统在 368 题评测集上的复算结果（点表头排序）。玩法＝30 个玩法场景的平均准确率；规则题＝10 个规则场景的平均准确率。</caption>
+<thead><tr><th scope="col" class="sortable" data-sort="text"><button type="button">系统</button></th><th scope="col" class="sortable" data-sort="text"><button type="button">类型</button></th><th scope="col" class="num sortable" data-sort="num" aria-sort="descending"><button type="button">玩法准确率</button></th><th scope="col" class="num sortable" data-sort="num"><button type="button">规则题</button></th><th scope="col" class="num sortable" data-sort="num"><button type="button">中位延迟</button></th><th scope="col" class="num sortable" data-sort="num"><button type="button">≤1 s 玩法答对</button></th><th scope="col" class="num sortable" data-sort="num"><button type="button">生成 token/答案</button></th><th scope="col" class="num sortable" data-sort="num"><button type="button">截断率</button></th></tr></thead>
+<tbody><tr class="agent-row"><td><span class="best">TavernAgent</span></td><td class="small">训练策略</td><td class="num" data-v="0.9144">91.4%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.030">0.03 s</td><td class="num" data-v="0.9019">90.2%</td><td class="num" data-v="0">0</td><td class="num" data-v="0.0000">0%</td></tr><tr class=""><td><span class="">GPT-6 Astra</span></td><td class="small">通用模型</td><td class="num" data-v="0.6316">63.2%</td><td class="num" data-v="0.9500">95.0%</td><td class="num" data-v="8.400">8.40 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="186">186</td><td class="num" data-v="0.0000">0%</td></tr><tr class=""><td><span class="">Claude Sonnet 5.5</span></td><td class="small">通用模型</td><td class="num" data-v="0.5255">52.5%</td><td class="num" data-v="0.8500">85.0%</td><td class="num" data-v="6.940">6.94 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="346">346</td><td class="num" data-v="0.0000">0%</td></tr><tr class=""><td><span class="">Claude Opus 5.5</span></td><td class="small">通用模型</td><td class="num" data-v="0.5188">51.9%</td><td class="num" data-v="0.9250">92.5%</td><td class="num" data-v="7.370">7.37 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="310">310</td><td class="num" data-v="0.0027">0%</td></tr><tr class=""><td><span class="">GPT-6.1 Sol</span></td><td class="small">通用模型</td><td class="num" data-v="0.4619">46.2%</td><td class="num" data-v="0.5625">56.2%</td><td class="num" data-v="11.260">11.26 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="305">305</td><td class="num" data-v="0.0027">0%</td></tr><tr class=""><td><span class="">Gemini 3.8 Flash</span></td><td class="small">通用模型</td><td class="num" data-v="0.4433">44.3%</td><td class="num" data-v="0.9000">90.0%</td><td class="num" data-v="10.910">10.91 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="2772">2772</td><td class="num" data-v="0.1608">16%</td></tr><tr class=""><td><span class="">GLM-5.3</span></td><td class="small">通用模型</td><td class="num" data-v="0.3953">39.5%</td><td class="num" data-v="0.6500">65.0%</td><td class="num" data-v="41.900">41.90 s</td><td class="num" data-v="0.0116">1.2%</td><td class="num" data-v="605">605</td><td class="num" data-v="0.0380">4%</td></tr><tr class=""><td><span class="">Jev</span></td><td class="small">专用接口</td><td class="num" data-v="0.3700">37.0%</td><td class="num" data-v="0.3500">35.0%</td><td class="num" data-v="0.263">0.26 s</td><td class="num" data-v="0.3700">37.0%</td><td class="num" data-v="369">369</td><td class="num" data-v="0.0000">0%</td></tr><tr class=""><td><span class="">Intern-S2 Preview</span></td><td class="small">通用模型</td><td class="num" data-v="0.3205">32.1%</td><td class="num" data-v="0.5375">53.8%</td><td class="num" data-v="0.490">0.49 s</td><td class="num" data-v="0.2908">29.1%</td><td class="num" data-v="9">9</td><td class="num" data-v="0.0000">0%</td></tr><tr class=""><td><span class="">Kimi K2.6</span></td><td class="small">通用模型</td><td class="num" data-v="0.2824">28.2%</td><td class="num" data-v="0.5625">56.2%</td><td class="num" data-v="10.910">10.91 s</td><td class="num" data-v="0.0880">8.8%</td><td class="num" data-v="1577">1577</td><td class="num" data-v="0.2337">23%</td></tr><tr class=""><td><span class="">DeepSeek V4.1 Flash</span></td><td class="small">通用模型</td><td class="num" data-v="0.2588">25.9%</td><td class="num" data-v="0.2875">28.7%</td><td class="num" data-v="2.370">2.37 s</td><td class="num" data-v="0.0262">2.6%</td><td class="num" data-v="21">21</td><td class="num" data-v="0.0027">0%</td></tr><tr class=""><td><span class="">Grok 4.7</span></td><td class="small">通用模型</td><td class="num" data-v="0.2249">22.5%</td><td class="num" data-v="0.7875">78.8%</td><td class="num" data-v="67.740">67.74 s</td><td class="num" data-v="0.0000">0.0%</td><td class="num" data-v="6625">6625</td><td class="num" data-v="0.4755">48%</td></tr><tr class="chance-row"><td>随机基线</td><td class="small">—</td><td class="num" data-v="0.2182">21.8%</td><td class="num" data-v="0.0500">5.0%</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr></tbody></table></div>
+<p class="tblnote">延迟与 token 取自随仓库发布的作答记录中的实测字段（latency_s、output_tokens）。截断率＝超出每题 4,096 token 预算或 finish_reason 为 length 的比例，按官方评分规则计为错误。</p>
+
+    <div class="heattitle">
+      <h3>按类别的强弱分布</h3>
+      <div class="viewswitch" role="tablist" aria-label="热力图视图">
+        <button type="button" role="tab" data-view="abs" aria-selected="true" id="tabAbs" aria-controls="heatAbs">绝对准确率</button>
+        <button type="button" role="tab" data-view="rel" aria-selected="false" id="tabRel" aria-controls="heatRel">相对随机基线</button>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span>低</span>
+        <span class="scale"><span style="background:#f8f5ef"></span><span style="background:#cfdbd8"></span><span style="background:#8fb3b0"></span><span style="background:#4a8384"></span><span style="background:#125f66"></span></span>
+        <span>高</span>
+      </div>
+    </div>
+    <div id="heatAbs" role="tabpanel" aria-labelledby="tabAbs"><div class="tablewrap"><table class="heat">
+<caption>各系统在 7 个玩法类别上的准确率（数字为百分比，颜色越深越高）；规则类另见表 1。</caption>
+<thead><tr><th scope="col">系统</th><th scope="col">战斗结算</th><th scope="col">站位编排</th><th scope="col">出牌顺序</th><th scope="col">目标选择</th><th scope="col">英雄/饰品选择</th><th scope="col">回合规划</th><th scope="col">经济计算</th><th scope="col">玩法均值</th></tr></thead><tbody><tr><td class="sys">TavernAgent</td><td class="val" style="background:#125f66;color:#ffffff">100</td><td class="val" style="background:#176269;color:#ffffff">98</td><td class="val" style="background:#125f66;color:#ffffff">100</td><td class="val" style="background:#176269;color:#ffffff">98</td><td class="val" style="background:#5f9194;color:#ffffff">64</td><td class="val" style="background:#478286;color:#ffffff">75</td><td class="val" style="background:#125f66;color:#ffffff">100</td><td class="val" style="background:#ffffff;color:#1c1a16">91</td></tr><tr><td class="sys">GPT-6 Astra</td><td class="val" style="background:#468185;color:#ffffff">75</td><td class="val" style="background:#729d9f;color:#2a2721">55</td><td class="val" style="background:#4c8588;color:#ffffff">72</td><td class="val" style="background:#729d9f;color:#2a2721">55</td><td class="val" style="background:#7da5a6;color:#2a2721">50</td><td class="val" style="background:#759fa1;color:#2a2721">54</td><td class="val" style="background:#468185;color:#ffffff">75</td><td class="val" style="background:#ffffff;color:#1c1a16">63</td></tr><tr><td class="sys">Claude Sonnet 5.5</td><td class="val" style="background:#6a999b;color:#ffffff">58</td><td class="val" style="background:#88acac;color:#2a2721">45</td><td class="val" style="background:#578c8f;color:#ffffff">68</td><td class="val" style="background:#77a1a2;color:#2a2721">52</td><td class="val" style="background:#96b5b5;color:#2a2721">39</td><td class="val" style="background:#adc4c2;color:#2a2721">29</td><td class="val" style="background:#7da5a6;color:#2a2721">50</td><td class="val" style="background:#ffffff;color:#1c1a16">53</td></tr><tr><td class="sys">Claude Opus 5.5</td><td class="val" style="background:#588d90;color:#ffffff">67</td><td class="val" style="background:#a4bebd;color:#2a2721">32</td><td class="val" style="background:#679698;color:#ffffff">60</td><td class="val" style="background:#77a1a2;color:#2a2721">52</td><td class="val" style="background:#90b1b1;color:#2a2721">41</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#7da5a6;color:#2a2721">50</td><td class="val" style="background:#ffffff;color:#1c1a16">52</td></tr><tr><td class="sys">GPT-6.1 Sol</td><td class="val" style="background:#7da5a6;color:#2a2721">50</td><td class="val" style="background:#8eb0b0;color:#2a2721">42</td><td class="val" style="background:#82a8a9;color:#2a2721">48</td><td class="val" style="background:#b0c6c4;color:#2a2721">28</td><td class="val" style="background:#729d9f;color:#2a2721">55</td><td class="val" style="background:#8dafaf;color:#2a2721">43</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#ffffff;color:#1c1a16">46</td></tr><tr><td class="sys">Gemini 3.8 Flash</td><td class="val" style="background:#78a2a3;color:#2a2721">52</td><td class="val" style="background:#a4bebd;color:#2a2721">32</td><td class="val" style="background:#a4bebd;color:#2a2721">32</td><td class="val" style="background:#82a8a9;color:#2a2721">48</td><td class="val" style="background:#90b1b1;color:#2a2721">41</td><td class="val" style="background:#8cafaf;color:#2a2721">43</td><td class="val" style="background:#619395;color:#ffffff">62</td><td class="val" style="background:#ffffff;color:#1c1a16">44</td></tr><tr><td class="sys">GLM-5.3</td><td class="val" style="background:#749fa0;color:#2a2721">54</td><td class="val" style="background:#c2d2cf;color:#2a2721">20</td><td class="val" style="background:#93b3b3;color:#2a2721">40</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#90b1b1;color:#2a2721">41</td><td class="val" style="background:#a2bdbc;color:#2a2721">34</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#ffffff;color:#1c1a16">40</td></tr><tr><td class="sys">Jev</td><td class="val" style="background:#6f9c9d;color:#ffffff">56</td><td class="val" style="background:#b6cac8;color:#2a2721">25</td><td class="val" style="background:#c2d2cf;color:#2a2721">20</td><td class="val" style="background:#88acac;color:#2a2721">45</td><td class="val" style="background:#93b3b3;color:#2a2721">40</td><td class="val" style="background:#c8d6d2;color:#2a2721">17</td><td class="val" style="background:#d5deda;color:#2a2721">12</td><td class="val" style="background:#ffffff;color:#1c1a16">37</td></tr><tr><td class="sys">Intern-S2 Preview</td><td class="val" style="background:#a7c0bf;color:#2a2721">31</td><td class="val" style="background:#d5deda;color:#2a2721">12</td><td class="val" style="background:#a4bebd;color:#2a2721">32</td><td class="val" style="background:#93b3b3;color:#2a2721">40</td><td class="val" style="background:#8baeae;color:#2a2721">44</td><td class="val" style="background:#a1bcbb;color:#2a2721">34</td><td class="val" style="background:#d5deda;color:#2a2721">12</td><td class="val" style="background:#ffffff;color:#1c1a16">32</td></tr><tr><td class="sys">Kimi K2.6</td><td class="val" style="background:#a7c0bf;color:#2a2721">31</td><td class="val" style="background:#e2e6e2;color:#2a2721">8</td><td class="val" style="background:#bccecb;color:#2a2721">22</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#9cb9b8;color:#2a2721">36</td><td class="val" style="background:#b2c7c5;color:#2a2721">27</td><td class="val" style="background:#b6cac8;color:#2a2721">25</td><td class="val" style="background:#ffffff;color:#1c1a16">28</td></tr><tr><td class="sys">DeepSeek V4.1 Flash</td><td class="val" style="background:#acc4c2;color:#2a2721">29</td><td class="val" style="background:#c8d6d2;color:#2a2721">18</td><td class="val" style="background:#cedad6;color:#2a2721">15</td><td class="val" style="background:#a4bebd;color:#2a2721">32</td><td class="val" style="background:#b6cac8;color:#2a2721">25</td><td class="val" style="background:#c3d3d0;color:#2a2721">19</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#ffffff;color:#1c1a16">26</td></tr><tr><td class="sys">Grok 4.7</td><td class="val" style="background:#acc4c2;color:#2a2721">29</td><td class="val" style="background:#f8f5ef;color:#2a2721">0</td><td class="val" style="background:#e8ebe6;color:#2a2721">5</td><td class="val" style="background:#c2d2cf;color:#2a2721">20</td><td class="val" style="background:#99b7b6;color:#2a2721">38</td><td class="val" style="background:#99b7b7;color:#2a2721">37</td><td class="val" style="background:#d5deda;color:#2a2721">12</td><td class="val" style="background:#ffffff;color:#1c1a16">22</td></tr><tr><td class="sys">随机基线</td><td class="val" style="background:#d3ddd9;color:#2a2721">13</td><td class="val" style="background:#c2d2cf;color:#2a2721">20</td><td class="val" style="background:#c0d0cd;color:#2a2721">21</td><td class="val" style="background:#b6cac8;color:#2a2721">25</td><td class="val" style="background:#aac2c1;color:#2a2721">30</td><td class="val" style="background:#b6cac8;color:#2a2721">25</td><td class="val" style="background:#d5deda;color:#2a2721">12</td><td class="val">22</td></tr></tbody></table></div></div>
+    <div id="heatRel" role="tabpanel" aria-labelledby="tabRel" class="is-hidden"><div class="tablewrap"><table class="heat">
+<caption>各系统相对该类随机基线的差值（百分点；蓝绿为正，红为负，0 表示与随机无异）。</caption>
+<thead><tr><th scope="col">系统</th><th scope="col">战斗结算</th><th scope="col">站位编排</th><th scope="col">出牌顺序</th><th scope="col">目标选择</th><th scope="col">英雄/饰品选择</th><th scope="col">回合规划</th><th scope="col">经济计算</th><th scope="col">玩法均值</th></tr></thead><tbody><tr><td class="sys">TavernAgent</td><td class="val" style="background:#0f5f63;color:#ffffff">+87</td><td class="val" style="background:#0f5f63;color:#ffffff">+78</td><td class="val" style="background:#0f5f63;color:#ffffff">+79</td><td class="val" style="background:#0f5f63;color:#ffffff">+72</td><td class="val" style="background:#5b9090;color:#ffffff">+34</td><td class="val" style="background:#106064;color:#ffffff">+50</td><td class="val" style="background:#0f5f63;color:#ffffff">+88</td><td class="val" style="background:#ffffff;color:#1c1a16">+70</td></tr><tr><td class="sys">GPT-6 Astra</td><td class="val" style="background:#0f5f63;color:#ffffff">+62</td><td class="val" style="background:#558c8d;color:#ffffff">+35</td><td class="val" style="background:#0f5f63;color:#ffffff">+52</td><td class="val" style="background:#6c9b9b;color:#2a2721">+30</td><td class="val" style="background:#9bb9b7;color:#2a2721">+20</td><td class="val" style="background:#739f9f;color:#2a2721">+29</td><td class="val" style="background:#0f5f63;color:#ffffff">+63</td><td class="val" style="background:#ffffff;color:#1c1a16">+41</td></tr><tr><td class="sys">Claude Sonnet 5.5</td><td class="val" style="background:#266e71;color:#ffffff">+45</td><td class="val" style="background:#84aaa9;color:#2a2721">+25</td><td class="val" style="background:#1f696d;color:#ffffff">+47</td><td class="val" style="background:#78a3a2;color:#2a2721">+27</td><td class="val" style="background:#cfdbd6;color:#2a2721">+9</td><td class="val" style="background:#e6e9e4;color:#2a2721">+4</td><td class="val" style="background:#498486;color:#ffffff">+38</td><td class="val" style="background:#ffffff;color:#1c1a16">+31</td></tr><tr><td class="sys">Claude Opus 5.5</td><td class="val" style="background:#0f5f63;color:#ffffff">+53</td><td class="val" style="background:#bed0cc;color:#2a2721">+13</td><td class="val" style="background:#428082;color:#ffffff">+39</td><td class="val" style="background:#78a3a2;color:#2a2721">+27</td><td class="val" style="background:#c4d3d0;color:#2a2721">+11</td><td class="val" style="background:#bdcfcc;color:#2a2721">+13</td><td class="val" style="background:#498486;color:#ffffff">+38</td><td class="val" style="background:#ffffff;color:#1c1a16">+30</td></tr><tr><td class="sys">GPT-6.1 Sol</td><td class="val" style="background:#4c8788;color:#ffffff">+37</td><td class="val" style="background:#8fb2b0;color:#2a2721">+22</td><td class="val" style="background:#7ca5a5;color:#2a2721">+27</td><td class="val" style="background:#eceee8;color:#2a2721">+2</td><td class="val" style="background:#83aaa9;color:#2a2721">+25</td><td class="val" style="background:#a5bfbd;color:#2a2721">+18</td><td class="val" style="background:#83aaa9;color:#2a2721">+25</td><td class="val" style="background:#ffffff;color:#1c1a16">+24</td></tr><tr><td class="sys">Gemini 3.8 Flash</td><td class="val" style="background:#438082;color:#ffffff">+39</td><td class="val" style="background:#bed0cc;color:#2a2721">+13</td><td class="val" style="background:#c2d2cf;color:#2a2721">+12</td><td class="val" style="background:#8fb2b0;color:#2a2721">+22</td><td class="val" style="background:#c4d3d0;color:#2a2721">+11</td><td class="val" style="background:#a4bfbc;color:#2a2721">+18</td><td class="val" style="background:#0f5f63;color:#ffffff">+50</td><td class="val" style="background:#ffffff;color:#1c1a16">+23</td></tr><tr><td class="sys">GLM-5.3</td><td class="val" style="background:#397a7c;color:#ffffff">+41</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#9fbcba;color:#2a2721">+19</td><td class="val" style="background:#bed0cc;color:#2a2721">+12</td><td class="val" style="background:#c4d3d0;color:#2a2721">+11</td><td class="val" style="background:#d0dbd7;color:#2a2721">+9</td><td class="val" style="background:#83aaa9;color:#2a2721">+25</td><td class="val" style="background:#ffffff;color:#1c1a16">+18</td></tr><tr><td class="sys">Jev</td><td class="val" style="background:#2f7476;color:#ffffff">+43</td><td class="val" style="background:#e1e6e1;color:#2a2721">+5</td><td class="val" style="background:#f6f1eb;color:#2a2721">-1</td><td class="val" style="background:#9bb9b7;color:#2a2721">+20</td><td class="val" style="background:#c9d7d3;color:#2a2721">+10</td><td class="val" style="background:#ecd8d1;color:#2a2721">-8</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#ffffff;color:#1c1a16">+15</td></tr><tr><td class="sys">Intern-S2 Preview</td><td class="val" style="background:#a4bfbc;color:#2a2721">+18</td><td class="val" style="background:#ecd8d1;color:#2a2721">-7</td><td class="val" style="background:#c2d2cf;color:#2a2721">+12</td><td class="val" style="background:#b2c8c5;color:#2a2721">+15</td><td class="val" style="background:#b8ccc8;color:#2a2721">+14</td><td class="val" style="background:#cedad6;color:#2a2721">+9</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#ffffff;color:#1c1a16">+10</td></tr><tr><td class="sys">Kimi K2.6</td><td class="val" style="background:#a4bfbc;color:#2a2721">+18</td><td class="val" style="background:#e4c4be;color:#2a2721">-12</td><td class="val" style="background:#f1f0eb;color:#2a2721">+2</td><td class="val" style="background:#bed0cc;color:#2a2721">+12</td><td class="val" style="background:#dbe2de;color:#2a2721">+6</td><td class="val" style="background:#f0f0ea;color:#2a2721">+2</td><td class="val" style="background:#bdcfcc;color:#2a2721">+13</td><td class="val" style="background:#ffffff;color:#1c1a16">+6</td></tr><tr><td class="sys">DeepSeek V4.1 Flash</td><td class="val" style="background:#aec5c2;color:#2a2721">+16</td><td class="val" style="background:#f4ebe5;color:#2a2721">-2</td><td class="val" style="background:#eeded8;color:#2a2721">-6</td><td class="val" style="background:#d5dfda;color:#2a2721">+7</td><td class="val" style="background:#f0e2db;color:#2a2721">-5</td><td class="val" style="background:#efdfd9;color:#2a2721">-6</td><td class="val" style="background:#83aaa9;color:#2a2721">+25</td><td class="val" style="background:#ffffff;color:#1c1a16">+4</td></tr><tr><td class="sys">Grok 4.7</td><td class="val" style="background:#aec5c2;color:#2a2721">+16</td><td class="val" style="background:#d8a7a0;color:#2a2721">-20</td><td class="val" style="background:#deb7b0;color:#2a2721">-16</td><td class="val" style="background:#f0e1db;color:#2a2721">-5</td><td class="val" style="background:#d5deda;color:#2a2721">+8</td><td class="val" style="background:#bed0cc;color:#2a2721">+12</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#ffffff;color:#1c1a16">+1</td></tr><tr><td class="sys">随机基线</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val" style="background:#f8f5ef;color:#2a2721">+0</td><td class="val">0</td></tr></tbody></table></div></div>
+    <p class="tblnote">类别准确率是"该类别下各场景准确率的平均"，每个场景等权；规则类 10 个场景单独列在表 1，不混进这张热力图。selection 类整体偏低，是因为它的 5 个场景里有 2 个（英雄、饰品）依赖人类天梯统计。</p>
+
+    <figure><svg viewBox="0 0 860 430" role="img" aria-labelledby="scatterT scatterD" xmlns="http://www.w3.org/2000/svg"><title id="scatterT">中位延迟与玩法准确率</title><desc id="scatterD">散点图：横轴为每题中位耗时（对数刻度，0.02 到 90 秒），纵轴为玩法准确率。TavernAgent 位于左上角，0.03 秒与 91%。</desc><rect x="0" y="0" width="860" height="430" fill="#fffdfa"/><line x1="78" y1="368.0" x2="830" y2="368.0" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="372.0" text-anchor="end" font-size="11.5" fill="#8b8478">0%</text><line x1="78" y1="300.4" x2="830" y2="300.4" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="304.4" text-anchor="end" font-size="11.5" fill="#8b8478">20%</text><line x1="78" y1="232.8" x2="830" y2="232.8" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="236.8" text-anchor="end" font-size="11.5" fill="#8b8478">40%</text><line x1="78" y1="165.2" x2="830" y2="165.2" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="169.2" text-anchor="end" font-size="11.5" fill="#8b8478">60%</text><line x1="78" y1="97.6" x2="830" y2="97.6" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="101.6" text-anchor="end" font-size="11.5" fill="#8b8478">80%</text><line x1="78" y1="30.0" x2="830" y2="30.0" stroke="#e9e2d6" stroke-width="1"/><text x="66" y="34.0" text-anchor="end" font-size="11.5" fill="#8b8478">100%</text><line x1="78.0" y1="30" x2="78.0" y2="368" stroke="#efe9dd" stroke-width="1"/><text x="78.0" y="388" text-anchor="middle" font-size="11.5" fill="#8b8478">0.02 s</text><line x1="221.9" y1="30" x2="221.9" y2="368" stroke="#efe9dd" stroke-width="1"/><text x="221.9" y="388" text-anchor="middle" font-size="11.5" fill="#8b8478">0.1 s</text><line x1="427.7" y1="30" x2="427.7" y2="368" stroke="#efe9dd" stroke-width="1"/><text x="427.7" y="388" text-anchor="middle" font-size="11.5" fill="#8b8478">1 s</text><line x1="633.6" y1="30" x2="633.6" y2="368" stroke="#efe9dd" stroke-width="1"/><text x="633.6" y="388" text-anchor="middle" font-size="11.5" fill="#8b8478">10 s</text><line x1="793.8" y1="30" x2="793.8" y2="368" stroke="#efe9dd" stroke-width="1"/><text x="793.8" y="388" text-anchor="middle" font-size="11.5" fill="#8b8478">60 s</text><rect x="78" y="30" width="349.7" height="338" fill="#eaf4f1" opacity=".75"/><text x="88" y="50" font-size="11.5" fill="#0f5f63">实时可用区（≤ 1 s）</text><text x="454.0" y="416" text-anchor="middle" font-size="12" fill="#7c766c">每题中位耗时（秒，对数刻度）</text><text transform="translate(16,199.0) rotate(-90)" text-anchor="middle" font-size="12" fill="#7c766c">玩法准确率</text><circle cx="113.6" cy="58.9" r="7" fill="#a95f18" fill-opacity="0.95" stroke="#fffdfa" stroke-width="1.4"><title>TavernAgent：玩法 91.4%，中位 0.03 s</title></circle><text x="125.6" y="62.9" font-size="12.5" font-weight="700" fill="#8a4d12">TavernAgent</text><circle cx="618.0" cy="154.5" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>GPT-6 Astra：玩法 63.2%，中位 8.40 s</title></circle><circle cx="600.9" cy="190.4" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Claude Sonnet 5.5：玩法 52.5%，中位 6.94 s</title></circle><circle cx="606.3" cy="192.6" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Claude Opus 5.5：玩法 51.9%，中位 7.37 s</title></circle><circle cx="644.2" cy="211.9" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>GPT-6.1 Sol：玩法 46.2%，中位 11.26 s</title></circle><circle cx="641.4" cy="218.2" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Gemini 3.8 Flash：玩法 44.3%，中位 10.91 s</title></circle><circle cx="761.7" cy="234.4" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>GLM-5.3：玩法 39.5%，中位 41.90 s</title></circle><circle cx="308.3" cy="242.9" r="4.6" fill="#6b5a8a" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Jev：玩法 37.0%，中位 0.26 s</title></circle><circle cx="364.0" cy="259.7" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Intern-S2 Preview：玩法 32.1%，中位 0.49 s</title></circle><circle cx="641.4" cy="272.5" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Kimi K2.6：玩法 28.2%，中位 10.91 s</title></circle><circle cx="504.9" cy="280.5" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>DeepSeek V4.1 Flash：玩法 25.9%，中位 2.37 s</title></circle><circle cx="804.6" cy="292.0" r="4.6" fill="#0f5f63" fill-opacity="0.62" stroke="#fffdfa" stroke-width="1.4"><title>Grok 4.7：玩法 22.5%，中位 67.74 s</title></circle><text x="630.0" y="142.5" text-anchor="start" font-size="10.6" fill="#5d574d">GPT-6 Astra</text><text x="586.9" y="178.4" text-anchor="end" font-size="10.6" fill="#5d574d">Claude Sonnet 5.5</text><text x="592.3" y="206.6" text-anchor="end" font-size="10.6" fill="#5d574d">Claude Opus 5.5</text><text x="658.2" y="223.9" text-anchor="start" font-size="10.6" fill="#5d574d">GPT-6.1 Sol</text><text x="627.4" y="236.2" text-anchor="end" font-size="10.6" fill="#5d574d">Gemini 3.8 Flash</text><text x="775.7" y="224.4" text-anchor="start" font-size="10.6" fill="#5d574d">GLM-5.3</text><text x="320.3" y="258.9" text-anchor="start" font-size="10.6" fill="#5d574d">Jev</text><text x="376.0" y="247.7" text-anchor="start" font-size="10.6" fill="#5d574d">Intern-S2 Preview</text><text x="655.4" y="284.5" text-anchor="start" font-size="10.6" fill="#5d574d">Kimi K2.6</text><text x="490.9" y="294.5" text-anchor="end" font-size="10.6" fill="#5d574d">DeepSeek V4.1 Flash</text><text x="790.6" y="280.0" text-anchor="end" font-size="10.6" fill="#5d574d">Grok 4.7</text></svg>
+<figcaption>图 3　中位延迟与玩法准确率。左下角是"又快又准"的方向：TavernAgent 以 0.03 s 拿到 91.4%，其余系统至少要 0.26 s 才进入 1 s 实时区，且准确率不超过 63.2%。</figcaption></figure>
+
+    <h3>与论文数字对照</h3>
+    <div class="tablewrap"><table>
+      <caption>表 4　论文摘要中的关键数字与本次复算的对照。"一致"指方向与量级相符；"口径差异"指论文使用的统计方式在发布物中不可完全还原。</caption>
+      <thead><tr><th scope="col">主张</th><th scope="col">论文</th><th scope="col">复算</th><th scope="col">判断</th></tr></thead>
+      <tbody>
+        <tr><td>TavernAgent 玩法准确率</td><td>91%</td><td>91.4%</td><td>一致 <span class="tag v">已复算</span></td></tr>
+        <tr><td>最强 LLM 玩法准确率</td><td>≤ 63%</td><td>63.2%（GPT-6 Astra）</td><td>一致 <span class="tag v">已复算</span></td></tr>
+        <tr><td>TavernAgent 规则题</td><td>满分</td><td>100%</td><td>一致 <span class="tag v">已复算</span></td></tr>
+        <tr><td>决策耗时</td><td>0.03 s</td><td>中位 0.03 s</td><td>一致 <span class="tag v">已复算</span></td></tr>
+        <tr><td>LLM 最慢耗时</td><td>至多 26 s</td><td>中位 0.49–67.7 s；均值最高 126 s（Grok 4.7）</td><td>口径差异（标准化延迟 vs 实测）</td></tr>
+        <tr><td>1 秒内准确率</td><td>90%，且无 LLM 超 26%</td><td>90.2%；Intern-S2 29.1%、Jev 37.0%，其余 ≤ 8.8%</td><td>方向一致，上限略有出入</td></tr>
+        <tr><td>随机基线</td><td>未在摘要给出</td><td>玩法 21.8%、规则 5.0%</td><td>补充 <span class="tag v">已复算</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="small">耗时差异来自统计口径：发布记录里的 <code>latency_s</code> 是实测墙钟时间，而 <code>report.py</code> 的注释说明论文使用"标准化延迟"。同一份数据换口径就会变，不算矛盾，但读者不该把"26 s"当成实测上限。</p>
+
+    <h3>六个能从数据里读出来的结论</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="head"><h3>1　差距集中在"算得出来"的题</h3></div>
+        <p>战斗结算、站位、顺序、目标、规则五类，TavernAgent 是 97.5–100%；LLM 最好也只有 55–75%。这些题有确定答案，模拟器 + 训练可以逼近上限。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>2　短板正好在人类经验处</h3></div>
+        <p>英雄选择 25%（与随机持平），饰品选择 12.5%（低于随机的 25%）。这两个场景的标签来自顶级玩家的统计名次，不是模拟器算的——训练环境帮不上忙的地方，差距立刻反向。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>3　规则题已饱和，不再是区分点</h3></div>
+        <p>GPT-6 Astra 95%、Claude Opus 5.5 92.5%、Gemini 90%。所以论文把重点放在玩法题（91% vs 63%）是对的；只看规则分会得出"大家差不多"的错误结论。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>4　延迟是第二根轴</h3></div>
+        <p>0.03 s 对 8.4 s 的中位差是 280 倍；1 秒内能答对的题，TavernAgent 是 90.2%，第二名 Jev 37%。实时性是这类游戏 AI 的硬指标，不是锦上添花。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>5　成本差异被低估了</h3></div>
+        <p>TavernAgent 每答案生成 0 token；Grok 平均 6,625 token 且 48% 超预算，Gemini 2,772 token。按 368 题算，一次全量评测的推理成本差了两三个数量级。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>6　几乎全场景占优，除了两个</h3></div>
+        <p>40 个场景里 38 个 TavernAgent 不低于所有 10 个 LLM；唯二落后的是 D1（−25 点）与 D2（−38 点）。"全面碾压"的说法要扣掉这两个。</p>
+      </div>
+    </div>
+
+    <h3>逐场景对照</h3>
+    <p>下表把 40 个场景摊开：左边是场景与随机基线，右边是 TavernAgent 与"10 个 LLM 里最强的那个"。可以用筛选看某一类，也可以按差值排序找短板。</p>
+    
+<div class="toolbar">
+  <ul class="chips" aria-label="按类别筛选场景"><li><button type="button" class="chip" data-cat="all" aria-pressed="true">全部 40</button></li><li><button type="button" class="chip" data-cat="combat" aria-pressed="false">战斗结算 6</button></li><li><button type="button" class="chip" data-cat="positioning" aria-pressed="false">站位编排 5</button></li><li><button type="button" class="chip" data-cat="ordering" aria-pressed="false">出牌顺序 5</button></li><li><button type="button" class="chip" data-cat="targets" aria-pressed="false">目标选择 5</button></li><li><button type="button" class="chip" data-cat="selection" aria-pressed="false">英雄/饰品选择 5</button></li><li><button type="button" class="chip" data-cat="strategy" aria-pressed="false">回合规划 2</button></li><li><button type="button" class="chip" data-cat="economy" aria-pressed="false">经济计算 5</button></li><li><button type="button" class="chip" data-cat="rules" aria-pressed="false">规则执行 7</button></li></ul>
+  <div class="search">
+    <label for="scenSearch">搜索场景或类别</label>
+    <input id="scenSearch" type="search" placeholder="如 B6、站位、selection" autocomplete="off">
+    <button type="button" class="btn" id="scenReset">重置</button>
+  </div>
+</div>
+<div class="tablewrap"><table class="sortable" id="scenarioTable">
+<caption>表 2　40 个场景逐个对照。<span id="scenCount">40</span> / 40 行可见。点表头排序，用上方按钮筛选。</caption>
+<thead><tr>
+<th scope="col" class="sortable" data-sort="text"><button type="button">场景</button></th>
+<th scope="col" class="sortable" data-sort="text"><button type="button">类别</button></th>
+<th scope="col" class="num sortable" data-sort="num"><button type="button">题数</button></th>
+<th scope="col" class="num sortable" data-sort="num"><button type="button">随机基线</button></th>
+<th scope="col" class="num sortable" data-sort="num"><button type="button">TavernAgent</button></th>
+<th scope="col" class="num sortable" data-sort="num"><button type="button">最强 LLM</button></th>
+<th scope="col" class="num sortable" data-sort="num"><button type="button">差值</button></th>
+<th scope="col">最强 LLM 是</th>
+</tr></thead><tbody><tr data-cat="combat"><td class="mono">B1</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="combat"><td class="mono">B2</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="combat"><td class="mono">B3</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.7500">75.0%</td><td class="num" data-v="0.2500"><span class="best">+25.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="combat"><td class="mono">B4</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="combat"><td class="mono">B5</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">Claude Sonnet 5.5</td></tr><tr data-cat="combat"><td class="mono">B6</td><td>战斗结算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.1250">12%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.3750">37.5%</td><td class="num" data-v="0.6250"><span class="best">+62.5</span></td><td class="small">Claude Opus 5.5</td></tr><tr data-cat="selection"><td class="mono">D1</td><td>英雄/饰品选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2500">25%</td><td class="num" data-v="0.2500">25.0%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="-0.2500"><span class="neg">-25.0</span></td><td class="small">GPT-6.1 Sol</td></tr><tr data-cat="selection"><td class="mono">D2</td><td>英雄/饰品选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2500">25%</td><td class="num" data-v="0.1250">12.5%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="-0.3750"><span class="neg">-37.5</span></td><td class="small">GPT-6.1 Sol</td></tr><tr data-cat="selection"><td class="mono">D3</td><td>英雄/饰品选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.7500">75.0%</td><td class="num" data-v="0.2500"><span class="best">+25.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="selection"><td class="mono">D4</td><td>英雄/饰品选择</td><td class="num" data-v="16">16</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="0.8125">81.2%</td><td class="num" data-v="0.5625">56.2%</td><td class="num" data-v="0.2500"><span class="best">+25.0</span></td><td class="small">Claude Opus 5.5</td></tr><tr data-cat="selection"><td class="mono">D5</td><td>英雄/饰品选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">Intern-S2 Preview</td></tr><tr data-cat="economy"><td class="mono">E1</td><td>经济计算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="economy"><td class="mono">E2</td><td>经济计算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">Claude Opus 5.5</td></tr><tr data-cat="economy"><td class="mono">E3</td><td>经济计算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.1223">12%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.7500">75.0%</td><td class="num" data-v="0.2500"><span class="best">+25.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="economy"><td class="mono">E4</td><td>经济计算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.5000">50%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">Intern-S2 Preview</td></tr><tr data-cat="economy"><td class="mono">E5</td><td>经济计算</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="strategy"><td class="mono">N1</td><td>回合规划</td><td class="num" data-v="29">29</td><td class="num" data-v="0.2500">25%</td><td class="num" data-v="0.8276">82.8%</td><td class="num" data-v="0.5172">51.7%</td><td class="num" data-v="0.3103"><span class="best">+31.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="strategy"><td class="mono">N2</td><td>回合规划</td><td class="num" data-v="27">27</td><td class="num" data-v="0.2500">25%</td><td class="num" data-v="0.6667">66.7%</td><td class="num" data-v="0.5556">55.6%</td><td class="num" data-v="0.1111"><span class="best">+11.1</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="ordering"><td class="mono">O1</td><td>出牌顺序</td><td class="num" data-v="8">8</td><td class="num" data-v="0.1719">17%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="ordering"><td class="mono">O2</td><td>出牌顺序</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2083">21%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="0.5000"><span class="best">+50.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="ordering"><td class="mono">O3</td><td>出牌顺序</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2396">24%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">Claude Sonnet 5.5</td></tr><tr data-cat="ordering"><td class="mono">O4</td><td>出牌顺序</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2292">23%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.6250">62.5%</td><td class="num" data-v="0.3750"><span class="best">+37.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="ordering"><td class="mono">O5</td><td>出牌顺序</td><td class="num" data-v="8">8</td><td class="num" data-v="0.1979">20%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="positioning"><td class="mono">P1</td><td>站位编排</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2000">20%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.6250">62.5%</td><td class="num" data-v="0.3750"><span class="best">+37.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="positioning"><td class="mono">P2</td><td>站位编排</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2000">20%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.6250">62.5%</td><td class="num" data-v="0.3750"><span class="best">+37.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="positioning"><td class="mono">P3</td><td>站位编排</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2000">20%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="0.5000"><span class="best">+50.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="positioning"><td class="mono">P4</td><td>站位编排</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2000">20%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="0.3750"><span class="best">+37.5</span></td><td class="small">GPT-6.1 Sol</td></tr><tr data-cat="positioning"><td class="mono">P5</td><td>站位编排</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2000">20%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.6250">62.5%</td><td class="num" data-v="0.3750"><span class="best">+37.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R1</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R2</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3333">33%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R3</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R4</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R5</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R6</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="rules"><td class="mono">R7</td><td>规则执行</td><td class="num" data-v="8">8</td><td class="num" data-v="0.0000">0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">Claude Sonnet 5.5</td></tr><tr data-cat="targets"><td class="mono">T1</td><td>目标选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2458">25%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="0.5000"><span class="best">+50.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="targets"><td class="mono">T2</td><td>目标选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2521">25%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.3750">37.5%</td><td class="num" data-v="0.6250"><span class="best">+62.5</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="targets"><td class="mono">T3</td><td>目标选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.2729">27%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.5000">50.0%</td><td class="num" data-v="0.5000"><span class="best">+50.0</span></td><td class="small">GPT-6 Astra</td></tr><tr data-cat="targets"><td class="mono">T4</td><td>目标选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.3021">30%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="1.0000">100.0%</td><td class="num" data-v="0.0000"><span class="">0</span></td><td class="small">Claude Opus 5.5</td></tr><tr data-cat="targets"><td class="mono">T5</td><td>目标选择</td><td class="num" data-v="8">8</td><td class="num" data-v="0.1786">18%</td><td class="num" data-v="0.8750">87.5%</td><td class="num" data-v="0.7500">75.0%</td><td class="num" data-v="0.1250"><span class="best">+12.5</span></td><td class="small">Claude Sonnet 5.5</td></tr></tbody></table></div>
+<p class="empty" id="scenEmpty" hidden>没有匹配的场景。清空搜索词或点"重置"回到全部 40 行。</p>
+
+  </div>
+</section>
+
+<section id="trust">
+  <div class="wrap">
+    <p class="kicker">05 · 可信度</p>
+    <h2>哪些数字站得住，哪些只是声称</h2>
+    <p class="lead">这类发布最容易出的问题不是造假，而是把"能复现的工程"和"只在论文里成立的结果"混在一起读。下面按证据强度分开列。</p>
+
+    <div class="tablewrap"><table>
+      <caption>表 5　主张、证据与可核验性。"已复算"指我在本机重跑并得到相同或接近的数字；"可核对"指能从仓库文件直接读出。</caption>
+      <thead><tr><th scope="col">主张</th><th scope="col">证据在哪</th><th scope="col">状态</th></tr></thead>
+      <tbody>
+        <tr><td>模拟器覆盖 978 个当前对象</td><td>CONTENT.md 七类候选数相加：244+116+70+236+47+253+12</td><td><span class="tag r">仓库可查</span></td></tr>
+        <tr><td>245 个动作，掩码精确</td><td><code>actions.rs</code> 常量与断言；<code>every_masked_legal_action_applies</code> 测试</td><td><span class="tag r">仓库可查</span></td></tr>
+        <tr><td>3,227 特征、124 卡位</td><td><code>obs.rs</code> 常量、<code>layout()</code> 输出</td><td><span class="tag r">仓库可查</span></td></tr>
+        <tr><td>960 题、368 题评测集</td><td><code>data/full</code> 与本目录下 <code>data/eval</code> 的行数</td><td><span class="tag v">已复算</span></td></tr>
+        <tr><td>TavernAgent 91%、最强 LLM 63%</td><td>用官方 <code>report.py</code> 重跑 12 份作答</td><td><span class="tag v">已复算</span></td></tr>
+        <tr><td>决策 0.03 s，1 秒内保持 90%</td><td>同上（中位 0.03 s、实时玩法 90.2%）</td><td><span class="tag v">已复算</span></td></tr>
+        <tr><td>12 个系统的作答完整</td><td>368 行 × 11 + 367 行（Gemini 缺 P2-000，按错处理，与文档一致）</td><td><span class="tag v">已复算</span></td></tr>
+        <tr><td>天梯 1.60 平均名次、胜过前十</td><td>仓库无对局日志、无天梯接入代码、无榜单快照</td><td><span class="tag p">论文声称</span>·不可核</td></tr>
+        <tr><td>20 天、23 个 TavernAgent 版本</td><td>仓库只有一次提交 <code>v1.0.0</code>（2026-10-25），无版本历史</td><td><span class="tag p">论文声称</span>·不可核</td></tr>
+        <tr><td>智能体改进自己的研究流程</td><td>论文主体；仓库只有最终产物</td><td><span class="tag p">论文声称</span>·不可核</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>四条保留意见</h3>
+    <div class="grid g2">
+      <div class="card">
+        <div class="head"><h3>1　标签与策略同源</h3><span class="tag w">注意</span></div>
+        <p>基准的"正确答案"由 TavernGym 算出，TavernAgent 又在 TavernGym 里训练。91% 这个数字的准确含义是<strong>"与模拟器最优解的一致率"</strong>，不是"对人类玩家的胜率"。</p>
+        <p>这不算作弊——真实世界的标签同样会带有生成机制——但引用时要带上限定。反过来，D1/D2 掉到随机线以下恰好证明：一旦标签来自人类统计而非模拟器，优势就消失。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>2　覆盖不等于正确</h3><span class="tag w">注意</span></div>
+        <p>978 是"注册在案"的对象数。事件结算顺序、随机权重、少数英雄的触发条件都是模拟器自己的约定，文档如实标注了。</p>
+        <p>仓库还自己提示：题目是用论文当时的模拟器标的，现在的引擎修了规则，用当前版本重算标签"在少数情况下会有差异"。做长期基准要固定引擎版本。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>3　天梯成绩无法复核</h3><span class="tag w">注意</span></div>
+        <p>"约 15,000 分、最近 20 局平均 1.60 名、80% 第一、优于服务器前十"是整篇论文最有传播力的部分，但发布物里没有任何原始对局记录、账号信息或时间戳。</p>
+        <p>单次提交的仓库也不支持"20 天迭代出 23 个版本"的过程叙事。可以相信，但不能验证。</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>4　口径会改变排名细节</h3><span class="tag w">注意</span></div>
+        <p>延迟用实测还是标准化、4,096 token 预算是否含推理、缺题是否算错，都会动小数点。复算里 Intern-S2 的实时准确率 29.1%，高于论文写的 26% 上限，就是口径差异。</p>
+        <p>结论方向不受影响（TavernAgent 遥遥领先），但"没有 LLM 超过 26%"这类绝对表述不宜直接引用。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="label">可以放心引用的部分</div>
+      <p>① 模拟器的分层设计、确定性存档与合法性掩码；② 基准的题目设计与标签生成流程（4,096 次战斗、128 次回放等具体做法）；③ "在这个基准上，模拟器内训练的策略显著强于通用 LLM，且快两个数量级"；④ 全部代码与数据以 MIT 发布，第三方可复算分数。</p>
+    </div>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <p class="kicker">06 · 上手</p>
+    <h2>四条命令，从跑一局到评自己的模型</h2>
+    <p class="lead">仓库的开箱体验做得比多数研究代码好：评分只需要标准库，跑模拟器才需要 Rust。按需要选路径。</p>
+
+    <h3>只复算分数（无需模型、无需编译）</h3>
+<pre><code>git clone https://github.com/MCG-NJU/AutoTavern.git
+cd AutoTavern/tavernbench
+python -m tavernbench.report --set data/eval --runs results/eval \
+    --systems tavernagent,gpt-6-astra,claude-opus-5.5,jev</code></pre>
+    <p class="small">这就是本报告表 1 的来源。只用 Python 标准库，Python 3.9 也能跑。</p>
+
+    <h3>跑一局游戏</h3>
+<pre><code>cd AutoTavern
+pip install .            <span class="c"># 需要 Rust 工具链；rustup 会按 rust-toolchain.toml 装 1.98</span>
+python - &lt;&lt;'PY'
+import taverngym
+g = taverngym.Game(seed=1)
+while not g.is_over():
+    for p in range(g.num_players):
+        if g.needs_action(p):
+            g.step(p, g.bot_action(p))     <span class="c"># 换成你的合法动作即可接管座位</span>
+print(list(g.placements()))
+PY</code></pre>
+
+    <h3>接训练循环</h3>
+<pre><code>from taverngym import BatchEnv
+
+env = BatchEnv(n_games=64, seed=0, controlled=(0,), threads=8)   <span class="c"># 自对弈改成 range(8)</span>
+obs = env.observe()
+actions = policy(obs["features"], obs["cards"], obs["action_mask"])
+rewards, dones, info = env.step(actions)    <span class="c"># info["placement"], info["rejected"]</span></code></pre>
+    <p class="small">奖励只有终局名次（第一名 +1，第八名 −1，线性），非法动作扣 0.01 且不改变状态。想做回合级奖励得自己加 wrapper。</p>
+
+    <h3>评自己的模型</h3>
+<pre><code>pip install ".[bench]"
+python -m tavernbench.run_openai --set data/eval --model YOUR_MODEL \
+    --out answers/YOUR_MODEL/answers.jsonl \
+    --base-url https://api.example.com/v1 --key-env API_KEY
+python -m tavernbench.report --set data/eval --runs answers --systems YOUR_MODEL</code></pre>
+
+    <details>
+      <summary>六个容易踩的坑</summary>
+      <div class="body">
+        <ol>
+          <li><strong>Python 版本</strong>：<code>pyproject.toml</code> 要求 ≥ 3.10；3.9 装不上。评分脚本本身不受影响。</li>
+          <li><strong>首次编译</strong>：7.2 万行 Rust 加全部卡片脚本，release 构建要等几分钟；之后 <code>pip install -e ".[test]"</code> 可以做开发模式。</li>
+          <li><strong>实验性规则会扩大动作空间</strong>：<code>experimental_mode</code> 引入固定 245 维之外的动作（任务、伙伴、时空扭曲）。自己写策略时别假设动作维度恒定。</li>
+          <li><strong>时空扭曲默认关闭</strong>：要复现相关实验必须显式 <code>config={"timewarp_enabled": True}</code>；默认 36.6.3 的全局系统是饰品与暗月礼物。</li>
+          <li><strong>不要手改 <code>cards.json</code></strong>：它是 <code>gen_carddb.py</code> 从内容包加 overlay 生成的，改完下次生成就丢；要做平衡实验改 <code>RulesConfig</code>。</li>
+          <li><strong>评分与生成分离</strong>：<code>report --runs</code> 只读已有作答，不会调用模型；把 <code>answers/</code> 放错目录会得到全 0 而不是报错。</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section id="fit">
+  <div class="wrap">
+    <p class="kicker">07 · 适用性</p>
+    <h2>谁该花时间，谁可以跳过</h2>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>值得投入</h3>
+        <ul>
+          <li><strong>RL 环境研究者</strong>：找一个"规则复杂、动作空间固定、能批量跑、确定可存档"的非玩具环境，这里现成。</li>
+          <li><strong>做 LLM 评测的人</strong>：960 题的标签、题目、作答、评分代码齐备，适合当"可复算基准"的工程范本，包括它的 chance level 与实时口径设计。</li>
+          <li><strong>写游戏模拟器的人</strong>：钩子表 + 内容模块的组织方式、池守恒检查、卡表指纹、存档设计，都值得抄结构。</li>
+          <li><strong>课程与教学</strong>：从 <code>examples/play.rs</code> 打印一局事件日志开始，比读论文快。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>可以先跳过</h3>
+        <ul>
+          <li><strong>想直接拿一个强 bot 打天梯</strong>：权重与训练代码都没发布，能跑的是脚本 bot（文档自称"便宜且确定，但不强"）。</li>
+          <li><strong>要验证"AI 能不能打赢职业选手"</strong>：这项证据不在仓库里，只有论文的一段描述。</li>
+          <li><strong>需要商业授权</strong>：暴雪 IP，仓库声明为非商业研究项目，第三方内容版权保留。</li>
+          <li><strong>想要即插即用的强化学习教程</strong>：没有 baseline 训练脚本，只有接口与示例。</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>30 分钟评估清单</h3>
+    <div class="card">
+      <ol>
+        <li><strong>读 <code>docs/ARCHITECTURE.md</code> 的确定性一节</strong>（约 5 分钟）。判断"种子 + 动作序列可完全复现"是否符合你的实验设计。</li>
+        <li><strong>跑 <code>cargo test --release</code></strong>。858 个测试全绿再谈后续；有红就先看是哪类卡牌。</li>
+        <li><strong>跑十分钟 <code>--example fuzz</code></strong>。池守恒与不变量断言是最便宜的正确性体检。</li>
+        <li><strong>复算一次分数</strong>。用 <code>data/eval</code> 加发布作答，确认你读到的论文数字与仓库一致。</li>
+        <li><strong>抽 5 道题读题面与标签</strong>。重点看 <code>tol</code> 容差与 value_map 的取值，判断你对"最优解"的理解是否与作者一致。</li>
+      </ol>
+      <p class="small">这五步都过，再决定是把它当环境、当基准，还是当工程参考。</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>来源与引用</h2>
+    <ul>
+      <li>代码与数据：<a href="https://github.com/MCG-NJU/AutoTavern" rel="noopener noreferrer" target="_blank">github.com/MCG-NJU/AutoTavern</a>（MIT；快照 2026-11-01：211 star、50 fork、单次提交 v1.0.0）</li>
+      <li>论文：<a href="https://arxiv.org/abs/2610.33845" rel="noopener noreferrer" target="_blank">arXiv:2610.33845</a>，《Build, Don't Play: Self-Improving LLM Research Agents Develop a Hearthstone Battlegrounds AI That Rivals Top Players》，Changlian Ma、Limin Wang（南京大学 / 上海人工智能实验室），2026-10-24</li>
+      <li>文档：<code>docs/TAVERNGYM.md</code>、<code>docs/TAVERNBENCH.md</code>、<code>docs/ARCHITECTURE.md</code>、<code>docs/CONTENT.md</code>、<code>docs/TIMEWARP.md</code>，以及 <code>NOTICE</code> 中的版权说明</li>
+      <li>复算数据：仓库 <code>tavernbench/data/eval</code>（368 题）与 <code>tavernbench/results</code>（12 个系统的作答），用仓库自带的 <code>score.py</code> / <code>report.py</code> / <code>chance.py</code> 在本机重跑</li>
+    </ul>
+    <pre><code>@misc{ma2026build,
+  title  = {Build, Don't Play: Self-Improving {LLM} Research Agents Develop a
+            Hearthstone Battlegrounds {AI} That Rivals Top Players},
+  author = {Ma, Changlian and Wang, Limin},
+  year   = {2026},
+  url    = {https://github.com/MCG-NJU/AutoTavern}
+}</code></pre>
+    <p class="footnote">本报告是第三方分析，与作者及暴雪娱乐无关。所有数字均标注了来源等级；未标注的部分为对公开文档与代码的解读，不是官方结论。图表由页面内联 SVG 绘制，可离线打开。生成日期 2026-11-01。</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* reading progress + scrollspy ------------------------------------------------ */
+  var progress = document.querySelector(".progress");
+  var links = Array.prototype.slice.call(document.querySelectorAll(".nav a"));
+  var sections = links.map(function (a) {
+    return document.querySelector(a.getAttribute("href"));
+  }).filter(Boolean);
+
+  function onScroll() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  if ("IntersectionObserver" in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (l) { l.removeAttribute("aria-current"); });
+        var active = links.find(function (l) {
+          return l.getAttribute("href") === "#" + entry.target.id;
+        });
+        if (active) active.setAttribute("aria-current", "true");
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+
+  /* sortable tables ------------------------------------------------------------- */
+  Array.prototype.forEach.call(document.querySelectorAll("table.sortable"), function (table) {
+    var tbody = table.tBodies[0];
+    var heads = Array.prototype.slice.call(table.tHead.rows[0].cells);
+    heads.forEach(function (th, index) {
+      var btn = th.querySelector("button");
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var dir = th.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+        heads.forEach(function (other) {
+          other.removeAttribute("aria-sort");
+          other.classList.remove("sorted");
+        });
+        th.setAttribute("aria-sort", dir);
+        th.classList.add("sorted");
+        var numeric = th.getAttribute("data-sort") === "num";
+        var rows = Array.prototype.slice.call(tbody.rows);
+        rows.sort(function (a, b) {
+          var ac = a.cells[index], bc = b.cells[index];
+          var av = ac ? (ac.getAttribute("data-v") || ac.textContent.trim()) : "";
+          var bv = bc ? (bc.getAttribute("data-v") || bc.textContent.trim()) : "";
+          var r;
+          if (numeric) {
+            var an = parseFloat(av), bn = parseFloat(bv);
+            if (isNaN(an) && isNaN(bn)) r = 0;
+            else if (isNaN(an)) r = 1;
+            else if (isNaN(bn)) r = -1;
+            else r = an - bn;
+          } else {
+            r = av.localeCompare(bv, "zh-Hans-CN");
+          }
+          return dir === "ascending" ? r : -r;
+        });
+        rows.forEach(function (row) { tbody.appendChild(row); });
+      });
+    });
+  });
+
+  /* heatmap view switch --------------------------------------------------------- */
+  var viewButtons = Array.prototype.slice.call(document.querySelectorAll("[data-view]"));
+  var live = document.createElement("p");
+  live.className = "small";
+  live.setAttribute("aria-live", "polite");
+  live.hidden = true;
+  document.body.appendChild(live);
+
+  viewButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var view = btn.getAttribute("data-view");
+      viewButtons.forEach(function (other) {
+        other.setAttribute("aria-selected", String(other === btn));
+      });
+      document.getElementById("heatAbs").classList.toggle("is-hidden", view !== "abs");
+      document.getElementById("heatRel").classList.toggle("is-hidden", view !== "rel");
+      live.hidden = false;
+      live.textContent = view === "abs" ? "已切换到绝对准确率" : "已切换到相对随机基线的差值";
+    });
+  });
+
+  /* scenario filter -------------------------------------------------------------- */
+  var search = document.getElementById("scenSearch");
+  var table = document.getElementById("scenarioTable");
+  var empty = document.getElementById("scenEmpty");
+  var count = document.getElementById("scenCount");
+  var reset = document.getElementById("scenReset");
+  var chips = Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var category = "all";
+
+  function applyFilter() {
+    if (!table) return;
+    var q = (search.value || "").trim().toLowerCase();
+    var shown = 0;
+    Array.prototype.forEach.call(table.tBodies[0].rows, function (row) {
+      var okCat = category === "all" || row.getAttribute("data-cat") === category;
+      var okText = !q || row.textContent.toLowerCase().indexOf(q) !== -1;
+      row.hidden = !(okCat && okText);
+      if (!row.hidden) shown += 1;
+    });
+    count.textContent = String(shown);
+    empty.hidden = shown > 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      chips.forEach(function (other) { other.setAttribute("aria-pressed", "false"); });
+      chip.setAttribute("aria-pressed", "true");
+      category = chip.getAttribute("data-cat");
+      applyFilter();
+    });
+  });
+
+  if (search) search.addEventListener("input", applyFilter);
+  if (reset) {
+    reset.addEventListener("click", function () {
+      search.value = "";
+      category = "all";
+      chips.forEach(function (chip) {
+        chip.setAttribute("aria-pressed", String(chip.getAttribute("data-cat") === "all"));
+      });
+      applyFilter();
+      search.focus();
+    });
+  }
+})();
+</script>
+</body>
+</html>

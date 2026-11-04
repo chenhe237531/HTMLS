@@ -38,9 +38,15 @@
 | [`SoftwareEngineering/kimi/`](SoftwareEngineering/kimi/index.html) | Kimi 开源图谱：MoonshotAI 42 个公开仓库 + Mooncake 逐项分析，每项一页（2026-11） |
 | [`SoftwareEngineering/DeepSeek/`](SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html) | DeepSeek 开源全景：46 个官方仓库的分层地图、逐项分析与时间线（2026-10 快照） |
 | [`SoftwareEngineering/puter-reports/`](SoftwareEngineering/puter-reports/puter-analysis-report.html) | Puter 平台分析与 [Everything 51 个应用全景](SoftwareEngineering/puter-reports/everything-apps-report.html)（2026-11） |
-
+| [`SoftwareEngineering/Game/`](SoftwareEngineering/Game/taverngym-tavernbench-report.html) | TavernGym / TavernBench：AutoTavern 的 8 人对局模拟器与 960 题基准；368×12 份作答本地复算，含 7.2 万行 Rust 工程核查（2026-11） |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/kali-linux-guide.html) | Kali Linux 使用指南：工具地图、按阶段实操与边界，一份可离线阅读的单文件手册 |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/ai-redteam-oss-map.html) | AI Agent 红队网络攻防：开源项目地图与使用手册 |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/agentshark-report.html) | AgentShark：把 Claude Code / Codex 的本地日志索引成可过滤事件表的 Wireshark 式检查器（0.1.0 边界说明） |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/wireshark-report.html) | Wireshark 工具报告：主仓库在 GitLab、1700+ 解析器分层、tshark 工具链、排障场景与合规边界 |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/cairn-analysis-report.html) | Cairn 分析：把渗透测试重写成状态空间搜索；Fact/Intent/Hint 协议、调度并发、成本与风险清单 |
+| [`SoftwareEngineering/Safty/`](SoftwareEngineering/Safty/ai-reverse-engineering-stack.html) | AI 逆向工程工作室：20 个工具 / 5 组流水线，用 MCP 驱动反编译与调试；17 条仓库已核实 |
+| [`SoftwareEngineering/Safty/account/`](SoftwareEngineering/Safty/account/account-security-systems.html) | 账号体系攻防地图：Google / Apple / Microsoft / Meta / 腾讯 / 阿里与企业 SSO 的协议字段、20 种手法与 14 起案例 |
 | [`BigModel/`](BigModel/index.html) | 主流大模型调研：评测方法、AA v5 综合/分项排名、16 个模型的价格与性价比、月成本估算器（2026-11） |
-
 | [`Agents/Rules/`](Agents/Rules/index.html) | Agent 规则指南：AGENTS.md / CLAUDE.md / .cursor/rules 的加载机制、优先级、写法与体检表 |
 
 ## 约定
@@ -66,6 +72,9 @@ for f in "$PWD"/SoftwareEngineering/kimi/*.html; do
   python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$f"
 done
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html"
+for f in "$PWD"/SoftwareEngineering/Game/*.html "$PWD"/SoftwareEngineering/Safty/*.html "$PWD"/SoftwareEngineering/Safty/account/*.html; do
+  python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$f"
+done
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Videos/index.html"
 python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Videos/html-video-sop/index.html"
 ```

@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cairn 分析报告：把渗透测试重写成状态空间搜索</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#16181d; --muted:#5d6470;
+    --line:#e2e5ea; --line-strong:#c9ced6;
+    --accent:#1f6feb; --accent-soft:#e8f0fe;
+    --ok:#137a3f; --ok-soft:#e6f4ec;
+    --warn:#9a5b00; --warn-soft:#fdf1dd;
+    --bad:#a3261f; --bad-soft:#fbe9e7;
+    --idle:#4b5563; --idle-soft:#eef0f3;
+    --radius:10px;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono); font-size:.88em; background:#eef1f5; padding:.12em .38em; border-radius:4px}
+  h1,h2,h3{line-height:1.3; letter-spacing:-.01em}
+  h2{font-size:22px; margin:0 0 6px}
+  h3{font-size:16px; margin:22px 0 8px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 22px}
+  header.top{
+    background:linear-gradient(180deg,#0d1320 0%,#182231 100%);
+    color:#e9edf5; padding:34px 0 28px; border-bottom:1px solid #0b0f16;
+  }
+  header.top .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#8fa3c4}
+  header.top h1{font-size:30px; margin:10px 0 8px; color:#fff; max-width:900px}
+  header.top p{margin:0; color:#aebbd0; max-width:880px}
+  .meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; padding:5px 10px; border-radius:999px;
+    background:rgba(255,255,255,.08); color:#d8e2f2; border:1px solid rgba(255,255,255,.12);
+  }
+  .chip b{color:#fff; font-weight:600}
+
+  .layout{display:grid; grid-template-columns:224px minmax(0,1fr); gap:34px; align-items:start; padding:26px 0 50px}
+  nav.side{position:sticky; top:18px; font-size:13.5px}
+  nav.side .nav-title{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 8px 10px}
+  nav.side a{display:block; padding:7px 10px; border-radius:7px; color:var(--muted); border-left:2px solid transparent}
+  nav.side a:hover{background:#eceff4; color:var(--ink); text-decoration:none}
+  nav.side a.active{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  nav.side a .c{font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:4px}
+  nav.side a.active .c{color:var(--accent)}
+  .nav-note{margin:14px 10px 0; font-size:12px; color:var(--muted); line-height:1.5}
+
+  main{min-width:0}
+  section{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px 26px; margin-bottom:18px; scroll-margin-top:16px}
+  .sec-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+  .sec-num{font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:5px}
+  .sec-head h2{flex:1 1 auto}
+  .lede{color:var(--muted); margin:2px 0 14px}
+
+  .verdict{
+    border:1px solid #c3d9fb; border-left:4px solid var(--accent); background:var(--accent-soft);
+    border-radius:8px; padding:14px 16px; margin:0 0 18px;
+  }
+  .verdict p{margin:0; font-size:15px; color:#0f3a75}
+  .verdict p + p{margin-top:8px; font-size:13.5px; color:#2d4f83}
+
+  .callout{border-radius:8px; padding:12px 14px; margin:14px 0; border:1px solid; font-size:14px}
+  .callout.ok{background:var(--ok-soft); border-color:#bfe3cd; color:#0d4f2a}
+  .callout.warn{background:var(--warn-soft); border-color:#f0d6a8; color:#5f3800}
+  .callout.bad{background:var(--bad-soft); border-color:#f0c3bf; color:#7c1a15}
+  .callout.info{background:var(--accent-soft); border-color:#c3d9fb; color:#14407f}
+  .callout p{margin:4px 0}
+  .callout b{font-weight:700}
+
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid2 > *{min-width:0}
+  .paths{display:grid; gap:18px; margin:14px 0 0}
+  .paths > div{min-width:0}
+  .calc > *{min-width:0}
+  .stat{border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:#fbfcfd}
+  .stat .big{font-size:23px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums}
+  .stat .big small{font-size:12px; font-weight:500; color:var(--muted)}
+  .stat p{margin:2px 0 0; font-size:12.5px; color:var(--muted)}
+  .kv{display:grid; grid-template-columns:150px 1fr; gap:6px 14px; font-size:13.5px; margin:10px 0}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0}
+
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:8px}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:680px}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:#f1f3f6; font-size:12px; letter-spacing:.04em; color:var(--muted); font-weight:600; white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafbfc}
+  td .name{font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:600}
+  .badge{display:inline-block; font-size:11px; padding:1px 7px; border-radius:999px; white-space:nowrap; font-weight:600; border:1px solid}
+  .badge.ok{background:var(--ok-soft); color:var(--ok); border-color:#bfe3cd}
+  .badge.warn{background:var(--warn-soft); color:var(--warn); border-color:#f0d6a8}
+  .badge.bad{background:var(--bad-soft); color:var(--bad); border-color:#f0c3bf}
+  .badge.idle{background:var(--idle-soft); color:var(--idle); border-color:var(--line-strong)}
+  .badge.info{background:var(--accent-soft); color:var(--accent); border-color:#c3d9fb}
+
+  .prim{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:12px 0}
+  .prim .p{border:1px solid var(--line); border-radius:9px; padding:14px 15px; background:#fbfcfd}
+  .prim .p h3{margin:0 0 4px; font-size:15px}
+  .prim .p .en{font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:.04em}
+  .prim .p p{margin:6px 0 0; font-size:13px; color:var(--muted)}
+  .prim .p .role{margin-top:8px; font-size:12px; color:var(--ink)}
+
+  .steps{list-style:none; padding:0; margin:10px 0; counter-reset:s}
+  .steps li{position:relative; padding:10px 0 10px 40px; border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{
+    counter-increment:s; content:counter(s);
+    position:absolute; left:0; top:10px; width:24px; height:24px; border-radius:50%;
+    background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps li b{display:block; font-size:14px}
+  .steps li span{color:var(--muted); font-size:13.5px}
+
+  details{border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:#fbfcfd; margin:10px 0}
+  details summary{cursor:pointer; font-size:13.5px; color:var(--ink); font-weight:600; list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"▸ "; color:var(--accent)}
+  details[open] summary::before{content:"▾ "}
+  details .inner{margin-top:8px}
+  pre{
+    background:#111722; color:#dbe4f0; padding:13px 15px; border-radius:8px;
+    overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.6; margin:10px 0;
+  }
+  pre .c{color:#7f8ea6}
+
+  /* ---- 图生长演示 ---- */
+  .demo{border:1px solid var(--line); border-radius:10px; background:#fbfcfd; padding:14px; margin:12px 0}
+  .demo-controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px}
+  .demo-controls button{
+    font:inherit; font-size:13px; padding:6px 12px; border-radius:7px; cursor:pointer;
+    border:1px solid var(--line-strong); background:#fff; color:var(--ink);
+  }
+  .demo-controls button:hover{border-color:var(--accent); color:var(--accent)}
+  .demo-controls button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  .demo-controls .pos{font-family:var(--mono); font-size:12px; color:var(--muted); margin-left:auto}
+  .graph-hint{display:none; margin:0 0 6px; font-size:12px; color:var(--muted)}
+  .graph-box{background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px; max-width:780px; margin:0 auto}
+  svg.graph{width:100%; height:auto; display:block}
+  svg.graph text{font-family:var(--sans)}
+  svg.graph .fbox{fill:#fff; stroke:#c9ced6; stroke-width:1.4; rx:8}
+  svg.graph .fbox.done{stroke:#137a3f; stroke-width:1.8}
+  svg.graph .flabel{font-family:var(--mono); font-size:11px; fill:#16181d; font-weight:700}
+  svg.graph .fsub{font-size:9.5px; fill:#5d6470}
+  svg.graph .idiamond{fill:#e8f0fe; stroke:#9dc0f5; stroke-width:1.3}
+  svg.graph .ilabel{font-family:var(--mono); font-size:9.5px; fill:#14407f; font-weight:700}
+  svg.graph .edge{stroke:#c9ced6; stroke-width:1.4; fill:none; marker-end:url(#arr)}
+  svg.graph .edge.done{stroke:#137a3f}
+  svg.graph .hintbox{fill:#fdf1dd; stroke:#e6c68c; stroke-width:1.2; stroke-dasharray:5 4; rx:7}
+  svg.graph .hinttext{font-size:10.5px; fill:#5f3800}
+  svg.graph [data-stage]{opacity:0; transition:opacity .25s ease}
+  svg.graph [data-stage].on{opacity:1}
+  svg.graph [data-stage].fresh .fbox,
+  svg.graph [data-stage].fresh .idiamond{stroke:var(--accent); stroke-width:2.4}
+  svg.graph [data-stage].fresh .flabel{fill:var(--accent)}
+
+  .stage-list{list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px}
+  .stage-list li{margin:0}
+  .stage-list button{
+    width:100%; text-align:left; font:inherit; cursor:pointer; background:#fff;
+    border:1px solid var(--line); border-radius:8px; padding:9px 12px; color:var(--ink);
+    display:grid; grid-template-columns:26px 1fr; gap:10px; align-items:start;
+  }
+  .stage-list button:hover{border-color:var(--line-strong); background:#fafbfc}
+  .stage-list button[aria-current="true"]{border-color:var(--accent); background:var(--accent-soft)}
+  .stage-list .n{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent); padding-top:3px}
+  .stage-list b{display:block; font-size:13.5px}
+  .stage-list span{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
+
+  /* ---- 并发计算器 ---- */
+  .calc{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0 0}
+  .calc-form{display:grid; gap:10px}
+  .field{display:grid; grid-template-columns:1fr 96px; gap:10px; align-items:center; font-size:13.5px}
+  .field label{color:var(--ink)}
+  .field .hint{display:block; font-size:11.5px; color:var(--muted)}
+  .field input{
+    font:inherit; font-size:13.5px; padding:6px 9px; width:100%; text-align:right;
+    border:1px solid var(--line-strong); border-radius:6px; background:#fff; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .field input:focus{outline:2px solid var(--accent); outline-offset:1px}
+  .calc-out{border:1px solid var(--line); border-radius:9px; background:#fbfcfd; padding:14px}
+  .calc-out .row{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px dashed var(--line); font-size:13.5px}
+  .calc-out .row:last-child{border-bottom:0}
+  .calc-out .row b{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .calc-out .bottleneck{margin-top:10px; font-size:13px; color:#14407f; background:var(--accent-soft); border:1px solid #c3d9fb; border-radius:7px; padding:9px 11px}
+  .calc-out .warnmsg{margin-top:8px; font-size:12.5px; color:#5f3800; background:var(--warn-soft); border:1px solid #f0d6a8; border-radius:7px; padding:8px 10px}
+
+  .cells{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0}
+  .cell{border:1px solid var(--line); border-radius:8px; padding:10px 11px; background:#fbfcfd; text-align:center}
+  .cell .t{font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+  .cell .n{font-size:19px; font-weight:700; font-variant-numeric:tabular-nums}
+  .cell .d{font-size:11.5px; color:var(--muted)}
+
+  table.risk td:nth-child(2){min-width:270px}
+  table.risk td:nth-child(3){min-width:190px}
+  table.risk code{overflow-wrap:anywhere}
+
+  .quote{border-left:3px solid var(--line-strong); padding:2px 0 2px 14px; color:var(--muted); font-style:italic; margin:12px 0}
+
+  footer{padding:0 0 50px; color:var(--muted); font-size:12.5px; text-align:center}
+  footer p{margin:4px 0}
+
+  @media (max-width:1000px){
+    .grid4,.grid3{grid-template-columns:repeat(2,1fr)}
+    .prim{grid-template-columns:1fr}
+    .cells{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr; gap:16px}
+    nav.side{position:static; display:flex; flex-wrap:wrap; gap:4px; padding:0 0 6px}
+    nav.side .nav-title{display:none}
+    nav.side a{border-left:0; border:1px solid var(--line); padding:5px 9px; font-size:12.5px}
+    nav.side a.active{border-color:var(--accent)}
+    .nav-note{display:none}
+    .grid2,.calc{grid-template-columns:1fr}
+    header.top h1{font-size:24px}
+    section{padding:18px 16px}
+    .kv{grid-template-columns:1fr}
+  }
+  @media (max-width:620px){
+    .grid4,.grid3,.cells{grid-template-columns:1fr 1fr}
+    .stage-list button{grid-template-columns:22px 1fr}
+    /* 窄屏保持 SVG 文字可读：允许图内部横向滚动，而不是整体缩小 */
+    .graph-box{overflow-x:auto; -webkit-overflow-scrolling:touch}
+    .graph-hint{display:block}
+    svg.graph{min-width:560px}
+    .field{grid-template-columns:1fr 84px}
+  }
+  @media print{
+    nav.side,.demo-controls,.calc-form{display:none}
+    body{background:#fff; font-size:11.5px}
+    section{break-inside:avoid; border-color:#ddd}
+    .layout{display:block}
+    details{display:none}
+    a{color:var(--ink)}
+    svg.graph [data-stage]{opacity:1 !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">工具分析报告 / 单仓库深读</div>
+    <h1>Cairn：把渗透测试重写成“状态空间搜索”</h1>
+    <p>对 <a href="https://github.com/oritera/Cairn" style="color:#9fc2f7" target="_blank" rel="noopener noreferrer">oritera/Cairn</a> 的代码级分析——它是什么、怎么跑、强在哪、哪里会咬人。核实基于仓库源码（v0.2.1，70 commits）、两份设计文档与 GitHub API 数据，抓取时间 2026-11-01。</p>
+    <div class="meta">
+      <span class="chip">★ <b>4,746</b></span>
+      <span class="chip">Fork <b>918</b></span>
+      <span class="chip">版本 <b>v0.2.1</b></span>
+      <span class="chip">许可 <b>AGPL-3.0</b></span>
+      <span class="chip">源码 <b>6,430 行</b></span>
+      <span class="chip">测试 <b>2,603 行 / 13 文件</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+  <nav class="side" aria-label="报告目录">
+    <p class="nav-title">目录</p>
+    <a href="#summary">摘要与判断 <span class="c">00</span></a>
+    <a href="#what">它是什么 <span class="c">01</span></a>
+    <a href="#arch">架构解剖 <span class="c">02</span></a>
+    <a href="#graph">图怎么长 <span class="c">03</span></a>
+    <a href="#tasks">任务与契约 <span class="c">04</span></a>
+    <a href="#sched">调度与并发 <span class="c">05</span></a>
+    <a href="#protocol">协议面 <span class="c">06</span></a>
+    <a href="#result">战绩与可信度 <span class="c">07</span></a>
+    <a href="#good">做对了什么 <span class="c">08</span></a>
+    <a href="#risk">风险清单 <span class="c">09</span></a>
+    <a href="#deploy">部署与成本 <span class="c">10</span></a>
+    <a href="#compare">横向对比 <span class="c">11</span></a>
+    <a href="#verdict">结论 <span class="c">12</span></a>
+    <a href="#appendix">附录·核实 <span class="c">13</span></a>
+  </nav>
+
+  <main>
+
+    <!-- ============ 00 摘要 ============ -->
+    <section id="summary">
+      <div class="sec-head">
+        <span class="sec-num">00</span>
+        <h2>摘要：它改了问题，不是改了工具</h2>
+      </div>
+
+      <div class="verdict">
+        <p>Cairn 不是“更强的渗透工具集”，而是把渗透测试重新表述为：<b>已知起点、已知终点、路径未知的图搜索</b>。它把这条搜索的每一步都写成图上的节点和边，让多个无角色 LLM Worker 并发推进。</p>
+        <p>真正的工程内核只有三条不变量：Agent 不写 API、Dispatcher 独占写回、事实只增不改。剩下全是围绕这三条做的调度与容错。</p>
+      </div>
+
+      <div class="grid4">
+        <div class="stat"><div class="big">3</div><p>个协议原语：Fact / Intent / Hint</p></div>
+        <div class="stat"><div class="big">3</div><p>类任务：bootstrap / reason / explore</p></div>
+        <div class="stat"><div class="big">4</div><p>层并发限额，示例配置实际只有 4 并行</p></div>
+        <div class="stat"><div class="big">0</div><p>处 MCP / RAG / 角色模板（作者明确如此设计）</p></div>
+      </div>
+
+      <h3>三个判断</h3>
+      <ol>
+        <li><b>架构值得抄，战绩需要打折。</b>协议与调度设计有真东西（双阶段收尾、单写者、lease 租约）；但“54/54 AK、第三名”是单次比赛自述，没有公开基准与复现脚本。</li>
+        <li><b>“通用”目前是结构上的通用，不是证据上的通用。</b>把问题抽象成图搜索确实不限于渗透，但公开验证只有渗透这一个域——“零 MCP、零 RAG、零角色”在渗透里成立，不代表换域也成立。</li>
+        <li><b>默认配置很危险。</b>Agent 以 <code>--dangerously-skip-permissions</code> 级别运行、容器挂宿主 Docker socket、local 模式无沙箱。它假设你在一台可丢弃的隔离机器上跑。</li>
+      </ol>
+
+      <div class="callout info">
+        <b>怎么读这份报告：</b>第 01–06 节讲机制（含可点的图生长演示与并发计算器），第 07–09 节是可证伪的部分——数字、优点、风险，每条都标了依据出处。
+      </div>
+    </section>
+
+    <!-- ============ 01 它是什么 ============ -->
+    <section id="what">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2>它是什么：一张只生长不修改的事实图</h2>
+      </div>
+      <p class="lede">官方定位：“Cairn 是一个通用问题求解引擎。它不定义角色，不定义工作流。给定起点和目标，它在未知状态空间里搜索一条路径。” 渗透只是第一个被验证的域。</p>
+
+      <div class="prim">
+        <div class="p">
+          <span class="en">FACT</span>
+          <h3>事实 = 节点</h3>
+          <p>已确认的客观结论，写进黑板。只有描述文本，没有状态字段，<b>只增不改、永久保留</b>。</p>
+          <div class="role">例：<code>f002 布尔盲注确认，参数 user</code></div>
+        </div>
+        <div class="p">
+          <span class="en">INTENT</span>
+          <h3>意图 = 边</h3>
+          <p>从若干事实出发的探索方向。未结论时 <code>to=null</code>，被某 Worker 认领后 <code>worker</code> 非空。</p>
+          <div class="role">例：<code>i003 from f002「时间盲注 dump users 表」</code></div>
+        </div>
+        <div class="p">
+          <span class="en">HINT</span>
+          <h3>提示 = 旁注</h3>
+          <p>人随时注入的判断，不在图里、不参与因果推理，Worker 下一轮读图时吸收。也可用来做“态势压缩”。</p>
+          <div class="role">例：<code>h001 WAF 只拦 union，改用时间盲注</code></div>
+        </div>
+      </div>
+
+      <h3>设计血缘（这是它最有意思的部分）</h3>
+      <ul>
+        <li><b>黑板架构</b>（Hearsay-II，CMU 1970s）：多个专家读写同一块黑板，无中央调度。Cairn 的差别是把“行动记录”也留在图上——于是图同时是知识库和审计日志。</li>
+        <li><b>共识主动性 / 信息素</b>（stigmergy）：个体不直接通信，只通过改变共享环境间接协调。Worker 之间确实没有任何消息通道。</li>
+        <li><b>OODA 循环</b>：每个 Worker 执行 观察图 → 定位态势 → 决定意图 → 执行探索。</li>
+        <li><b>任务式指挥</b>（Mission Command）：只下发目标，各单位按态势自主决策，Hint 扮演“指挥官意图”。</li>
+      </ul>
+
+      <p>所以它和主流“多 Agent 框架”的差别是可量化的：没有角色表、没有节点/边编排、没有消息总线。任务不是预先声明的，而是<b>从图的当前状态即时生成</b>的——图里没有可认领 intent 时，就会自然产生一个 reason 任务来制造 intent。</p>
+
+      <div class="callout warn">
+        <b>一个容易误读的点：</b>README 说“不定义工作流”，但代码里确实有三个硬编码任务类型（bootstrap / reason / explore）。准确说法是“<b>不定义领域工作流</b>”：渗透步骤没有一条写死在代码里，但“如何推进搜索”这个元流程是固定的。
+      </div>
+    </section>
+
+    <!-- ============ 02 架构 ============ -->
+    <section id="arch">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2>架构解剖：四层，三种人写不同东西</h2>
+      </div>
+      <p class="lede">Cairn 的分层不是为了微服务好看，而是为了把“谁能写协议”收窄成一个点。</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">层</th><th scope="col">实现</th><th scope="col">职责</th><th scope="col">不做什么</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">Cairn Server</td>
+              <td>FastAPI + SQLite（<code>server/</code>，257 行 services + 358 行 projects 路由）</td>
+              <td>协议真相源：保存 Project / Fact / Intent / Hint，维护 claim-heartbeat-conclude 生命周期与 reason 租约</td>
+              <td>不做任何推理、不做调度、不调用 LLM</td>
+            </tr>
+            <tr>
+              <td class="name">Dispatcher</td>
+              <td>Python 线程池（<code>scheduler/loop.py</code> 935 行，最大单文件）</td>
+              <td>读图 → 选任务类型 → 选 Worker → 认领 → 起进程 → 解析 JSON → 写回；管容器、超时、健康检查</td>
+              <td>不直接执行渗透动作；<b>它是唯一的协议写入者</b></td>
+            </tr>
+            <tr>
+              <td class="name">项目容器</td>
+              <td>Kali rolling 镜像（<code>container/Dockerfile</code>）</td>
+              <td>提供工具链与网络环境；每个项目一个容器，多个 Worker 进程共享</td>
+              <td>不持有状态，容器可 stop / remove 后重建</td>
+            </tr>
+            <tr>
+              <td class="name">Worker / Agent CLI</td>
+              <td>driver：claudecode / codex / pi / mock</td>
+              <td>收 prompt、在容器内干活、输出结构化 JSON</td>
+              <td>不认领 intent、不发心跳、不调 API——它连 Cairn 的存在都不知道</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>为什么“Agent 不碰 API”是关键设计</h3>
+      <p>在一次真实渗透里，模型的输出经常是烂 JSON、跑偏的 shell、半截日志。如果把写协议的能力交给模型，图会被污染，而且你没法区分“图错了”还是“模型错了”。Cairn 的做法是：模型只负责<b>产出结论</b>，Dispatcher 负责<b>判断这份结论配不配进图</b>（schema 校验、`accepted` 检查、写回失败即丢弃）。</p>
+      <p>代价是 Dispatcher 变成了单点，也是它代码量最大的原因（935 行循环 + 481 行 bootstrap 任务 + 424 行配置校验）。</p>
+
+      <h3>执行主链路（一次 explore 的完整往返）</h3>
+      <ol class="steps">
+        <li><b>读图</b><span>结构化接口用于调度判断；<code>GET /projects/{id}/export?format=yaml</code> 单独取一份 YAML 快照给 prompt 用。</span></li>
+        <li><b>选任务 + 选 Worker</b><span>按任务类型、并发余量、优先级、健康状态筛；explore 还要先成功 claim 到 intent。</span></li>
+        <li><b>认领</b><span><code>POST /intents/{id}/heartbeat</code> 抢占；失败就换下一个，抢不到就不启动进程。</span></li>
+        <li><b>起进程</b><span>在项目容器里 exec <code>claude --session-id ... -p -- "{prompt}"</code>，stdout 全文作为模型正文。</span></li>
+        <li><b>解析</b><span>从 stdout 抽取 JSON，逐字段做 schema 校验；<code>accepted:false</code>、非法 JSON、字段缺失都直接作废。</span></li>
+        <li><b>写回</b><span><code>POST /intents/{id}/conclude</code> 落 Fact 并关边；失败则 release，不写任何图数据。</span></li>
+      </ol>
+
+      <div class="callout ok">
+        <b>顺手记一个漂亮实现：</b>“完成项目”不是一个独立状态位，而是一次 <code>complete</code> 调用插入的 <code>to='goal'</code> 的 Intent（见 <code>server/routers/projects.py</code>）。也就是说<b>完成本身也是一条边</b>，图里能看到“是谁、从哪些事实、判定达成”的完整证据链。这个细节比多数 Agent 框架的 “done = true” 认真得多。
+      </div>
+    </section>
+
+    <!-- ============ 03 图生长演示 ============ -->
+    <section id="graph">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2>图怎么长：七步走完一次搜索</h2>
+      </div>
+      <p class="lede">用一个简化的 Web 渗透例子，演示 Fact / Intent / Hint 如何一步步长成一条能追溯到 goal 的路径。可以点“下一步”逐步看，也可以直接看下面七条文字说明（关掉脚本也能读）。</p>
+
+      <div class="demo">
+        <div class="demo-controls">
+          <button type="button" id="demo-prev">← 上一步</button>
+          <button type="button" id="demo-next" class="primary">下一步 →</button>
+          <button type="button" id="demo-replay">回到起点</button>
+          <button type="button" id="demo-all">看完整图</button>
+          <span class="pos" id="demo-pos" aria-live="polite">第 1 / 7 步</span>
+        </div>
+
+        <p class="graph-hint">窄屏下图形可横向滑动查看 →</p>
+        <div class="graph-box">
+          <svg class="graph" viewBox="0 0 760 240" role="img" aria-labelledby="graph-title graph-desc">
+            <title id="graph-title">Cairn 事实图的生长过程</title>
+            <desc id="graph-desc">从 origin 与 goal 两个事实出发，经 reason 产生两个意图，分别探索得到布尔盲注与目录可列两个事实；中途人工注入提示，再产生一个意图得到口令哈希，最后以一条指向 goal 的意图完成。</desc>
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#c9ced6"/>
+              </marker>
+            </defs>
+
+            <!-- edges -->
+            <line class="edge" data-stage="2" x1="110" y1="97" x2="170" y2="60"/>
+            <line class="edge" data-stage="2" x1="110" y1="123" x2="170" y2="164"/>
+            <line class="edge" data-stage="3" x1="214" y1="48" x2="256" y2="48"/>
+            <line class="edge" data-stage="4" x1="214" y1="176" x2="256" y2="176"/>
+            <line class="edge" data-stage="6" x1="358" y1="48" x2="384" y2="48"/>
+            <line class="edge" data-stage="6" x1="434" y1="48" x2="450" y2="48"/>
+            <line class="edge" data-stage="7" x1="552" y1="62" x2="572" y2="94"/>
+            <line class="edge" data-stage="7" x1="614" y1="110" x2="624" y2="110"/>
+
+            <!-- facts -->
+            <g data-stage="1">
+              <rect class="fbox" x="24" y="87" width="96" height="46"/>
+              <text class="flabel" x="72" y="108" text-anchor="middle">origin</text>
+              <text class="fsub" x="72" y="123" text-anchor="middle">起点：目标可达</text>
+            </g>
+            <g data-stage="1">
+              <rect class="fbox" x="628" y="87" width="96" height="46"/>
+              <text class="flabel" x="676" y="108" text-anchor="middle">goal</text>
+              <text class="fsub" x="676" y="123" text-anchor="middle">取得后台数据</text>
+            </g>
+            <g data-stage="3">
+              <rect class="fbox" x="262" y="25" width="96" height="46"/>
+              <text class="flabel" x="310" y="46" text-anchor="middle">f002</text>
+              <text class="fsub" x="310" y="61" text-anchor="middle">user 布尔盲注</text>
+            </g>
+            <g data-stage="4">
+              <rect class="fbox" x="262" y="153" width="96" height="46"/>
+              <text class="flabel" x="310" y="174" text-anchor="middle">f004</text>
+              <text class="fsub" x="310" y="189" text-anchor="middle">目录可列·无敏感</text>
+            </g>
+            <g data-stage="6">
+              <rect class="fbox" x="456" y="25" width="96" height="46"/>
+              <text class="flabel" x="504" y="46" text-anchor="middle">f003</text>
+              <text class="fsub" x="504" y="61" text-anchor="middle">admin 口令哈希</text>
+            </g>
+
+            <!-- intents -->
+            <g data-stage="2">
+              <polygon class="idiamond" points="192,26 214,48 192,70 170,48"/>
+              <text class="ilabel" x="192" y="51" text-anchor="middle">i001</text>
+            </g>
+            <g data-stage="2">
+              <polygon class="idiamond" points="192,154 214,176 192,198 170,176"/>
+              <text class="ilabel" x="192" y="179" text-anchor="middle">i002</text>
+            </g>
+            <g data-stage="6">
+              <polygon class="idiamond" points="412,26 434,48 412,70 390,48"/>
+              <text class="ilabel" x="412" y="51" text-anchor="middle">i003</text>
+            </g>
+            <g data-stage="7">
+              <polygon class="idiamond" points="592,88 614,110 592,132 570,110"/>
+              <text class="ilabel" x="592" y="113" text-anchor="middle">i004</text>
+            </g>
+
+            <!-- hint -->
+            <g data-stage="5">
+              <rect class="hintbox" x="318" y="204" width="232" height="30"/>
+              <text class="hinttext" x="330" y="224">h001 · WAF 拦 union，改用时间盲注</text>
+            </g>
+          </svg>
+        </div>
+
+        <ol class="stage-list" id="stage-list">
+          <li><button type="button" data-step="1" aria-current="true">
+            <span class="n">01</span>
+            <span><b>起点与终点</b><span>图里只有 origin 和 goal 两个特殊 Fact，没有任何 Intent。没有可认领的意图 → 触发首次 reason。</span></span>
+          </button></li>
+          <li><button type="button" data-step="2">
+            <span class="n">02</span>
+            <span><b>reason 提出两个方向</b><span>一个 reason 任务最多产出 <code>max_intents</code> 条（示例配置为 2）：i001「枚举登录参数」、i002「探测静态目录」。两条都从 origin 出发，可并行。</span></span>
+          </button></li>
+          <li><button type="button" data-step="3">
+            <span class="n">03</span>
+            <span><b>explore 拿下 i001</b><span>某 Worker claim i001 → 执行 → 回写一条 Fact（f002「user 存在布尔盲注」），i001 的 <code>to</code> 指向 f002，边闭合。</span></span>
+          </button></li>
+          <li><button type="button" data-step="4">
+            <span class="n">04</span>
+            <span><b>负结果也是事实</b><span>i002 探索完没发现敏感文件，仍然落一条客观结论 f004。设计上不允许“空手而归”直接丢弃——否则同样的事会被反复重试。</span></span>
+          </button></li>
+          <li><button type="button" data-step="5">
+            <span class="n">05</span>
+            <span><b>人插一句 Hint</b><span>h001 告诉系统 WAF 的脾气。Hint 不进图、不建立因果，只是让下一轮 reason 看到“新态势”（Hint 数量 +1 → 允许重新 reason）。</span></span>
+          </button></li>
+          <li><button type="button" data-step="6">
+            <span class="n">06</span>
+            <span><b>接上新事实</b><span>第二轮 reason 看到 f002 与 h001，提出 i003（从 f002 出发，走时间盲注）；explore 拿回 f003「dump 到 admin 口令哈希」。</span></span>
+          </button></li>
+          <li><button type="button" data-step="7">
+            <span class="n">07</span>
+            <span><b>收敛</b><span>reason 判定 goal 已满足 → 调用 complete，服务端插入一条 <code>from=[f003], to=goal</code> 的 Intent，项目转 completed。完成事件本身留在图里，可审计。</span></span>
+          </button></li>
+        </ol>
+
+        <p style="font-size:12px;color:#5d6470;margin:10px 0 0">
+          图示简化：协议里 Intent 是<b>边</b>（带 worker / heartbeat / 时间戳的边），这里画成菱形节点便于阅读。真实前端用 Cytoscape 渲染，支持 dagre / elk / klay / cola 四种布局。
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ 04 任务与契约 ============ -->
+    <section id="tasks">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2>任务与契约：三类任务，两种收尾</h2>
+      </div>
+      <p class="lede">整套系统只有三类任务，全部由同一个 Worker 执行——Worker 没有“角色”，只有当前被派的活。</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">任务</th><th scope="col">什么时候派</th><th scope="col">输入</th><th scope="col">必须输出</th><th scope="col">失败怎么算</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">bootstrap</td>
+              <td>项目初始态：facts 恰好只有 origin+goal，且没有普通 intent</td>
+              <td>origin / goal / hints（不读图）</td>
+              <td>成功时必须同时给 <code>fact</code> 和 <code>complete</code></td>
+              <td>超时 → 同 session 进 <code>bootstrap_conclude</code>，只产 fact；两阶段都失败才 release</td>
+            </tr>
+            <tr>
+              <td class="name">reason</td>
+              <td>无未认领 intent，且出现“新态势”（Fact 或 Hint 变多，或有 intent 全部收口）</td>
+              <td>整图 YAML + 合法 fact id 列表 + 未结论 intent 列表</td>
+              <td><code>complete</code> ／ <code>intents[]</code> ／ 空对象</td>
+              <td>超时或非法输出直接作废，<b>不写图</b></td>
+            </tr>
+            <tr>
+              <td class="name">explore</td>
+              <td>存在可认领的未结论 intent</td>
+              <td>整图 YAML + intent id + intent 描述</td>
+              <td>一条客观事实 <code>description</code></td>
+              <td>超时 / 解析失败 → 同 session 进 <code>explore_conclude</code>；仍失败则 release</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>双阶段收尾：这套设计里最实用的一手</h3>
+      <p>LLM 跑到 300 秒还没输出合法 JSON 时，常见做法是“任务失败、白干”。Cairn 的做法是：杀掉进程、<b>保留 session id</b>、在同一 session 里补一个“别继续探索，只总结到目前为止确认了什么”的收尾 prompt，用剩余的 <code>conclude_timeout</code>（示例 90 秒）产出一条 Fact。</p>
+      <p>这解决的是一个真实痛点：探索过程本身往往已经挖到东西，只是没跑到“收尾”就开始写总结或超时。<b>把已发生的探索捞回来</b>，比重新派一次任务便宜得多。</p>
+
+      <div class="grid2">
+        <div>
+          <h3>状态机</h3>
+          <dl class="kv">
+            <dt>active</dt><dd>接受写入，正常调度</dd>
+            <dt>stopped</dt><dd>硬停止：取消本地任务、停容器、不再落 Fact；可恢复</dd>
+            <dt>completed</dt><dd>不再接受写入；判断错了可 <code>reopen</code> 回 active</dd>
+            <dt>deleted</dt><dd>orphan 容器直接删除（不是仅停止）</dd>
+          </dl>
+        </div>
+        <div>
+          <h3>两条不被允许的偷懒</h3>
+          <ul>
+            <li>模型不能返回“我拒绝协助渗透”当结论——explore 的 description 必须是客观事实。</li>
+            <li>模型不能只给结论不给证据链：<code>complete.from</code> 必须是图上真实存在的 fact id。</li>
+          </ul>
+        </div>
+      </div>
+
+      <details>
+        <summary>看 explore 的输出契约（服务端会逐字段校验）</summary>
+        <div class="inner">
+<pre><span class="c">// 正常返回</span>
+{"accepted": true, "data": {"description": "确认 /search 的 q 参数存在报错型注入，DB 为 MySQL 5.7"}}
+
+<span class="c">// 没打出漏洞也要给客观结论，不能空手</span>
+{"accepted": true, "data": {"description": "对 /search 测试常见注入 payload，未发现可利用迹象"}}
+
+<span class="c">// reason 的两条出路</span>
+{"accepted": true, "data": {"complete": {"from": ["f003"], "description": "已取得管理员口令哈希并登录后台"}}}
+{"accepted": true, "data": {"intents": [{"from": ["f002"], "description": "对 user 参数做时间盲注提取 users 表"}]}}</pre>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============ 05 调度与并发 ============ -->
+    <section id="sched">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <h2>调度与并发：四个旋钮，一个真正的瓶颈</h2>
+      </div>
+      <p class="lede">调度逻辑维持在一个刻意的低复杂度：一个 tick，按顺序试 bootstrap → reason → explore，试不到就启动新项目。</p>
+
+<pre><span class="c"># scheduler/loop.py 的核心形状（伪代码）</span>
+for project in running_projects_round_robin:
+    if has_dispatchable_bootstrap(project): dispatch(...); continue
+    if has_dispatchable_reason(project):    dispatch(...); continue
+    if has_dispatchable_explore(project):   dispatch(...); continue
+
+if running_project_count &lt; runtime.max_running_projects:
+    maybe_start_one_new_project()</pre>
+
+      <h3>四层限额，谁先卡住</h3>
+      <p><code>runtime.max_workers</code> 看着是“并行 8”，但示例配置里两个 worker 各 <code>max_running: 2</code>，Σ=4——所以真实并行上限是 4。这个差别在调优时很要命：加项目不会更并行，只有加 worker 配额才会。下面这个计算器可以自己试（数字可以改）。</p>
+
+      <div class="calc">
+        <div class="calc-form">
+          <div class="field">
+            <div><label for="c-maxw">runtime.max_workers</label><span class="hint">全局并行任务总数上限（示例 8）</span></div>
+            <input id="c-maxw" type="number" min="1" max="64" value="8" inputmode="numeric">
+          </div>
+          <div class="field">
+            <div><label for="c-proj">runtime.max_running_projects</label><span class="hint">同时接手的活跃项目数（示例 3）</span></div>
+            <input id="c-proj" type="number" min="1" max="64" value="3" inputmode="numeric">
+          </div>
+          <div class="field">
+            <div><label for="c-ppw">runtime.max_project_workers</label><span class="hint">单项目并行上限，reason 也占名额（示例 4）</span></div>
+            <input id="c-ppw" type="number" min="1" max="64" value="4" inputmode="numeric">
+          </div>
+          <div class="field">
+            <div><label for="c-wsum">Σ workers[].max_running</label><span class="hint">所有 worker 自身并发之和（示例 2+2=4）</span></div>
+            <input id="c-wsum" type="number" min="1" max="64" value="4" inputmode="numeric">
+          </div>
+        </div>
+        <div class="calc-out" id="calc-out" aria-live="polite">
+          <div class="row"><span>有效并行任务上限</span><b id="o-eff">4</b></div>
+          <div class="row"><span>单项目并行上限</span><b id="o-pp">4</b></div>
+          <div class="row"><span>可同时推进的项目数</span><b id="o-proj">1</b></div>
+          <div class="bottleneck" id="o-bn">瓶颈：Σ workers[].max_running —— 加项目不会更并行，只有加 worker 配额才会。</div>
+          <div class="warnmsg" id="o-warn" hidden>注意：单项目内同一时刻最多 1 个 reason，它会占用 max_project_workers 的一个名额。</div>
+        </div>
+      </div>
+
+      <h3>reason 的触发去重：防的是“自己吵自己”</h3>
+      <p>朴素的实现会让 reason 刚创建的 intent 立刻触发下一次 reason，形成风暴。Cairn 的做法是把“重触发条件”限定为三种可观测的变化：</p>
+      <ul>
+        <li>Fact 数量增加</li>
+        <li>Hint 数量增加</li>
+        <li>项目从“还有 open intent”变成“没有 open intent”</li>
+      </ul>
+      <p><b>“intent 数量增加”被刻意排除在外</b>——因为那通常正是上一次 reason 的产物。这个判断很小但很关键，多数多 Agent 系统就是在这类“事件回环”上烧掉预算的。</p>
+
+      <h3>心跳与 lease：把耦合做成显式不变量</h3>
+      <p><code>runtime.interval</code>（默认 3s）被同时用作主循环节拍和 claim 任务的 heartbeat 周期。这本来是个危险耦合，Cairn 的补法是启动时校验服务端的 <code>intent_timeout</code> / <code>reason_timeout</code>（默认 15s）必须大于 <code>interval</code>，小于 2 倍时还要告警——心跳余量不足会先被说出来，而不是等线上出现“自己的 intent 被别人抢走”。</p>
+
+      <div class="callout warn">
+        <b>仍有的隐患：</b>超时清空 <code>worker</code> 只发生在一轮 tick 之后，若某任务恰好在心跳与过期之间完成，理论上可能出现“同一 intent 被两个 Worker 同时探索”的窗口（后写的那次 conclude 会失败并被丢弃，不会污染图，但会白烧 token）。
+      </div>
+    </section>
+
+    <!-- ============ 06 协议面 ============ -->
+    <section id="protocol">
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <h2>协议面：16 个端点，一套租约语义</h2>
+      </div>
+      <p class="lede">服务端刻意不做推理，只维护一致性——所以 API 很小，全部围绕“图的生长”和“谁在占用什么”。</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">端点</th><th scope="col">作用</th><th scope="col">谁调</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="name">GET/PUT /settings</td><td>全局 intent / reason 超时（最小 5s，默认 15s）</td><td>前端、运维</td></tr>
+            <tr><td class="name">GET /projects</td><td>项目摘要：fact / intent / hint 计数、可认领数、当前 reason 租约</td><td>Dispatcher 每 tick</td></tr>
+            <tr><td class="name">POST /projects</td><td>建项目，同时写入 origin 与 goal 两个特殊 Fact</td><td>人 / 前端</td></tr>
+            <tr><td class="name">GET /projects/{id}</td><td>完整图（facts / intents / hints）</td><td>前端、Dispatcher</td></tr>
+            <tr><td class="name">PUT /projects/{id}/status</td><td>active ↔ stopped，硬停止会取消任务并停容器</td><td>人</td></tr>
+            <tr><td class="name">POST /intents</td><td>声明一条意图（可同时认领，<code>worker</code> 必须等于 <code>creator</code>）</td><td>Dispatcher（代 reason 写）</td></tr>
+            <tr><td class="name">POST /intents/{id}/heartbeat</td><td>认领 + 续租；首次心跳即 claim</td><td>Dispatcher</td></tr>
+            <tr><td class="name">POST /intents/{id}/conclude</td><td>落 Fact 并闭合这条边（<code>to</code> 只写一次）</td><td>Dispatcher</td></tr>
+            <tr><td class="name">POST /intents/{id}/release</td><td>放弃本次尝试，intent 回到可认领状态</td><td>Dispatcher</td></tr>
+            <tr><td class="name">POST /projects/{id}/reason/claim</td><td>项目级 reason 互斥租约（保证单项目只有一个 reason）</td><td>Dispatcher</td></tr>
+            <tr><td class="name">POST /projects/{id}/reason/heartbeat</td><td>续租，状态对前端可见</td><td>Dispatcher</td></tr>
+            <tr><td class="name">POST /projects/{id}/hints</td><td>注入人工提示；stopped / completed 状态下仍可写</td><td>人</td></tr>
+            <tr><td class="name">POST /projects/{id}/complete</td><td>插入一条 <code>to=goal</code> 的 Intent 并置 completed</td><td>Dispatcher（代 reason 写）</td></tr>
+            <tr><td class="name">POST /projects/{id}/reopen</td><td>撤销完成态，回到 active 继续探索</td><td>人</td></tr>
+            <tr><td class="name">GET /export?format=yaml</td><td>给 prompt 用的图快照</td><td>Dispatcher</td></tr>
+            <tr><td class="name">GET /export?format=timeline</td><td>时间线导出，用于复盘</td><td>前端、人</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>三个值得注意的语义细节</h3>
+      <ul>
+        <li><b>Fact 只增不改。</b>“shell 掉了”不是修改旧事实，而是新增一条 <code>f025 host-A shell 已断开</code>。时序本身就是状态信息，读图的人自己判断可达性。</li>
+        <li><b>Intent 可以是超边。</b><code>from</code> 收多个 fact id，保留“多个已知事实共同支撑一次探索”的因果，而不是被迫选一个主事实丢掉上下文。</li>
+        <li><b>Hint 不受状态限制。</b>项目 stopped 甚至 completed 时仍可继续写 Hint——它是一个旁路输入，用于在 reopen 之后把人的判断补进去。</li>
+      </ul>
+
+      <p>前端是仓库自带的单文件 <code>server/static/index.html</code>（3,406 行，Alpine + Cytoscape，依赖全部 vendor 在本地），能直接看图、注入 Hint、导出 YAML / timeline。它不走 CDN，离线可用。</p>
+    </section>
+
+    <!-- ============ 07 战绩 ============ -->
+    <section id="result">
+      <div class="sec-head">
+        <span class="sec-num">07</span>
+        <h2>战绩与可信度：数字是真的，结论要打折</h2>
+      </div>
+
+      <div class="cells">
+        <div class="cell"><div class="t">题目</div><div class="n">54 / 54</div><div class="d">唯一 AK 队伍（自述）</div></div>
+        <div class="cell"><div class="t">排名</div><div class="n">第 3</div><div class="d">腾讯云黑客松·智能渗透赛</div></div>
+        <div class="cell"><div class="t">参赛规模</div><div class="n">610</div><div class="d">支队伍 / 1,345 人</div></div>
+        <div class="cell"><div class="t">赛前测试</div><div class="n">0</div><div class="d">作者称开赛当天 4 点才跑通链路</div></div>
+      </div>
+
+      <p>README 的原文强调：“没有训练、没有调优、没有领域专用工具。零 MCP、零 RAG、零预设 Agent 角色。”（Zero MCP tools, zero RAG, zero predefined agent roles）</p>
+
+      <div class="callout warn">
+        <b>需要打折的三点：</b>
+        <ul>
+          <li><b>不可复现。</b>仓库没有公开赛题集、评分脚本或 baseline。54/54 是单次比赛结果，无法用来估计它在别的环境里的成功率。</li>
+          <li><b>“零 RAG”是取舍不是胜利。</b>它省掉了检索工程，但把整图塞进 prompt 的代价是随图规模线性增长——比赛题目规模小，正好掩盖了这个成本曲线。</li>
+          <li><b>“通用引擎”缺少第二个域的公开证据。</b>作者写了从渗透走向通用问题求解的复盘文，但仓库里只有渗透容器与 TSEC 提交技能（<code>container/.agents/skills/tsec-actions</code>）。</li>
+        </ul>
+      </div>
+
+      <p>反过来，仓库本身的活跃度是真实的：4,746 星、918 fork（fork/star ≈ 19%，偏高，通常是“拿来改”的比例大）、70 次提交、3 个版本、18 个未关闭 issue。</p>
+    </section>
+
+    <!-- ============ 08 做对了什么 ============ -->
+    <section id="good">
+      <div class="sec-head">
+        <span class="sec-num">08</span>
+        <h2>做对了什么：七条可以直接抄的设计</h2>
+      </div>
+
+      <ol class="steps">
+        <li><b>协议只有三原语，没有 DSL</b><span>没有角色表、没有节点编排、没有 YAML 工作流。换域时改的是 prompt 和容器，不是引擎——这是“通用”说法的唯一硬支撑。</span></li>
+        <li><b>Agent 不写 API，Dispatcher 独占写回</b><span>模型只产结论，协议由代码写。图被污染和被模型骗这两种故障，在这里被物理隔离了。</span></li>
+        <li><b>双阶段 conclude</b><span>超时或解析失败时保留 session 做“只总结、不继续”的收尾，把已发生的探索捞成 Fact。省钱且显著提高单次任务的有效产出率。</span></li>
+        <li><b>完成即一条指向 goal 的边</b><span>不留“done 标志位”，完成判定是谁、基于哪些事实，全部在图上可查。</span></li>
+        <li><b>reason 用“新态势”去重</b><span>只认 Fact / Hint 增加与 open→empty 转变，避免“提案→立刻再提案”的预算黑洞。</span></li>
+        <li><b>把隐藏耦合变成启动期不变量</b><span>心跳周期复用主循环节拍是危险设计，但代码在启动时校验 server 超时 &gt; interval，余量不足 2× 还告警。承认耦合并加护栏，比假装解耦现实。</span></li>
+        <li><b>可观测性优先</b><span>稳定轮询不打日志、状态变化必打；容器 stop 而不是 remove，留现场给复盘；mock driver 能注入延迟与失败概率，让“超时 / 非法 JSON / 拒绝”这些路径可以在没有 LLM 的情况下测——13 个测试文件、2,603 行测试就是这么来的。</span></li>
+      </ol>
+    </section>
+
+    <!-- ============ 09 风险 ============ -->
+    <section id="risk">
+      <div class="sec-head">
+        <span class="sec-num">09</span>
+        <h2>风险清单：先看高危三条</h2>
+      </div>
+      <p class="lede">按“会不会真出事”排序，每条给出依据出处。授权与合规责任在 README 里被明确交给使用者，工程上没有任何 scope 强制。</p>
+
+      <div class="table-scroll">
+        <table class="risk">
+          <thead>
+            <tr><th scope="col">级别</th><th scope="col">问题</th><th scope="col">依据</th><th scope="col">建议</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge bad">高</span></td>
+              <td>Agent 被赋予无审批执行权：<code>claude --dangerously-skip-permissions</code>、<code>codex exec --dangerously-bypass-approvals-and-sandbox</code></td>
+              <td>设计文档「CLI 接入约定」；容器内是 Kali 全家桶 + <code>network_mode: host</code></td>
+              <td>只跑在一次性 VM / 隔离网段；跑完销毁环境</td>
+            </tr>
+            <tr>
+              <td><span class="badge bad">高</span></td>
+              <td>docker-compose 把宿主 <code>/var/run/docker.sock</code> 挂进 dispatcher（它要建/删容器）</td>
+              <td><code>docker-compose.yaml</code></td>
+              <td>等价宿主 root：不要在多人共享或生产宿主机上跑</td>
+            </tr>
+            <tr>
+              <td><span class="badge bad">高</span></td>
+              <td>local 模式无沙箱，Agent 以你的用户权限直接在宿主机执行</td>
+              <td>README「no sandbox」「runs with your user's permissions」</td>
+              <td>专用账户 + 专用机器；不要在你的日常工作站上用</td>
+            </tr>
+            <tr>
+              <td><span class="badge warn">中</span></td>
+              <td>单 Dispatcher、SQLite 单机、无 HA；作者明确不支持多实例共管同一服务端</td>
+              <td>设计文档「已知限制」第 10 条</td>
+              <td>当作单机工具，不要当平台底座</td>
+            </tr>
+            <tr>
+              <td><span class="badge warn">中</span></td>
+              <td>上下文随图线性膨胀：每次 reason/explore 都把整图 YAML 铺进 prompt</td>
+              <td>prompt 契约 <code>{graph_yaml}</code>；作者自述零 RAG</td>
+              <td>长项目用 Hint 做态势压缩；限制 fact 描述长度，把原始数据放文件引用</td>
+            </tr>
+            <tr>
+              <td><span class="badge warn">中</span></td>
+              <td>成本与时长不可控点：3s tick、单任务 300s、示例 4 并发满打满算，且每次派发前先做一次 healthcheck ping</td>
+              <td><code>dispatch.example.yaml</code>、<code>UNHEALTHY_RETRY_AFTER_SECONDS=5</code></td>
+              <td>先 1–2 并发、把 explore.timeout 降到 120 观察曲线</td>
+            </tr>
+            <tr>
+              <td><span class="badge warn">中</span></td>
+              <td>双轨许可：AGPL-3.0 + 商业授权。做成 SaaS 或嵌进闭源产品会触发 AGPL 义务</td>
+              <td>README「License」段落</td>
+              <td>商用前先谈授权，别事后补救</td>
+            </tr>
+            <tr>
+              <td><span class="badge warn">中</span></td>
+              <td>文档与实现漂移：设计文档写 reason 返回单数 <code>intent</code>，实际 prompt 用 <code>intents[]</code>（contracts 兼容单数）；驱动文档列 3 种，代码里有 4 种（含 pi）</td>
+              <td><code>contracts.py</code> 的 backward compat 注释；<code>workers/registry.py</code></td>
+              <td>以代码为准；规范滞后说明迭代快于文档</td>
+            </tr>
+            <tr>
+              <td><span class="badge idle">低</span></td>
+              <td>图只增不改、没有失效标记，长任务会产生大量“已失效”的历史事实</td>
+              <td>协议文档「状态变化的表达」</td>
+              <td>靠 Hint 做人工压缩；前端按时间线阅读</td>
+            </tr>
+            <tr>
+              <td><span class="badge idle">低</span></td>
+              <td>战绩是自述，没有基准与复现脚本</td>
+              <td>README「Results」，仅一段文字</td>
+              <td>当作工程案例，不要当性能承诺</td>
+            </tr>
+            <tr>
+              <td><span class="badge idle">低</span></td>
+              <td>前端 3,406 行单文件 + 依赖直接 vendor，无构建链</td>
+              <td><code>server/static/index.html</code></td>
+              <td>改 UI 成本偏高，别指望二开体验好</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout bad">
+        <b>最重要的一句：</b>这套系统的默认形态是“把一台装了 Kali 的机器、以及一整个攻击面，交给一个不受审批约束的模型”。风险不在代码质量，在授权边界。README 的免责声明把责任完全交给使用者——它不是形式条款，是真的会发生。
+      </div>
+    </section>
+
+    <!-- ============ 10 部署 ============ -->
+    <section id="deploy">
+      <div class="sec-head">
+        <span class="sec-num">10</span>
+        <h2>部署与成本：两条路，先走轻的那条</h2>
+      </div>
+
+      <div class="paths">
+        <div>
+          <h3>路径 A：容器模式（完整）</h3>
+<pre>docker pull --platform=linux/amd64 \
+  ghcr.io/oritera/cairn-worker-container:latest
+docker pull ghcr.io/astral-sh/uv:python3.13-trixie
+cp dispatch.example.yaml dispatch.yaml   <span class="c"># 填 LLM 端点与 key</span>
+docker compose up --build</pre>
+          <p style="font-size:13px;color:#5d6470">server 在 8000 端口，dispatcher 等健康检查通过后启动；每个项目一个 Kali 容器；数据落在 <code>./datas/cairn/</code>。</p>
+        </div>
+        <div>
+          <h3>路径 B：local 模式（推荐先试）</h3>
+<pre>cp dispatch.local.example.yaml dispatch.yaml
+
+<span class="c"># 终端 1：起服务端</span>
+uv run --project cairn cairn serve
+
+<span class="c"># 终端 2：起调度器</span>
+uv run --project cairn cairn dispatch \
+  --config dispatch.yaml</pre>
+          <p style="font-size:13px;color:#5d6470">复用本机已登录的 <code>claude</code> / <code>codex</code> / <code>pi</code>，不需要 Docker、不需要在配置里放 key；代价是无沙箱、以你的权限运行。</p>
+        </div>
+      </div>
+
+      <h3>上线前的三件小事</h3>
+      <ul>
+        <li><b>先跑离线测试：</b><code>uv run --project cairn --group dev pytest</code>，不碰 Docker、不碰真实模型端点。mock driver 能复现超时、非法 JSON、拒绝等路径。</li>
+        <li><b>把并发调到 1–2：</b>示例配置 Σ max_running=4 已经能长时间占满一个 key；观察单任务耗时与 token 再放大。</li>
+        <li><b>先确认心跳余量：</b>启动日志会打印 <code>server setting validated intent_timeout=15s interval=3s</code>；如果看到 tight warning，先调大服务端超时。</li>
+      </ul>
+
+      <p><b>成本怎么估：</b>这套系统没有内置 token 计量。粗算式是「有效并行数 × 单任务时长 × 每任务输入 token（整图 YAML + 系统提示）+ 输出 token」，再乘模型单价。变量里最不直观的是<b>输入 token 随图增长</b>——同一道题跑到第 20 条事实时，每次 reason 的输入会比第 2 条事实时大一个量级。</p>
+    </section>
+
+    <!-- ============ 11 对比 ============ -->
+    <section id="compare">
+      <div class="sec-head">
+        <span class="sec-num">11</span>
+        <h2>横向对比：它到底比谁强，强在哪</h2>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">方案</th><th scope="col">协调机制</th><th scope="col">状态表示</th><th scope="col">需要预设角色/流程</th><th scope="col">审计能力</th><th scope="col">适合什么</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">Cairn</td>
+              <td>共享事实图 + 租约（无消息通道）</td>
+              <td>DAG：事实节点 + 意图边</td>
+              <td>否（任务运行时生成）</td>
+              <td><b>强</b>：图即日志，含失败与负结果</td>
+              <td>长链条、需要规划与多步验证的目标搜索</td>
+            </tr>
+            <tr>
+              <td class="name">单 Agent + 工具</td>
+              <td>无（单线程会话）</td>
+              <td>上下文窗口</td>
+              <td>否</td>
+              <td>弱：只有 transcript</td>
+              <td>短任务、单点突破、人机协作</td>
+            </tr>
+            <tr>
+              <td class="name">MCP 直连工具</td>
+              <td>无</td>
+              <td>无</td>
+              <td>否</td>
+              <td>弱</td>
+              <td>给现有 Agent 加一个工具能力（如 GhidraMCP）</td>
+            </tr>
+            <tr>
+              <td class="name">多 Agent 框架<br>（LangGraph / AutoGen / CrewAI）</td>
+              <td>消息传递 / 编排图</td>
+              <td>代码里的 state 对象</td>
+              <td><b>是</b>：角色、节点、边</td>
+              <td>中：取决于是否自己记 trace</td>
+              <td>流程已知、要工程化落地的业务任务</td>
+            </tr>
+            <tr>
+              <td class="name">传统扫描器<br>（nuclei / naabu）</td>
+              <td>无</td>
+              <td>无</td>
+              <td>是（模板）</td>
+              <td>有扫描日志</td>
+              <td>已知模式的匹配与覆盖，不解决多步推理</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>一句话定位：<b>Cairn 补的是“多步探索的记账”这块空白。</b>扫描器给你覆盖面，单 Agent 给你单点突破，Cairn 给的是“谁在什么时候基于哪条事实走了哪一步、失败的那些步留下了什么”。</p>
+    </section>
+
+    <!-- ============ 12 结论 ============ -->
+    <section id="verdict">
+      <div class="sec-head">
+        <span class="sec-num">12</span>
+        <h2>结论：分三类人给建议</h2>
+      </div>
+
+      <div class="grid3">
+        <div class="stat">
+          <div class="big" style="font-size:15px">想用它打靶 / 做授权测试</div>
+          <p style="font-size:13px;color:var(--ink);margin-top:6px">值得跑。先 local 模式 + 单 worker + 隔离 VM，一道小题观察 2–3 轮图生长，再决定是否上容器与多并发。别指望开箱即用——README 里的“开赛 4 点才跑通”就是真实上手曲线。</p>
+        </div>
+        <div class="stat">
+          <div class="big" style="font-size:15px">想抄架构做自己的系统</div>
+          <p style="font-size:13px;color:var(--ink);margin-top:6px">三件可直接搬：<b>单写者 Dispatcher</b>、<b>双阶段 conclude</b>、<b>完成即指向 goal 的边</b>。第四件是 reason 的“新态势”去重——如果你的多 Agent 系统有事件回环问题，这条最省预算。</p>
+        </div>
+        <div class="stat">
+          <div class="big" style="font-size:15px">想商用 / 集成进产品</div>
+          <p style="font-size:13px;color:var(--ink);margin-top:6px">先解决两个硬门槛：AGPL 授权、单 Dispatcher + 无沙箱的形态。这两条不解决，技术上再顺手也不能进生产；它不是平台底座，是单机引擎。</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b>最后一句评价：</b>它最值钱的不是“AI 自动渗透”，而是把“探索过程本身”变成了可审计的一等公民——失败的方向、被排除的路径、人插的一句话，都在图里。这件事做得比它的战绩更值得被记住。
+      </div>
+    </section>
+
+    <!-- ============ 13 附录 ============ -->
+    <section id="appendix">
+      <div class="sec-head">
+        <span class="sec-num">13</span>
+        <h2>附录：事实表与核实方法</h2>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">项</th><th scope="col">值</th><th scope="col">来源</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>仓库</td><td class="name">oritera/Cairn</td><td>GitHub</td></tr>
+            <tr><td>定位描述</td><td>“通用 AI 状态空间搜索引擎，首个验证域为自主渗透测试”（原文另注明常被误拼为 Carin）</td><td>仓库 description</td></tr>
+            <tr><td>Star / Fork / Issue</td><td>4,746 / 918 / 18（2026-11-01）</td><td>GitHub API</td></tr>
+            <tr><td>提交 / 版本</td><td>70 commits；v0.1.0 / v0.2.0 / v0.2.1</td><td>GitHub API、pyproject</td></tr>
+            <tr><td>创建 / 最后推送</td><td>2026-04-19 / 2026-09-07</td><td>GitHub API</td></tr>
+            <tr><td>许可</td><td>AGPL-3.0（个人与教育免费，商用需单独授权）</td><td>LICENSE、README</td></tr>
+            <tr><td>技术栈</td><td>Python ≥3.12；FastAPI + uvicorn + SQLite；前端 Alpine + Cytoscape</td><td>pyproject、static/</td></tr>
+            <tr><td>代码规模</td><td>源码 6,430 行 / 测试 2,603 行（13 个测试文件，56 个 .py）</td><td>本地统计 tarball</td></tr>
+            <tr><td>最大单文件</td><td><code>scheduler/loop.py</code> 935 行</td><td>同上</td></tr>
+            <tr><td>Worker 后端</td><td>Claude Code、Codex、Pi（另有 mock 测试驱动，共 4 个 driver）</td><td>README、workers/registry.py</td></tr>
+            <tr><td>任务类型</td><td>bootstrap / reason / explore（+ 两种 conclude 收尾）</td><td>设计文档、tasks/</td></tr>
+            <tr><td>默认参数</td><td>tick 3s；单任务 300s；收尾 90s；max_intents 2（代码默认 3）；intent/reason 超时 15s</td><td>dispatch.example.yaml、db.py</td></tr>
+            <tr><td>协议端点</td><td>16 个（settings 2、projects 7、reason 3、hints 1、intents 4、export 2，含复用）</td><td>server/routers/</td></tr>
+            <tr><td>图表渲染</td><td>dagre / elk / klay / cola 四种布局</td><td>static/vendor/</td></tr>
+            <tr><td>战绩</td><td>腾讯云黑客松·智能渗透赛第 2 期：610 队 / 1,345 人，54/54 AK，第 3 名（自述）</td><td>README「Results」</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>怎么核实的</h3>
+      <ul>
+        <li>拉取仓库 tarball（main 分支）后本地统计代码行数与文件结构，未依赖 README 自述的规模数据。</li>
+        <li>架构、任务、调度、并发、校验规则均对照 <code>docs/specs/dispatcher-design.md</code>（1,181 行）与 <code>docs/specs/server-protocol.md</code>（864 行），并与源码交叉验证。</li>
+        <li>文档与代码不一致之处（reason 输出单复数、driver 数量）按源码为准，并已在风险清单中标出，不静默抹平。</li>
+        <li>Star / fork / commit 数据取自 GitHub API，抓取时间写在页头；数值会变，结论不会因为涨星而变。</li>
+      </ul>
+
+      <p style="font-size:12.5px;color:#5d6470">主要参考：<a href="https://github.com/oritera/Cairn" target="_blank" rel="noopener noreferrer">仓库主页</a> · <a href="https://github.com/oritera/Cairn/blob/main/docs/specs/dispatcher-design.md" target="_blank" rel="noopener noreferrer">dispatcher-design.md</a> · <a href="https://github.com/oritera/Cairn/blob/main/docs/specs/server-protocol.md" target="_blank" rel="noopener noreferrer">server-protocol.md</a> · <a href="https://github.com/oritera/Cairn/blob/main/dispatch.example.yaml" target="_blank" rel="noopener noreferrer">dispatch.example.yaml</a></p>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <p>Cairn 分析报告 · 单文件离线可用 · 数据核实于 2026-11-01（v0.2.1）</p>
+  <p>本页为第三方技术分析，不代表项目方观点，也不构成使用授权或合规意见。</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 图生长演示 ---------- */
+  var TOTAL = 7;
+  var step = 1;
+  var nodes = Array.prototype.slice.call(document.querySelectorAll("svg.graph [data-stage]"));
+  var posEl = document.getElementById("demo-pos");
+  var btns = Array.prototype.slice.call(document.querySelectorAll("#stage-list button"));
+  var prev = document.getElementById("demo-prev");
+  var next = document.getElementById("demo-next");
+  var replay = document.getElementById("demo-replay");
+  var allBtn = document.getElementById("demo-all");
+
+  function render() {
+    nodes.forEach(function (el) {
+      var s = Number(el.getAttribute("data-stage"));
+      el.classList.toggle("on", s <= step);
+      el.classList.toggle("fresh", s === step);
+    });
+    btns.forEach(function (b) {
+      b.setAttribute("aria-current", Number(b.dataset.step) === step ? "true" : "false");
+    });
+    posEl.textContent = "第 " + step + " / " + TOTAL + " 步";
+    prev.disabled = step <= 1;
+    next.disabled = step >= TOTAL;
+  }
+
+  function go(n) {
+    step = Math.min(TOTAL, Math.max(1, n));
+    render();
+  }
+
+  prev.addEventListener("click", function () { go(step - 1); });
+  next.addEventListener("click", function () { go(step + 1); });
+  replay.addEventListener("click", function () { go(1); });
+  allBtn.addEventListener("click", function () { go(TOTAL); });
+  btns.forEach(function (b) {
+    b.addEventListener("click", function () { go(Number(b.dataset.step)); });
+  });
+  render();
+
+  /* ---------- 并发计算器 ---------- */
+  var ids = ["c-maxw", "c-proj", "c-ppw", "c-wsum"];
+  var inputs = ids.map(function (id) { return document.getElementById(id); });
+  var oEff = document.getElementById("o-eff");
+  var oPp = document.getElementById("o-pp");
+  var oProj = document.getElementById("o-proj");
+  var oBn = document.getElementById("o-bn");
+  var oWarn = document.getElementById("o-warn");
+
+  function val(el) {
+    var n = parseInt(el.value, 10);
+    return isFinite(n) && n > 0 ? n : 1;
+  }
+
+  function calc() {
+    var maxw = val(inputs[0]);
+    var proj = val(inputs[1]);
+    var ppw = val(inputs[2]);
+    var wsum = val(inputs[3]);
+
+    var capProjectProduct = proj * ppw;
+    var eff = Math.min(maxw, wsum, capProjectProduct);
+    var perProject = Math.min(ppw, wsum, maxw);
+    var projectsParallel = Math.min(proj, Math.ceil(eff / Math.max(1, Math.min(ppw, eff))));
+
+    oEff.textContent = String(eff);
+    oPp.textContent = String(perProject);
+    oProj.textContent = String(projectsParallel);
+
+    var hits = [];
+    if (maxw === eff) { hits.push("runtime.max_workers=" + maxw); }
+    if (wsum === eff) { hits.push("Σ workers[].max_running=" + wsum); }
+    if (capProjectProduct === eff) { hits.push("max_running_projects × max_project_workers=" + proj + "×" + ppw + "=" + capProjectProduct); }
+    if (hits.length === 0) { hits.push("上述三者取最小"); }
+
+    var msg = "瓶颈：" + hits.join(" 与 ") + "。";
+    if (wsum === eff && wsum < maxw) {
+      msg += " 加项目不会更并行，只有加 worker 配额才会。";
+    } else if (maxw === eff && maxw < wsum) {
+      msg += " 这是全局硬顶，另外两项再大也没用。";
+    } else if (capProjectProduct === eff && capProjectProduct < maxw && capProjectProduct < wsum) {
+      msg += " 项目开得出去，但单项目开不满。";
+    } else if (hits.length > 1) {
+      msg += " 多个层同时触顶，先松哪一个都不会立刻变快。";
+    }
+    oBn.textContent = msg;
+
+    oWarn.hidden = !(ppw <= 2);
+    if (!oWarn.hidden) {
+      oWarn.textContent = "注意：max_project_workers=" + ppw + "，而单项目同一时刻最多 1 个 reason，它会占掉一个名额——实际可用于 explore 的并发最多 " + Math.max(0, ppw - 1) + " 个。";
+    }
+  }
+
+  inputs.forEach(function (el) {
+    el.addEventListener("input", calc);
+    el.addEventListener("change", calc);
+  });
+  calc();
+
+  /* ---------- 目录高亮 ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll("nav.side a"));
+  var targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute("href").slice(1));
+  }).filter(Boolean);
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) { return; }
+        links.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id);
+        });
+      });
+    }, { rootMargin: "-15% 0px -70% 0px", threshold: 0 });
+    targets.forEach(function (t) { obs.observe(t); });
+  }
+})();
+</script>
+</body>
+</html>
