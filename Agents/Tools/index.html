@@ -236,14 +236,27 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 </div></header>
 <main id="main" class="wrap">
 <section class="hero">
-<p class="eyebrow"><span>RESEARCH INDEX</span><span class="sep">/</span><span>20 REPORTS</span><span class="sep">/</span><span>2026-11-02</span></p>
+<p class="eyebrow"><span>RESEARCH INDEX</span><span class="sep">/</span><span>27 REPORTS</span><span class="sep">/</span><span>2026-11-02</span></p>
 <h1>Agent 工具调研</h1>
-<p class="lede">二十份独立报告，按“它是什么、怎么工作、装在哪里、花多少钱、什么时候别用”来拆；覆盖编码 Agent、Agent 框架、终端 Harness 与 Agent-native CLI 生成器。每篇另附衍生项目与社区生态。不是排行榜，也不替代你自己跑一遍。</p>
-<div class="pills"><span class="pill"><b>报告</b>20 份</span><span class="pill"><b>更新</b>2026-11-02</span><span class="pill"><b>口径</b>官方文档 + 仓库</span><span class="pill"><b>方式</b>单文件离线</span></div>
+<p class="lede">二十七份独立报告，按“它是什么、怎么工作、装在哪里、花多少钱、什么时候别用”来拆；覆盖编码 Agent、Agent 框架、终端 Harness 与 Agent-native CLI 生成器。每篇另附衍生项目与社区生态。不是排行榜，也不替代你自己跑一遍。</p>
+<div class="pills"><span class="pill"><b>报告</b>27 份</span><span class="pill"><b>更新</b>2026-11-02</span><span class="pill"><b>口径</b>官方文档 + 仓库</span><span class="pill"><b>方式</b>单文件离线</span></div>
 <div class="note"><b>怎么读：</b>事实性陈述对应每篇末尾的来源；GitHub star 与最新 release 于 2026-11-02 通过 API 读取；“适合/不适合”与风险判断是推断。没有统一的 token/成功率 benchmark，跨工具数字不可直接横比。</div>
 </section>
 <section class="sec" id="tools">
-<div class="sec-head"><span class="sec-no">01</span><h2>按类别筛选</h2></div>
+<div class="sec-head"><span class="sec-no">01</span><h2>目录与筛选</h2></div>
+<p class="fine" style="margin:0 0 8px"><b>目录结构：</b>报告已按用途归入 <code>Agents/Tools/</code> 下的子目录；根目录的 <code>index.html</code> 仍是总入口。</p>
+<div class="table-wrap"><table class="matrix"><thead><tr><th>目录</th><th>用途</th><th>报告</th></tr></thead><tbody>
+<tr><td><b>coding/</b></td><td>编码 Agent 与终端/IDE harness</td><td><a href="./coding/opencode.html">OpenCode</a> · <a href="./coding/pi.html">Pi</a> · <a href="./coding/oh-my-pi.html">oh-my-pi</a> · <a href="./coding/openhands.html">OpenHands</a></td></tr>
+<tr><td><b>general/</b></td><td>通用个人 Agent</td><td><a href="./general/comma.html">Comma</a> · <a href="./general/goose.html">Goose</a> · <a href="./general/hermes.html">Hermes</a></td></tr>
+<tr><td><b>orchestration/</b></td><td>多 Agent 编排与团队</td><td><a href="./orchestration/orca.html">Orca</a> · <a href="./orchestration/agent-orchestrator.html">Orchestrator.inc</a> · <a href="./orchestration/praisonai.html">PraisonAI</a></td></tr>
+<tr><td><b>workspace/</b></td><td>终端/远程工作台与多路复用</td><td><a href="./workspace/t3code.html">T3 Code</a> · <a href="./workspace/paseo.html">Paseo</a> · <a href="./workspace/cmux.html">cmux</a> · <a href="./workspace/herdr.html">herdr</a></td></tr>
+<tr><td><b>computer-use/</b></td><td>浏览器与桌面操作</td><td><a href="./computer-use/browser-use.html">Browser Use</a> · <a href="./computer-use/cua.html">Cua</a> · <a href="./computer-use/agent-desktop.html">agent-desktop</a></td></tr>
+<tr><td><b>remote/</b></td><td>远程执行与多机桥接</td><td><a href="./remote/corespeed-tie.html">CoreSpeed Tie</a> · <a href="./remote/mainplane.html">Mainplane</a></td></tr>
+<tr><td><b>harness/</b></td><td>Harness、配置与 CLI 生成</td><td><a href="./harness/ecc.html">ECC</a> · <a href="./harness/deepseek-harness.html">DeepSeek Harness</a> · <a href="./harness/cli-anything.html">CLI-Anything</a></td></tr>
+<tr><td><b>Voice/</b></td><td>语音输入与本地声音工具</td><td><a href="./Voice/osgkeyboard-ios-report.html">OSGKeyboard</a> · <a href="./Voice/qingsheng-macos-report.html">轻声输入</a> · <a href="./Voice/saydra-windows-report.html">Saydra</a> · <a href="./Voice/voicestudio-analysis.html">VoiceStudio</a> · <a href="./Voice/voicetype-macos-report.html">voiceType</a></td></tr>
+</tbody></table></div>
+
+<p class="fine" style="margin:0 0 8px">下方 11 张卡片是重点工具，可按类别/许可筛选；完整 27 篇清单见上表。</p>
 <div class="filters">
 <label for="tool-search">搜索<input id="tool-search" type="search" placeholder="名称、许可证、关键词" autocomplete="off"></label>
 <label for="tool-category">类别<select id="tool-category"><option value="all">全部</option><option value="orchestration">编排 / IDE</option><option value="terminal">终端编码</option><option value="general">通用代理</option><option value="autonomous">自治 / 沙箱
@@ -254,7 +267,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 </div>
 <div class="tool-grid" id="tool-grid"><article class="tool-card" data-category="orchestration" data-search="orca agent development environment 编排器 / agent ide mit macos / windows / linux 桌面；ios / android 伴侣 把多个编码 agent 放进各自独立 worktree 的控制台；它提供工作台，不提供模型。">
 <div class="card-top"><span>编排器 / Agent IDE</span><span class="lic">MIT</span></div>
-<h3><a href="./orca.html">Orca</a></h3>
+<h3><a href="./orchestration/orca.html">Orca</a></h3>
 <p class="en">Agent Development Environment</p>
 <p class="desc">把多个编码 agent 放进各自独立 worktree 的控制台；它提供工作台，不提供模型。</p>
 <dl class="mini">
@@ -263,10 +276,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>111,798</dd></div>
 </dl>
 <p class="card-verdict">适合：同时跑多个编码 agent、需要隔离 worktree 与 diff 审阅的人</p>
-<div class="card-foot"><span>软件免费 · 付 agent</span><a href="./orca.html">阅读报告 →</a></div>
+<div class="card-foot"><span>软件免费 · 付 agent</span><a href="./orchestration/orca.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="terminal" data-search="opencode open source coding agent 终端编码 agent mit tui / 桌面 / ide 扩展 / web 配对 终端优先、provider 无关的开源编码 agent；也可桌面和 ide，但核心仍是 tui。">
 <div class="card-top"><span>终端编码 Agent</span><span class="lic">MIT</span></div>
-<h3><a href="./opencode.html">OpenCode</a></h3>
+<h3><a href="./coding/opencode.html">OpenCode</a></h3>
 <p class="en">Open source coding agent</p>
 <p class="desc">终端优先、provider 无关的开源编码 agent；也可桌面和 IDE，但核心仍是 TUI。</p>
 <dl class="mini">
@@ -275,10 +288,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>223,636</dd></div>
 </dl>
 <p class="card-verdict">适合：想要终端 agent 且不愿被单一模型锁定的人</p>
-<div class="card-foot"><span>免费 · provider 另计</span><a href="./opencode.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · provider 另计</span><a href="./coding/opencode.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="general" data-search="hermes agent the agent that grows with you 通用个人 agent / 网关 mit cli / tui / 桌面 / 消息平台 / acp ide 本地优先的通用 agent：cli/tui、消息网关、持久记忆、技能、定时任务和沙箱在一个运行时里。">
 <div class="card-top"><span>通用个人 Agent / 网关</span><span class="lic">MIT</span></div>
-<h3><a href="./hermes.html">Hermes Agent</a></h3>
+<h3><a href="./general/hermes.html">Hermes Agent</a></h3>
 <p class="en">The agent that grows with you</p>
 <p class="desc">本地优先的通用 agent：CLI/TUI、消息网关、持久记忆、技能、定时任务和沙箱在一个运行时里。</p>
 <dl class="mini">
@@ -287,10 +300,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>259,218</dd></div>
 </dl>
 <p class="card-verdict">适合：想要跨平台、有记忆的常驻个人/团队助手</p>
-<div class="card-foot"><span>免费 · provider 另计</span><a href="./hermes.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · provider 另计</span><a href="./general/hermes.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="terminal" data-search="pi minimal agent harness 终端编码 / 可扩展 harness mit 终端 tui / print-json / rpc / sdk 极小核心、可自我扩展的终端 agent harness：四个工具起步，其余能力用 typescript 扩展和包拼。">
 <div class="card-top"><span>终端编码 / 可扩展 Harness</span><span class="lic">MIT</span></div>
-<h3><a href="./pi.html">Pi</a></h3>
+<h3><a href="./coding/pi.html">Pi</a></h3>
 <p class="en">Minimal agent harness</p>
 <p class="desc">极小核心、可自我扩展的终端 agent harness：四个工具起步，其余能力用 TypeScript 扩展和包拼。</p>
 <dl class="mini">
@@ -299,10 +312,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>119,218</dd></div>
 </dl>
 <p class="card-verdict">适合：想要极小、可改造、可自我扩展的编码 harness</p>
-<div class="card-foot"><span>免费 · provider 另计</span><a href="./pi.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · provider 另计</span><a href="./coding/pi.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="general" data-search="goose your open source ai agent 通用本地 agent / mcp apache-2.0 桌面 / cli / api（macos、windows、linux） mcp 原生、可扩展的本地通用 agent：桌面 + cli + api，用 recipes 固化工作流。">
 <div class="card-top"><span>通用本地 Agent / MCP</span><span class="lic">Apache-2.0</span></div>
-<h3><a href="./goose.html">Goose</a></h3>
+<h3><a href="./general/goose.html">Goose</a></h3>
 <p class="en">Your open source AI agent</p>
 <p class="desc">MCP 原生、可扩展的本地通用 agent：桌面 + CLI + API，用 recipes 固化工作流。</p>
 <dl class="mini">
@@ -311,10 +324,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>56,057</dd></div>
 </dl>
 <p class="card-verdict">适合：想用 MCP 组合工具、并把流程固化成 recipe 的人</p>
-<div class="card-foot"><span>免费 · provider 另计</span><a href="./goose.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · provider 另计</span><a href="./general/goose.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="autonomous" data-search="openhands ai-driven development 自治 / 沙箱 agent mit（主仓库） agent canvas（浏览器）/ cli / sdk / rest api 把开发任务丢进沙箱自主执行的 agent 平台：canvas + sdk + agent server。">
 <div class="card-top"><span>自治 / 沙箱 Agent</span><span class="lic">MIT（主仓库）</span></div>
-<h3><a href="./openhands.html">OpenHands</a></h3>
+<h3><a href="./coding/openhands.html">OpenHands</a></h3>
 <p class="en">AI-driven development</p>
 <p class="desc">把开发任务丢进沙箱自主执行的 agent 平台：Canvas + SDK + Agent Server。</p>
 <dl class="mini">
@@ -323,10 +336,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>92,377</dd></div>
 </dl>
 <p class="card-verdict">适合：需要沙箱内自治执行完整开发任务的人</p>
-<div class="card-foot"><span>免费 · 付算力</span><a href="./openhands.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · 付算力</span><a href="./coding/openhands.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="desktop" data-search="agent-desktop vercel labs 桌面操作 computer use 无障碍树 accessibility apache-2.0 macos / windows / linux cli / c 库 通过操作系统无障碍树读取桌面软件结构，用快照 ref 精确操作，不依赖截图与像素匹配。">
 <div class="card-top"><span>桌面 Computer Use</span><span class="lic">Apache-2.0</span></div>
-<h3><a href="./agent-desktop.html">agent-desktop</a></h3>
+<h3><a href="./computer-use/agent-desktop.html">agent-desktop</a></h3>
 <p class="en">Reliable desktop computer use</p>
 <p class="desc">读无障碍树而不是截图；快照 ref 定位元素，动作可验证、错误可重试。</p>
 <dl class="mini">
@@ -335,10 +348,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>7,336</dd></div>
 </dl>
 <p class="card-verdict">适合：需要可靠操作原生桌面应用、又不想把屏幕像素喂给模型的 agent</p>
-<div class="card-foot"><span>免费 · 开源</span><a href="./agent-desktop.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · 开源</span><a href="./computer-use/agent-desktop.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="harness" data-search="ecc everything claude code harness 优化 配置 skills agents rules hooks 安全 agentshield mit cli 插件 github app 多工具">
 <div class="card-top"><span>Harness 优化</span><span class="lic">MIT</span></div>
-<h3><a href="./ecc.html">ECC</a></h3>
+<h3><a href="./harness/ecc.html">ECC</a></h3>
 <p class="en">Everything Claude Code</p>
 <p class="desc">71 agents、314 skills、98 commands：把流程、规则、hooks 与安全扫描固化成跨工具配置。</p>
 <dl class="mini">
@@ -347,10 +360,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>294,969</dd></div>
 </dl>
 <p class="card-verdict">适合：同时用多个编码 agent、想把流程与安全固化成配置的人</p>
-<div class="card-foot"><span>开源免费 · Pro $19/seat/mo</span><a href="./ecc.html">阅读报告 →</a></div>
+<div class="card-foot"><span>开源免费 · Pro $19/seat/mo</span><a href="./harness/ecc.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="orchestration" data-search="praisonai ai agent framework 五层栈 agentflow handoffs managed agents 100+ llm mit python 24/7 多 agent 编排">
 <div class="card-top"><span>Agent 框架 / 编排</span><span class="lic">MIT</span></div>
-<h3><a href="./praisonai.html">PraisonAI</a></h3>
+<h3><a href="./orchestration/praisonai.html">PraisonAI</a></h3>
 <p class="en">24/7 AI Workforce Framework</p>
 <p class="desc">五层 Agent 栈 + AgentFlow + 托管 sandbox；用 Python/YAML 把单 Agent 扩成团队。</p>
 <dl class="mini">
@@ -359,10 +372,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>9,315（上游）</dd></div>
 </dl>
 <p class="card-verdict">适合：想快速搭多 Agent 工作流，且需要 memory/RAG/审批/预算/沙箱的人</p>
-<div class="card-foot"><span>免费 · 开源 · provider 另计</span><a href="./praisonai.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · 开源 · provider 另计</span><a href="./orchestration/praisonai.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="terminal" data-search="oh-my-pi omp omp studio stencil labs 终端编码 agent lsp dap rust bun hashline 子 agent advisor 多模型 mit">
 <div class="card-top"><span>终端编码 / IDE 级 Harness</span><span class="lic">MIT</span></div>
-<h3><a href="./oh-my-pi.html">oh-my-pi / OMP Studio</a></h3>
+<h3><a href="./coding/oh-my-pi.html">oh-my-pi / OMP Studio</a></h3>
 <p class="en">Coding Agent with the IDE Wired In</p>
 <p class="desc">把 LSP/DAP、hashline 编辑、子 Agent、advisor 与 60+ provider 焊进终端；OMP Studio 是社区桌面壳。</p>
 <dl class="mini">
@@ -371,10 +384,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>37,470</dd></div>
 </dl>
 <p class="card-verdict">适合：终端优先、需要 IDE 级操作与多模型路由的编码 Agent</p>
-<div class="card-foot"><span>免费 · 开源 · provider 另计</span><a href="./oh-my-pi.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · 开源 · provider 另计</span><a href="./coding/oh-my-pi.html">阅读报告 →</a></div>
 </article><article class="tool-card" data-category="harness" data-search="cli-anything hkuds cli hub agent native click python 生成器 gui 转 cli skill.md apache-2.0 自动化">
 <div class="card-top"><span>Agent-native CLI 生成</span><span class="lic">Apache-2.0</span></div>
-<h3><a href="./cli-anything.html">CLI-Anything</a></h3>
+<h3><a href="./harness/cli-anything.html">CLI-Anything</a></h3>
 <p class="en">Making Software Agent-Native</p>
 <p class="desc">从源码/接口生成 Click CLI + REPL + JSON + 测试 + SKILL.md；CLI-Hub 负责分发。</p>
 <dl class="mini">
@@ -383,14 +396,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 <div><dt>Star</dt><dd>58,070</dd></div>
 </dl>
 <p class="card-verdict">适合：有源码/API 的专业软件，要把 GUI 能力变成可复现 CLI</p>
-<div class="card-foot"><span>免费 · 开源</span><a href="./cli-anything.html">阅读报告 →</a></div>
+<div class="card-foot"><span>免费 · 开源</span><a href="./harness/cli-anything.html">阅读报告 →</a></div>
 </article></div>
-<p class="fine">同目录另有 <a href="./comma.html">Comma</a>、<a href="./deepseek-harness.html">DeepSeek Harness</a> 等并行调研报告，暂未并入上面的工具对比。</p>
+<p class="fine">同目录另有 <a href="./general/comma.html">Comma</a>、<a href="./harness/deepseek-harness.html">DeepSeek Harness</a> 等并行调研报告，暂未并入上面的工具对比。</p>
 <p class="empty" id="empty" hidden>没有匹配的工具，换个关键词或重置筛选。</p>
 </section>
 <section class="sec" id="matrix">
 <div class="sec-head"><span class="sec-no">02</span><h2>对比矩阵</h2></div>
-<div class="table-wrap"><table class="matrix"><thead><tr><th>工具</th><th>类型</th><th>界面</th><th>许可证</th><th>模型</th><th>最适合</th><th>主要代价</th></tr></thead><tbody><tr><td><b><a href="./orca.html">Orca</a></b></td><td>编排器 / Agent IDE</td><td>macOS / Windows / Linux 桌面；iOS / Android 伴侣</td><td>MIT</td><td>BYO CLI</td><td>同时跑多个编码 agent、需要隔离 worktree 与 diff 审阅的人</td><td>软件免费 · 付 agent</td></tr><tr><td><b><a href="./opencode.html">OpenCode</a></b></td><td>终端编码 Agent</td><td>TUI / 桌面 / IDE 扩展 / Web 配对</td><td>MIT</td><td>75+ / 本地</td><td>想要终端 agent 且不愿被单一模型锁定的人</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./hermes.html">Hermes Agent</a></b></td><td>通用个人 Agent / 网关</td><td>CLI / TUI / 桌面 / 消息平台 / ACP IDE</td><td>MIT</td><td>任意 OpenAI 兼容</td><td>想要跨平台、有记忆的常驻个人/团队助手</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./pi.html">Pi</a></b></td><td>终端编码 / 可扩展 Harness</td><td>终端 TUI / print-JSON / RPC / SDK</td><td>MIT</td><td>多 provider / 订阅</td><td>想要极小、可改造、可自我扩展的编码 harness</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./goose.html">Goose</a></b></td><td>通用本地 Agent / MCP</td><td>桌面 / CLI / API（macOS、Windows、Linux）</td><td>Apache-2.0</td><td>15+ / 订阅</td><td>想用 MCP 组合工具、并把流程固化成 recipe 的人</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./openhands.html">OpenHands</a></b></td><td>自治 / 沙箱 Agent</td><td>Agent Canvas（浏览器）/ CLI / SDK / REST API</td><td>MIT（主仓库）</td><td>任意（LiteLLM）</td><td>需要沙箱内自治执行完整开发任务的人</td><td>免费 · 付算力</td></tr><tr><td><b><a href="./praisonai.html">PraisonAI</a></b></td><td>Agent 框架 / 多 Agent 编排</td><td>Python SDK / CLI / YAML / Flow / Claw</td><td>MIT</td><td>100+（声明）</td><td>需要 memory/RAG/审批/预算与托管 sandbox 的团队</td><td>抽象多、依赖面大、需自己运维</td></tr><tr><td><b><a href="./oh-my-pi.html">oh-my-pi</a></b></td><td>终端编码 / IDE 级 Harness</td><td>TUI / SDK / RPC / ACP；社区 Studio</td><td>MIT</td><td>60+</td><td>需要 LSP/DAP、子 Agent 与多模型路由的人</td><td>体积大、升级快、项目信任模型</td></tr><tr><td><b><a href="./cli-anything.html">CLI-Anything</a></b></td><td>Agent-native CLI 生成</td><td>CLI / CLI-Hub / Agent 插件</td><td>Apache-2.0</td><td>由目标软件决定</td><td>有源码/API 的专业软件批量自动化</td><td>需生成/测试/维护，依赖上游</td></tr></tbody></table></div>
+<div class="table-wrap"><table class="matrix"><thead><tr><th>工具</th><th>类型</th><th>界面</th><th>许可证</th><th>模型</th><th>最适合</th><th>主要代价</th></tr></thead><tbody><tr><td><b><a href="./orchestration/orca.html">Orca</a></b></td><td>编排器 / Agent IDE</td><td>macOS / Windows / Linux 桌面；iOS / Android 伴侣</td><td>MIT</td><td>BYO CLI</td><td>同时跑多个编码 agent、需要隔离 worktree 与 diff 审阅的人</td><td>软件免费 · 付 agent</td></tr><tr><td><b><a href="./coding/opencode.html">OpenCode</a></b></td><td>终端编码 Agent</td><td>TUI / 桌面 / IDE 扩展 / Web 配对</td><td>MIT</td><td>75+ / 本地</td><td>想要终端 agent 且不愿被单一模型锁定的人</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./general/hermes.html">Hermes Agent</a></b></td><td>通用个人 Agent / 网关</td><td>CLI / TUI / 桌面 / 消息平台 / ACP IDE</td><td>MIT</td><td>任意 OpenAI 兼容</td><td>想要跨平台、有记忆的常驻个人/团队助手</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./coding/pi.html">Pi</a></b></td><td>终端编码 / 可扩展 Harness</td><td>终端 TUI / print-JSON / RPC / SDK</td><td>MIT</td><td>多 provider / 订阅</td><td>想要极小、可改造、可自我扩展的编码 harness</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./general/goose.html">Goose</a></b></td><td>通用本地 Agent / MCP</td><td>桌面 / CLI / API（macOS、Windows、Linux）</td><td>Apache-2.0</td><td>15+ / 订阅</td><td>想用 MCP 组合工具、并把流程固化成 recipe 的人</td><td>免费 · provider 另计</td></tr><tr><td><b><a href="./coding/openhands.html">OpenHands</a></b></td><td>自治 / 沙箱 Agent</td><td>Agent Canvas（浏览器）/ CLI / SDK / REST API</td><td>MIT（主仓库）</td><td>任意（LiteLLM）</td><td>需要沙箱内自治执行完整开发任务的人</td><td>免费 · 付算力</td></tr><tr><td><b><a href="./orchestration/praisonai.html">PraisonAI</a></b></td><td>Agent 框架 / 多 Agent 编排</td><td>Python SDK / CLI / YAML / Flow / Claw</td><td>MIT</td><td>100+（声明）</td><td>需要 memory/RAG/审批/预算与托管 sandbox 的团队</td><td>抽象多、依赖面大、需自己运维</td></tr><tr><td><b><a href="./coding/oh-my-pi.html">oh-my-pi</a></b></td><td>终端编码 / IDE 级 Harness</td><td>TUI / SDK / RPC / ACP；社区 Studio</td><td>MIT</td><td>60+</td><td>需要 LSP/DAP、子 Agent 与多模型路由的人</td><td>体积大、升级快、项目信任模型</td></tr><tr><td><b><a href="./harness/cli-anything.html">CLI-Anything</a></b></td><td>Agent-native CLI 生成</td><td>CLI / CLI-Hub / Agent 插件</td><td>Apache-2.0</td><td>由目标软件决定</td><td>有源码/API 的专业软件批量自动化</td><td>需生成/测试/维护，依赖上游</td></tr></tbody></table></div>
 <p class="fine">“最适合”是编辑判断；许可证与模型支持以各报告来源为准。</p>
 </section>
 <section class="sec" id="choose">
@@ -404,15 +417,17 @@ footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);f
 </section>
 <section class="sec" id="caveats">
 <div class="sec-head"><span class="sec-no">04</span><h2>未纳入与变化提示</h2></div>
-<p class="fine" style="margin:0 0 8px"><b>本轮新增 7 份独立报告</b>，覆盖多 Agent 控制面、终端运行时与远程执行桥；下表只做索引，结论在各篇里。</p>
+<p class="fine" style="margin:0 0 8px"><b>本轮新增 9 份独立报告</b>，覆盖多 Agent 控制面、终端运行时与远程执行桥；下表只做索引，结论在各篇里。</p>
 <div class="table-wrap"><table class="matrix"><thead><tr><th>工具</th><th>一句话</th><th>形态</th><th>报告</th></tr></thead><tbody>
-<tr><td><b>T3 Code</b></td><td>给已有 CLI Agent 装远程驾驶舱；服务器持有环境，手机/浏览器接管</td><td>服务器 + Web / 桌面 / 手机</td><td><a href="./t3code.html">阅读 →</a></td></tr>
-<tr><td><b>cmux</b></td><td>macOS 原生终端：垂直标签、通知环、浏览器与 SSH</td><td>macOS GUI</td><td><a href="./cmux.html">阅读 →</a></td></tr>
-<tr><td><b>herdr</b></td><td>Agent 的终端运行时：断 SSH 不丢任务，但机器重启仍会丢进程</td><td>TUI / 多机</td><td><a href="./herdr.html">阅读 →</a></td></tr>
-<tr><td><b>Paseo</b></td><td>本地 daemon + 全端客户端，手机是完整工作台</td><td>桌面 / 移动 / Web / CLI</td><td><a href="./paseo.html">阅读 →</a></td></tr>
-<tr><td><b>Orchestrator.inc</b></td><td>主 Agent 拆任务，Worker 在独立 worktree 并行到 PR</td><td>桌面 / 移动</td><td><a href="./agent-orchestrator.html">阅读 →</a></td></tr>
-<tr><td><b>CoreSpeed Tie</b></td><td>把电脑的 Shell/文件/浏览器包成 MCP 工具，逐次审批</td><td>MCP / 多机</td><td><a href="./corespeed-tie.html">阅读 →</a></td></tr>
-<tr><td><b>Mainplane</b></td><td>自托管 harness：常开 server + 被授权的 worker</td><td>自托管</td><td><a href="./mainplane.html">阅读 →</a></td></tr>
+<tr><td><b>T3 Code</b></td><td>给已有 CLI Agent 装远程驾驶舱；服务器持有环境，手机/浏览器接管</td><td>服务器 + Web / 桌面 / 手机</td><td><a href="./workspace/t3code.html">阅读 →</a></td></tr>
+<tr><td><b>cmux</b></td><td>macOS 原生终端：垂直标签、通知环、浏览器与 SSH</td><td>macOS GUI</td><td><a href="./workspace/cmux.html">阅读 →</a></td></tr>
+<tr><td><b>herdr</b></td><td>Agent 的终端运行时：断 SSH 不丢任务，但机器重启仍会丢进程</td><td>TUI / 多机</td><td><a href="./workspace/herdr.html">阅读 →</a></td></tr>
+<tr><td><b>Paseo</b></td><td>本地 daemon + 全端客户端，手机是完整工作台</td><td>桌面 / 移动 / Web / CLI</td><td><a href="./workspace/paseo.html">阅读 →</a></td></tr>
+<tr><td><b>Orchestrator.inc</b></td><td>主 Agent 拆任务，Worker 在独立 worktree 并行到 PR</td><td>桌面 / 移动</td><td><a href="./orchestration/agent-orchestrator.html">阅读 →</a></td></tr>
+<tr><td><b>CoreSpeed Tie</b></td><td>把电脑的 Shell/文件/浏览器包成 MCP 工具，逐次审批</td><td>MCP / 多机</td><td><a href="./remote/corespeed-tie.html">阅读 →</a></td></tr>
+<tr><td><b>Mainplane</b></td><td>自托管 harness：常开 server + 被授权的 worker</td><td>自托管</td><td><a href="./remote/mainplane.html">阅读 →</a></td></tr>
+<tr><td><b>Browser Use</b></td><td>浏览器 Agent 库：DOM + 截图，模型无关，可重放</td><td>Python 库 / CLI / 云</td><td><a href="./computer-use/browser-use.html">阅读 →</a></td></tr>
+<tr><td><b>Cua</b></td><td>Computer-use 驱动 + VM 沙箱 + 评测；不是单个 Agent</td><td>Driver / Spaces / SDK</td><td><a href="./computer-use/cua.html">阅读 →</a></td></tr>
 </tbody></table></div>
 <ul class="fact-list">
 <li><b>OpenClaw</b>（MIT）：聊天渠道、持久记忆、技能与 Hermes 高度重叠；除非需要它的 29 个渠道和移动节点，否则先不装。</li>
