@@ -40,6 +40,8 @@
 
 | [`BigModel/`](BigModel/index.html) | 主流大模型调研：评测方法、AA v5 综合/分项排名、16 个模型的价格与性价比、月成本估算器（2026-11） |
 
+| [`Agents/Rules/`](Agents/Rules/index.html) | Agent 规则指南：AGENTS.md / CLAUDE.md / .cursor/rules 的加载机制、优先级、写法与体检表 |
+
 ## 约定
 
 - 一个交付物一个 `.html` 组，CSS/JS 与图片全部内联，不依赖 CDN、网络或本地服务器。

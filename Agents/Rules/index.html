@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Agent 规则指南：AGENTS.md、CLAUDE.md、.cursor/rules、copilot-instructions 如何被加载、优先级如何、怎么写可验证的规则，以及 rule / skill / hook 的分工。">
+<title>Agent 规则指南 · 规则如何被 Agent 使用</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#efece4;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --green:#22654e;--green-soft:#e6f1eb;
+  --red:#98302f;--red-soft:#fae9e8;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --code-bg:#171a1f;--code-ink:#e9e6de;--code-dim:#9aa3af;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.8;
+  background:radial-gradient(1200px 600px at 82% -8%,rgba(43,79,158,.07),transparent 60%),radial-gradient(900px 500px at 4% 2%,rgba(154,87,18,.06),transparent 55%),var(--paper);
+  -webkit-font-smoothing:antialiased}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:0 0 10px 0;z-index:999}
+.skip:focus{left:0}
+.progress{position:fixed;inset:0 auto auto 0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--amber));z-index:80}
+.topbar{position:sticky;top:0;z-index:60;display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:rgba(246,244,239,.86);backdrop-filter:blur(8px);font-size:13px}
+.topbar .back{text-decoration:none;font-weight:600;white-space:nowrap}
+.topbar .crumb{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager{display:flex;gap:14px;white-space:nowrap}
+.pager a{text-decoration:none;font-size:12.5px;color:var(--ink-2)}
+.wrap{max-width:960px;margin:0 auto;padding:46px clamp(18px,5vw,36px) 80px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(36px,5.2vw,56px);line-height:1.1;letter-spacing:-.015em;margin:0 0 16px}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{font-size:18.5px;line-height:1.78;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:12.5px;color:var(--ink-2)}
+.pill b{font-weight:600;color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:26px 0 44px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;line-height:1.1;letter-spacing:-.02em}
+.kpi .n span{font-size:12.5px;font-family:var(--sans);color:var(--muted);letter-spacing:0;margin-left:2px}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+section{scroll-margin-top:64px;margin:0 0 54px}
+h2{display:flex;gap:12px;align-items:baseline;font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 8px;padding-bottom:9px;border-bottom:1px solid var(--line-strong)}
+h2 .no{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.08em;flex:0 0 auto}
+.sub{font-size:13px;color:var(--muted);margin:0 0 22px;max-width:52em}
+h3{font-size:16.5px;margin:28px 0 8px;line-height:1.5}
+p{margin:0 0 14px}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 5px;border-radius:5px;white-space:nowrap}
+.callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:15px 18px;font-size:14.2px;color:var(--ink-2);line-height:1.78;margin:0 0 14px}
+.callout.warn{background:var(--amber-soft);border-color:#ecd9bd;border-left-color:var(--amber)}
+.callout.good{background:var(--green-soft);border-color:#cfe3d8;border-left-color:var(--green)}
+.callout.bad{background:var(--red-soft);border-color:#f0d2d1;border-left-color:var(--red)}
+.callout .t{font-weight:650;color:var(--ink);display:block;margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.callout ul{margin:6px 0 0;padding-left:1.2em}
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin:0 0 10px}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.figcap b{color:var(--ink-2)}
+.loaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.loader{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 17px;box-shadow:var(--shadow)}
+.loader .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--amber)}
+.loader h3{margin:4px 0 6px;font-size:15px}
+.loader p{margin:0;font-size:13.2px;color:var(--ink-2);line-height:1.68}
+.loader .ex{margin-top:7px;font-size:11.8px;color:var(--muted);font-family:var(--mono);line-height:1.6}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.tab{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer}
+.tab:hover{border-color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#f8f6f0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.panel p:last-child{margin-bottom:0}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:15px 17px;overflow-x:auto;font-family:var(--mono);font-size:12.3px;line-height:1.72;margin:0 0 12px}
+pre code{background:none;border:none;padding:0;color:inherit;white-space:pre;font-size:inherit}
+pre .c{color:var(--code-dim)}
+pre .k{color:#8fb8ff}
+pre .s{color:#c3e88d}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:12.9px;min-width:760px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;color:var(--muted);font-weight:600;background:var(--paper-2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+td code{white-space:nowrap}
+ul.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+ul.check li{position:relative;padding-left:24px;font-size:14px;color:var(--ink-2);line-height:1.7}
+ul.check li::before{content:"";position:absolute;left:2px;top:.58em;width:10px;height:5px;border-left:2px solid var(--green);border-bottom:2px solid var(--green);transform:rotate(-45deg)}
+.audit{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.audit .item{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;font-size:13.8px;color:var(--ink-2);padding:6px 0;line-height:1.65}
+.audit input{margin-top:6px;accent-color:var(--accent)}
+.audit .score{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.audit .score b{font-family:var(--serif);font-size:21px;color:var(--accent);margin-right:6px}
+.sources{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0;padding-left:1.2em}
+.sources li{margin:5px 0}
+.sources a{color:var(--ink-2)}
+footer{border-top:1px solid var(--line);padding:22px clamp(18px,5vw,36px) 40px;max-width:960px;margin:0 auto;font-size:12.5px;color:var(--muted);line-height:1.9}
+footer a{color:var(--ink-2);overflow-wrap:anywhere}
+@media (max-width:640px){.topbar{flex-wrap:wrap;gap:8px 14px}.topbar .crumb{order:3;flex-basis:100%}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{.progress,.topbar,.pager,.tabs,.audit{display:none}body{background:#fff}.loader,.panel,.figure{box-shadow:none}pre{background:#f2f0ea;color:#111}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="../../README.md">← 仓库索引</a>
+  <span class="crumb">Agents/Rules · 规则如何被使用 · 2026-11-03</span>
+  <nav class="pager"><a href="#load">怎么加载</a><a href="#tools">工具对照</a><a href="#write">怎么写</a></nav>
+</header>
+
+<main class="wrap" id="main">
+
+  <div class="eyebrow"><span class="dot"></span>AGENTS.md · CLAUDE.md · .cursor/rules · Copilot</div>
+  <h1>规则如何<br><em>被 Agent 使用</em></h1>
+  <p class="lede">规则不是“更长的提示词”。它是一套文件约定：放在哪、什么时候进上下文、和别的规则冲突时谁赢、哪些事根本不该交给规则。这份指南按“加载机制 → 工具差异 → 写法 → 生命周期”讲清楚。</p>
+
+  <div class="meta-row">
+    <span class="pill">8 个主流工具</span>
+    <span class="pill">5 种加载机制</span>
+    <span class="pill">3 套可抄模板</span>
+    <span class="pill">1 张体检表</span>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">AGENTS<span>.md</span></div><div class="l">跨工具事实标准</div></div>
+    <div class="kpi"><div class="n">200<span>行</span></div><div class="l">单文件建议上限（Claude）</div></div>
+    <div class="kpi"><div class="n">4<span>种</span></div><div class="l">Cursor 规则应用方式</div></div>
+    <div class="kpi"><div class="n">0<span>保证</span></div><div class="l">规则不是硬约束</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="no">01</span>先纠正一个误解</h2>
+    <p class="sub">规则是“上下文”，不是“配置”，更不是“权限”。</p>
+
+    <p>大多数工具把规则文件的内容在会话开始时拼进模型上下文，或者在某类文件被打开时追加进去。模型“看到”它，然后决定是否遵守。它没有执行器，也没有强制力。</p>
+
+    <div class="callout bad">
+      <span class="t">因此有三件事不能只靠规则</span>
+      <ul>
+        <li><b>安全边界</b>：禁止访问某个目录、禁止 push main → 用 permissions / hooks。</li>
+        <li><b>确定性动作</b>：每次提交前必须跑测试 → 用 hook 或 CI，不要指望模型记得。</li>
+        <li><b>格式规范</b>：缩进、引号、import 顺序 → 用 formatter / linter，规则里只写“跑哪个命令”。</li>
+      </ul>
+    </div>
+
+    <p>规则真正擅长的是：<b>项目事实</b>（构建命令、目录结构、约定）、<b>偏好</b>（语言、风格、沟通方式）、<b>决策背景</b>（为什么不用某个库）。这些内容模型无法从代码里可靠推断，又每次都需要。</p>
+  </section>
+
+  <section id="load">
+    <h2><span class="no">02</span>五种加载机制</h2>
+    <p class="sub">不同工具的叫法不同，底层其实就这五种。看懂它们，换工具只需要换文件名。</p>
+
+    <div class="loaders">
+      <div class="loader">
+        <div class="k">MECHANISM 1</div>
+        <h3>启动时全量注入</h3>
+        <p>会话开始就把根目录的规则文件塞进上下文。最简单，也最贵：每一轮都在付 token。</p>
+        <div class="ex">AGENTS.md · CLAUDE.md</div>
+      </div>
+      <div class="loader">
+        <div class="k">MECHANISM 2</div>
+        <h3>按目录就近发现</h3>
+        <p>从当前目录向上找，或读子目录里的规则；越靠近工作目录的越晚读、越具体。适合 monorepo。</p>
+        <div class="ex">AGENTS.md 层级 · CLAUDE.md 子目录按需加载</div>
+      </div>
+      <div class="loader">
+        <div class="k">MECHANISM 3</div>
+        <h3>按文件路径匹配</h3>
+        <p>规则声明 glob（如 <code>src/api/**/*.ts</code>），只有打开匹配文件时才加载。省上下文，也减少无关干扰。</p>
+        <div class="ex">.cursor/rules/*.mdc · .claude/rules + paths · Copilot applyTo</div>
+      </div>
+      <div class="loader">
+        <div class="k">MECHANISM 4</div>
+        <h3>按需 / 手动调用</h3>
+        <p>规则平时不进上下文，用户 @ 一下或模型判断相关才读。适合长流程、低频场景。</p>
+        <div class="ex">Cursor 的 @rule · skills · 引用文件让 agent 自己 Read</div>
+      </div>
+      <div class="loader">
+        <div class="k">MECHANISM 5</div>
+        <h3>事件钩子（不是规则）</h3>
+        <p>在工具调用前后跑脚本，能真正阻断动作。规则做不到的事，放这里。</p>
+        <div class="ex">Claude Code hooks · Cursor hook adapter · OpenCode plugins</div>
+      </div>
+    </div>
+
+    <h3>一次请求里，规则是怎么进去的</h3>
+    <div class="figure">
+      <svg viewBox="0 0 760 330" role="img" aria-label="规则加载流程：发现、合并、注入、模型">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9a9ea6"/></marker></defs>
+
+        <rect x="20" y="20" width="210" height="96" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="36" y="41" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#2b4f9e">SOURCES</text>
+        <text x="36" y="60" font-size="11.5" fill="#17181b">全局 / 用户规则</text>
+        <text x="36" y="78" font-size="11.5" fill="#17181b">项目根规则</text>
+        <text x="36" y="96" font-size="11.5" fill="#17181b">子目录 / 路径规则</text>
+
+        <line x1="230" y1="68" x2="272" y2="68" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="272" y="20" width="200" height="96" rx="9" fill="#fbefdf" stroke="#ecd9bd"/>
+        <text x="288" y="41" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#9a5712">RESOLVE</text>
+        <text x="288" y="60" font-size="11.5" fill="#17181b">发现顺序</text>
+        <text x="288" y="78" font-size="11.5" fill="#17181b">优先级 / 覆盖 / 合并</text>
+        <text x="288" y="96" font-size="11.5" fill="#17181b">去重、排除、symlink</text>
+
+        <line x1="472" y1="68" x2="514" y2="68" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="514" y="20" width="226" height="96" rx="9" fill="#e6f1eb" stroke="#cfe3d8"/>
+        <text x="530" y="41" font-size="11" font-family="ui-monospace,Menlo,monospace" fill="#22654e">INJECT</text>
+        <text x="530" y="60" font-size="11.5" fill="#17181b">拼进 system / context</text>
+        <text x="530" y="78" font-size="11.5" fill="#17181b">按 token 预算截断</text>
+        <text x="530" y="96" font-size="11.5" fill="#17181b">顺序影响“谁最后被读到”</text>
+
+        <line x1="627" y1="116" x2="627" y2="146" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+
+        <rect x="420" y="146" width="320" height="70" rx="9" fill="#e9eefb" stroke="#cfd9f3"/>
+        <text x="436" y="168" font-size="12" fill="#17181b">模型（看到的是文本，不是配置）</text>
+        <text x="436" y="187" font-size="11" fill="#6f7279">遵守程度取决于具体性、冲突与上下文压力</text>
+        <text x="436" y="204" font-size="11" fill="#6f7279">同一段规则，换模型/换 harness 效果不同</text>
+
+        <rect x="20" y="146" width="340" height="70" rx="9" fill="#fae9e8" stroke="#f0d2d1"/>
+        <text x="36" y="168" font-size="12" fill="#17181b">Hooks / Permissions（另一条路）</text>
+        <text x="36" y="187" font-size="11" fill="#6f7279">工具调用前后执行脚本，可阻断</text>
+        <text x="36" y="204" font-size="11" fill="#6f7279">不受模型是否“记得”影响</text>
+
+        <line x1="190" y1="216" x2="190" y2="246" stroke="#9a9ea6" stroke-width="1.2" marker-end="url(#a)"/>
+        <rect x="20" y="246" width="340" height="58" rx="9" fill="#fffefb" stroke="#cfc7b8"/>
+        <text x="36" y="267" font-size="11.5" fill="#17181b">硬约束的正确位置</text>
+        <text x="36" y="285" font-size="11" fill="#6f7279">规则负责“告诉”，hooks 负责“保证”</text>
+
+        <text x="420" y="252" font-size="11" fill="#6f7279">规则文件本身也会被读进 token：</text>
+        <text x="420" y="270" font-size="11" fill="#6f7279">200 行 ≈ 1.5–3k token；路径规则可按需触发。</text>
+        <text x="420" y="288" font-size="11" fill="#6f7279">规则越多，注意力越分散 —— 这不是免费的。</text>
+      </svg>
+    </div>
+    <p class="figcap"><b>读法：</b>上半条是“文本进上下文”，下半条是“脚本拦截动作”。两者都叫“规则”时，最容易混淆；写之前先决定你要的是哪一种。</p>
+  </section>
+
+  <section id="tools">
+    <h2><span class="no">03</span>八个工具，规则放哪</h2>
+    <p class="sub">以各工具 2026-11 的官方文档为准。共同趋势很清楚：AGENTS.md 正在成为跨工具的公共入口。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>工具</th><th>主文件 / 目录</th><th>作用域</th><th>路径级</th><th>关键机制</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>OpenCode</b></td>
+            <td><code>AGENTS.md</code>；兼容 <code>CLAUDE.md</code></td>
+            <td>项目、全局（<code>~/.config/opencode/AGENTS.md</code>）、<code>instructions</code> 配置</td>
+            <td>通过 <code>opencode.json</code> 的 <code>instructions</code> 支持 glob 与远程 URL</td>
+            <td>就近查找，每类第一个命中；AGENTS.md 优先于 CLAUDE.md；所有 instructions 合并</td>
+          </tr>
+          <tr>
+            <td><b>Claude Code</b></td>
+            <td><code>CLAUDE.md</code>；<code>.claude/rules/*.md</code></td>
+            <td>managed / user / project / local</td>
+            <td>规则 frontmatter 的 <code>paths</code> glob</td>
+            <td>启动加载 + 子目录按需；<code>@path</code> 导入最多 4 层；hook 才能强制</td>
+          </tr>
+          <tr>
+            <td><b>Cursor</b></td>
+            <td><code>.cursor/rules/*.mdc</code>；<code>AGENTS.md</code></td>
+            <td>Team / Project / User</td>
+            <td><code>globs</code> 字段</td>
+            <td>四种应用方式：alwaysApply、描述匹配、文件匹配、手动 @；Team → Project → User</td>
+          </tr>
+          <tr>
+            <td><b>GitHub Copilot</b></td>
+            <td><code>.github/copilot-instructions.md</code>；<code>.github/instructions/*.instructions.md</code>；<code>AGENTS.md</code></td>
+            <td>个人 / 仓库 / 组织；最近 AGENTS.md 优先</td>
+            <td><code>applyTo</code> glob；可用 <code>excludeAgent</code></td>
+            <td>仓库规则 + 路径规则同时生效；cloud agent 与 code review 都读</td>
+          </tr>
+          <tr>
+            <td><b>Codex</b></td>
+            <td><code>AGENTS.md</code></td>
+            <td>仓库根 + 子目录</td>
+            <td>靠目录层级</td>
+            <td>就近的 AGENTS.md 优先，适合 monorepo 分区</td>
+          </tr>
+          <tr>
+            <td><b>Gemini CLI</b></td>
+            <td><code>GEMINI.md</code></td>
+            <td>项目 / 全局</td>
+            <td>目录层级</td>
+            <td>与 AGENTS.md 同一类机制；Copilot 也接受根目录单个 GEMINI.md</td>
+          </tr>
+          <tr>
+            <td><b>Cline</b></td>
+            <td><code>.clinerules</code>（文件或目录）</td>
+            <td>项目</td>
+            <td>目录组织</td>
+            <td>规则直接进上下文；自定义指令另有一套设置</td>
+          </tr>
+          <tr>
+            <td><b>Windsurf</b></td>
+            <td><code>.windsurf/rules/</code>（旧版 <code>.windsurfrules</code>）</td>
+            <td>项目 / 全局</td>
+            <td>规则激活模式</td>
+            <td>按 always / manual / model / glob 等模式激活；细节随版本变化</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <span class="t">跨工具最小方案</span>
+      <p>把项目事实写在根目录 <code>AGENTS.md</code>；需要路径级时，再为 Cursor 加 <code>.cursor/rules/*.mdc</code>、为 Copilot 加 <code>.github/instructions/*.instructions.md</code>。Claude Code 没有 CLAUDE.md 时会直接读 AGENTS.md；有 CLAUDE.md 时用一行 <code>@AGENTS.md</code> 导入即可共享。</p>
+    </div>
+  </section>
+
+  <section id="precedence">
+    <h2><span class="no">04</span>冲突时谁赢</h2>
+    <p class="sub">这是最容易踩坑的部分：大多数工具不是“覆盖”，而是“全部塞进去，冲突时模型自己挑”。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>工具</th><th>顺序</th><th>冲突行为</th></tr></thead>
+        <tbody>
+          <tr><td><b>OpenCode</b></td><td>本地 AGENTS.md / CLAUDE.md → 全局 AGENTS.md → <code>~/.claude/CLAUDE.md</code></td><td>每类第一个命中；不同类合并；<code>instructions</code> 全部追加</td></tr>
+          <tr><td><b>Claude Code</b></td><td>managed → user → project → local；目录由根到当前</td><td>全部拼接，不覆盖；冲突时可能任选，建议人工清理</td></tr>
+          <tr><td><b>Cursor</b></td><td>Team → Project → User</td><td>合并，前面的来源优先；Team 可强制</td></tr>
+          <tr><td><b>Copilot</b></td><td>个人 → 仓库 → 组织</td><td>全部提供；个人优先级最高；官方建议避免冲突</td></tr>
+          <tr><td><b>AGENTS.md 生态</b></td><td>最近的目录优先</td><td>父级 + 子级合并；越具体越晚读</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="t">一条实用规则</span>
+      <p>同一个行为，只在一个地方定义。要么在根规则，要么在路径规则，不要两处都写；否则模型收到两条略有差异的指令，行为会变得不稳定。</p>
+    </div>
+  </section>
+
+  <section id="write">
+    <h2><span class="no">05</span>怎么写一条 Agent 能执行的规则</h2>
+    <p class="sub">核心标准只有一个：<b>可验证</b>。模型能判断“做没做到”，规则才会生效。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>不要写</th><th>写成</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td>“注意代码质量”</td><td>“提交前运行 <code>npm test</code>，失败不得提交”</td><td>有命令、有判定</td></tr>
+          <tr><td>“保持文件整洁”</td><td>“单文件不超过 400 行；超过就拆分”</td><td>有阈值</td></tr>
+          <tr><td>“用合适的错误处理”</td><td>“API 边界返回 <code>{code, message}</code>，禁止抛裸字符串”</td><td>有结构</td></tr>
+          <tr><td>“遵循项目架构”</td><td>“业务逻辑在 <code>src/services/</code>；路由只做参数校验”</td><td>有位置</td></tr>
+          <tr><td>“不要动生成文件”</td><td>“禁止编辑 <code>dist/</code>、<code>build/</code>；它们由 <code>pnpm build</code> 生成”</td><td>有边界与替代方案</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>一条规则的六段结构</h3>
+    <pre><code><span class="c"># 适用范围（越具体越好）</span>
+适用：src/api/**/*.ts
+不适用：migrations/**
+
+<span class="c"># 必须</span>
+- 所有 handler 在入口处校验输入
+- 错误返回 { code, message }，不抛裸字符串
+
+<span class="c"># 禁止</span>
+- 不在此目录直接访问数据库；走 service 层
+- 不修改 dist/ 下的任何文件
+
+<span class="c"># 验证</span>
+- `pnpm test src/api` 必须通过
+- `pnpm lint` 无新增 warning
+
+<span class="c"># 参考</span>
+- 模板：@src/api/handlers/_template.ts
+- 规范：docs/api-errors.md
+
+<span class="c"># 维护</span>
+- Owner: @backend-team · 最近复核: 2026-10</code></pre>
+
+    <p>“参考”部分很关键：不要复制模板内容，给路径，让 agent 自己读。文档会变，复制会过期。</p>
+
+    <h3>长度与颗粒度</h3>
+    <ul class="check">
+      <li><b>根规则控制在 200 行内</b>（Claude 官方建议）；Cursor 建议单条规则 500 行内。</li>
+      <li><b>一个文件一个主题</b>：测试、API、前端、发布，不要混在一起。</li>
+      <li><b>能按路径触发就别常驻</b>：只在改 <code>src/api</code> 时才需要的规则，不要每轮都带。</li>
+      <li><b>多步流程写成 skill</b>，不要塞进规则；规则是“事实与约束”，skill 是“步骤”。</li>
+    </ul>
+  </section>
+
+  <section id="templates">
+    <h2><span class="no">06</span>三套可直接抄的模板</h2>
+    <p class="sub">同一个项目，三种工具的写法。内容一致，机制不同。</p>
+
+    <div class="tabs" role="tablist" aria-label="模板">
+      <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">AGENTS.md</button>
+      <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false">Cursor .mdc</button>
+      <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false">Copilot applyTo</button>
+    </div>
+
+    <div class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+      <pre><code><span class="c"># 项目规则</span>
+
+<span class="c">## 构建与验证</span>
+- 安装：`pnpm install`
+- 开发：`pnpm dev`（端口 3000）
+- 测试：`pnpm test`；提交前必须通过
+- 类型检查：`pnpm typecheck`
+
+<span class="c">## 目录</span>
+- `src/api/` 路由与校验
+- `src/services/` 业务逻辑
+- `src/db/` schema 与迁移
+- `dist/` 生成物，禁止手改
+
+<span class="c">## 约定</span>
+- TypeScript strict；禁止 `any`
+- 错误统一 `{ code, message }`
+- 新增 API 必须带一条集成测试
+
+<span class="c">## 不要做</span>
+- 不直接改 `main` 分支
+- 不引入新的状态管理库，先讨论
+- 不提交 `.env`、密钥、真实用户数据</code></pre>
+      <p class="sub" style="margin:8px 0 0">适合 OpenCode、Codex、Cursor（根目录）、Copilot（AGENTS.md）等。</p>
+    </div>
+
+    <div class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+      <pre><code><span class="c">---</span>
+<span class="k">description</span>: API 路由的输入校验与错误格式
+<span class="k">globs</span>: src/api/**/*.ts
+<span class="k">alwaysApply</span>: false
+<span class="c">---</span>
+
+- 每个 handler 在入口校验输入
+- 错误返回 `{ code, message }`，禁止抛裸字符串
+- 业务逻辑放 `src/services/`，路由只做校验与转发
+- 新增或修改接口时，补一条集成测试
+- 参考模板：@src/api/handlers/_template.ts</code></pre>
+      <p class="sub" style="margin:8px 0 0"><code>alwaysApply: false</code> + <code>globs</code>：只有打开匹配文件时才自动附加。<code>@</code> 引用不会内联内容，agent 需要时自己读。</p>
+    </div>
+
+    <div class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+      <pre><code><span class="c">---</span>
+<span class="k">applyTo</span>: <span class="s">"src/api/**/*.ts"</span>
+<span class="c">---</span>
+
+# API 规则
+- 所有 handler 入口校验输入
+- 错误统一 `{ code, message }`
+- 不在路由层直接访问数据库
+- 新接口必须附带集成测试
+- 模板见 `src/api/handlers/_template.ts`</code></pre>
+      <p class="sub" style="margin:8px 0 0">仓库级规则放 <code>.github/copilot-instructions.md</code>；路径级规则放 <code>.github/instructions/NAME.instructions.md</code>。</p>
+    </div>
+  </section>
+
+  <section id="lifecycle">
+    <h2><span class="no">07</span>规则的生命周期</h2>
+    <p class="sub">规则不是写完就完了。它和代码一样会腐坏，而且腐坏得更隐蔽。</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>阶段</th><th>动作</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><b>提出</b></td><td>同一个错误出现第二次，或新人需要同样的解释</td><td>有具体案例，不是“感觉应该写”</td></tr>
+          <tr><td><b>落位</b></td><td>判断放根规则、路径规则、skill 还是 hook</td><td>能按路径触发的不常驻；要强制的不用规则</td></tr>
+          <tr><td><b>评审</b></td><td>检查是否可验证、是否与现有规则冲突</td><td>有命令/阈值/结构；无重复定义</td></tr>
+          <tr><td><b>度量</b></td><td>观察同类错误是否下降；是否增加上下文负担</td><td>错误率下降，且没有明显拖慢/干扰</td></tr>
+          <tr><td><b>退役</b></td><td>重构后失效、工具已强制、规则已被代码表达</td><td>删除或降级为 skill/文档</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="t">每季度做一次规则审计</span>
+      <p>Claude Code 提供 <code>/doctor prompt-audit</code> 检查过期引用与冲突；其他工具没有内置审计时，就人工过一遍：删掉已由 linter/hook 覆盖的条目，合并重复项，把长流程移到 skill。</p>
+    </div>
+  </section>
+
+  <section id="mistakes">
+    <h2><span class="no">08</span>七个常见错误</h2>
+    <ul class="check">
+      <li><b>把整个风格指南贴进去</b>：改用 formatter/linter，规则只写“运行哪个命令”。</li>
+      <li><b>复制模板代码</b>：引用路径，让 agent 自己读；否则模板一改规则就过期。</li>
+      <li><b>根规则过长</b>：超过 200–500 行后，遵循率下降，token 成本上升。</li>
+      <li><b>同一行为写两遍</b>：父级与子级、根规则与路径规则各写一条，冲突时行为随机。</li>
+      <li><b>把安全边界写成规则</b>：模型可能忽略；用 permissions、hooks、CI 强制。</li>
+      <li><b>规则里放密钥或内部 URL</b>：规则会进上下文、进日志、进截图。</li>
+      <li><b>只写“要做什么”，不写“怎么算做到”</b>：没有验证标准的规则等于建议。</li>
+    </ul>
+  </section>
+
+  <section id="audit">
+    <h2><span class="no">09</span>规则体检表</h2>
+    <p class="sub">勾选你项目当前满足的项，看看这套规则能不能被 agent 稳定执行。</p>
+
+    <div class="audit" id="audit">
+      <label class="item"><input type="checkbox" data-w="1"><span>根规则在 200 行以内，且一个文件只讲一个主题</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>每条规则都有可验证的判定（命令、阈值或结构）</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>路径相关的规则按 glob 触发，不常驻</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>同一个行为只在一个地方定义，没有父子冲突</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>需要强制的约束已经交给 hooks / permissions / CI</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>模板与长文档用引用，没有复制进规则</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>没有密钥、真实用户数据或内部敏感 URL</span></label>
+      <label class="item"><input type="checkbox" data-w="1"><span>规则有 owner 与最近复核日期，过期项会删</span></label>
+      <div class="score"><b id="score">0</b><span id="verdict">/ 8 · 还没有开始检查</span></div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2><span class="no">10</span>来源</h2>
+    <ul class="sources">
+      <li>OpenCode Rules：<a href="https://opencode.ai/docs/rules/" rel="noreferrer">opencode.ai/docs/rules</a>（AGENTS.md、instructions、优先级、Claude 兼容）</li>
+      <li>Cursor Rules：<a href="https://cursor.com/docs/context/rules" rel="noreferrer">cursor.com/docs/context/rules</a>（.mdc、四种应用方式、Team / Project / User）</li>
+      <li>Claude Code Memory：<a href="https://code.claude.com/docs/en/memory" rel="noreferrer">code.claude.com/docs/en/memory</a>（CLAUDE.md、.claude/rules、imports、hooks）</li>
+      <li>GitHub Copilot 仓库指令：<a href="https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions" rel="noreferrer">docs.github.com</a>（copilot-instructions、applyTo、AGENTS.md）</li>
+      <li>AGENTS.md 约定：<a href="https://agents.md/" rel="noreferrer">agents.md</a></li>
+    </ul>
+    <p class="sub" style="margin-top:12px">各工具行为可能随版本变化；具体路径与字段以官方文档为准。检索于 2026-11-03。</p>
+  </section>
+
+</main>
+
+<footer>
+  <div>Agents/Rules · 规则如何被 Agent 使用 · 2026-11-03</div>
+  <span>本页为独立整理，与所列工具无隶属关系；规则不构成安全控制。</span>
+</footer>
+
+<script>
+(function(){
+  var bar = document.getElementById('progress');
+  function paint(){
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  addEventListener('scroll', paint, {passive:true});
+  addEventListener('resize', paint);
+  paint();
+})();
+
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      var p = document.getElementById(t.getAttribute('aria-controls'));
+      if (p) p.hidden = !on;
+    });
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus(); select(next);
+      }
+    });
+  });
+})();
+
+(function(){
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('#audit input[type=checkbox]'));
+  var score = document.getElementById('score');
+  var verdict = document.getElementById('verdict');
+  function update(){
+    var n = boxes.filter(function(b){ return b.checked; }).length;
+    score.textContent = String(n);
+    var msg;
+    if (n === 0) msg = '/ 8 · 还没有开始检查';
+    else if (n <= 3) msg = '/ 8 · 规则更像“愿望清单”，先补可验证性';
+    else if (n <= 5) msg = '/ 8 · 基本可用，注意冲突与强制层';
+    else if (n <= 7) msg = '/ 8 · 比较健康，再补一两条即可';
+    else msg = '/ 8 · 这套规则可以被 agent 稳定执行';
+    verdict.textContent = msg;
+  }
+  boxes.forEach(function(b){ b.addEventListener('change', update); });
+  update();
+})();
+</script>
+</body>
+</html>
