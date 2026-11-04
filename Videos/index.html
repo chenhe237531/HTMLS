@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AI 视频制作工具全景 · 商业与开源（2026-11）</title>
+<style>
+:root{
+  --paper:#f6f4ef;--paper-2:#eeeae1;--surface:#fffefb;
+  --ink:#17181b;--ink-2:#3c3f45;--muted:#6f7279;--faint:#a7a196;
+  --line:#e3ded3;--line-strong:#cfc7b8;
+  --accent:#2b4f9e;--accent-soft:#e9eefb;
+  --teal:#0f6f62;--teal-soft:#e3f2ee;
+  --violet:#6b4a9e;--violet-soft:#efe9f8;
+  --amber:#9a5712;--amber-soft:#fbefdf;
+  --red:#9b2c2c;--red-soft:#f8e7e5;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(23,24,27,.05),0 10px 30px -18px rgba(23,24,27,.35);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font:15.5px/1.75 var(--sans);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1100px 540px at 86% -10%,rgba(43,79,158,.08),transparent 62%),
+    radial-gradient(900px 480px at -4% 4%,rgba(15,111,98,.06),transparent 58%),
+    var(--paper);}
+::selection{background:#c9d6f7;color:#10131a}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1120px;margin:0 auto;padding:36px clamp(18px,5vw,44px) 80px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.topnav{display:flex;gap:16px;align-items:center;font-size:13px;margin-bottom:24px;flex-wrap:wrap}
+.topnav a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid transparent}
+.topnav a:hover{border-color:var(--accent);color:var(--accent)}
+.topnav .here{color:var(--muted)}
+
+header.hero{margin-bottom:8px}
+.eyebrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:var(--mono);
+  font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin:0 0 14px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,4.8vw,52px);
+  line-height:1.08;letter-spacing:-.015em;margin:0 0 14px;max-width:18em}
+.lede{color:var(--ink-2);font-size:15px;margin:0;max-width:820px}
+.lede b{color:var(--ink)}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:26px 0 8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 15px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--serif);font-size:26px;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:11.5px;line-height:1.5;display:block;margin-top:2px}
+.stat.hl b{color:var(--accent)}
+
+.tldr{margin:18px 0 0;padding:17px 20px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+.tldr h2{margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);font-weight:600}
+.tldr ol{margin:0;padding-left:20px;display:grid;grid-template-columns:1fr 1fr;gap:4px 28px;font-size:13.5px;color:var(--ink-2)}
+.tldr li::marker{color:var(--accent);font-family:var(--mono)}
+.tldr a{text-decoration:none;font-weight:600}
+.tldr a:hover{text-decoration:underline}
+
+.wizard{margin:26px 0 0;padding:18px 20px;background:linear-gradient(180deg,#fffefb,#fbf9f3);
+  border:1px solid var(--line-strong);border-radius:var(--radius);box-shadow:var(--shadow)}
+.wizard h2{margin:0 0 4px;font-family:var(--serif);font-size:19px;letter-spacing:-.01em}
+.wizard p.hint{margin:0 0 12px;color:var(--muted);font-size:12.5px}
+.goals{display:flex;flex-wrap:wrap;gap:8px}
+.goal{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+  border-radius:99px;padding:7px 13px;font:13px/1.4 var(--sans);cursor:pointer;transition:.15s}
+.goal:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.goal b{font-weight:600;color:var(--ink)}
+
+.controls{position:sticky;top:0;z-index:20;display:flex;gap:9px;flex-wrap:wrap;align-items:center;
+  margin:26px 0 16px;padding:11px 13px;background:rgba(255,254,251,.95);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+input[type=search]{flex:1 1 210px;background:var(--paper);color:var(--ink);border:1px solid var(--line-strong);
+  border-radius:9px;padding:8px 11px;font:13.5px/1.5 var(--sans);outline:none;min-width:150px}
+input[type=search]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+  border-radius:9px;padding:6px 10px;font:12.5px/1.3 var(--sans);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.count{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+
+section.group{margin-top:34px;scroll-margin-top:96px}
+.ghead{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-bottom:2px solid var(--line-strong);padding-bottom:8px}
+.ghead .num{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.1em}
+.ghead h2{margin:0;font-family:var(--serif);font-size:clamp(21px,2.6vw,27px);letter-spacing:-.01em}
+.ghead .tag{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+.gintro{margin:10px 0 16px;color:var(--ink-2);font-size:13.5px;max-width:900px}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+article.tool{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:15px 17px 14px;box-shadow:var(--shadow);transition:border-color .16s,transform .16s,box-shadow .16s;scroll-margin-top:100px}
+article.tool:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+article.tool::before{content:"";position:absolute;left:0;top:15px;bottom:15px;width:3px;border-radius:99px;background:var(--accent)}
+article.tool[data-kind="open"]::before{background:var(--teal)}
+article.tool[data-kind="free"]::before{background:var(--violet)}
+article.tool[data-kind="retired"]::before{background:var(--faint)}
+article.tool.flash{animation:flash 1.8s ease-out}
+@keyframes flash{0%,100%{box-shadow:var(--shadow)}18%{box-shadow:0 0 0 4px rgba(43,79,158,.28),var(--shadow);border-color:var(--accent)}}
+.th{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.th h3{margin:0;font-size:16px;line-height:1.45;letter-spacing:-.005em}
+.th .en{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;border-radius:99px;padding:1px 8px;white-space:nowrap}
+.b-paid{background:var(--accent-soft);color:var(--accent)}
+.b-open{background:var(--teal-soft);color:var(--teal)}
+.b-free{background:var(--violet-soft);color:var(--violet)}
+.b-warn{background:var(--red-soft);color:var(--red)}
+.b-note{background:var(--amber-soft);color:var(--amber)}
+.tool p{margin:7px 0 0;font-size:13px;line-height:1.65;color:var(--ink-2)}
+.tool p .k{color:var(--ink);font-weight:600}
+.tool p.warn{color:var(--amber)}
+.tool .meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tool .meta span{background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.tool .link{margin-top:9px;font-family:var(--mono);font-size:11.5px;word-break:break-all}
+.tool .link a{text-decoration:none}
+.tool .link a:hover{text-decoration:underline}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);margin-top:4px}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:12.5px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--paper-2);font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+td b{font-weight:600}
+td .muted{color:var(--muted)}
+caption{caption-side:top;text-align:left;padding:12px 14px 2px;color:var(--muted);font-size:12px}
+
+.flow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:14px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;box-shadow:var(--shadow);position:relative}
+.step .n{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.step h3{margin:2px 0 5px;font-size:13px}
+.step p{margin:0;font-size:11.5px;color:var(--ink-2);line-height:1.55}
+.step:not(:last-child)::after{content:"→";position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--line-strong);font-size:14px;background:var(--paper);z-index:1}
+
+.callout{margin-top:18px;padding:15px 18px;border-radius:var(--radius);border:1px solid var(--line-strong);
+  background:var(--surface);box-shadow:var(--shadow)}
+.callout h3{margin:0 0 7px;font-size:15px}
+.callout p,.callout li{font-size:13px;color:var(--ink-2);margin:5px 0}
+.callout ul{margin:6px 0 0;padding-left:20px}
+.callout.warn{background:#fdf8f1;border-color:#e8d5b8}
+.callout.warn h3{color:var(--amber)}
+.callout.risk{background:#fdf4f3;border-color:#ecc9c4}
+.callout.risk h3{color:var(--red)}
+
+.sources{margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.sources ol{padding-left:20px;margin:0}
+.sources li{margin:3px 0;word-break:break-word}
+.sources .date{font-family:var(--mono);color:var(--faint);font-size:11px;margin-left:4px}
+
+footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line-strong);color:var(--muted);
+  font-size:12.5px;line-height:1.95}
+footer b{color:var(--ink-2);font-weight:600;display:inline-block;min-width:58px}
+footer code{background:var(--paper-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+  font-size:11.5px;font-family:var(--mono)}
+
+.empty{text-align:center;color:var(--muted);padding:56px 0;font-size:14px}
+
+@media (max-width:940px){
+  .flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .step:not(:last-child)::after{display:none}
+  .tldr ol{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .count{margin-left:0}
+  .ghead .tag{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none !important;transition:none !important}
+}
+@media print{
+  body{background:#fff}
+  .controls,.wizard,.topnav{display:none}
+  article.tool,.step,.tablewrap{break-inside:avoid;box-shadow:none}
+}
+</style>
+</head>
+<body>
+<a class="sr" href="#main">跳到正文</a>
+<div class="wrap">
+  <nav class="topnav" aria-label="站点导航">
+    <span class="here">Videos · 工具全景</span>
+    <a href="../README.md">← 仓库索引</a>
+    <a href="#compare">横评表</a>
+    <a href="#pipeline">本地流水线</a>
+    <a href="#license">许可证</a>
+    <a href="#sources">来源</a>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>AI Video Landscape · 核对于 2026-11-02</div>
+    <h1>AI 视频制作工具全景</h1>
+    <p class="lede">把市面上的工具拆成四块来看：<b>AI 生成</b>（文/图生视频）、<b>剪辑与后期</b>、<b>数字人与口播</b>、<b>音频与配音</b>。同一张表里既放商业产品，也放可以自己部署的开源模型与工具。价格、版本、免费额度变化很快，页面里的数字只作为<b>量级参考</b>，下单前请回官网核对。</p>
+  </header>
+
+  <div class="stats" aria-label="概览">
+    <div class="stat hl"><b>76</b><span>工具与模型条目</span></div>
+    <div class="stat"><b>16</b><span>商业 AI 生成产品</span></div>
+    <div class="stat"><b>27</b><span>剪辑 / 后期工具</span></div>
+    <div class="stat"><b>41</b><span>开源模型与工具</span></div>
+  </div>
+
+  <div class="tldr">
+    <h2>先看这 8 条</h2>
+    <ol>
+      <li><a href="#veo" data-jump="veo">要带声音的电影感镜头</a>：Veo 3.1 + Flow</li>
+      <li><a href="#runway" data-jump="runway">要运镜、参考一致性与后期</a>：Runway Gen-4.5</li>
+      <li><a href="#kling" data-jump="kling">要便宜、动作大、30 秒</a>：Kling 4.0 / 可灵</li>
+      <li><a href="#jimeng" data-jump="jimeng">要直接进剪映、中文链路</a>：即梦 Seedance</li>
+      <li><a href="#wan22" data-jump="wan22">要 Apache 2.0 本地部署</a>：Wan 2.2</li>
+      <li><a href="#ltx" data-jump="ltx">要开源 + 原生音频</a>：LTX-2.5</li>
+      <li><a href="#kdenlive" data-jump="kdenlive">要免费专业剪辑</a>：DaVinci Resolve / Kdenlive</li>
+      <li><a href="#heygen" data-jump="heygen">要做口播 / 培训视频</a>：HeyGen / Synthesia</li>
+    </ol>
+  </div>
+
+  <section class="wizard" aria-labelledby="wizard-title">
+    <h2 id="wizard-title">按活儿选：点一个场景</h2>
+    <p class="hint">会跳到对应工具卡片并短暂高亮。场景只是起点，不是唯一答案。</p>
+    <div class="goals">
+      <button class="goal" type="button" data-jump="veo"><b>广告 / 品牌片</b> · 要声音与质感</button>
+      <button class="goal" type="button" data-jump="kling"><b>带货 / 产品展示</b> · 图生视频</button>
+      <button class="goal" type="button" data-jump="capcut"><b>社交短视频</b> · 快剪与字幕</button>
+      <button class="goal" type="button" data-jump="heygen"><b>口播 / 培训</b> · 数字人</button>
+      <button class="goal" type="button" data-jump="opusclip"><b>长视频转短</b> · 自动切片</button>
+      <button class="goal" type="button" data-jump="wan22"><b>本地零预算</b> · 自己部署</button>
+      <button class="goal" type="button" data-jump="latentsync"><b>换口型 / 配音</b> · 开源方案</button>
+    </div>
+  </section>
+
+  <div class="controls" role="search">
+    <label class="sr" for="q">搜索工具、模型或用途</label>
+    <input id="q" type="search" placeholder="搜工具 / 模型 / 用途，例如：口型、4K、Apache" autocomplete="off">
+    <div class="chips" role="group" aria-label="按类别筛选">
+      <button class="chip" type="button" data-cat="all" aria-pressed="true">全部</button>
+      <button class="chip" type="button" data-cat="gen" aria-pressed="false">AI 生成</button>
+      <button class="chip" type="button" data-cat="edit" aria-pressed="false">剪辑后期</button>
+      <button class="chip" type="button" data-cat="avatar" aria-pressed="false">数字人口播</button>
+      <button class="chip" type="button" data-cat="audio" aria-pressed="false">音频配音</button>
+      <button class="chip" type="button" data-cat="open" aria-pressed="false">开源</button>
+      <button class="chip" type="button" data-cat="free" aria-pressed="false">免费 / 可白嫖</button>
+      <button class="chip" type="button" data-cat="retired" aria-pressed="false">已退役 / 慎用</button>
+    </div>
+    <span class="count" id="count" aria-live="polite" aria-atomic="true"></span>
+  </div>
+
+  <main id="main">
+
+  <!-- 01 商业生成 海外 -->
+  <section class="group" id="g-gen-paid">
+    <div class="ghead"><span class="num">01</span><h2>商业 AI 视频生成 · 海外</h2><span class="tag">按提示词或图片生成镜头</span></div>
+    <p class="gintro">这一档竞争集中在三件事：原生音频、单次时长、以及“能不能把生成的镜头继续编辑”。2026 年的一个明显变化是，纯生成和传统 NLE 正在合流——Runway 卖编辑套件，Adobe 把生成模型接进时间线。</p>
+    <div class="grid">
+
+      <article class="tool" id="veo" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Google Veo 3.1</h3><span class="en">Google DeepMind</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：目前综合口碑最好的“画面 + 原生音频”模型，对话、环境声、音效与口型一起出。入口在 Gemini、Flow、Google Vids、Vertex AI。</p>
+        <p><span class="k">适合</span>：广告、有台词的短场景、需要一遍出声音的社媒片。</p>
+        <p class="warn"><span class="k">注意</span>：单次 4/6/8 秒，长片要靠 extend 或多镜头拼接；最高画质与额度绑定 Google AI 订阅档位；4K 主要走 API / Flow 放大。</p>
+        <div class="meta"><span>原生音频</span><span>1080p / 4K 放大</span><span>Flow 场景延展</span><span>有 API</span></div>
+        <div class="link"><a href="https://deepmind.google/models/veo/" target="_blank" rel="noopener">deepmind.google/models/veo</a></div>
+      </article>
+
+      <article class="tool" id="runway" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Runway Gen-4.5 + Aleph</h3><span class="en">Runway</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：不是单点模型，而是一套“生成 + 编辑”的工作台：运镜控制、References 角色/风格一致、Aleph 对已有视频做上下文编辑、绿幕/补帧/重打光。</p>
+        <p><span class="k">适合</span>：广告与产品片、需要精确运镜、要把 AI 镜头和实拍混剪的团队。</p>
+        <p class="warn"><span class="k">注意</span>：Gen-4.5 积分消耗快；免费额度只够试十几秒；不同模型（含托管第三方）价格差异大。</p>
+        <div class="meta"><span>原生音频（2025-12 起）</span><span>1080p</span><span>HDR / EXR / ProRes 导出</span><span>有 API</span></div>
+        <div class="link"><a href="https://runwayml.com/" target="_blank" rel="noopener">runwayml.com</a></div>
+      </article>
+
+      <article class="tool" id="kling" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Kling 4.0 / 可灵</h3><span class="en">快手</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：图生视频和大幅度人体动作是招牌；4.0 主打单次最长 30 秒、最高 4K、原生立体声与多关键帧。国内版就是“可灵 AI”。</p>
+        <p><span class="k">适合</span>：产品图动起来、舞蹈/运动/健身、人物走路转头不易崩。</p>
+        <p class="warn"><span class="k">注意</span>：长镜头与 4K 很吃积分；失败生成也可能扣费；免费档带水印，商用要看付费协议。</p>
+        <div class="meta"><span>最长 30s</span><span>4K</span><span>原生音频</span><span>首尾帧 / 运镜</span></div>
+        <div class="link"><a href="https://klingai.com/" target="_blank" rel="noopener">klingai.com</a> · <a href="https://app.klingai.com/cn/" target="_blank" rel="noopener">国内站</a></div>
+      </article>
+
+      <article class="tool" id="seedance" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Seedance 2.5</h3><span class="en">字节跳动 · Dreamina / 即梦</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：单段约 30 秒（部分入口/档位可更长），支持多参考素材、时间戳指令和视频编辑；与剪映/抖音链路最短。</p>
+        <p><span class="k">适合</span>：需要“生成完直接剪”的短视频团队、批量口播与商品素材。</p>
+        <p class="warn"><span class="k">注意</span>：公开页面对商用授权写得不如可灵/海螺明确，商用前读用户协议；不同入口（即梦、Dreamina、火山 API）价格与规格不一致。</p>
+        <div class="meta"><span>最长 30s</span><span>1080p</span><span>原生音频</span><span>多参考</span></div>
+        <div class="link"><a href="https://dreamina.capcut.com/" target="_blank" rel="noopener">dreamina.capcut.com</a> · <a href="https://jimeng.jianying.com/" target="_blank" rel="noopener">即梦</a></div>
+      </article>
+
+      <article class="tool" id="luma" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Luma Dream Machine · Ray3</h3><span class="en">Luma AI</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：光影与运动自然，概念预演和品牌片友好；Ray3 支持 16-bit HDR，提供 API。</p>
+        <p><span class="k">适合</span>：需要电影感氛围、先在低成本下快速试镜头的项目。</p>
+        <p class="warn"><span class="k">注意</span>：原生音频不是强项，通常要后期补；单次约 10 秒。</p>
+        <div class="meta"><span>1080p</span><span>HDR</span><span>有 API</span><span>图生视频</span></div>
+        <div class="link"><a href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener">lumalabs.ai/dream-machine</a></div>
+      </article>
+
+      <article class="tool" id="pika" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Pika 2.5</h3><span class="en">Pika Labs</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：模板特效、Pikaffects 一类“社媒爆点”玩法，出片快，免费档相对宽松。</p>
+        <p><span class="k">适合</span>：追热点的竖版短视频、产品动效、趣味转场。</p>
+        <p class="warn"><span class="k">注意</span>：写实与长镜头不是它的主战场；模板内容同质化高，最好加自己的解说或观点。</p>
+        <div class="meta"><span>竖版友好</span><span>特效模板</span><span>有免费档</span></div>
+        <div class="link"><a href="https://pika.art/" target="_blank" rel="noopener">pika.art</a></div>
+      </article>
+
+      <article class="tool" id="hailuo" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>MiniMax Hailuo H3 / 海螺</h3><span class="en">MiniMax</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：人物表情与中文语义理解口碑好；H3 支持最高 2K、原生音频、15 秒左右，API 单价低。</p>
+        <p><span class="k">适合</span>：人物特写、情绪向内容、风景航拍、预算敏感的批量生成。</p>
+        <p class="warn"><span class="k">注意</span>：H3 开源权重对美/欧/英/韩有额外申请要求；消费端与 API 是两套计费。</p>
+        <div class="meta"><span>最高 2K</span><span>原生音频</span><span>有 API</span><span>部分开源</span></div>
+        <div class="link"><a href="https://hailuoai.com/" target="_blank" rel="noopener">hailuoai.com</a> · <a href="https://hailuoai.video/" target="_blank" rel="noopener">海外站</a></div>
+      </article>
+
+      <article class="tool" id="grok" data-kind="paid" data-tags="gen paid">
+        <div class="th"><h3>Grok Imagine Video 1.5</h3><span class="en">xAI</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：原生 1080p、带口型同步，按秒计价便宜，和 X / Grok 生态绑定。</p>
+        <p><span class="k">适合</span>：已经在用 X Premium、需要低成本批量试片的团队。</p>
+        <p class="warn"><span class="k">注意</span>：部分地区功能受限；素材授权与平台条款要单独确认。</p>
+        <div class="meta"><span>1080p</span><span>15s</span><span>按秒计费</span></div>
+        <div class="link"><a href="https://grok.com/" target="_blank" rel="noopener">grok.com</a></div>
+      </article>
+
+      <article class="tool" id="higgsfield" data-kind="paid" data-tags="gen paid">
+        <div class="th"><h3>Higgsfield</h3><span class="en">Higgsfield AI</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：一个额度里聚合 Veo、Kling、Seedance、WAN 等多个模型，外加运镜/特效预设，按镜头挑模型。</p>
+        <p><span class="k">适合</span>：不想同时订五六家、需要快速对比不同模型出片的团队。</p>
+        <p class="warn"><span class="k">注意</span>：本质是聚合层，单价通常高于直接买 API；英文界面为主。</p>
+        <div class="meta"><span>多模型聚合</span><span>运镜预设</span><span>英文界面</span></div>
+        <div class="link"><a href="https://higgsfield.ai/" target="_blank" rel="noopener">higgsfield.ai</a></div>
+      </article>
+
+      <article class="tool" id="ltxstudio" data-kind="paid" data-tags="gen paid">
+        <div class="th"><h3>LTX Studio</h3><span class="en">Lightricks</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：不是单个模型，而是“剧本 → 分镜 → 生成 → 时间线”的成片工作流，适合叙事型内容。</p>
+        <p><span class="k">适合</span>：品牌故事、分镜驱动的短片、需要角色一致性的连续场景。</p>
+        <p class="warn"><span class="k">注意</span>：订阅档位跨度大；用它自己的模型和接第三方模型时，画质与价格不是一回事。</p>
+        <div class="meta"><span>脚本到成片</span><span>分镜</span><span>角色一致</span></div>
+        <div class="link"><a href="https://ltx.studio/" target="_blank" rel="noopener">ltx.studio</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 02 国内生成 -->
+  <section class="group" id="g-gen-cn">
+    <div class="ghead"><span class="num">02</span><h2>商业 AI 视频生成 · 国内</h2><span class="tag">人民币付费 / 中文提示词</span></div>
+    <p class="gintro">国内产品的差异更多在“生态入口”和“商用条款”，而不是单一画质。做带货和广告时，先确认付费档是否写明可商用、能否去水印，再比价格。</p>
+    <div class="grid">
+
+      <article class="tool" id="keling-cn" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>可灵 AI</h3><span class="en">快手 · Kling</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：国内综合最稳的一档。首尾帧、运镜、多镜头、原生音频、最高 4K；用户规模最大，教程与模板多。不同版本的时长上限差异很大，单段与延展后要分开看。</p>
+        <p><span class="k">适合</span>：日更短视频、电商详情页、广告素材、需要“从 A 状态到 B 状态”的产品演示。</p>
+        <p class="warn"><span class="k">注意</span>：会员价各渠道有差异（约 ¥58–66/月起）；失败任务也扣积分；免费额度带水印。</p>
+        <div class="meta"><span>4K</span><span>最长 3 分钟（版本/延展）</span><span>原生音频</span><span>开放 API</span></div>
+        <div class="link"><a href="https://app.klingai.com/cn/" target="_blank" rel="noopener">app.klingai.com/cn</a></div>
+      </article>
+
+      <article class="tool" id="jimeng" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>即梦 AI</h3><span class="en">字节跳动 · Seedance</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：上手门槛低，中文提示词友好；生成结果可直接进剪映，抖音/小红书发布链路最短。Seedance 2.x 支持较长片段与视频编辑。</p>
+        <p><span class="k">适合</span>：口播配画面、空镜、创意片段、学生与个人创作者。</p>
+        <p class="warn"><span class="k">注意</span>：免费档带水印；商用授权在公开页面写得不够明确，接商单前读协议；价格近一年调整频繁。</p>
+        <div class="meta"><span>剪映直连</span><span>最长 30s+</span><span>中文友好</span><span>有免费额度</span></div>
+        <div class="link"><a href="https://jimeng.jianying.com/" target="_blank" rel="noopener">jimeng.jianying.com</a></div>
+      </article>
+
+      <article class="tool" id="vidu" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>Vidu</h3><span class="en">生数科技</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：多主体参考、角色一致性、动漫/二次元风格；Q3 系列支持音视频同出与像素级文字渲染。</p>
+        <p><span class="k">适合</span>：AI 漫剧、连续剧情、固定角色反复出现、品牌 IP。</p>
+        <p class="warn"><span class="k">注意</span>：不同 Q 系列模型的音频默认值和能力不同；高峰期排队慢；国内站与海外站分开计价。</p>
+        <div class="meta"><span>角色一致</span><span>音画同出</span><span>动漫向</span><span>有 API</span></div>
+        <div class="link"><a href="https://www.vidu.cn/" target="_blank" rel="noopener">vidu.cn</a> · <a href="https://www.vidu.com/" target="_blank" rel="noopener">vidu.com</a></div>
+      </article>
+
+      <article class="tool" id="wan-cn" data-kind="paid" data-tags="gen paid free open">
+        <div class="th"><h3>通义万相 Wan 3.0</h3><span class="en">阿里巴巴</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：单次最长 30 秒、1080P；输入端很特别，支持 doc/xls/ppt/pdf/md 直接转视频；Wan 系列同时开源，可本地部署。</p>
+        <p><span class="k">适合</span>：商品视频、营销素材、企业文档转视频、阿里云/钉钉生态内团队。</p>
+        <p class="warn"><span class="k">注意</span>：网页会员与阿里云百炼 API 是两套计费；商用条款以服务协议为准；开源版与线上 3.0 不是同一权重。</p>
+        <div class="meta"><span>30s</span><span>1080P</span><span>文档输入</span><span>部分开源</span></div>
+        <div class="link"><a href="https://tongyi.aliyun.com/wan/" target="_blank" rel="noopener">tongyi.aliyun.com/wan</a></div>
+      </article>
+
+      <article class="tool" id="pixverse" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>PixVerse 拍我 AI</h3><span class="en">爱诗科技</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：模板与特效多，一张照片就能出趣味视频，出片速度快。</p>
+        <p><span class="k">适合</span>：热点玩法、社媒趣味内容、活动传播。</p>
+        <p class="warn"><span class="k">注意</span>：模板同质化、精细控制弱；不适合严肃品牌片。</p>
+        <div class="meta"><span>特效模板</span><span>图生视频</span><span>快</span></div>
+        <div class="link"><a href="https://pixverse.ai/" target="_blank" rel="noopener">pixverse.ai</a></div>
+      </article>
+
+      <article class="tool" id="qingying" data-kind="paid" data-tags="gen paid free">
+        <div class="th"><h3>智谱清影</h3><span class="en">智谱 AI</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：中文理解好，提供 API，适合开发者快速接一个视频生成能力。</p>
+        <p><span class="k">适合</span>：已有智谱/GLM 技术栈、需要 API 而非网页产品的团队。</p>
+        <p class="warn"><span class="k">注意</span>：消费端热度低于可灵/即梦，模型迭代与文档要自己跟；画质不是第一梯队。</p>
+        <div class="meta"><span>中文</span><span>有 API</span><span>开发者向</span></div>
+        <div class="link"><a href="https://chatglm.cn/" target="_blank" rel="noopener">chatglm.cn</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 03 剪辑后期 -->
+  <section class="group" id="g-edit">
+    <div class="ghead"><span class="num">03</span><h2>商业 AI 剪辑与后期</h2><span class="tag">把素材变成成片</span></div>
+    <p class="gintro">AI 在剪辑里主要省四类时间：转写与粗剪、字幕、长转短、以及生成式补帧/扩展。真正的调色、混音和节奏仍然靠人。</p>
+    <div class="grid">
+
+      <article class="tool" id="descript" data-kind="paid" data-tags="edit paid free">
+        <div class="th"><h3>Descript</h3><span class="en">Descript</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：改文字就是改视频。自动转写、删口癖、Studio Sound 降噪、Underlord 助手、AI 语音补录。</p>
+        <p><span class="k">适合</span>：播客、访谈、口播、课程、需要大量处理说话内容的团队。</p>
+        <p class="warn"><span class="k">注意</span>：不是深度 VFX/调色工具；中文转写质量建议先实测；免费档有额度与导出限制。</p>
+        <div class="meta"><span>文本剪辑</span><span>降噪</span><span>字幕</span><span>免费档</span></div>
+        <div class="link"><a href="https://www.descript.com/" target="_blank" rel="noopener">descript.com</a></div>
+      </article>
+
+      <article class="tool" id="capcut" data-kind="free" data-tags="edit free paid">
+        <div class="th"><h3>CapCut / 剪映</h3><span class="en">字节跳动</span><span class="badge b-free">免费 + 订阅</span></div>
+        <p><span class="k">强项</span>：移动/桌面/网页全平台，自动字幕、抠像、自动重构、模板、音乐库；国内版剪映与即梦、抖音直连。</p>
+        <p><span class="k">适合</span>：TikTok / Reels / Shorts 日更，模板化生产，跨设备剪辑。</p>
+        <p class="warn"><span class="k">注意</span>：自动字幕常需人工修；Pro 价格随地区和渠道变化；字节系产品的数据与合规问题在部分市场仍有争议。</p>
+        <div class="meta"><span>全平台</span><span>自动字幕</span><span>模板</span><span>免费档</span></div>
+        <div class="link"><a href="https://www.capcut.com/" target="_blank" rel="noopener">capcut.com</a> · <a href="https://www.capcut.cn/" target="_blank" rel="noopener">剪映</a></div>
+      </article>
+
+      <article class="tool" id="premiere" data-kind="paid" data-tags="edit paid">
+        <div class="th"><h3>Adobe Premiere Pro + Firefly</h3><span class="en">Adobe</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：行业标准时间线；Generative Extend 补帧/补声、文本粗剪、Enhance Speech、对象蒙版、Media Intelligence 素材检索。</p>
+        <p><span class="k">适合</span>：专业后期、长片、需要与 After Effects / Audition 协作的团队。</p>
+        <p class="warn"><span class="k">注意</span>：订阅制；生成额度单独计算；AI 是加速器，不会替你做叙事判断。</p>
+        <div class="meta"><span>专业 NLE</span><span>生成式扩展</span><span>文本粗剪</span><span>订阅</span></div>
+        <div class="link"><a href="https://www.adobe.com/products/premiere.html" target="_blank" rel="noopener">adobe.com/products/premiere</a></div>
+      </article>
+
+      <article class="tool" id="resolve" data-kind="free" data-tags="edit free paid">
+        <div class="th"><h3>DaVinci Resolve / Studio</h3><span class="en">Blackmagic Design</span><span class="badge b-free">免费 + 买断</span></div>
+        <p><span class="k">强项</span>：剪辑、调色、Fusion 合成、Fairlight 音频一体；免费版已能剪 4K；Studio 一次性 $295，解锁 Neural Engine 的 Magic Mask、语音分离、超分等。</p>
+        <p><span class="k">适合</span>：想一次买断、重视调色与音频、愿意投入学习成本的人。</p>
+        <p class="warn"><span class="k">注意</span>：硬件要求高；免费版缺少部分 AI 与协作功能；学习曲线陡。</p>
+        <div class="meta"><span>免费版强大</span><span>调色</span><span>Fusion</span><span>$295 买断</span></div>
+        <div class="link"><a href="https://www.blackmagicdesign.com/products/davinciresolve" target="_blank" rel="noopener">blackmagicdesign.com/products/davinciresolve</a></div>
+      </article>
+
+      <article class="tool" id="opusclip" data-kind="paid" data-tags="edit paid free">
+        <div class="th"><h3>OpusClip</h3><span class="en">Opus</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：把长播客/直播/网课自动切成竖版短片，检测高光、加字幕、重构画面，带“病毒度”评分。</p>
+        <p><span class="k">适合</span>：播客、访谈、 webinar 的二次分发，一个人运营多个账号。</p>
+        <p class="warn"><span class="k">注意</span>：自动切片仍需人工挑；免费额度少；对中文内容和口音的识别要实测。</p>
+        <div class="meta"><span>长转短</span><span>自动字幕</span><span>竖版重构</span><span>有免费档</span></div>
+        <div class="link"><a href="https://www.opus.pro/" target="_blank" rel="noopener">opus.pro</a></div>
+      </article>
+
+      <article class="tool" id="veed" data-kind="paid" data-tags="edit paid free">
+        <div class="th"><h3>VEED</h3><span class="en">VEED.io</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：浏览器里完成剪辑、字幕、翻译、录屏、团队评审，上手快，适合非专业剪辑的人。</p>
+        <p><span class="k">适合</span>：市场团队、协作审片、轻量社媒内容。</p>
+        <p class="warn"><span class="k">注意</span>：复杂时间线与大文件不如桌面 NLE；部分功能锁在更高档。</p>
+        <div class="meta"><span>浏览器</span><span>字幕翻译</span><span>协作</span></div>
+        <div class="link"><a href="https://www.veed.io/" target="_blank" rel="noopener">veed.io</a></div>
+      </article>
+
+      <article class="tool" id="filmora" data-kind="paid" data-tags="edit paid">
+        <div class="th"><h3>Filmora</h3><span class="en">Wondershare</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：对新手友好的桌面剪辑，模板、AI 抠像、音频降噪、字幕都有，价格低于 Adobe。</p>
+        <p><span class="k">适合</span>：中小团队、教育内容、需要快速出片的非专业剪辑。</p>
+        <p class="warn"><span class="k">注意</span>：深度与插件生态不如 Premiere/Resolve；年付订阅。</p>
+        <div class="meta"><span>新手友好</span><span>模板</span><span>年付</span></div>
+        <div class="link"><a href="https://wondershare.com/filmora/" target="_blank" rel="noopener">wondershare.com/filmora</a></div>
+      </article>
+
+      <article class="tool" id="invideo" data-kind="paid" data-tags="edit paid free">
+        <div class="th"><h3>InVideo / Pictory</h3><span class="en">提示词/脚本成片</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：输入脚本或文章，自动配素材、字幕、配音，生成营销视频；适合批量做信息型内容。</p>
+        <p><span class="k">适合</span>：博客转视频、产品说明、批量投放变体。</p>
+        <p class="warn"><span class="k">注意</span>：素材库同质化；成片“模板感”强；复杂叙事还是要人工剪。</p>
+        <div class="meta"><span>脚本成片</span><span>素材库</span><span>批量</span></div>
+        <div class="link"><a href="https://invideo.io/" target="_blank" rel="noopener">invideo.io</a> · <a href="https://pictory.ai/" target="_blank" rel="noopener">pictory.ai</a></div>
+      </article>
+
+      <article class="tool" id="captions" data-kind="paid" data-tags="edit avatar paid free">
+        <div class="th"><h3>Captions</h3><span class="en">Captions AI</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：移动端口播创作，自动字幕、眼神修正、AI Twin 数字分身、配音与剪辑一体。</p>
+        <p><span class="k">适合</span>：TikTok/Reels 口播博主、需要“本人分身”批量出镜的创作者。</p>
+        <p class="warn"><span class="k">注意</span>：AI Twin 需录制授权素材；不同档位额度差异大。</p>
+        <div class="meta"><span>移动端</span><span>AI Twin</span><span>字幕</span></div>
+        <div class="link"><a href="https://www.captions.ai/" target="_blank" rel="noopener">captions.ai</a></div>
+      </article>
+
+      <article class="tool" id="topaz" data-kind="paid" data-tags="edit paid">
+        <div class="th"><h3>Topaz Video AI</h3><span class="en">Topaz Labs</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：超分、去噪、去隔行、补帧、修复老素材；对 AI 生成的低分辨率片段做“最后一道提清晰”。</p>
+        <p><span class="k">适合</span>：把 720p 素材拉到 4K、修复压缩伪影、给慢动作补帧。</p>
+        <p class="warn"><span class="k">注意</span>：买断+升级费；处理慢、吃 GPU；过度放大可能产生“塑料感”。</p>
+        <div class="meta"><span>超分</span><span>补帧</span><span>修复</span><span>桌面</span></div>
+        <div class="link"><a href="https://www.topazlabs.com/topaz-video-ai" target="_blank" rel="noopener">topazlabs.com/topaz-video-ai</a></div>
+      </article>
+
+      <article class="tool" id="riverside" data-kind="paid" data-tags="edit paid free">
+        <div class="th"><h3>Riverside</h3><span class="en">Riverside.fm</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：远程录制访谈/播客，本地分轨高质量录制，Magic Clips 自动切短片。</p>
+        <p><span class="k">适合</span>：访谈节目、远程对谈、需要干净分轨的后期。</p>
+        <p class="warn"><span class="k">注意</span>：核心是录制与轻剪，不是完整 NLE。</p>
+        <div class="meta"><span>远程录制</span><span>分轨</span><span>自动切片</span></div>
+        <div class="link"><a href="https://riverside.fm/" target="_blank" rel="noopener">riverside.fm</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 04 数字人 -->
+  <section class="group" id="g-avatar">
+    <div class="ghead"><span class="num">04</span><h2>数字人与口播</h2><span class="tag">把文字变成“有人在说”</span></div>
+    <p class="gintro">这一类拼的是口型、中文/多语种、以及批量与合规。企业培训看 SCORM 与审批流，营销看语言覆盖与克隆速度，开发者看 API 与实时性。</p>
+    <div class="grid">
+
+      <article class="tool" id="heygen" data-kind="paid" data-tags="avatar paid free">
+        <div class="th"><h3>HeyGen</h3><span class="en">HeyGen</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：口型与数字人真实度第一梯队，175+ 语言、视频翻译、Avatar IV/V、批量个性化、实时 Streaming API。</p>
+        <p><span class="k">适合</span>：营销与销售视频、UGC 风格广告、多语言本地化、需要 API 的团队。</p>
+        <p class="warn"><span class="k">注意</span>：Creator 约 $29/月，额度按分钟折算；高级功能与并发在更高档；商用需遵守肖像授权。</p>
+        <div class="meta"><span>175+ 语言</span><span>口型强</span><span>视频翻译</span><span>有 API</span></div>
+        <div class="link"><a href="https://www.heygen.com/" target="_blank" rel="noopener">heygen.com</a></div>
+      </article>
+
+      <article class="tool" id="synthesia" data-kind="paid" data-tags="avatar paid free">
+        <div class="th"><h3>Synthesia</h3><span class="en">Synthesia</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：企业培训与合规场景最完整：230+ 头像、140+ 语言、SCORM/LMS 导出、审批流、品牌套件、ISO 42001。</p>
+        <p><span class="k">适合</span>：L&amp;D、内部沟通、需要治理与审计的企业。</p>
+        <p class="warn"><span class="k">注意</span>：创意灵活性不如 HeyGen；实时数字人主要在企业档；价格偏高。</p>
+        <div class="meta"><span>企业培训</span><span>SCORM</span><span>140+ 语言</span><span>治理</span></div>
+        <div class="link"><a href="https://www.synthesia.io/" target="_blank" rel="noopener">synthesia.io</a></div>
+      </article>
+
+      <article class="tool" id="did" data-kind="paid" data-tags="avatar paid free">
+        <div class="th"><h3>D-ID</h3><span class="en">D-ID</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：开发者友好，照片转说话头像，REST API 与实时 Agents SDK，入门价低。</p>
+        <p><span class="k">适合</span>：把数字人嵌进 App、客服/导览、低成本原型。</p>
+        <p class="warn"><span class="k">注意</span>：预录画质弱于 HeyGen/Synthesia；实时分钟数按档位限制。</p>
+        <div class="meta"><span>照片转视频</span><span>实时 API</span><span>低价入门</span></div>
+        <div class="link"><a href="https://www.d-id.com/" target="_blank" rel="noopener">d-id.com</a></div>
+      </article>
+
+      <article class="tool" id="tavus" data-kind="paid" data-tags="avatar paid">
+        <div class="th"><h3>Tavus</h3><span class="en">Tavus</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：实时对话式视频（WebRTC），面向“能问答的数字人”而不是录播。</p>
+        <p><span class="k">适合</span>：销售外呼、客服、个性化视频、交互式产品演示。</p>
+        <p class="warn"><span class="k">注意</span>：不是脚本化成片工具；按对话分钟计费，成本要算清。</p>
+        <div class="meta"><span>实时对话</span><span>WebRTC</span><span>API</span></div>
+        <div class="link"><a href="https://www.tavus.io/" target="_blank" rel="noopener">tavus.io</a></div>
+      </article>
+
+      <article class="tool" id="colossyan" data-kind="paid" data-tags="avatar paid free">
+        <div class="th"><h3>Colossyan</h3><span class="en">Colossyan</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：多角色对话场景、分支互动培训、SCORM 导出，培训视频的“情景剧”能力强。</p>
+        <p><span class="k">适合</span>：合规培训、软技能课程、多角色情景演练。</p>
+        <p class="warn"><span class="k">注意</span>：品牌知名度低于前三家；模板化程度高。</p>
+        <div class="meta"><span>多角色</span><span>分支剧情</span><span>SCORM</span></div>
+        <div class="link"><a href="https://www.colossyan.com/" target="_blank" rel="noopener">colossyan.com</a></div>
+      </article>
+
+      <article class="tool" id="hedra" data-kind="paid" data-tags="avatar paid free">
+        <div class="th"><h3>Hedra</h3><span class="en">Hedra</span><span class="badge b-paid">商业</span></div>
+        <p><span class="k">强项</span>：表现力强的头像视频，Character-3 支持照片 + 音频驱动，适合创意内容而非企业培训。</p>
+        <p><span class="k">适合</span>：创意短片、虚拟主播、音乐/对白片段。</p>
+        <p class="warn"><span class="k">注意</span>：语言覆盖与企业治理弱；长视频稳定性一般。</p>
+        <div class="meta"><span>表现力</span><span>照片驱动</span><span>创意向</span></div>
+        <div class="link"><a href="https://www.hedra.com/" target="_blank" rel="noopener">hedra.com</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 05 开源生成模型 -->
+  <section class="group" id="g-open-model">
+    <div class="ghead"><span class="num">05</span><h2>开源视频生成模型</h2><span class="tag">可以自己下权重、自己跑</span></div>
+    <p class="gintro">“开源”在这里要拆成三层：代码许可、权重许可、以及依赖（人脸检测、VAE、文本编码器）的许可。三层都干净，才能放心商用。显存数字来自官方 README 和社区量化实践，工作流不同差别很大。</p>
+    <div class="grid">
+
+      <article class="tool" id="wan22" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>Wan 2.2 / Wan 2.1</h3><span class="en">阿里巴巴 · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：开源里最省心的默认选择。2.2 的 TI2V-5B 可在 8GB 显存（GGUF + offload）跑 720p，MoE 版本质量更高；2.1 的 1.3B 是低显存入门。</p>
+        <p><span class="k">适合</span>：商业项目、消费级显卡、需要文生/图生/视频编辑/视频转音频的整套工具链。</p>
+        <p class="warn"><span class="k">注意</span>：没有原生音频；官方托管的 Wan 3.0 与可下载权重不是一回事，可下载权重以 2.2 为主，更高版本请回官方仓库核对。</p>
+        <div class="meta"><span>Apache 2.0</span><span>8GB 起（量化）</span><span>720p</span><span>无原生音频</span></div>
+        <div class="link"><a href="https://github.com/Wan-Video/Wan2.2" target="_blank" rel="noopener">github.com/Wan-Video/Wan2.2</a></div>
+      </article>
+
+      <article class="tool" id="ltx" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>LTX-2.5 / LTX-2.3</h3><span class="en">Lightricks</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：目前少数“一次生成同步音频 + 视频”的开源模型；22B，支持文生、图生、音频条件、编辑、多镜头；ComfyUI 生态成熟。</p>
+        <p><span class="k">适合</span>：要本地 4K/带声音、做 ComfyUI 流水线、需要 IC-LoRA/相机控制适配器的团队。</p>
+        <p class="warn"><span class="k">注意</span>：LTX-2.x 社区许可：年营收低于 $1000 万可商用，超过通常需付费授权；量化后 16–32GB 显存；画面内文字仍容易糊。</p>
+        <div class="meta"><span>原生音频</span><span>最高 4K</span><span>16–32GB（量化）</span><span>社区许可</span></div>
+        <div class="link"><a href="https://github.com/Lightricks/LTX-Video" target="_blank" rel="noopener">github.com/Lightricks/LTX-Video</a></div>
+      </article>
+
+      <article class="tool" id="hunyuan" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>HunyuanVideo 1.5</h3><span class="en">腾讯</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：8.3B，动作与光影质量口碑很好；FP8 + 文本编码器卸载后约 14GB 显存可跑，24GB 更舒服；带超分到 1080p。</p>
+        <p><span class="k">适合</span>：有 4090/4080 级别显卡、追求电影感运动、能接受腾讯社区许可的团队。</p>
+        <p class="warn"><span class="k">注意</span>：腾讯社区许可，不适用于欧盟/英国/韩国，且有规模限制；微调支持有限；无原生音频。</p>
+        <div class="meta"><span>8.3B</span><span>1080p</span><span>~14GB（FP8+offload）</span><span>腾讯许可</span></div>
+        <div class="link"><a href="https://github.com/Tencent-Hunyuan/HunyuanVideo" target="_blank" rel="noopener">github.com/Tencent-Hunyuan/HunyuanVideo</a></div>
+      </article>
+
+      <article class="tool" id="cogvideo" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>CogVideoX</h3><span class="en">智谱 / 清华 THUDM</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：提示词遵循好，复杂多从句描述更不容易跑偏；2B 是 Apache 2.0，12–16GB 级别显卡可跑；diffusers 集成顺。</p>
+        <p><span class="k">适合</span>：实验、教学、低显存原型、已经在 HuggingFace diffusers 生态里的团队。</p>
+        <p class="warn"><span class="k">注意</span>：5B 使用自定义 CogVideoX 许可；画质与长镜头一致性落后于 Wan/LTX；无原生音频。</p>
+        <div class="meta"><span>2B Apache</span><span>5B 自定义</span><span>720p</span><span>6–10s</span><span>12–16GB 级别</span></div>
+        <div class="link"><a href="https://github.com/THUDM/CogVideo" target="_blank" rel="noopener">github.com/THUDM/CogVideo</a></div>
+      </article>
+
+      <article class="tool" id="mochi" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>Mochi 1</h3><span class="en">Genmo · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：10B，流体/粒子类二次运动自然；官方 LoRA 训练器支持单卡，是做微调的友好底座。</p>
+        <p><span class="k">适合</span>：想自己训 LoRA、做风格化实验、显存 20GB 以上。</p>
+        <p class="warn"><span class="k">注意</span>：480p、无音频、生态更新慢；不适合作为唯一的生产模型。</p>
+        <div class="meta"><span>Apache 2.0</span><span>480p</span><span>20GB（FP8）</span><span>可微调</span></div>
+        <div class="link"><a href="https://github.com/genmoai/mochi" target="_blank" rel="noopener">github.com/genmoai/mochi</a></div>
+      </article>
+
+      <article class="tool" id="opensora" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>Open-Sora</h3><span class="en">HPC-AI Tech · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：完整的训练/推理代码与数据流程，适合研究“视频 DiT 怎么搭”，而不只是拿现成权重。</p>
+        <p><span class="k">适合</span>：研究者、需要复现实验、想训练自己模型的团队。</p>
+        <p class="warn"><span class="k">注意</span>：工程门槛高、显存需求高；成品质量不等同于商业闭源模型。</p>
+        <div class="meta"><span>Apache 2.0</span><span>可训练</span><span>24GB+</span><span>研究向</span></div>
+        <div class="link"><a href="https://github.com/hpcaitech/Open-Sora" target="_blank" rel="noopener">github.com/hpcaitech/Open-Sora</a></div>
+      </article>
+
+      <article class="tool" id="svd" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>Stable Video Diffusion</h3><span class="en">Stability AI</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：图生视频的老牌基线，8GB 显存可跑，和 SD 生态、AnimateDiff 工作流兼容。</p>
+        <p><span class="k">适合</span>：已有 SD 工作流、做短循环/风格化动图、教学演示。</p>
+        <p class="warn"><span class="k">注意</span>：14/25 帧、576×1024，时长很短；Stability 社区许可有商用条件；已被新模型大幅超越。</p>
+        <div class="meta"><span>图生视频</span><span>8GB</span><span>14/25 帧</span><span>社区许可</span></div>
+        <div class="link"><a href="https://github.com/Stability-AI/generative-models" target="_blank" rel="noopener">github.com/Stability-AI/generative-models</a></div>
+      </article>
+
+      <article class="tool" id="vace" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>VACE</h3><span class="en">阿里 · Apache 2.0 代码</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：统一“生成 + 编辑”：参考图、遮罩、视频到视频、局部重绘，一个模型处理多种控制信号。</p>
+        <p><span class="k">适合</span>：要精确控制镜头内容、做视频编辑流水线、愿意读论文和代码。</p>
+        <p class="warn"><span class="k">注意</span>：代码 Apache，但各模型权重沿用各自基座许可；上手成本高。</p>
+        <div class="meta"><span>视频编辑</span><span>参考/遮罩</span><span>Apache 代码</span></div>
+        <div class="link"><a href="https://github.com/ali-vilab/VACE" target="_blank" rel="noopener">github.com/ali-vilab/VACE</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 06 开源剪辑工具 -->
+  <section class="group" id="g-open-edit">
+    <div class="ghead"><span class="num">06</span><h2>开源剪辑与后期工具</h2><span class="tag">从命令行到完整 NLE</span></div>
+    <p class="gintro">开源 NLE 的现实是：Kdenlive 最像 Premiere，Shotcut 最不挑格式，OpenShot 最容易上手，Blender 适合“剪辑只是 3D 流水线一环”。Olive 已长期停更，不建议新项目使用。</p>
+    <div class="grid">
+
+      <article class="tool" id="ffmpeg" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>FFmpeg</h3><span class="en">FFmpeg 项目</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：转码、裁剪、拼接、滤镜、抽帧、录屏、推流的事实标准；几乎所有视频工具内部都在用它。</p>
+        <p><span class="k">适合</span>：批处理、自动化流水线、把 AI 生成的片段拼成成片。</p>
+        <p class="warn"><span class="k">注意</span>：LGPL/GPL 取决于编译选项；不是设计工具，复杂动画用它会很痛苦。</p>
+        <div class="meta"><span>CLI</span><span>全平台</span><span>转码/滤镜</span><span>LGPL/GPL</span></div>
+        <div class="link"><a href="https://ffmpeg.org/" target="_blank" rel="noopener">ffmpeg.org</a></div>
+      </article>
+
+      <article class="tool" id="kdenlive" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Kdenlive</h3><span class="en">KDE · GPL-3.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：开源里最完整的传统 NLE：多轨、嵌套序列、代理剪辑、示波器、运动跟踪、字幕、调色。</p>
+        <p><span class="k">适合</span>：认真做长片/课程/访谈，愿意花几小时学时间线的人；Linux 体验最佳。</p>
+        <p class="warn"><span class="k">注意</span>：Windows/macOS 仍有崩溃报告，勤保存；20 轨以上在低内存机器上会吃力。</p>
+        <div class="meta"><span>多轨</span><span>代理</span><span>GPL-3.0</span><span>跨平台</span></div>
+        <div class="link"><a href="https://kdenlive.org/" target="_blank" rel="noopener">kdenlive.org</a></div>
+      </article>
+
+      <article class="tool" id="shotcut" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Shotcut</h3><span class="en">Meltytech · GPL-3.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：和 Kdenlive 同用 MLT 引擎，但更“开箱即用”：几乎不转码就能读各种相机/手机格式，更新频繁，硬件编码支持好。</p>
+        <p><span class="k">适合</span>：混合格式素材、快速裁剪与导出、Windows on ARM。</p>
+        <p class="warn"><span class="k">注意</span>：文档偏薄；没有一键社媒导出预设；复杂嵌套能力弱。</p>
+        <div class="meta"><span>原生格式</span><span>硬件编码</span><span>GPL-3.0</span><span>跨平台</span></div>
+        <div class="link"><a href="https://shotcut.org/" target="_blank" rel="noopener">shotcut.org</a></div>
+      </article>
+
+      <article class="tool" id="openshot" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>OpenShot</h3><span class="en">OpenShot Studios · GPL-3.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：最容易上手，拖拽、标题、转场、录屏/摄像头/系统音频内录，4.0 之后体验明显改善。</p>
+        <p><span class="k">适合</span>：第一次剪视频、课堂、家庭视频、简单讲解。</p>
+        <p class="warn"><span class="k">注意</span>：项目一大就卡/崩；macOS 官方构建仍以 Intel 为主；不适合商业长片。</p>
+        <div class="meta"><span>新手</span><span>内录</span><span>GPL-3.0</span><span>跨平台</span></div>
+        <div class="link"><a href="https://www.openshot.org/" target="_blank" rel="noopener">openshot.org</a></div>
+      </article>
+
+      <article class="tool" id="blender" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Blender（Video Sequencer）</h3><span class="en">Blender Foundation · GPL</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：剪辑、合成、3D、动效、跟踪、调色在同一个工程里；VSE 支持多轨、波形、示波器、关键帧。</p>
+        <p><span class="k">适合</span>：需要 3D 片头/动效/合成的项目，或已经在 Blender 里做资产的人。</p>
+        <p class="warn"><span class="k">注意</span>：VSE 不是它的开发重点，精细修剪和音频后期弱于 Kdenlive；为剪视频学整个 Blender 不划算。</p>
+        <div class="meta"><span>3D + 剪辑</span><span>合成</span><span>GPL</span><span>跨平台</span></div>
+        <div class="link"><a href="https://www.blender.org/" target="_blank" rel="noopener">blender.org</a></div>
+      </article>
+
+      <article class="tool" id="losslesscut" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>LosslessCut</h3><span class="en">Mikael Finstad · GPL-2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：不重新编码的快速裁剪/拼接，几乎瞬间完成，画质零损失。</p>
+        <p><span class="k">适合</span>：从长素材里粗剪片段、去掉片头片尾、提取音轨。</p>
+        <p class="warn"><span class="k">注意</span>：只能在关键帧附近切；不是完整编辑器。</p>
+        <div class="meta"><span>无损裁剪</span><span>极快</span><span>GPL-2.0</span></div>
+        <div class="link"><a href="https://github.com/mifi/lossless-cut" target="_blank" rel="noopener">github.com/mifi/lossless-cut</a></div>
+      </article>
+
+      <article class="tool" id="flowblade" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Flowblade</h3><span class="en">GPL-3.0 · Linux</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：Linux 上的精密插入剪辑，界面紧凑、快捷键驱动，适合“剪得快”的人。</p>
+        <p><span class="k">适合</span>：Linux 用户、纪录片/访谈的精确修剪。</p>
+        <p class="warn"><span class="k">注意</span>：仅 Linux；生态与教程少。</p>
+        <div class="meta"><span>Linux only</span><span>精确剪辑</span><span>GPL-3.0</span></div>
+        <div class="link"><a href="https://github.com/jliljebl/flowblade" target="_blank" rel="noopener">github.com/jliljebl/flowblade</a></div>
+      </article>
+
+      <article class="tool" id="pitivi" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Pitivi / Avidemux</h3><span class="en">GPL · 轻量工具</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：Pitivi 是 GNOME 风格的简洁剪辑器；Avidemux 擅长快速剪切、滤镜与格式转换。</p>
+        <p><span class="k">适合</span>：Linux 桌面上的简单剪辑、转码、去广告。</p>
+        <p class="warn"><span class="k">注意</span>：两者都更新缓慢；Avidemux 自 2022 年后无稳定版，长期项目慎选。</p>
+        <div class="meta"><span>Linux</span><span>轻量</span><span>GPL</span><span>更新慢</span></div>
+        <div class="link"><a href="https://www.pitivi.org/" target="_blank" rel="noopener">pitivi.org</a> · <a href="https://avidemux.org/" target="_blank" rel="noopener">avidemux.org</a></div>
+      </article>
+
+      <article class="tool" id="natron" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Natron</h3><span class="en">GPL-2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：节点式合成，OpenFX 插件，做抠像、跟踪、roto、合成都行，是 After Effects/Nuke 的开源替代方向。</p>
+        <p><span class="k">适合</span>：需要合成与跟踪、愿意学节点工作流的人。</p>
+        <p class="warn"><span class="k">注意</span>：开发活跃度一般；不是剪辑器，要和 NLE 配合。</p>
+        <div class="meta"><span>节点合成</span><span>OpenFX</span><span>GPL-2.0</span></div>
+        <div class="link"><a href="https://natrongithub.github.io/" target="_blank" rel="noopener">natrongithub.github.io</a></div>
+      </article>
+
+      <article class="tool" id="autoeditor" data-kind="open" data-tags="edit open free audio">
+        <div class="th"><h3>Auto-Editor</h3><span class="en">WyattBlue · Unlicense</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：自动检测静音/无声段并剪掉，命令行批处理，适合口播、访谈、课程的第一道粗剪。</p>
+        <p><span class="k">适合</span>：把一小时讲课压成紧凑版本、批量去停顿。</p>
+        <p class="warn"><span class="k">注意</span>：只看音量，不理解语义；重要停顿/笑点可能被误删，需回看。</p>
+        <div class="meta"><span>去静音</span><span>CLI</span><span>Unlicense</span><span>批处理</span></div>
+        <div class="link"><a href="https://auto-editor.com/" target="_blank" rel="noopener">auto-editor.com</a></div>
+      </article>
+
+      <article class="tool" id="obs" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>OBS Studio</h3><span class="en">OBS Project · GPL-2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：录屏、摄像头、窗口采集、直播、场景切换，视频生产的第一道“素材入口”。</p>
+        <p><span class="k">适合</span>：教程录制、直播、把 AI 生成过程录下来做花絮。</p>
+        <p class="warn"><span class="k">注意</span>：不是编辑器；长时间录制要管好磁盘和码率。</p>
+        <div class="meta"><span>录屏</span><span>直播</span><span>GPL-2.0</span><span>跨平台</span></div>
+        <div class="link"><a href="https://obsproject.com/" target="_blank" rel="noopener">obsproject.com</a></div>
+      </article>
+
+      <article class="tool" id="storytoolkit" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>StoryToolkitAI</h3><span class="en">GPL-3.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：用语义搜索素材、自动转写、按内容找片段，直接对接 Resolve/Premiere 的工作流。</p>
+        <p><span class="k">适合</span>：素材量大的纪录片/访谈，先搜再剪。</p>
+        <p class="warn"><span class="k">注意</span>：2025 年后更新变慢；需要本地模型与一定配置。</p>
+        <div class="meta"><span>语义搜索</span><span>转写</span><span>GPL-3.0</span></div>
+        <div class="link"><a href="https://github.com/octimot/StoryToolkitAI" target="_blank" rel="noopener">github.com/octimot/StoryToolkitAI</a></div>
+      </article>
+
+      <article class="tool" id="openchatcut" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>OpenChatCut</h3><span class="en">AGPL-3.0 · 2026 新项目</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：对话式 AI 剪辑 + 真实多轨时间线，编辑落到 clips/transitions/captions 上，可撤销、可继续手剪；支持 MCP 与 Remotion 渲染。</p>
+        <p><span class="k">适合</span>：想让 Agent 参与剪辑、又不想被“生成完就改不了”的团队。</p>
+        <p class="warn"><span class="k">注意</span>：项目很新，格式与工具仍在变；AGPL 对网络分发有要求；渲染依赖 Remotion 的许可。</p>
+        <div class="meta"><span>Agent 剪辑</span><span>多轨</span><span>MCP</span><span>AGPL-3.0</span></div>
+        <div class="link"><a href="https://github.com/0xsline/OpenChatCut" target="_blank" rel="noopener">github.com/0xsline/OpenChatCut</a></div>
+      </article>
+
+      <article class="tool" id="remotion" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Remotion / Editly / Motion Canvas</h3><span class="en">代码生成视频</span><span class="badge b-note">源码可见</span></div>
+        <p><span class="k">强项</span>：用 React/JS 把视频写成程序，数据驱动、批量渲染、和前端技术栈一致；Editly 用 JSON + FFmpeg，Motion Canvas 偏动效演示。</p>
+        <p><span class="k">适合</span>：批量个性化视频、数据可视化动画、开发者做模板系统。</p>
+        <p class="warn"><span class="k">注意</span>：Remotion 不是 OSI 开源，超过 3 人的公司商用需买许可；Editly 更新已放缓；都要写代码。</p>
+        <div class="meta"><span>React/JS</span><span>批量渲染</span><span>Remotion 商用许可</span></div>
+        <div class="link"><a href="https://www.remotion.dev/" target="_blank" rel="noopener">remotion.dev</a> · <a href="https://github.com/mifi/editly" target="_blank" rel="noopener">editly</a> · <a href="https://motioncanvas.io/" target="_blank" rel="noopener">motioncanvas.io</a></div>
+      </article>
+
+      <article class="tool" id="htmlvideo" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>html-video</h3><span class="en">nexu-io · Apache-2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：HTML/CSS/数据 → MP4 的“元层”，给 coding agent 用。多帧 HTML 故事板交给 Hyperframes 引擎：headless Chromium 逐帧录，ffmpeg 编码；自带 21 个模板、14 个 agent 后端、Studio + CLI。</p>
+        <p><span class="k">适合</span>：原理片、数据动画、产品说明、批量个性化；本地渲染、无按条计费。</p>
+        <p class="warn"><span class="k">注意</span>：目前只有 Hyperframes 适配器完整出片，Remotion / Motion Canvas / Manim 还在 roadmap；最后代码推送 2026-06-21，生产使用请 pin commit。</p>
+        <div class="meta"><span>HTML→MP4</span><span>Chromium + ffmpeg</span><span>21 模板</span><span>本地渲染</span></div>
+        <div class="link"><a href="https://github.com/nexu-io/html-video" target="_blank" rel="noopener">github.com/nexu-io/html-video</a> · <a href="html-video-sop/index.html">本站 SOP 案例（含 20s 演示视频）</a></div>
+      </article>
+
+      <article class="tool" id="webav" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>WebAV / ffmpeg.wasm</h3><span class="en">浏览器内剪辑底座</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：WebCodecs / WASM 在浏览器里做剪辑、合成、转码，不需要上传素材，适合做“本地优先”的网页编辑器。</p>
+        <p><span class="k">适合</span>：要自己搭在线剪辑器、注重隐私与零安装的产品。</p>
+        <p class="warn"><span class="k">注意</span>：它们只提供渲染/处理层，不带完整时间线 UI；浏览器性能与编解码支持参差。</p>
+        <div class="meta"><span>浏览器</span><span>WebCodecs</span><span>WASM</span><span>无 UI</span></div>
+        <div class="link"><a href="https://github.com/WebAV-Tech/WebAV" target="_blank" rel="noopener">WebAV</a> · <a href="https://ffmpegwasm.netlify.app/" target="_blank" rel="noopener">ffmpeg.wasm</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 07 开源 AI 专项 -->
+  <section class="group" id="g-open-ai">
+    <div class="ghead"><span class="num">07</span><h2>开源 AI 视频专项工具</h2><span class="tag">口型 / 数字人 / 语音 / 字幕 / 修复</span></div>
+    <p class="gintro">一条本地流水线通常由这些“小模型”拼起来：转写 → 配音 → 口型 → 超分 → 补帧 → 剪辑。每个都能单独替换，也各自带着许可陷阱。</p>
+    <div class="grid">
+
+      <article class="tool" id="comfyui" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>ComfyUI</h3><span class="en">GPL-3.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：节点式生成工作流的事实标准，Wan、LTX、Hunyuan、CogVideo、口型、超分、补帧都能接进同一张图。</p>
+        <p><span class="k">适合</span>：本地 AI 视频的主力工作台，想把多个模型串成可复用流水线。</p>
+        <p class="warn"><span class="k">注意</span>：节点生态质量参差，装错版本很容易炸环境；商用仍要看每个模型自己的许可。</p>
+        <div class="meta"><span>节点工作流</span><span>多模型</span><span>GPL-3.0</span></div>
+        <div class="link"><a href="https://github.com/comfyanonymous/ComfyUI" target="_blank" rel="noopener">github.com/comfyanonymous/ComfyUI</a></div>
+      </article>
+
+      <article class="tool" id="latentsync" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>LatentSync</h3><span class="en">字节跳动</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：给已有视频换口型，1.6 在 512×512 下清晰度最好，是本地配音/译制的默认基线。</p>
+        <p><span class="k">适合</span>：给外语视频做中文口型、修正台词、短视频译制。</p>
+        <p class="warn"><span class="k">注意</span>：代码 Apache，权重 OpenRAIL++；人脸检测依赖 InsightFace，其预训练模型标注为非商用研究；1.6 需 18GB 左右显存。</p>
+        <div class="meta"><span>换口型</span><span>512×512</span><span>8–18GB</span><span>许可需细读</span></div>
+        <div class="link"><a href="https://github.com/bytedance/LatentSync" target="_blank" rel="noopener">github.com/bytedance/LatentSync</a></div>
+      </article>
+
+      <article class="tool" id="musetalk" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>MuseTalk</h3><span class="en">腾讯音乐 · MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：实时口型（V100 上 30fps+），4GB 笔记本 GPU 也能跑 fp16；README 明确模型可用于商业用途。</p>
+        <p><span class="k">适合</span>：实时数字人、直播、低成本批量口型。</p>
+        <p class="warn"><span class="k">注意</span>：256×256 面部区域，清晰度有限；输入建议 25fps；依赖 Whisper/DWPose 等各自许可。</p>
+        <div class="meta"><span>实时</span><span>MIT</span><span>4GB 可跑</span><span>商业可用</span></div>
+        <div class="link"><a href="https://github.com/TMElyralab/MuseTalk" target="_blank" rel="noopener">github.com/TMElyralab/MuseTalk</a></div>
+      </article>
+
+      <article class="tool" id="liveportrait" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>LivePortrait</h3><span class="en">快手 Kling 团队 · MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：用驱动视频让静态肖像动起来，表情、头部、肩部自然，支持动物模式，官方支持 Apple Silicon。</p>
+        <p><span class="k">适合</span>：让照片“说话/做表情”、虚拟主播、表情迁移。</p>
+        <p class="warn"><span class="k">注意</span>：它不吃音频，要配 TTS；人脸裁剪默认用 InsightFace，商用需换 MediaPipe 或确认授权；Mac 上可能比 4090 慢很多。</p>
+        <div class="meta"><span>肖像驱动</span><span>MIT</span><span>支持 Mac</span><span>需配音频</span></div>
+        <div class="link"><a href="https://github.com/KlingAIResearch/LivePortrait" target="_blank" rel="noopener">github.com/KlingAIResearch/LivePortrait</a></div>
+      </article>
+
+      <article class="tool" id="sadtalker" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>SadTalker</h3><span class="en">Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：单张照片 + 音频生成说话头，社区老牌、教程多，M1 Mac 也能跑。</p>
+        <p><span class="k">适合</span>：低门槛照片说话、教学演示、原型。</p>
+        <p class="warn"><span class="k">注意</span>：画质与口型已被新模型超越；部分第三方组件许可见 README；长音频稳定性一般。</p>
+        <div class="meta"><span>照片说话</span><span>Apache 2.0</span><span>Mac 可跑</span><span>老牌</span></div>
+        <div class="link"><a href="https://github.com/OpenTalker/SadTalker" target="_blank" rel="noopener">github.com/OpenTalker/SadTalker</a></div>
+      </article>
+
+      <article class="tool" id="infinitetalk" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>InfiniteTalk</h3><span class="en">MeiGen-AI · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：长视频口型 + 头身运动，基于 Wan 2.1，支持视频+音频或图片+音频，低显存模式。</p>
+        <p><span class="k">适合</span>：需要“说话时头和身体也动”的长片段数字人。</p>
+        <p class="warn"><span class="k">注意</span>：比纯口型模型重；480p/720p；要走 Kijai 的 ComfyUI 包装器。</p>
+        <div class="meta"><span>长视频</span><span>头身运动</span><span>Apache 2.0</span><span>Wan 基座</span></div>
+        <div class="link"><a href="https://github.com/MeiGen-AI/InfiniteTalk" target="_blank" rel="noopener">github.com/MeiGen-AI/InfiniteTalk</a></div>
+      </article>
+
+      <article class="tool" id="wav2lip" data-kind="open" data-tags="avatar open free retired">
+        <div class="th"><h3>Wav2Lip</h3><span class="en">非商用</span><span class="badge b-warn">慎用</span></div>
+        <p><span class="k">强项</span>：经典口型基线，生态和教程最多，效果“够用”。</p>
+        <p><span class="k">适合</span>：研究、学习、非商业 demo。</p>
+        <p class="warn"><span class="k">注意</span>：README 明确“严禁任何形式的商业使用”；画质低；新项目建议直接用 MuseTalk/LatentSync。</p>
+        <div class="meta"><span>非商用</span><span>低分辨率</span><span>经典</span></div>
+        <div class="link"><a href="https://github.com/Rudrabha/Wav2Lip" target="_blank" rel="noopener">github.com/Rudrabha/Wav2Lip</a></div>
+      </article>
+
+      <article class="tool" id="hunyuan-avatar" data-kind="open" data-tags="avatar open free">
+        <div class="th"><h3>HunyuanVideo-Avatar</h3><span class="en">腾讯</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：图片 + 音频生成 704px 数字人，动作与表情自然，基于 HunyuanVideo 生态。</p>
+        <p><span class="k">适合</span>：高质量肖像数字人、有 24GB+ 显存的团队。</p>
+        <p class="warn"><span class="k">注意</span>：腾讯社区许可（欧盟/英国/韩国受限）；24GB 起、96GB 推荐；ComfyUI 支持当时尚未正式发布。</p>
+        <div class="meta"><span>704px</span><span>24GB 起</span><span>腾讯许可</span><span>音频驱动</span></div>
+        <div class="link"><a href="https://github.com/Tencent-Hunyuan/HunyuanVideo-Avatar" target="_blank" rel="noopener">github.com/Tencent-Hunyuan/HunyuanVideo-Avatar</a></div>
+      </article>
+
+      <article class="tool" id="funasr" data-kind="open" data-tags="edit audio open free">
+        <div class="th"><h3>FunASR / FunClip / Whisper</h3><span class="en">阿里 / OpenAI · MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：中文语音识别与时间戳；FunClip 按文本选片段自动剪；Whisper 多语种转写与字幕，whisperX 做词级对齐。</p>
+        <p><span class="k">适合</span>：自动字幕、按台词粗剪、播客转写、给口型模型准备音频对齐。</p>
+        <p class="warn"><span class="k">注意</span>：中文专有名词仍需校对；Whisper 大模型吃显存；词级对齐模型许可要单独看。</p>
+        <div class="meta"><span>中文 ASR</span><span>词级时间戳</span><span>MIT</span><span>字幕</span></div>
+        <div class="link"><a href="https://github.com/modelscope/FunASR" target="_blank" rel="noopener">FunASR</a> · <a href="https://github.com/modelscope/FunClip" target="_blank" rel="noopener">FunClip</a> · <a href="https://github.com/openai/whisper" target="_blank" rel="noopener">Whisper</a></div>
+      </article>
+
+      <article class="tool" id="autosubs" data-kind="open" data-tags="edit audio open free">
+        <div class="th"><h3>AutoSubs</h3><span class="en">MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：本地生成字幕并直接送进 DaVinci Resolve / Premiere / After Effects，省掉手工对时间轴。</p>
+        <p><span class="k">适合</span>：后期已经在 Resolve/Premiere 里的团队。</p>
+        <p class="warn"><span class="k">注意</span>：可选的 MMS 强制对齐权重是 CC BY-NC 4.0（非商用），商用要换模型。</p>
+        <div class="meta"><span>Resolve/Premiere</span><span>本地</span><span>MIT 代码</span><span>权重非商用</span></div>
+        <div class="link"><a href="https://github.com/tmoroney/auto-subs" target="_blank" rel="noopener">github.com/tmoroney/auto-subs</a></div>
+      </article>
+
+      <article class="tool" id="gpt-sovits" data-kind="open" data-tags="audio open free">
+        <div class="th"><h3>GPT-SoVITS</h3><span class="en">RVC-Boss 社区 · MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：5 秒零样本、1 分钟微调，中文/日文/韩文/粤语克隆效果好；WebUI 把切分、ASR、训练、推理都串好了。</p>
+        <p><span class="k">适合</span>：中文为主的角色配音、个人声音克隆、本地 TTS。</p>
+        <p class="warn"><span class="k">注意</span>：英文质量弱；需要一定训练与调参；克隆他人声音必须取得授权。</p>
+        <div class="meta"><span>少样本克隆</span><span>中文强</span><span>MIT</span><span>需授权</span></div>
+        <div class="link"><a href="https://github.com/RVC-Boss/GPT-SoVITS" target="_blank" rel="noopener">github.com/RVC-Boss/GPT-SoVITS</a></div>
+      </article>
+
+      <article class="tool" id="cosyvoice" data-kind="open" data-tags="audio open free">
+        <div class="th"><h3>CosyVoice 2 / 3</h3><span class="en">阿里 FunAudioLLM · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：零样本克隆 + 情绪标签 + 低延迟流式（首包约 150ms），中文强，9 种语言与多种方言。</p>
+        <p><span class="k">适合</span>：实时语音 Agent、中文旁白、多语种配音。</p>
+        <p class="warn"><span class="k">注意</span>：英文“可用但非顶级”；长文本建议分段；克隆需授权。</p>
+        <div class="meta"><span>Apache 2.0</span><span>流式</span><span>情绪标签</span><span>中文强</span></div>
+        <div class="link"><a href="https://github.com/FunAudioLLM/CosyVoice" target="_blank" rel="noopener">github.com/FunAudioLLM/CosyVoice</a></div>
+      </article>
+
+      <article class="tool" id="f5tts" data-kind="open" data-tags="audio open free">
+        <div class="th"><h3>F5-TTS / Kokoro</h3><span class="en">MIT / Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：F5-TTS 用 10 秒参考做零样本克隆，英文质量开源第一梯队、0.3B 跑得快；Kokoro 是极小的本地朗读引擎。</p>
+        <p><span class="k">适合</span>：英文旁白、轻量本地 TTS、ComfyUI 配音节点。</p>
+        <p class="warn"><span class="k">注意</span>：F5 语言覆盖以中英为主，无原生情绪标签，长文稳定性一般；Kokoro 音色与语言有限。</p>
+        <div class="meta"><span>MIT</span><span>10s 克隆</span><span>0.3B</span><span>英文强</span></div>
+        <div class="link"><a href="https://github.com/SWivid/F5-TTS" target="_blank" rel="noopener">github.com/SWivid/F5-TTS</a> · <a href="https://github.com/hexgrad/kokoro" target="_blank" rel="noopener">Kokoro</a></div>
+      </article>
+
+      <article class="tool" id="fishspeech" data-kind="open" data-tags="audio open free">
+        <div class="th"><h3>Fish Speech / Drama 3</h3><span class="en">Fish Audio</span><span class="badge b-note">半开源</span></div>
+        <p><span class="k">强项</span>：多说话人、长对话、情绪标签（[whisper]、[angry]）、口语化控制；Drama 3 面向多角色场景与长内容。</p>
+        <p><span class="k">适合</span>：广播剧、多角色配音、需要强表现力的中文/多语种内容。</p>
+        <p class="warn"><span class="k">注意</span>：代码与权重是 Fish Audio 社区许可，S2-Pro 权重为研究许可；商用前必须逐条读 LICENSE。</p>
+        <div class="meta"><span>多说话人</span><span>情绪标签</span><span>社区许可</span><span>长音频</span></div>
+        <div class="link"><a href="https://github.com/fishaudio/fish-speech" target="_blank" rel="noopener">github.com/fishaudio/fish-speech</a></div>
+      </article>
+
+      <article class="tool" id="musicgen" data-kind="open" data-tags="audio open free">
+        <div class="th"><h3>MusicGen / ACE-Step / Stable Audio</h3><span class="en">开源音乐生成</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：按文字或旋律生成配乐；ACE-Step 速度快、适合批量；MusicGen 生态成熟；Stable Audio 擅长音效与短循环。</p>
+        <p><span class="k">适合</span>：给短视频配无版权风险的 BGM、生成音效、做循环铺底。</p>
+        <p class="warn"><span class="k">注意</span>：MusicGen 代码 MIT 但权重常为 CC BY-NC（非商用），ACE-Step 为 Apache 2.0，Stable Audio 走 Stability 社区许可；三者别混为一谈。</p>
+        <div class="meta"><span>文生音乐</span><span>音效</span><span>许可各异</span><span>本地</span></div>
+        <div class="link"><a href="https://github.com/facebookresearch/audiocraft" target="_blank" rel="noopener">MusicGen</a> · <a href="https://github.com/ace-step/ACE-Step" target="_blank" rel="noopener">ACE-Step</a> · <a href="https://github.com/Stability-AI/stable-audio-tools" target="_blank" rel="noopener">Stable Audio</a></div>
+      </article>
+
+      <article class="tool" id="realesrgan" data-kind="open" data-tags="edit open free">
+        <div class="th"><h3>Real-ESRGAN / RIFE / BackgroundRemover</h3><span class="en">BSD / MIT</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：Real-ESRGAN 超分与修复，RIFE 补帧让运动更顺，BackgroundRemover 一键抠像，都是流水线里的“零件”。</p>
+        <p><span class="k">适合</span>：把低清 AI 片段提清晰、给 24fps 补到 60fps、批量去背景。</p>
+        <p class="warn"><span class="k">注意</span>：超分会放大伪影、补帧会产生果冻感；批量处理吃 GPU；不同项目许可要逐个确认。</p>
+        <div class="meta"><span>超分</span><span>补帧</span><span>抠像</span><span>零件式</span></div>
+        <div class="link"><a href="https://github.com/xinntao/Real-ESRGAN" target="_blank" rel="noopener">Real-ESRGAN</a> · <a href="https://github.com/hzwer/ECCV2022-RIFE" target="_blank" rel="noopener">RIFE</a> · <a href="https://github.com/nadermx/backgroundremover" target="_blank" rel="noopener">BackgroundRemover</a></div>
+      </article>
+
+      <article class="tool" id="diffsynth" data-kind="open" data-tags="gen open free">
+        <div class="th"><h3>DiffSynth-Studio</h3><span class="en">ModelScope · Apache 2.0</span><span class="badge b-open">开源</span></div>
+        <p><span class="k">强项</span>：一套代码跑多种图像/视频/音频模型的推理与训练，包括 LoRA 训练，适合“一个工具箱管多代模型”。</p>
+        <p><span class="k">适合</span>：要批量试验不同基座、自己训 LoRA、做模型对比的团队。</p>
+        <p class="warn"><span class="k">注意</span>：抽象层会隐藏细节，出问题要往下读代码；各模型仍受各自权重许可约束。</p>
+        <div class="meta"><span>多模型</span><span>LoRA 训练</span><span>Apache 2.0</span><span>活跃</span></div>
+        <div class="link"><a href="https://github.com/modelscope/DiffSynth-Studio" target="_blank" rel="noopener">github.com/modelscope/DiffSynth-Studio</a></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 08 横评 -->
+  <section class="group" id="compare">
+    <div class="ghead"><span class="num">08</span><h2>生成模型横评（量级对照）</h2><span class="tag">先看口径，再看数字</span></div>
+    <p class="gintro">下表把“闭源商业”和“可下载权重”放在一起，只对比公开可核对的硬指标。同一家的不同档位、不同入口（网页 / API / 第三方托管）经常不是同一套规格，价格与时长请以你实际使用的入口为准。</p>
+    <div class="tablewrap">
+      <table>
+        <caption>核对日期 2026-11-02。时长/分辨率/价格为公开页面与二手评测的量级参考，不是报价单。</caption>
+        <thead>
+          <tr><th>模型</th><th>原生音频</th><th>单次时长</th><th>最高分辨率</th><th>许可 / 价格量级</th><th>最适合</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Veo 3.1</b><br><span class="muted">Google</span></td><td>有，含对白</td><td>4 / 6 / 8s，可延展</td><td>1080p；4K 走 API/Flow</td><td>闭源；订阅或按秒（约 $0.03–0.60/s）</td><td>带声音的广告镜头</td></tr>
+          <tr><td><b>Kling 4.0</b><br><span class="muted">快手</span></td><td>有</td><td>最长 30s</td><td>4K</td><td>闭源；约 $10/月起，国内约 ¥58–66/月</td><td>动作、图生视频</td></tr>
+          <tr><td><b>Runway Gen-4.5</b><br><span class="muted">Runway</span></td><td>有（2025-12 起）</td><td>5 / 10s</td><td>1080p</td><td>闭源；$12–15/月起，API 约 $0.12/s</td><td>运镜与编辑套件</td></tr>
+          <tr><td><b>Seedance 2.5</b><br><span class="muted">字节</span></td><td>有</td><td>最长 30s</td><td>1080p</td><td>闭源；Dreamina 约 $15/月起</td><td>剪映/抖音链路</td></tr>
+          <tr><td><b>Wan 2.2</b><br><span class="muted">阿里</span></td><td>无</td><td>约 5s</td><td>720p</td><td>Apache 2.0；本地免费</td><td>商业项目、消费级显卡</td></tr>
+          <tr><td><b>LTX-2.5</b><br><span class="muted">Lightricks</span></td><td>有，音画同步</td><td>由提示词/工作流决定</td><td>最高 4K</td><td>社区许可；年营收 &lt; $1000 万可商用</td><td>开源 + 原生音频</td></tr>
+          <tr><td><b>HunyuanVideo 1.5</b><br><span class="muted">腾讯</span></td><td>无</td><td>约 5s</td><td>1080p（超分）</td><td>腾讯社区许可；欧盟/英国/韩国受限</td><td>电影感运动、单卡 4090</td></tr>
+          <tr><td><b>CogVideoX</b><br><span class="muted">智谱/清华</span></td><td>无</td><td>6–10s</td><td>720p</td><td>2B Apache 2.0；5B 自定义许可</td><td>低显存实验、diffusers</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <h3>一个必须说清楚的变化：Sora 已经退役</h3>
+      <p>据 OpenAI 帮助中心与开发者弃用页，Sora 的网页/App 于 <b>2026-04-26</b> 停止服务，Sora 2 模型与 Videos API 于 <b>2026-09-24</b> 关闭，且官方未给出“一对一替代”。仍能看到大量 2025 年的“Sora vs Veo”文章，选型时不要把 Sora 当成在售产品。</p>
+    </div>
+  </section>
+
+  <!-- 09 流水线 -->
+  <section class="group" id="pipeline">
+    <div class="ghead"><span class="num">09</span><h2>从一句想法到成片：7 个环节</h2><span class="tag">商业或本地都能套</span></div>
+    <p class="gintro">真正的瓶颈通常不是“生成一个镜头”，而是角色一致、口型、字幕、节奏和返工。下面每一环都给了商业与开源两条路，按预算和合规要求替换即可。</p>
+    <div class="flow">
+      <div class="step"><div class="n">STEP 1</div><h3>选题 / 脚本</h3><p>ChatGPT、Claude、Gemini；本地可用 Ollama。先定时长、平台、CTA。</p></div>
+      <div class="step"><div class="n">STEP 2</div><h3>分镜 / 关键帧</h3><p>Midjourney、Flux、即梦；开源 SDXL / Qwen-Image。固定角色参考图。</p></div>
+      <div class="step"><div class="n">STEP 3</div><h3>镜头生成</h3><p>Veo、Kling、Runway；本地 Wan 2.2 / LTX-2.5 / HunyuanVideo。</p></div>
+      <div class="step"><div class="n">STEP 4</div><h3>角色一致</h3><p>Vidu 参考生视频、Runway References；开源 IP-Adapter / LoRA / VACE。</p></div>
+      <div class="step"><div class="n">STEP 5</div><h3>配音 / 音乐</h3><p>ElevenLabs、HeyGen；开源 CosyVoice、GPT-SoVITS、ACE-Step、MusicGen。</p></div>
+      <div class="step"><div class="n">STEP 6</div><h3>口型 / 数字人</h3><p>HeyGen、Synthesia；开源 LatentSync、MuseTalk、LivePortrait。</p></div>
+      <div class="step"><div class="n">STEP 7</div><h3>剪辑 / 字幕 / 导出</h3><p>Resolve、Premiere、剪映；开源 Kdenlive、Shotcut、FFmpeg、Whisper。</p></div>
+    </div>
+    <div class="callout">
+      <h3>本地零预算的一条最小可行链路</h3>
+      <ul>
+        <li><b>生成</b>：ComfyUI + Wan 2.2 TI2V-5B（8GB 量化）或 LTX-2.5（需要音频时）。</li>
+        <li><b>配音</b>：CosyVoice（中文）或 F5-TTS（英文），克隆素材必须自有授权。</li>
+        <li><b>口型</b>：MuseTalk（快、可商用）或 LatentSync 1.6（更清晰，许可更复杂）。</li>
+        <li><b>字幕</b>：Whisper / FunASR 转写，AutoSubs 送进 Resolve。</li>
+        <li><b>成片</b>：Kdenlive / Shotcut 手剪，FFmpeg 批处理与导出。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 10 许可证 -->
+  <section class="group" id="license">
+    <div class="ghead"><span class="num">10</span><h2>开源许可：三层，不是一层</h2><span class="tag">代码 / 权重 / 依赖</span></div>
+    <p class="gintro">同一个项目里，代码可能是 MIT，权重却是非商用；或者权重开源，但人脸检测依赖的预训练模型禁止商用。下面是最容易踩的几类。</p>
+    <div class="tablewrap">
+      <table>
+        <caption>只做类型提示，不构成法律意见；商用前请让法务或项目方确认具体版本。</caption>
+        <thead><tr><th>许可类型</th><th>典型项目</th><th>商用要注意</th></tr></thead>
+        <tbody>
+          <tr><td><b>Apache 2.0 / MIT</b></td><td>Wan 2.2、CogVideoX-2B、MuseTalk、LivePortrait、F5-TTS、CosyVoice、Whisper</td><td>最宽松，但仍要看“权重”是否同一许可；MIT 需保留版权声明。</td></tr>
+          <tr><td><b>GPL / AGPL</b></td><td>Kdenlive、Shotcut、OpenShot、FFmpeg（部分）、OpenChatCut</td><td>分发修改版要开源；AGPL 把“通过网络提供服务”也纳入触发条件。</td></tr>
+          <tr><td><b>社区许可</b></td><td>LTX-2.x、HunyuanVideo 1.5、Stability 系列、MiniMax H3</td><td>常有营收上限、地区排除（欧盟/英国/韩国）或申请流程，逐条读。</td></tr>
+          <tr><td><b>OpenRAIL</b></td><td>LatentSync 权重、部分生成模型</td><td>允许使用但附带行为限制，不能只看“开源”两个字。</td></tr>
+          <tr><td><b>非商用</b></td><td>Wav2Lip、XTTS-v2、MusicGen 权重、AutoSubs 的 MMS 对齐权重、InsightFace 预训练模型</td><td>不能用于接单、广告、带货；研究/学习可以，但也要看数据来源。</td></tr>
+          <tr><td><b>源码可见</b></td><td>Remotion</td><td>个人与小团队免费，超过人数阈值需购买公司许可；不是 OSI 开源。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout risk">
+      <h3>三个最常见的坑</h3>
+      <ul>
+        <li><b>代码许可 ≠ 权重许可。</b> 仓库写 Apache 2.0，模型卡可能写 OpenRAIL 或“仅研究”。</li>
+        <li><b>依赖也会传染。</b> LatentSync / LivePortrait 的人脸检测用到 InsightFace，其预训练模型标注为非商用研究。</li>
+        <li><b>生成内容可商用 ≠ 画面里的一切都可商用。</b> 真人肖像、品牌 Logo、影视角色、音乐、字体仍要单独授权。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 11 已退役 -->
+  <section class="group" id="g-retired">
+    <div class="ghead"><span class="num">11</span><h2>已退役 / 不建议新项目使用</h2><span class="tag">避免照着旧教程踩空</span></div>
+    <p class="gintro">AI 视频的教程半衰期很短。下面这些仍能搜到大量内容，但要么服务已关，要么项目已停更。</p>
+    <div class="grid">
+      <article class="tool" id="sora" data-kind="retired" data-tags="gen retired">
+        <div class="th"><h3>OpenAI Sora</h3><span class="en">已停服</span><span class="badge b-warn">退役</span></div>
+        <p>网页/App 于 2026-04-26 停止，Sora 2 与 Videos API 于 2026-09-24 关闭；官方弃用页没有推荐替代。现有作品请尽快按官方指引导出。</p>
+        <p class="warn"><b>替代</b>：按任务选 Veo / Kling / Runway / Seedance，不要找“Sora 平替”这种单一答案。</p>
+        <div class="meta"><span>API 已关</span><span>无官方替代</span><span>导出请从速</span></div>
+        <div class="link"><a href="https://help.openai.com/en/articles/20001152-what-to-know-about-the-sora-discontinuation" target="_blank" rel="noopener">OpenAI 帮助中心</a></div>
+      </article>
+      <article class="tool" id="olive" data-kind="retired" data-tags="edit retired open">
+        <div class="th"><h3>Olive</h3><span class="en">停更</span><span class="badge b-warn">退役</span></div>
+        <p>曾经很有野心的节点式 NLE，但代码自 2024 年 12 月后没有提交，从未发布稳定 1.0；官网只写“will return”。旧 alpha 不适合真实项目。</p>
+        <p class="warn"><b>替代</b>：Kdenlive（完整）、Shotcut（不挑格式）、DaVinci Resolve（专业免费档）。</p>
+        <div class="meta"><span>停更</span><span>无稳定版</span><span>仅可围观</span></div>
+        <div class="link"><a href="https://olivevideoeditor.org/" target="_blank" rel="noopener">olivevideoeditor.org</a></div>
+      </article>
+    </div>
+  </section>
+
+  <p class="empty" id="empty" hidden>没有匹配的工具，试试别的关键词或点“全部”。</p>
+
+  </main>
+
+  <section class="group" id="sources">
+    <div class="ghead"><span class="num">12</span><h2>来源与方法</h2><span class="tag">抓取 / 核对日期见下</span></div>
+    <p class="gintro">本页由公开网页与厂商文档整理，不包含实测跑分。价格、版本、免费额度以 2026 年 10–11 月公开信息为准；厂商改价频繁，下单前请回官网确认。标注“据报道/二手来源”的数字只作量级参考。</p>
+    <div class="sources">
+      <ol>
+        <li>OpenAI Help Center — Sora discontinuation（App 2026-04-26，API 2026-09-24）<span class="date">2026-09</span></li>
+        <li>OpenAI Developer Docs — Deprecations: Sora 2 / Videos API<span class="date">2026-03-24</span></li>
+        <li>ToolDuck — Best AI video generators in 2026: Sora, Veo, Kling, Runway and Luma compared<span class="date">2026-10-12</span></li>
+        <li>Shattered — Best AI Video Generators: 3 Tested, Veo Wins<span class="date">2026-10-25</span></li>
+        <li>Pasquale Pillitteri — Best AI video generators compared（含 LTX / Wan 本地）<span class="date">2026-10-29</span></li>
+        <li>Kursvideo AI — Sora 2 vs Veo 3 vs Runway Gen-4 vs Kling 3<span class="date">2026-09-24 更新</span></li>
+        <li>极客AI导航 — AI 视频生成工具哪个好：可灵、即梦、海螺、Vidu 等 11 款<span class="date">2026-10-28</span></li>
+        <li>iosur — 可灵、即梦、海螺、Vidu、万相对比：价格、免费额度与商用<span class="date">2026-10-13</span></li>
+        <li>发现AI — Wan3.0 上线，四个国产视频模型按活儿分战场<span class="date">2026-08-25</span></li>
+        <li>Thunder Compute — Best Open-Source AI Video Generation Models（2026）<span class="date">2026-08-18</span></li>
+        <li>LTX Blog — Open Source Video Generation Models（2026 Landscape Guide）<span class="date">2026-07-13</span></li>
+        <li>Turing Post — Open-Source Video Generation Models 2026: 9 Compared<span class="date">2026</span></li>
+        <li>OpenSourceHunter / buildforpeople / rankite — 开源视频编辑器对比<span class="date">2026-10</span></li>
+        <li>Jutsu Studio — Open-Source Lip Sync: LatentSync, MuseTalk, Wav2Lip<span class="date">2026-11-01</span></li>
+        <li>agentgid — AI Video Generation / Editing: 10 Open-Source GitHub Repos<span class="date">2026-10-27</span></li>
+        <li>DeepForgeHub — Voice Cloning Models Compared 2026<span class="date">2026-09-22</span></li>
+        <li>Bland AI — 9 Best Open Source Text to Speech Models<span class="date">2026-09-12</span></li>
+        <li>Descript / Buffer / creativeainews / futurewarns — AI 剪辑工具对比<span class="date">2026-07</span></li>
+        <li>HeyGen / Kompozy / Comparee — AI 数字人平台对比<span class="date">2026-05 至 10</span></li>
+        <li>Remotion / Editly / OpenChatCut 官方仓库与文档<span class="date">2026-10</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <div><b>口径</b>本页是工具地图，不是排行榜；同一工具在不同入口（网页/API/第三方托管）规格与价格可能不同。</div>
+    <div><b>未做</b>同提示词实拍横评、稳定性压测、商用授权法律审查。涉及肖像、音乐、商标与生成内容合规，请咨询专业人士。</div>
+    <div><b>更新</b>2026-11-02 整理。若你发现价格或版本已变，以厂商页面为准。</div>
+    <div><b>校验</b><code>python3 ~/.agents/skills/building-interactive-html-docs/scripts/verify_single_html.py "$PWD/Videos/index.html"</code></div>
+  </footer>
+</div>
+<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('article.tool'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cat = 'all';
+
+  function apply(){
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+    cards.forEach(function(card){
+      var tags = (card.getAttribute('data-tags') || '').split(/\s+/);
+      var okCat = cat === 'all' || tags.indexOf(cat) !== -1;
+      var okTerm = !term || card.textContent.toLowerCase().indexOf(term) !== -1;
+      var show = okCat && okTerm;
+      card.hidden = !show;
+      if (show) shown++;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section.group'), function(g){
+      var any = Array.prototype.some.call(g.querySelectorAll('article.tool'), function(c){ return !c.hidden; });
+      g.hidden = !any;
+    });
+    count.textContent = '显示 ' + shown + ' / ' + cards.length;
+    if (empty) empty.hidden = shown !== 0;
+  }
+
+  chips.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      cat = btn.getAttribute('data-cat');
+      chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
+      apply();
+    });
+  });
+  q.addEventListener('input', apply);
+
+  function jump(id){
+    cat = 'all';
+    chips.forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-cat') === 'all')); });
+    q.value = '';
+    apply();
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    window.setTimeout(function(){ el.classList.remove('flash'); }, 2000);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-jump]'), function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      jump(a.getAttribute('data-jump'));
+    });
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
