@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Gemini API · Reverse Proxy Explainer</title>
+<style>
+  :root{
+    --bg:#070a0f; --panel:#0e141d; --panel-2:#111a24;
+    --line:#1f2b3a; --line-soft:#17212e;
+    --ink:#eaf0f8; --ink-2:#cbd6e4; --muted:#93a1b5; --dim:#5c697c;
+    --cyan:#56e1c5; --violet:#a78bfa; --amber:#f6b95a; --red:#ff8078;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  .stage{position:relative;width:1280px;height:720px;overflow:hidden}
+
+  .grid{position:absolute;inset:0;background-image:
+      linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);
+    background-size:48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse 82% 82% at 50% 42%,#000 18%,transparent 78%);
+    mask-image:radial-gradient(ellipse 82% 82% at 50% 42%,#000 18%,transparent 78%)}
+  .glow{position:absolute;border-radius:50%;filter:blur(64px);opacity:.55;pointer-events:none}
+  .g1{width:620px;height:460px;left:-220px;top:-180px;background:rgba(86,225,197,.13);animation:drift 13s ease-in-out infinite alternate}
+  .g2{width:680px;height:500px;right:-260px;bottom:-240px;background:rgba(167,139,250,.12);animation:drift 17s ease-in-out infinite alternate-reverse}
+  @keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(42px,-28px,0)}}
+
+  .brand{position:absolute;left:56px;top:30px;font:600 13px/1 var(--mono);letter-spacing:.1em;color:var(--muted);z-index:20}
+  .brand b{color:var(--ink);font-weight:600}
+  .brand span{color:var(--dim);font-weight:400;margin-left:10px;letter-spacing:.04em}
+  .timecode{position:absolute;right:56px;top:31px;font:11px/1 var(--mono);letter-spacing:.12em;color:var(--dim);z-index:20}
+  .timecode em{font-style:normal;color:var(--cyan)}
+
+  .progress{position:absolute;left:56px;right:56px;bottom:27px;height:2px;background:#1a2230;border-radius:2px;overflow:hidden;z-index:20}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));animation:progress 30.4s linear both}
+  @keyframes progress{from{width:0}to{width:100%}}
+
+  .scene{position:absolute;inset:0;padding:92px 56px 62px;opacity:0;
+    animation:sceneInOut var(--dur,5s) linear var(--start,0s) both}
+  .scene.stay{animation-name:sceneStay}
+  @keyframes sceneInOut{
+    0%{opacity:0;transform:translateY(12px)}
+    6%{opacity:1;transform:none}
+    92%{opacity:1;transform:none}
+    100%{opacity:0;transform:none}
+  }
+  @keyframes sceneStay{
+    0%{opacity:0;transform:translateY(12px)}
+    6%{opacity:1;transform:none}
+    100%{opacity:1;transform:none}
+  }
+  .rise{opacity:0;transform:translateY(14px);animation:rise .7s cubic-bezier(.2,.72,.2,1) var(--d,0s) both}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .kicker{font:600 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+  h2{font-size:44px;line-height:1.16;letter-spacing:-.025em;margin:12px 0 14px;font-weight:650}
+  .lead{font-size:17px;line-height:1.7;color:var(--muted);margin:0;max-width:860px}
+  .accent{color:var(--cyan)}
+  .violet{color:var(--violet)}
+  .amber{color:var(--amber)}
+  .red{color:var(--red)}
+
+  .badges{display:flex;gap:8px;margin-top:26px;flex-wrap:wrap}
+  .badges span{font:11.5px/1 var(--mono);color:var(--muted);border:1px solid var(--line);
+    background:var(--panel);border-radius:999px;padding:7px 11px;letter-spacing:.03em}
+  .badges b{color:var(--cyan);font-weight:500}
+
+  /* ---------- scene 1 ---------- */
+  .s1{display:flex;align-items:center;justify-content:space-between;gap:54px}
+  .s1 .copy{max-width:700px}
+  .s1 h1{font-size:74px;line-height:1.04;letter-spacing:-.035em;margin:18px 0 20px;font-weight:700}
+  .s1 h1 em{font-style:normal;background:linear-gradient(92deg,var(--cyan) 8%,var(--violet) 92%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .s1 p{font-size:19px;line-height:1.7;color:var(--muted);margin:0;max-width:620px}
+
+  .hero-side{width:362px;flex:0 0 auto;display:flex;flex-direction:column;gap:0}
+  .hnode{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    box-shadow:0 20px 42px -28px rgba(0,0,0,.9)}
+  .hnode div b{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .hnode div small{display:block;font:10.5px/1.5 var(--mono);color:var(--dim);margin-top:5px;letter-spacing:.04em}
+  .hnode .k{font:10px/1 var(--mono);letter-spacing:.1em;border-radius:999px;padding:5px 8px;white-space:nowrap}
+  .hnode.client .k{color:var(--muted);border:1px solid var(--line-soft);background:#0b1119}
+  .hnode.gateway{border-color:rgba(86,225,197,.45);background:linear-gradient(180deg,rgba(86,225,197,.09),var(--panel))}
+  .hnode.gateway .k{color:var(--cyan);border:1px solid rgba(86,225,197,.35);background:rgba(86,225,197,.07)}
+  .hnode.upstream{border-color:rgba(167,139,250,.4);background:linear-gradient(180deg,rgba(167,139,250,.08),var(--panel))}
+  .hnode.upstream .k{color:var(--violet);border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.07)}
+  .harrow{height:30px;display:flex;align-items:center;justify-content:center;position:relative}
+  .harrow::before{content:"";width:1px;height:100%;background:linear-gradient(var(--line),var(--dim))}
+  .harrow::after{content:"";position:absolute;bottom:2px;border-top:6px solid var(--dim);border-left:4px solid transparent;border-right:4px solid transparent}
+  .harrow span{position:absolute;left:50%;margin-left:12px;font:9.5px/1 var(--mono);color:var(--dim);letter-spacing:.08em;white-space:nowrap}
+
+  /* ---------- shared ---------- */
+  .label{font:600 11.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .two{display:grid;grid-template-columns:1.03fr .97fr;gap:52px;align-items:center;height:100%}
+  .facts{position:absolute;left:56px;right:56px;bottom:58px;display:flex;gap:58px;
+    border-top:1px solid var(--line-soft);padding-top:13px}
+  .facts b{display:block;font:600 15px/1.2 var(--mono);color:var(--ink);letter-spacing:-.01em}
+  .facts span{display:block;font:10px/1.5 var(--mono);color:var(--dim);letter-spacing:.09em;margin-top:3px}
+  .facts .accent b{color:var(--cyan)}
+
+  /* ---------- scene 2 ---------- */
+  .flow-panel{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#0d141d,#0a1017);
+    padding:22px;box-shadow:0 24px 60px -40px rgba(0,0,0,.9)}
+  .flow-row{display:flex;align-items:center;gap:12px}
+  .flow-node{flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:12px 13px}
+  .flow-node b{display:block;font-size:14px;font-weight:600}
+  .flow-node small{display:block;font:10px/1.5 var(--mono);color:var(--dim);margin-top:4px;letter-spacing:.04em}
+  .flow-node.hl{border-color:rgba(86,225,197,.42);background:linear-gradient(180deg,rgba(86,225,197,.08),var(--panel))}
+  .flow-node.hl b{color:var(--cyan)}
+  .flow-node.up{border-color:rgba(167,139,250,.36);background:linear-gradient(180deg,rgba(167,139,250,.07),var(--panel))}
+  .flow-node.up b{color:var(--violet)}
+  .v-arrow{height:24px;display:flex;justify-content:center;position:relative}
+  .v-arrow::before{content:"";width:1px;height:100%;background:var(--line)}
+  .v-arrow::after{content:"";position:absolute;bottom:2px;border-top:5px solid var(--dim);border-left:4px solid transparent;border-right:4px solid transparent}
+  .flow-note{display:flex;justify-content:space-between;margin-top:12px;font:9.5px/1 var(--mono);color:var(--dim);letter-spacing:.08em}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .chips span{font:10.5px/1 var(--mono);color:var(--muted);border:1px solid var(--line-soft);border-radius:999px;padding:6px 9px}
+  .chips b{color:var(--cyan);font-weight:500}
+
+  /* ---------- scene 3 ---------- */
+  .five{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:26px}
+  .gcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 15px;min-height:196px;
+    position:relative;overflow:hidden}
+  .gcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(var(--cyan),transparent)}
+  .gcard .n{font:10px/1 var(--mono);letter-spacing:.12em;color:var(--dim)}
+  .gcard b{display:block;font-size:20px;font-weight:650;margin:12px 0 7px;letter-spacing:-.01em}
+  .gcard small{display:block;font:10.5px/1.65 var(--mono);color:var(--muted)}
+  .gcard .bar{position:absolute;left:15px;right:15px;bottom:14px;height:3px;border-radius:2px;background:#1a2432;overflow:hidden}
+  .gcard .bar i{display:block;height:100%;width:0;background:var(--cyan);animation:fill 1.1s ease-out var(--fd,0s) both}
+  @keyframes fill{to{width:100%}}
+  .note-line{margin-top:20px;border:1px solid rgba(246,185,90,.3);background:rgba(246,185,90,.07);
+    border-radius:10px;padding:12px 15px;font-size:14px;color:var(--ink-2)}
+  .note-line b{color:var(--amber);font-weight:600}
+
+  /* ---------- scene 4 ---------- */
+  .proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+  .proto{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 20px;min-height:254px;position:relative;overflow:hidden}
+  .proto.openai{border-color:rgba(86,225,197,.35);background:linear-gradient(180deg,rgba(86,225,197,.06),var(--panel))}
+  .proto.native{border-color:rgba(167,139,250,.35);background:linear-gradient(180deg,rgba(167,139,250,.06),var(--panel))}
+  .proto .tag{font:10px/1 var(--mono);letter-spacing:.16em;color:var(--dim)}
+  .proto.openai .tag{color:var(--cyan)}
+  .proto.native .tag{color:var(--violet)}
+  .proto h3{margin:10px 0 8px;font-size:19px;font-weight:650;letter-spacing:-.01em}
+  .proto .path{font:12.5px/1.55 var(--mono);color:var(--ink-2);background:#0a0f16;border:1px solid var(--line-soft);
+    border-radius:8px;padding:9px 11px;word-break:break-all}
+  .proto p{margin:12px 0 0;font-size:13.5px;color:var(--muted);line-height:1.6}
+  .proto .map{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .proto .map span{font:10px/1 var(--mono);color:var(--muted);border:1px solid var(--line-soft);border-radius:6px;padding:6px 8px}
+  .rule{margin-top:18px;display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink-2)}
+  .rule::before{content:"";width:24px;height:2px;background:var(--cyan);flex:0 0 auto}
+
+  /* ---------- scene 5 ---------- */
+  .tools{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+  .tool{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:15px 17px;min-height:128px}
+  .tool .top{display:flex;align-items:baseline;gap:10px}
+  .tool b{font-size:19px;font-weight:650;letter-spacing:-.01em}
+  .tool .lang{font:9.5px/1 var(--mono);color:var(--dim);border:1px solid var(--line-soft);border-radius:999px;padding:4px 7px}
+  .tool p{margin:8px 0 0;font-size:13px;line-height:1.55;color:var(--muted)}
+  .tool .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+  .tool .tags span{font:9.5px/1 var(--mono);color:var(--cyan);background:rgba(86,225,197,.07);
+    border:1px solid rgba(86,225,197,.24);border-radius:5px;padding:4px 6px}
+  .tool-foot{margin-top:16px;font-size:13.5px;color:var(--muted)}
+  .tool-foot b{color:var(--ink-2);font-weight:600}
+
+  /* ---------- scene 6 ---------- */
+  .boundary{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+  .bcard{border:1px solid var(--line);border-radius:14px;padding:18px 20px;min-height:286px}
+  .bcard.do{border-color:rgba(86,225,197,.35);background:linear-gradient(180deg,rgba(86,225,197,.06),var(--panel))}
+  .bcard.dont{border-color:rgba(255,128,120,.34);background:linear-gradient(180deg,rgba(255,128,120,.06),var(--panel))}
+  .bcard h3{margin:0 0 12px;font:600 12px/1 var(--mono);letter-spacing:.18em}
+  .bcard.do h3{color:var(--cyan)}
+  .bcard.dont h3{color:var(--red)}
+  .bcard ul{list-style:none;margin:0;padding:0}
+  .bcard li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.55;color:var(--ink-2);margin:10px 0}
+  .bcard li i{font-style:normal;font:600 11px/1 var(--mono);flex:0 0 auto;width:18px;height:18px;border-radius:50%;
+    display:grid;place-items:center;margin-top:2px}
+  .bcard.do li i{color:var(--cyan);background:rgba(86,225,197,.1);border:1px solid rgba(86,225,197,.3)}
+  .bcard.dont li i{color:var(--red);background:rgba(255,128,120,.1);border:1px solid rgba(255,128,120,.3)}
+  .end-line{margin-top:20px;font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .end-line b{color:var(--amber)}
+  .end{position:absolute;left:56px;right:56px;bottom:58px;font-size:28px;font-weight:650;letter-spacing:-.02em}
+  .end em{font-style:normal;color:var(--cyan)}
+  .end small{display:block;font:10.5px/1 var(--mono);color:var(--dim);letter-spacing:.12em;margin-top:9px;font-weight:400}
+
+  .keypool{display:flex;align-items:center;gap:10px;margin-top:14px;border:1px solid var(--line-soft);
+    border-radius:10px;background:#0b1119;padding:10px 13px}
+  .keypool .kp-label{font:9.5px/1 var(--mono);letter-spacing:.14em;color:var(--dim);margin-right:2px}
+  .kpill{display:flex;align-items:center;gap:7px;border:1px solid var(--line-soft);border-radius:7px;
+    padding:6px 9px;font:10px/1 var(--mono);color:var(--muted);background:var(--panel)}
+  .kpill i{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px rgba(86,225,197,.6)}
+  .kpill.cool i{background:var(--amber);box-shadow:0 0 8px rgba(246,185,90,.5)}
+  .kpill small{color:var(--dim);font-size:9px;letter-spacing:.05em}
+  .keypool .kp-note{margin-left:auto;font:9.5px/1 var(--mono);color:var(--dim);letter-spacing:.06em}
+
+  .curl{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#0a0f16;
+    padding:12px 15px;font:12px/1.7 var(--mono);color:var(--muted);white-space:pre-wrap}
+  .curl .prompt{color:var(--cyan)}
+  .curl b{color:var(--ink-2);font-weight:500}
+  .curl .dim{color:var(--dim)}
+
+  .use-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .use-strip div{border:1px solid var(--line-soft);border-radius:9px;background:#0b1119;padding:10px 12px}
+  .use-strip span{display:block;font:9px/1 var(--mono);letter-spacing:.14em;color:var(--dim);margin-bottom:5px}
+  .use-strip b{display:block;font:11.5px/1.4 var(--mono);color:var(--cyan);font-weight:500;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="grid"></div>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <div class="brand"><b>gemini</b><span>reverse proxy · api gateway</span></div>
+  <div class="timecode"><em>●</em> LOCAL RENDER · 30.4s · 16:9</div>
+
+  <!-- 01 -->
+  <section class="scene s1" style="--start:0s;--dur:4.2s">
+    <div class="copy">
+      <div class="kicker rise" style="--d:.18s">GEMINI API · REVERSE PROXY</div>
+      <h1 class="rise" style="--d:.36s">反代不是<br><em>转发一下</em></h1>
+      <p class="rise" style="--d:.6s">客户端只拿虚拟 Key。网关负责认证替换、协议适配、Key 调度与配额隔离。</p>
+      <div class="badges rise" style="--d:.84s">
+        <span><b>OpenAI</b> 兼容</span><span>Gemini 原生</span><span>多 Key</span><span>本地网关</span>
+      </div>
+    </div>
+    <div class="hero-side rise" style="--d:.52s">
+      <div class="hnode client">
+        <div><b>客户端</b><small>SDK / 聊天工具 / Agent</small></div>
+        <span class="k">VIRTUAL KEY</span>
+      </div>
+      <div class="harrow"><span>HTTPS</span></div>
+      <div class="hnode gateway">
+        <div><b>API 网关</b><small>auth · route · quota · log</small></div>
+        <span class="k">GATEWAY</span>
+      </div>
+      <div class="harrow"><span>UPSTREAM AUTH</span></div>
+      <div class="hnode upstream">
+        <div><b>Gemini API</b><small>AI Studio / Vertex AI</small></div>
+        <span class="k">REAL KEY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="scene s2" style="--start:3.9s;--dur:5.5s">
+    <div class="two">
+      <div>
+        <div class="label rise" style="--d:4.12s">01 / WHY</div>
+        <h2 class="rise" style="--d:4.3s">一把上游 Key<br>不能发给所有客户端</h2>
+        <p class="lead rise" style="--d:4.52s">把真实 Key 写进客户端，等于把账单和配额交给每个使用者。反向代理把 Key 收回服务端，只发可撤销的虚拟凭据。</p>
+        <div class="chips rise" style="--d:4.78s">
+          <span><b>隐藏</b> 上游 Key</span><span><b>可撤销</b> 客户端凭据</span><span><b>统一</b> 入口与日志</span>
+        </div>
+      </div>
+      <div class="flow-panel rise" style="--d:4.62s">
+        <div class="flow-row">
+          <div class="flow-node">
+            <b>客户端</b><small>只配置网关地址</small>
+          </div>
+        </div>
+        <div class="v-arrow"></div>
+        <div class="flow-row">
+          <div class="flow-node hl">
+            <b>API 网关</b><small>鉴权 · 转换 · 调度 · 记账</small>
+          </div>
+        </div>
+        <div class="v-arrow"></div>
+        <div class="flow-row">
+          <div class="flow-node up">
+            <b>Gemini / Vertex</b><small>真实 Key 只在服务端</small>
+          </div>
+        </div>
+        <div class="flow-note"><span>VIRTUAL KEY</span><span>REAL KEY</span></div>
+      </div>
+    </div>
+    <div class="facts rise" style="--d:5.15s">
+      <div class="accent"><b>1</b><span>统一入口</span></div>
+      <div><b>N</b><span>客户端</span></div>
+      <div><b>0</b><span>上游 Key 外泄</span></div>
+      <div><b>可撤销</b><span>VIRTUAL KEY</span></div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="scene s3" style="--start:9.1s;--dur:5.7s">
+    <div class="label rise" style="--d:9.32s">02 / GATEWAY</div>
+    <h2 class="rise" style="--d:9.5s">网关做的五件事</h2>
+    <p class="lead rise" style="--d:9.7s">转发只是最后一跳。真正决定安全与稳定的，是转发前后的这些动作。</p>
+    <div class="five">
+      <div class="gcard rise" style="--d:9.95s">
+        <span class="n">01</span><b>鉴权</b><small>虚拟 Key<br>租户 / 预算</small><div class="bar"><i style="--fd:10.9s"></i></div>
+      </div>
+      <div class="gcard rise" style="--d:10.07s">
+        <span class="n">02</span><b>适配</b><small>OpenAI ↔ Gemini<br>请求与流式</small><div class="bar"><i style="--fd:11.02s"></i></div>
+      </div>
+      <div class="gcard rise" style="--d:10.19s">
+        <span class="n">03</span><b>映射</b><small>模型别名<br>参数与工具</small><div class="bar"><i style="--fd:11.14s"></i></div>
+      </div>
+      <div class="gcard rise" style="--d:10.31s">
+        <span class="n">04</span><b>调度</b><small>Key 池 / 权重<br>限流 / 重试</small><div class="bar"><i style="--fd:11.26s"></i></div>
+      </div>
+      <div class="gcard rise" style="--d:10.43s">
+        <span class="n">05</span><b>记账</b><small>token / 延迟<br>日志 / 告警</small><div class="bar"><i style="--fd:11.38s"></i></div>
+      </div>
+    </div>
+    <div class="note-line rise" style="--d:10.72s"><b>边界：</b>反向代理不创造额度，只调度已授权的配额。</div>
+    <div class="keypool rise" style="--d:10.9s">
+      <span class="kp-label">KEY POOL</span>
+      <span class="kpill"><i></i>key-01 <small>healthy</small></span>
+      <span class="kpill cool"><i></i>key-02 <small>cooling</small></span>
+      <span class="kpill"><i></i>key-03 <small>healthy</small></span>
+      <span class="kp-note">429 → cooldown / rotate</span>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="scene s4" style="--start:14.5s;--dur:6.1s">
+    <div class="label rise" style="--d:14.72s">03 / PROTOCOL</div>
+    <h2 class="rise" style="--d:14.9s">OpenAI 兼容，还是 Gemini 原生？</h2>
+    <p class="lead rise" style="--d:15.1s">兼容层降低接入成本；原生接口保留高级能力。网关最好两条路都能走。</p>
+    <div class="proto-grid">
+      <div class="proto openai rise" style="--d:15.35s">
+        <div class="tag">OPENAI COMPAT</div>
+        <h3>客户端零改造</h3>
+        <div class="path">POST /v1/chat/completions</div>
+        <p>适合聊天、流式和基础工具调用。现有 OpenAI SDK 改个 Base URL 就能接。</p>
+        <div class="map"><span>messages → contents</span><span>stream → SSE</span></div>
+      </div>
+      <div class="proto native rise" style="--d:15.58s">
+        <div class="tag">GEMINI NATIVE</div>
+        <h3>保留完整能力</h3>
+        <div class="path">POST /v1beta/models/{model}:generateContent</div>
+        <p>thinking、搜索工具、代码执行、上下文缓存、复杂多模态优先走原生。</p>
+        <div class="map"><span>tools → functionDeclarations</span><span>generationConfig</span></div>
+      </div>
+    </div>
+    <div class="rule rise" style="--d:16.05s">基础聊天走兼容层；高级能力走原生接口。</div>
+    <div class="curl rise" style="--d:16.28s"><span class="prompt">$</span> curl <b>$GATEWAY/v1/chat/completions</b> \
+  <span class="dim">-H</span> "Authorization: Bearer sk-virtual-xxx" \
+  <span class="dim">-d</span> '{"model":"gemini-2.5-flash","stream":true}'</div>
+  </section>
+
+  <!-- 05 -->
+  <section class="scene s5" style="--start:20.3s;--dur:5.3s">
+    <div class="label rise" style="--d:20.52s">04 / TOOLS</div>
+    <h2 class="rise" style="--d:20.7s">四种常见工具形态</h2>
+    <p class="lead rise" style="--d:20.9s">先看你是只有 Gemini，还是要多供应商、多租户、多实例。</p>
+    <div class="tools">
+      <div class="tool rise" style="--d:21.15s">
+        <div class="top"><b>gemini-balance</b><span class="lang">Python</span></div>
+        <p>Gemini 专用；多 Key 轮询、失败重试、状态页。</p>
+        <div class="tags"><span>OpenAI + 原生</span><span>轻量自建</span></div>
+      </div>
+      <div class="tool rise" style="--d:21.28s">
+        <div class="top"><b>GPT-Load</b><span class="lang">Go</span></div>
+        <p>多 Key、多渠道、权重与冷却；适合高并发与多分组。</p>
+        <div class="tags"><span>多协议</span><span>group 路由</span></div>
+      </div>
+      <div class="tool rise" style="--d:21.41s">
+        <div class="top"><b>new-api</b><span class="lang">Go</span></div>
+        <p>多租户、令牌、渠道、额度与计费；适合团队共享。</p>
+        <div class="tags"><span>多供应商</span><span>配额管理</span></div>
+      </div>
+      <div class="tool rise" style="--d:21.54s">
+        <div class="top"><b>LiteLLM Proxy</b><span class="lang">Python</span></div>
+        <p>虚拟 Key、预算、路由与回退；混合模型统一接入。</p>
+        <div class="tags"><span>预算</span><span>原生透传</span></div>
+      </div>
+    </div>
+    <div class="tool-foot rise" style="--d:21.86s"><b>选型：</b>单 Key 直连用官方兼容端点；团队与多供应商再上网关。</div>
+    <div class="use-strip rise" style="--d:22.05s">
+      <div><span>OPENAI BASE</span><b>http://gateway:4000/v1</b></div>
+      <div><span>GEMINI BASE</span><b>http://gateway:4000/gemini</b></div>
+      <div><span>CLIENT KEY</span><b>sk-virtual-••••</b></div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section class="scene stay s6" style="--start:25.3s;--dur:5.1s">
+    <div class="label rise" style="--d:25.52s">05 / BOUNDARY</div>
+    <h2 class="rise" style="--d:25.7s">能做什么，不能做什么</h2>
+    <div class="boundary">
+      <div class="bcard do rise" style="--d:25.95s">
+        <h3>DO</h3>
+        <ul>
+          <li><i>✓</i><span>只使用自己或组织已授权的项目与 Key</span></li>
+          <li><i>✓</i><span>客户端只拿虚拟 Key，上游 Key 留在服务端</span></li>
+          <li><i>✓</i><span>设置限流、预算、模型白名单与日志脱敏</span></li>
+          <li><i>✓</i><span>管理后台放内网、VPN 或 SSO 之后</span></li>
+        </ul>
+      </div>
+      <div class="bcard dont rise" style="--d:26.12s">
+        <h3>DON'T</h3>
+        <ul>
+          <li><i>×</i><span>批量注册账号或项目来绕开额度限制</span></li>
+          <li><i>×</i><span>公开分享 Key、网关地址或管理后台</span></li>
+          <li><i>×</i><span>把数据库、管理面直接暴露到公网</span></li>
+          <li><i>×</i><span>未授权转售或对外提供 API 额度</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="end-line rise" style="--d:26.5s">网关不提升额度。<b>先确认授权，再谈接入。</b></div>
+    <div class="end rise" style="--d:26.78s">HTML 是画布，<em>MP4 是交付物。</em><small>GEMINI API · REVERSE PROXY · LOCAL RENDER</small></div>
+  </section>
+</div>
+</body>
+</html>
