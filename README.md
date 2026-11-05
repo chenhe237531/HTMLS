@@ -35,7 +35,7 @@
 | [`Video/课代表立正/topics.html`](Video/课代表立正/topics.html) | 同频道的分类与资料整理：10 个主题、6 种内容形式、32 本书、45 位访谈嘉宾、87 条站外链接 |
 | [`Videos/`](Videos/index.html) | AI 视频制作工具全景：76 个商业 / 开源工具，覆盖 AI 生成、剪辑后期、数字人口播、音频配音、许可证与本地流水线（2026-11） |
 | [`Videos/html-video-sop/`](Videos/html-video-sop/index.html) | html-video SOP 案例：从安装、写模板到渲染 20 秒原理片，内嵌 MP4（658KB）与踩坑记录（2026-11） |
-| [`SoftwareEngineering/books/`](SoftwareEngineering/books/index.html) | 软件工程经典书单：20 本书 × 12 项技能，含阅读路径、年代分布与书籍-方法映射（2026-11） |
+| [`SoftwareEngineering/books/`](SoftwareEngineering/books/index.html) | 软件工程经典书单：20 本书 × 17 个高星 Agent Skill，含来源仓库、书籍-方法映射与阅读路径（2026-11） |
 | [`SoftwareEngineering/kimi/`](SoftwareEngineering/kimi/index.html) | Kimi 开源图谱：MoonshotAI 42 个公开仓库 + Mooncake 逐项分析，每项一页（2026-11） |
 | [`SoftwareEngineering/12-factor-agents.html`](SoftwareEngineering/12-factor-agents.html) | 12-Factor Agents 原理分析：Agent 四部件、12 条原则、上下文工程、暂停/恢复与落地清单（2026-11） |
 | [`SoftwareEngineering/DeepSeek/`](SoftwareEngineering/DeepSeek/DeepSeek-OpenSource-Report.html) | DeepSeek 开源全景：46 个官方仓库的分层地图、逐项分析与时间线（2026-10 快照） |
