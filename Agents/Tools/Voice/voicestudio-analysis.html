@@ -315,6 +315,7 @@
         <ul>
           <li><a href="#overview">概览</a></li>
           <li><a href="#product">产品</a></li>
+          <li><a href="#install">安装</a></li>
           <li><a href="#engines">引擎</a></li>
           <li><a href="#arch">架构</a></li>
           <li><a href="#code">代码</a></li>
@@ -333,7 +334,7 @@
 
 <div class="wrap">
   <div class="hero">
-    <span class="eyebrow"><b>开源项目分析</b> · 数据快照 2026-11-02</span>
+    <span class="eyebrow"><b>开源项目分析</b> · 数据快照 2026-11-02 · 安装节复核 2026-11-05</span>
     <h1>VoiceStudio<br><span class="thin">把 ElevenLabs 搬回你自己的电脑</span></h1>
     <p class="sub">
       一个用 Python + Electron 写的全本地声音工作室：克隆、配音、听写、有声书、批量渲染，
@@ -438,10 +439,138 @@
     </div>
   </section>
 
-  <!-- ================= 03 引擎 ================= -->
+  <!-- ================= 03 安装与效果 ================= -->
+  <section id="install">
+    <div class="sec-head">
+      <span class="num">03 / 安装与效果</span>
+      <h2>装起来有多重，跑起来有多快</h2>
+      <p class="lede">这一节回答两个实际问题：第一次安装要花多少时间与空间，装完能得到什么效果。
+      信息按 2026-11-05 的 README、<code>docs/install</code>、<code>docs/performance</code> 与
+      <code>config/models.yaml</code> 复核；未在本机实测，耗时与效果是区间估计。</p>
+    </div>
+
+    <div class="grid g4">
+      <div class="card card--flat">
+        <h3>macOS</h3>
+        <p>macOS 13.3+，Apple Silicon。Homebrew、DMG 或一行脚本；约 10 GB 空间。
+        Intel Mac 只能跑 UI，本地后端不支持。</p>
+        <div class="tagrow"><span class="pill ok">Stable</span><span class="pill">arm64</span><span class="pill bad">Intel 仅 UI</span></div>
+      </div>
+      <div class="card card--flat">
+        <h3>Windows</h3>
+        <p>Windows 10/11 x64；无 NVIDIA 时 CPU 版 PyTorch 约 5 GiB，有 NVIDIA 时约 9 GiB。
+        Windows on ARM 是实验性，走 x64 模拟、仅 CPU。</p>
+        <div class="tagrow"><span class="pill ok">Stable</span><span class="pill">NVIDIA CUDA</span><span class="pill warn">ARM 实验性</span></div>
+      </div>
+      <div class="card card--flat">
+        <h3>Linux / Docker</h3>
+        <p>AppImage、deb、Snap、AUR、Nix；Docker 镜像走 GHCR。NVIDIA GPU 需要 Container Toolkit，
+        ROCm 走对应设备映射；也支持纯 CPU。</p>
+        <div class="tagrow"><span class="pill ok">Stable</span><span class="pill">x64</span><span class="pill">CUDA / CPU</span></div>
+      </div>
+      <div class="card card--flat">
+        <h3>手机</h3>
+        <p>Android 10+ 与 iOS 17+ 是 Preview；模型下载后可离线。手机不是遥控器，
+        配对电脑只是选择更重的引擎。</p>
+        <div class="tagrow"><span class="pill warn">Preview</span><span class="pill">离线</span></div>
+      </div>
+    </div>
+
+    <div class="note warn">
+      <b>先记住：</b>安装包只有 <b>200–280 MB</b>，真正的安装发生在首次启动——创建 Python 3.11 环境、
+      按显卡选择 PyTorch、下载 FFmpeg 与模型权重。官方 <code>docs/benchmarks.md</code> 目前仍写着
+      “No verified rows yet”，所以下面的耗时和效果是工程估计，不是性能承诺。
+    </div>
+
+    <h3>首次启动：真正花时间的地方</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>按 2026-11-05 的安装文档与模型清单估算。网络与磁盘速度会显著改变耗时。</caption>
+        <thead><tr><th>阶段</th><th>发生什么</th><th>预估</th></tr></thead>
+        <tbody>
+          <tr><td>下载安装包</td><td>DMG / EXE / AppImage</td><td>约 200–280 MB；100 Mbps 约 1–5 分钟</td></tr>
+          <tr><td>创建运行时</td><td>Python 3.11 + uv + PyTorch + FFmpeg</td><td>CPU 约 5 GiB / CUDA 约 9 GiB 的下载与解压</td></tr>
+          <tr><td>默认 TTS</td><td>OmniVoice 权重</td><td>约 2.4 GB</td></tr>
+          <tr><td>可选 ASR</td><td>Whisper large-v3 / turbo / small</td><td>约 0.5–3.1 GB</td></tr>
+          <tr><td>可选分离 / 翻译</td><td>pyannote / NLLB</td><td>约 0.8 GB / 2.4 GB</td></tr>
+          <tr><td>首次生成</td><td>模型懒加载、Metal / CUDA 预热</td><td>冷启动约 8 秒；首次还叠加下载</td></tr>
+          <tr><td>首次总时长</td><td>100 Mbps 家用宽带</td><td>约 10–40 分钟；20–50 Mbps 约 30–90 分钟；受限网络 1–3 小时</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>空间：默认 10 GB 起，折腾引擎会到 30 GB+</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>安装文档建议预留约 10 GB；以下是按默认模型与常见可选项的叠加估算。</caption>
+        <thead><tr><th>配置</th><th>估算占用</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>仅默认 TTS</td><td>约 10 GB 起</td><td>应用 + Python / PyTorch + 2.4 GB 权重</td></tr>
+          <tr><td>加 ASR</td><td>12–15 GB</td><td>Whisper turbo 1.6 GB / large 3 GB</td></tr>
+          <tr><td>加分离 + 翻译</td><td>15–20 GB</td><td>pyannote 0.8 GB + NLLB 2.4 GB</td></tr>
+          <tr><td>多引擎 / sidecar</td><td>30 GB+</td><td>部分 sidecar 会多一份 PyTorch / CUDA 运行时</td></tr>
+          <tr><td>模型盘余量</td><td>下载大小 + 2 GB</td><td>Model Catalogue 的安装要求；避免下到一半磁盘满</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>效果：GPU 上日常可用，CPU 上只适合轻量任务</h3>
+    <div class="tbl-wrap">
+      <table>
+        <caption>质量与速度取决于引擎、参考音、语言和硬件；官方 benchmark 表为空，以下为条件性预期。</caption>
+        <thead><tr><th>场景 / 硬件</th><th>预期效果</th><th>主要限制</th></tr></thead>
+        <tbody>
+          <tr><td>零样本克隆</td><td>3–10 秒干净参考音 + 正确转写；24 kHz 单声道</td><td>参考音质量决定上限；背景音乐、混响、口音会明显掉</td></tr>
+          <tr><td>多语言 TTS</td><td>默认 OmniVoice 覆盖 600+ 语言</td><td>低资源语言、跨语种口音质量不稳定</td></tr>
+          <tr><td>声音设计</td><td>固定属性（性别 / 年龄 / 音高 / 耳语 / 口音 / 方言）可用</td><td>不支持自由散文式描述；英中以外不稳定</td></tr>
+          <tr><td>视频配音</td><td>短视频可行：分离 → 转写 → 翻译 → 逐段合成 → 混流</td><td>长视频的分离 / 转写 / 合成很吃时间；翻译质量独立于 TTS</td></tr>
+          <tr><td>听写 / 转写</td><td>Whisper large-v3 / turbo；时间戳与 SRT/VTT</td><td>流式首字延迟官方未给实测；实时性要看引擎</td></tr>
+          <tr><td>有声书</td><td>多角色、按章节渲染、导出 WAV/MP3/M4B</td><td>长文本串行合成，几十分钟到数小时</td></tr>
+          <tr><td>CPU-only</td><td>轻量引擎（KittenTTS / Supertonic-3 / PocketTTS / GGUF）可用</td><td>比 GPU 慢 10–50 倍；长文本可能撞 600 秒预算</td></tr>
+          <tr><td>4 GB 显存</td><td>OmniVoice GGUF：Q4 约 659 MB / Q8 约 945 MB</td><td>默认引擎 6 GB 门槛以下会页到内存，几秒的活可能变几分钟</td></tr>
+          <tr><td>Apple Silicon 16 GB</td><td>MPS 可用，约 CPU 路径 2 倍吞吐</td><td>TTS 与 ASR 抢统一内存；长配音会反复卸载 / 加载</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <b>效果判据：</b>官方没有可复现的 benchmark；默认 OmniVoice 输出 24 kHz 单声道，
+      参考音 3–10 秒是最佳区间；声音设计只理解固定属性词表，低资源语言和跨语种口音不稳定。
+      视频配音的质量主要取决于转写、翻译和时长对齐，不是单一 TTS 模型。
+    </div>
+
+    <h3>最容易卡住的四件事</h3>
+    <div class="grid g4">
+      <div class="card card--flat"><h3>macOS Gatekeeper</h3><p>提示“已损坏”不是文件坏了，是未公证被拦截。先核对 SHA256，再执行 <code>xattr -dr com.apple.quarantine</code>，或直接用官方脚本。</p><div class="tagrow"><span class="pill bad">首次运行</span></div></div>
+      <div class="card card--flat"><h3>Windows 安全策略</h3><p>SmartScreen、Smart App Control、杀毒软件都可能拦截或拖慢首次启动。确认来源后允许安装，并把后端 <code>.venv</code> 加入排除。</p><div class="tagrow"><span class="pill warn">首次运行</span></div></div>
+      <div class="card card--flat"><h3>显存低于 6 GB</h3><p>默认 OmniVoice 在 4 GB 卡上会页到系统内存，渲染从秒级变分钟级。换 OmniVoice GGUF Q4/Q8，或选轻量 TTS。</p><div class="tagrow"><span class="pill warn">硬件错配</span></div></div>
+      <div class="card card--flat"><h3>模型下载 / 网络</h3><p>多 GB 下载可能卡在 Resolving 或中断。加 Hugging Face Token 提高限额；国内网络可切 <code>hf-mirror.com</code>。</p><div class="tagrow"><span class="pill">网络</span></div></div>
+    </div>
+
+    <h3>装完先做三个验收</h3>
+    <div class="grid g3">
+      <div class="card"><h3>10 秒克隆</h3><p>干净人声、同一句话；记录自然度、口音、尾音、生成耗时与显存。参考音有背景音乐或混响时，先排除素材问题。</p><div class="tagrow"><span class="pill">验收 1</span><span class="pill">2–5 分钟</span></div></div>
+      <div class="card"><h3>60 秒配音</h3><p>带背景音乐的视频；看人声分离、转写、翻译、逐段合成与时长拟合。记录总耗时和是否触发显存 / 内存回收。</p><div class="tagrow"><span class="pill">验收 2</span><span class="pill">5–20 分钟</span></div></div>
+      <div class="card"><h3>5 分钟有声书</h3><p>多角色、按章节渲染；看长文本是否超时、章节缓存能否续跑、导出 WAV/MP3/M4B 是否正常。</p><div class="tagrow"><span class="pill">验收 3</span><span class="pill">10–60 分钟</span></div></div>
+    </div>
+
+    <div class="note info">
+      <b>验收时同时检查：</b><code>Settings → Performance</code> 是否真的 GPU active（而不是静默 CPU fallback）；
+      模型缓存与引擎环境是否在同一磁盘；Hugging Face Token 是否已配（说话人分离需要）；
+      安装目录是否被杀毒软件实时扫描拖慢；应用日志里是否有 <code>DISK_FULL</code>、
+      <code>RUNTIME_DOWNLOAD_STALLED</code>、<code>BACKEND_STARTUP_FAILED</code>。
+    </div>
+
+    <div class="note">
+      <b>一句话判断：</b>值得装来试本地克隆 / 配音，但要按“一个需要首次引导、多 GB 下载的 AI 工作台”来安排时间与磁盘。
+      GPU 上可做到日常可用；CPU 上只适合轻量引擎和短句；生产前先用自己硬件的三项验收替代官方缺失的 benchmark。
+    </div>
+  </section>
+
+  <!-- ================= 04 引擎 ================= -->
   <section id="engines">
     <div class="sec-head">
-      <span class="num">03 / 引擎</span>
+      <span class="num">04 / 引擎</span>
       <h2>31 个引擎，一套注册表</h2>
       <p class="lede">这是整个项目最"工程"的部分：把 19 个 TTS 与 12 个 ASR 后端塞进同一个抽象，
       每个引擎自己声明能力、硬件要求、许可证和不可用原因。下面的表可以筛选和搜索。</p>
@@ -528,10 +657,10 @@
     </div>
   </section>
 
-  <!-- ================= 04 架构 ================= -->
+  <!-- ================= 05 架构 ================= -->
   <section id="arch">
     <div class="sec-head">
-      <span class="num">04 / 架构</span>
+      <span class="num">05 / 架构</span>
       <h2>一个本地后端，五种前端</h2>
       <p class="lede">整体是"PHP 时代的经典结构"：后端是唯一真相源，前端都是薄客户端。
       区别在于后端跑在你自己的机器上，还要负责下载模型、管理 GPU、修补平台差异。</p>
@@ -632,10 +761,10 @@
     </div>
   </section>
 
-  <!-- ================= 05 代码 ================= -->
+  <!-- ================= 06 代码 ================= -->
   <section id="code">
     <div class="sec-head">
-      <span class="num">05 / 代码</span>
+      <span class="num">06 / 代码</span>
       <h2>63 万行是怎么分布的</h2>
       <p class="lede">我直接拉取并逐行统计了仓库里的源码文件（1,309 个 <code>.py</code>、1,141 个 <code>.ts/.tsx</code>、
       675 个 <code>.jsx/.js/.css</code>、322 个 <code>.kt/.swift</code>），下面是实测结果，不是估算。</p>
@@ -718,10 +847,10 @@
     这条规则同时约束人和 AI——这个仓库是少见的"为 agent 写规范"的项目。</p>
   </section>
 
-  <!-- ================= 06 工程 ================= -->
+  <!-- ================= 07 工程 ================= -->
   <section id="practice">
     <div class="sec-head">
-      <span class="num">06 / 工程</span>
+      <span class="num">07 / 工程</span>
       <h2>把规范写成可执行的检查</h2>
       <p class="lede">这是我认为这个仓库最值得抄的部分：它不靠"自觉"，而是把几乎每条团队约定都变成了 CI 里会红的检查。</p>
     </div>
@@ -800,10 +929,10 @@
     </div>
   </section>
 
-  <!-- ================= 07 安全 ================= -->
+  <!-- ================= 08 安全 ================= -->
   <section id="security">
     <div class="sec-head">
-      <span class="num">07 / 安全与合规</span>
+      <span class="num">08 / 安全与合规</span>
       <h2>一个"默认无鉴权"的本地服务，怎么不变成灾难</h2>
       <p class="lede">后端默认只监听回环地址、不要求任何凭据——这对本地工具是合理的。
       真正的问题是：一旦用户把端口开放到局域网，声音克隆接口比聊天接口危险得多。</p>
@@ -868,10 +997,10 @@
     </div>
   </section>
 
-  <!-- ================= 08 竞争 ================= -->
+  <!-- ================= 09 竞争 ================= -->
   <section id="market">
     <div class="sec-head">
-      <span class="num">08 / 竞争位置</span>
+      <span class="num">09 / 竞争位置</span>
       <h2>它对标的不是开源项目，是 ElevenLabs</h2>
       <p class="lede">仓库里有一份 1,437 行的竞品分析（<code>docs/competitive-analysis.md</code>），
       自己给自己打分，也自己承认短板。这种"公开自我批评"的文档在开源项目里并不多见。</p>
@@ -917,10 +1046,10 @@
     </blockquote>
   </section>
 
-  <!-- ================= 09 风险 ================= -->
+  <!-- ================= 10 风险 ================= -->
   <section id="risk">
     <div class="sec-head">
-      <span class="num">09 / 优势与风险</span>
+      <span class="num">10 / 优势与风险</span>
       <h2>如果我要用它，我会担心什么</h2>
       <p class="lede">星数说明关注度，不说明可靠性。下面按"对我决策的影响"排序，每条都给出证据和缓解建议。</p>
     </div>
@@ -1009,10 +1138,10 @@
     </div>
   </section>
 
-  <!-- ================= 10 启示 ================= -->
+  <!-- ================= 11 启示 ================= -->
   <section id="takeaway">
     <div class="sec-head">
-      <span class="num">10 / 启示</span>
+      <span class="num">11 / 启示</span>
       <h2>不同角色该怎么用它</h2>
       <p class="lede">同一个仓库，对三类读者的价值完全不同。</p>
     </div>
@@ -1053,10 +1182,10 @@
     </div>
   </section>
 
-  <!-- ================= 11 方法 ================= -->
+  <!-- ================= 12 方法 ================= -->
   <section id="method">
     <div class="sec-head">
-      <span class="num">11 / 方法</span>
+      <span class="num">12 / 方法</span>
       <h2>数据怎么来的</h2>
       <p class="lede">为了让上面的数字可复核，这里说明采集方式与已知局限。</p>
     </div>
