@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="基于 Kali Linux 的网络空间节点与设备探测工具汇总：覆盖被动侦察、二层发现、端口服务识别、无线与物联网、持续监测、资产台账与合规边界。">
+<title>Kali 网络空间探测与资产管理</title>
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --surface: #fffdf9;
+    --surface-2: #efece4;
+    --ink: #1b1f22;
+    --muted: #5b646c;
+    --line: #d9d4c9;
+    --accent: #0d6b63;
+    --accent-soft: #dceee9;
+    --amber: #9a5b12;
+    --amber-soft: #f6e8d4;
+    --danger: #a02d2d;
+    --danger-soft: #f6dddd;
+    --code-bg: #12201e;
+    --code-ink: #d5efe8;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(27, 31, 34, .05), 0 8px 24px rgba(27, 31, 34, .05);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    --serif: ui-serif, Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111514;
+      --surface: #191e1d;
+      --surface-2: #202725;
+      --ink: #e9e7e1;
+      --muted: #a7aea9;
+      --line: #303936;
+      --accent: #63d3c6;
+      --accent-soft: #17332f;
+      --amber: #e0a458;
+      --amber-soft: #332614;
+      --danger: #f08b8b;
+      --danger-soft: #3a1d1d;
+      --code-bg: #0a0f0e;
+      --code-ink: #cdeee7;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.78;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-underline-offset: .18em; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--serif);
+    line-height: 1.3;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  .skip {
+    position: absolute; left: 12px; top: -60px;
+    background: var(--accent); color: #fff;
+    padding: 8px 14px; border-radius: 8px; z-index: 20;
+    text-decoration: none;
+  }
+  .skip:focus { top: 12px; }
+
+  .hero {
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(900px 360px at 85% -10%, var(--accent-soft), transparent 65%),
+      var(--bg);
+    padding: 72px 0 44px;
+  }
+
+  .eyebrow {
+    margin: 0 0 14px;
+    font-family: var(--mono);
+    font-size: .78rem;
+    letter-spacing: .18em;
+    color: var(--accent);
+  }
+
+  .hero h1 { margin: 0; font-size: clamp(2rem, 4.6vw, 3.3rem); font-weight: 650; }
+
+  .h1-sub {
+    display: block;
+    margin-top: 8px;
+    font-size: .46em;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: .02em;
+  }
+
+  .lede { max-width: 46em; margin: 20px 0 0; font-size: 1.08rem; color: var(--muted); }
+
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 18px;
+    list-style: none; margin: 22px 0 0; padding: 0;
+    font-size: .86rem; color: var(--muted);
+  }
+  .meta li { display: flex; align-items: center; gap: 6px; }
+  .meta li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+  .keypoints {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    margin-top: 34px;
+  }
+  .keypoints > div {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .keypoints p { margin: 6px 0 0; font-size: .92rem; color: var(--muted); line-height: 1.65; }
+  .k {
+    font-family: var(--mono);
+    font-size: .73rem; letter-spacing: .12em; color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 54px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+
+  .sidebar { min-width: 0; }
+
+  .toc {
+    position: sticky; top: 24px;
+    border-left: 1px solid var(--line);
+    padding-left: 18px;
+  }
+  .toc-title {
+    margin: 0 0 10px;
+    font-family: var(--mono);
+    font-size: .72rem; letter-spacing: .14em; color: var(--muted);
+  }
+  .toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  .toc li { counter-increment: toc; }
+  .toc a {
+    display: flex; gap: 9px;
+    padding: 5px 8px 5px 0;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: .88rem;
+    line-height: 1.45;
+    border-radius: 6px;
+  }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--line);
+    padding-top: 2px;
+  }
+  .toc a:hover { color: var(--ink); }
+  .toc a[aria-current="true"] {
+    color: var(--ink);
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--accent-soft), transparent 80%);
+  }
+  .toc a[aria-current="true"]::before { color: var(--accent); }
+
+  main { min-width: 0; }
+  section { padding-top: 10px; margin-bottom: 62px; scroll-margin-top: 24px; }
+
+  h2 {
+    display: flex; align-items: baseline; gap: 14px;
+    margin: 0 0 18px;
+    font-size: clamp(1.45rem, 2.6vw, 1.95rem);
+    font-weight: 650;
+  }
+  .num {
+    font-family: var(--mono);
+    font-size: .5em;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  h3 { margin: 34px 0 10px; font-size: 1.2rem; font-weight: 650; }
+  h4 { margin: 22px 0 8px; font-size: 1.02rem; }
+
+  p { margin: 0 0 16px; }
+  ul, ol { margin: 0 0 18px; padding-left: 1.35em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--accent); }
+  strong { font-weight: 650; }
+
+  code {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: .08em .34em;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    margin: 14px 0;
+    padding: 14px 16px;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: .82rem;
+    line-height: 1.65;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    overflow-wrap: normal;
+  }
+  pre .cmt { color: color-mix(in srgb, var(--code-ink) 55%, transparent); }
+
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 20px 0;
+    box-shadow: var(--shadow);
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-soft); }
+  .callout.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+  .callout .label {
+    display: block;
+    font-family: var(--mono);
+    font-size: .72rem; letter-spacing: .12em;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .callout.warn .label { color: var(--amber); }
+  .callout.danger .label { color: var(--danger); }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    margin: 20px 0;
+    box-shadow: var(--shadow);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 680px; }
+  #tool-table { min-width: 820px; }
+  caption { text-align: left; padding: 13px 16px 10px; color: var(--muted); font-size: .84rem; }
+  th, td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+  thead th { background: var(--surface-2); font-weight: 650; font-size: .8rem; letter-spacing: .02em; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+  [hidden] { display: none !important; }
+
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: .05em .55em;
+    font-size: .72rem;
+    line-height: 1.7;
+    white-space: nowrap;
+    font-family: var(--mono);
+  }
+  .badge.ok { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--accent-soft); }
+  .badge.mid { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); background: var(--amber-soft); }
+  .badge.high { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); background: var(--danger-soft); }
+
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li { position: relative; padding-left: 34px; margin: 10px 0; }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute; left: 0; top: .18em;
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: .72rem;
+    font-weight: 600;
+  }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: end;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    margin: 18px 0 10px;
+  }
+  .control { display: flex; flex-direction: column; gap: 5px; font-size: .8rem; color: var(--muted); }
+  .control.grow { flex: 1 1 220px; }
+  input[type="search"], input[type="text"], select, input[type="number"] {
+    font: inherit;
+    font-size: .92rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 40px;
+  }
+  input[type="search"], input[type="text"], input[type="number"] { width: 100%; }
+  .btn {
+    appearance: none;
+    font: inherit;
+    font-size: .9rem;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); color: #fff; }
+
+  .filter-state {
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-size: .82rem; color: var(--muted); margin: 0 0 4px;
+  }
+
+  details {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  summary {
+    cursor: pointer;
+    padding: 13px 18px;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: "+";
+    margin-left: auto;
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  details[open] summary { border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  details[open] summary::after { content: "−"; }
+  .details-body { padding: 16px 20px 6px; }
+  .details-body > *:last-child { margin-bottom: 12px; }
+
+  .calc {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    margin: 20px 0;
+  }
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 14px;
+  }
+  .calc-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .calc-out {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--line);
+  }
+  .metric {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .metric span {
+    display: block;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .07em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .metric strong {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--mono);
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .verdict {
+    margin: 14px 0 0;
+    font-size: .9rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+  .verdict[data-level="warn"] { background: var(--amber-soft); }
+  .verdict[data-level="bad"] { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
+
+  .checklist { list-style: none; padding: 0; margin: 16px 0 0; }
+  .checklist li { margin: 0; border-bottom: 1px solid var(--line); }
+  .checklist li:last-child { border-bottom: 0; }
+  .checklist label { display: flex; gap: 12px; align-items: flex-start; padding: 11px 4px; cursor: pointer; font-size: .95rem; }
+  .checklist input[type="checkbox"] { width: 19px; height: 19px; margin: 3px 0 0; accent-color: var(--accent); flex: 0 0 auto; }
+  .checklist input:checked + span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+  .progress { font-size: .85rem; color: var(--muted); margin-top: 10px; }
+
+  dl.glossary { margin: 18px 0 0; }
+  dl.glossary .term {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 8px 18px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: .93rem;
+  }
+  dl.glossary .term:last-child { border-bottom: 0; }
+  dl.glossary dt {
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: .86rem;
+    padding-top: 2px;
+  }
+  dl.glossary dd { margin: 0; color: var(--muted); }
+
+  .refs { font-size: .9rem; }
+  .refs li { margin: 7px 0; }
+
+  .figure {
+    margin: 22px 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .figure svg { display: block; width: 100%; height: auto; }
+  .figure figcaption { margin-top: 8px; font-size: .82rem; color: var(--muted); text-align: center; }
+
+  svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.4; }
+  svg .box-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
+  svg .box-amber { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 1.4; }
+  svg .box-danger { fill: var(--danger-soft); stroke: var(--danger); stroke-width: 1.4; }
+  svg .zone { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 6 5; }
+  svg .edge { stroke: var(--muted); stroke-width: 1.7; fill: none; }
+  svg .edge-accent { stroke: var(--accent); stroke-width: 2; fill: none; }
+  svg .edge-dashed { stroke: var(--amber); stroke-width: 2; fill: none; stroke-dasharray: 7 5; }
+  svg .label { fill: var(--ink); font-size: 14px; font-family: var(--sans); }
+  svg .label-sm { fill: var(--muted); font-size: 12px; font-family: var(--sans); }
+  svg .mono { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+
+  .nowrap { white-space: nowrap; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--muted); font-size: .84rem; }
+
+  @media (max-width: 960px) {
+    .layout { display: block; padding-top: 28px; }
+    .sidebar { margin-bottom: 34px; }
+    .toc { position: static; border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; }
+    .toc ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2px 18px; }
+    .toc a { padding: 6px 4px; }
+    section { scroll-margin-top: 12px; }
+    .hero { padding: 48px 0 34px; }
+  }
+
+  @media (max-width: 700px) {
+    caption::after {
+      content: "（可左右滑动查看）";
+      color: var(--muted);
+      font-size: .78em;
+    }
+    .figure { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .figure svg { min-width: 720px; }
+    .figure::before {
+      content: "窄屏可左右滑动查看";
+      position: sticky;
+      left: 0;
+      display: block;
+      width: max-content;
+      margin-bottom: 6px;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    .figure figcaption { position: sticky; left: 0; width: min(100%, 720px); }
+    .table-wrap { box-shadow: var(--shadow), inset -14px 0 14px -14px color-mix(in srgb, var(--ink) 40%, transparent); }
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .wrap, .layout { padding-left: 16px; padding-right: 16px; }
+    dl.glossary .term { grid-template-columns: 1fr; gap: 2px; }
+    dl.glossary dd { margin-bottom: 8px; }
+    .controls, .calc { padding: 14px; }
+  }
+
+  @media print {
+    .sidebar, .skip, .controls, .calc-actions, .progress { display: none !important; }
+    .layout { display: block; padding: 0; max-width: none; }
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .hero { background: none; padding: 0 0 12pt; border-bottom: 1px solid #999; }
+    .keypoints, .figure, details, .callout, .calc { box-shadow: none; break-inside: avoid; }
+    .figure { overflow: visible; }
+    .figure svg { min-width: 0; }
+    .figure::before { display: none; }
+    .figure figcaption { position: static; width: auto; }
+    details { border: 1px solid #999; }
+    details:not([open]) > .details-body { display: block; }
+    a { color: #000; }
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; color: #555; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">NETWORK NOTES · 资产发现与治理</p>
+    <h1>Kali 网络空间探测<span class="h1-sub">从地址段到设备台账：发现、识别、监测与边界</span></h1>
+    <p class="lede">“把网络空间里的所有节点和设备都摸清”不是一条命令能完成的任务。它需要把被动情报、二层邻居、三层扫描、协议枚举、无线观测和持续监测拼成一条证据链，最后沉淀为可核验、可追责的设备台账。</p>
+    <ul class="meta">
+      <li>阅读约 25 分钟</li>
+      <li>覆盖 40+ 工具与协议</li>
+      <li>仅限自有网络或书面授权范围</li>
+      <li>窄屏可左右滑动查看宽表格与示意图</li>
+    </ul>
+    <div class="keypoints">
+      <div>
+        <span class="k">目标</span>
+        <p>不是“扫到一个 IP”，而是形成带来源、时间、置信度和责任人的资产记录。</p>
+      </div>
+      <div>
+        <span class="k">方法</span>
+        <p>被动优先、主动克制、协议交叉验证；单点扫描只能给出局部视图。</p>
+      </div>
+      <div>
+        <span class="k">底线</span>
+        <p>只探测自有或书面授权的范围；不提供未授权入侵、窃听或规避审计的做法。</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <nav class="toc" aria-label="目录">
+      <p class="toc-title">目录</p>
+      <ol>
+        <li><a href="#scope">边界、目标与“管理”的定义</a></li>
+        <li><a href="#model">探测模型：六层漏斗</a></li>
+        <li><a href="#tools">Kali 工具图谱</a></li>
+        <li><a href="#deep">关键工具与安全用法</a></li>
+        <li><a href="#inventory">从扫描结果到资产台账</a></li>
+        <li><a href="#matrix">设备识别矩阵</a></li>
+        <li><a href="#wireless">无线、物联网与 IPv6</a></li>
+        <li><a href="#monitor">持续监测与变更管理</a></li>
+        <li><a href="#risk">风险、合规与检查清单</a></li>
+        <li><a href="#start">快速开始与网段计算</a></li>
+        <li><a href="#glossary">术语与参考</a></li>
+      </ol>
+    </nav>
+  </aside>
+
+  <main id="main">
+    <section id="scope" aria-labelledby="scope-title">
+      <h2 id="scope-title"><span class="num">01</span>边界、目标与“管理”的定义</h2>
+      <p>网络空间不只等于“能 ping 通的 IP”。对资产治理而言，至少要同时看六个维度：地址空间、物理/虚拟设备、暴露服务、身份与账号、无线覆盖、以及云与 OT 等特殊环境。任何单一工具都只能覆盖其中一角。</p>
+
+      <div class="table-wrap">
+        <table>
+          <caption>“网络空间资产”的六个观察面</caption>
+          <thead>
+            <tr><th scope="col">维度</th><th scope="col">你要回答的问题</th><th scope="col">主要证据来源</th><th scope="col">Kali 中的代表工具</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>地址空间</td><td>哪些网段属于我？哪些地址活跃？</td><td>路由表、DHCP 租约、ARP/ND、ICMP/TCP 探测</td><td><code>ip</code>、<code>arp-scan</code>、<code>nmap -sn</code>、<code>fping</code></td></tr>
+            <tr><td>设备</td><td>是什么设备？厂商、型号、操作系统？</td><td>MAC OUI、TTL、TCP/IP 指纹、SNMP、mDNS</td><td><code>nmap -O</code>、<code>snmpwalk</code>、<code>avahi-browse</code></td></tr>
+            <tr><td>服务</td><td>开了哪些端口？跑什么版本？</td><td>TCP/UDP 扫描、Banner、TLS 证书</td><td><code>nmap -sV</code>、<code>sslscan</code>、<code>whatweb</code></td></tr>
+            <tr><td>身份</td><td>谁在使用？有哪些账号与目录？</td><td>AD/LDAP、SMB 会话、证书、资产责任人</td><td><code>ldapsearch</code>、<code>smbclient</code>、<code>rpcclient</code></td></tr>
+            <tr><td>无线</td><td>有哪些 AP、客户端、隐藏网络？</td><td>Beacon、Probe、关联帧、信号强度</td><td><code>airodump-ng</code>、<code>kismet</code>、<code>bettercap</code></td></tr>
+            <tr><td>云 / OT</td><td>云上实例、工控设备如何纳入？</td><td>云厂商 API、资产代理、被动流量、SNMP/Modbus</td><td>Kali 工具只能看到可达网络，需 API/代理补足</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>1.1 “管理”指资产治理，不是远程控制</h3>
+      <p>本报告里的“管理”包括：发现、登记、归属、分类分级、基线核查、变更监测、生命周期与下线。它不等于拿到设备权限，也不包含漏洞利用。Kali 更适合做<strong>探测与验证</strong>；长期台账、工单和配置基线应落到 CMDB、NetBox、ELK 或自有数据库。</p>
+
+      <h3>1.2 三种探测方式，证据强度不同</h3>
+      <ul>
+        <li><strong>被动观测：</strong>不向目标发送包，只旁路采集流量、无线 Beacon、DNS 日志。隐蔽、风险低，但只能看到“有流量经过”的设备。</li>
+        <li><strong>主动探测：</strong>发送 ARP、ICMP、TCP/UDP 包。覆盖更全，但会被 IDS 记录，也可能影响老旧设备、工控设备或按次计费的链路。</li>
+        <li><strong>协议枚举：</strong>在发现端口后，用 SMB、SNMP、LDAP、mDNS 等协议读取设备自述信息。信息最结构化，但需要相应凭据或社区字符串，且可能触发审计。</li>
+      </ul>
+
+      <div class="callout danger">
+        <span class="label">授权边界</span>
+        <p>只对自有网络或取得书面授权的目标进行探测。未经授权扫描第三方地址、云上他人实例、公共 Wi-Fi 或运营商网络，可能违反《网络安全法》《数据安全法》《个人信息保护法》及刑法相关规定，也可能违反云服务商条款。扫描前明确：目标清单、排除项、时间窗口、速率上限、联系人、停止条件与数据保管方式。</p>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">“所有节点”是渐进目标</span>
+        <p>影子 IT、随机 MAC、NAT 后的设备、休眠 IoT、离线资产、云原生实例和 OT 网络都会造成盲区。合理的目标是“覆盖已知范围、记录未知、持续收敛”，而不是宣称一次扫描就能穷尽。</p>
+      </div>
+    </section>
+    <section id="model" aria-labelledby="model-title">
+      <h2 id="model-title"><span class="num">02</span>探测模型：六层漏斗</h2>
+      <p>把探测拆成六层，每层只回答一个问题，并把上一层的输出作为下一层的输入。这样既能控制噪声，也能知道每条资产记录来自哪里、可信度有多高。</p>
+
+      <figure class="figure" tabindex="0" aria-label="探测流程示意图，窄屏下可左右滚动查看">
+        <svg viewBox="0 0 920 210" role="img" aria-labelledby="fig-flow-title fig-flow-desc">
+          <title id="fig-flow-title">从范围到台账的六层探测流程</title>
+          <desc id="fig-flow-desc">依次为范围与授权、被动情报、邻居与主机发现、端口与服务扫描、设备指纹与协议枚举、资产台账与持续监测。每层输出作为下一层输入。</desc>
+          <defs>
+            <marker id="arrow-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect class="box-accent" x="12" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="80" y="84" text-anchor="middle">01 范围</text>
+          <text class="label-sm" x="80" y="104" text-anchor="middle">授权 · 网段</text>
+          <text class="mono" x="80" y="122" text-anchor="middle">CIDR / 排除项</text>
+
+          <rect class="box" x="164" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="232" y="84" text-anchor="middle">02 被动情报</text>
+          <text class="label-sm" x="232" y="104" text-anchor="middle">DNS · 证书 · 流量</text>
+          <text class="mono" x="232" y="122" text-anchor="middle">不发包</text>
+
+          <rect class="box" x="316" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="384" y="84" text-anchor="middle">03 邻居 / 主机</text>
+          <text class="label-sm" x="384" y="104" text-anchor="middle">ARP · NDP · ICMP</text>
+          <text class="mono" x="384" y="122" text-anchor="middle">谁在线</text>
+
+          <rect class="box" x="468" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="536" y="84" text-anchor="middle">04 端口 / 服务</text>
+          <text class="label-sm" x="536" y="104" text-anchor="middle">TCP · UDP</text>
+          <text class="mono" x="536" y="122" text-anchor="middle">暴露面</text>
+
+          <rect class="box-accent" x="620" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="688" y="84" text-anchor="middle">05 指纹 / 枚举</text>
+          <text class="label-sm" x="688" y="104" text-anchor="middle">SMB · SNMP · LDAP</text>
+          <text class="mono" x="688" y="122" text-anchor="middle">是什么设备</text>
+
+          <rect class="box-accent" x="772" y="56" width="136" height="80" rx="10"></rect>
+          <text class="label" x="840" y="84" text-anchor="middle">06 台账 / 监测</text>
+          <text class="label-sm" x="840" y="104" text-anchor="middle">去重 · 归属 · 告警</text>
+          <text class="mono" x="840" y="122" text-anchor="middle">持续收敛</text>
+
+          <line class="edge" x1="148" y1="96" x2="158" y2="96" color="var(--muted)" marker-end="url(#arrow-flow)"></line>
+          <line class="edge" x1="300" y1="96" x2="310" y2="96" color="var(--muted)" marker-end="url(#arrow-flow)"></line>
+          <line class="edge" x1="452" y1="96" x2="462" y2="96" color="var(--muted)" marker-end="url(#arrow-flow)"></line>
+          <line class="edge" x1="604" y1="96" x2="614" y2="96" color="var(--muted)" marker-end="url(#arrow-flow)"></line>
+          <line class="edge" x1="756" y1="96" x2="766" y2="96" color="var(--muted)" marker-end="url(#arrow-flow)"></line>
+
+          <text class="label-sm" x="460" y="178" text-anchor="middle">每一层都要记录：时间、来源、目标、命令/参数、结果、置信度</text>
+        </svg>
+        <figcaption>漏斗不是严格单向的：枚举结果会反过来修正网段与主机清单，监测会持续补充新资产。</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <caption>六层漏斗的输入、输出与常见误区</caption>
+          <thead>
+            <tr><th scope="col">层</th><th scope="col">核心问题</th><th scope="col">代表工具</th><th scope="col">输出</th><th scope="col">常见误区</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>01 范围</td><td>哪些地址可以碰？哪些必须排除？</td><td><code>ip route</code>、<code>ipcalc</code>、<code>nmap</code> 的排除参数</td><td>目标 CIDR、排除表、时间窗</td><td>把整个 <code>10.0.0.0/8</code> 直接扫；忽略云、OT、医疗设备</td></tr>
+            <tr><td>02 被动</td><td>不发包能知道什么？</td><td><code>dig</code>、<code>whois</code>、<code>tcpdump</code>、Zeek</td><td>域名、证书、DNS、流量会话</td><td>把历史 DNS 记录当成当前在线资产</td></tr>
+            <tr><td>03 邻居 / 主机</td><td>同一广播域里谁在线？</td><td><code>arp-scan</code>、<code>netdiscover</code>、<code>nmap -sn</code>、<code>fping</code></td><td>IP、MAC、厂商、响应时间</td><td>用 ICMP 判断“死机”；忽略防火墙丢 ICMP 的主机</td></tr>
+            <tr><td>04 端口 / 服务</td><td>暴露了哪些 TCP/UDP 服务？</td><td><code>nmap</code>、<code>masscan</code>、<code>hping3</code></td><td>端口、状态、Banner、版本</td><td>只扫常用端口；把 filtered 当成 closed</td></tr>
+            <tr><td>05 指纹 / 枚举</td><td>设备是什么？谁在用？</td><td><code>nbtscan</code>、<code>enum4linux-ng</code>、<code>snmpwalk</code>、<code>ldapsearch</code>、<code>whatweb</code></td><td>主机名、系统、型号、共享、用户、证书</td><td>只凭 TTL 或 MAC 猜操作系统；忽略误报</td></tr>
+            <tr><td>06 台账 / 监测</td><td>如何持续保持准确？</td><td><code>ndiff</code>、<code>jq</code>、<code>sqlite3</code>、Zeek、ntopng</td><td>资产表、变更记录、告警</td><td>把一次性扫描结果当永久台账</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2.1 覆盖、噪声与影响的三方权衡</h3>
+      <p>越主动、越深入，覆盖通常越好，但噪声、被检测概率和对目标的影响也越大。对生产网络，推荐“先被动、再低速率主动、最后按需枚举”；对实验室或维护窗口，可以提高速率并使用更激进的探测选项。</p>
+      <ul>
+        <li><strong>ARP 扫描</strong>只能覆盖同一广播域，跨网段无效；但它速度快、结果直观，是内网台账的起点。</li>
+        <li><strong>ICMP 探测</strong>会被防火墙过滤；改用 TCP SYN 到常见端口或 ARP 可以补充。</li>
+        <li><strong>UDP 扫描</strong>容易误判（无响应不等于关闭），需要协议级验证。</li>
+        <li><strong>版本探测</strong>依赖 Banner 和特征库，可能被伪造或识别错误；关键资产应结合 SNMP、证书和人工确认。</li>
+      </ul>
+
+      <div class="callout">
+        <span class="label">实战顺序</span>
+        <p>先画出“必须覆盖”和“绝对不能碰”的清单，再选工具。对 OT、医疗、打印机、UPS、摄像头等设备，先降速率、避开业务高峰，并准备回滚与停止方案。</p>
+      </div>
+    </section>
+    <section id="tools" aria-labelledby="tools-title">
+      <h2 id="tools-title"><span class="num">03</span>Kali 工具图谱：按任务而不是按字母找工具</h2>
+      <p>Kali 自带或可安装的工具很多，真正需要记住的是“在哪个阶段用什么证据”。下表按任务分类，并标注风险等级。风险高不代表不能用，而代表需要更明确的授权、更小的范围和更严格的变更控制。这些工具多数也存在于 Debian、Parrot、BlackArch 等发行版，命令基本一致，但包名与默认安装状态不同。</p>
+
+      <div class="controls">
+        <label class="control grow">搜索工具或协议
+          <input type="search" id="tool-search" placeholder="如 nmap、SNMP、无线、SMB" autocomplete="off">
+        </label>
+        <label class="control">类别
+          <select id="tool-cat">
+            <option value="">全部类别</option>
+            <option value="recon">侦察 / 情报</option>
+            <option value="l2">二层发现</option>
+            <option value="scan">主机 / 端口扫描</option>
+            <option value="enum">服务 / 设备识别</option>
+            <option value="wireless">无线</option>
+            <option value="monitor">流量 / 监测</option>
+            <option value="data">数据整理</option>
+            <option value="manage">配置 / 管理</option>
+            <option value="dual">双用途 / 高风险</option>
+          </select>
+        </label>
+        <label class="control">风险
+          <select id="tool-risk">
+            <option value="">全部</option>
+            <option value="low">低</option>
+            <option value="mid">中</option>
+            <option value="high">高</option>
+          </select>
+        </label>
+        <button class="btn" type="button" id="tool-reset">重置</button>
+      </div>
+      <p class="filter-state"><span id="tool-count" aria-live="polite">50 / 50 项</span><span>风险为对目标与审计的影响分级，不是漏洞严重性</span></p>
+
+      <div class="table-wrap">
+        <table id="tool-table">
+          <caption>Kali 网络空间探测与资产管理工具速查</caption>
+          <thead>
+            <tr>
+              <th scope="col">工具</th>
+              <th scope="col">类别</th>
+              <th scope="col">能做什么</th>
+              <th scope="col">输出 / 注意</th>
+              <th scope="col">风险</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-cat="recon" data-risk="low"><td><code>whois</code></td><td>侦察</td><td>域名注册人、注册商、NS、创建与到期时间</td><td>文本；隐私代理会隐藏真实信息</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="recon" data-risk="low"><td><code>traceroute</code> / <code>mtr</code></td><td>侦察</td><td>路径、每跳延迟与丢包</td><td>文本；只能看到响应的路由节点</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="recon" data-risk="low"><td><code>dig</code></td><td>侦察</td><td>A/AAAA/MX/TXT/PTR、区域传送尝试</td><td>文本；AXFR 多数被拒绝，需授权</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="recon" data-risk="mid"><td><code>dnsrecon</code></td><td>侦察</td><td>DNS 记录、子域、SRV、区域传送</td><td>文本 / JSON；字典扫描噪声较大</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="recon" data-risk="mid"><td><code>fierce</code></td><td>侦察</td><td>子域与邻近域名发现</td><td>文本；可能触发 DNS 速率限制</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="recon" data-risk="low"><td><code>theHarvester</code></td><td>侦察</td><td>公开邮箱、子域、主机等 OSINT</td><td>文本 / JSON；结果需交叉验证</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="recon" data-risk="mid"><td><code>recon-ng</code></td><td>侦察</td><td>模块化 OSINT 工作区与数据库</td><td>SQLite；注意 API key 与模块来源</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="recon" data-risk="mid"><td><code>amass</code></td><td>侦察</td><td>子域枚举、资产图谱、被动/主动模式</td><td>JSON / 图；耗时长，部分功能需安装</td><td><span class="badge mid">中</span></td></tr>
+
+            <tr data-cat="l2" data-risk="low"><td><code>arp-scan</code></td><td>二层</td><td>同广播域 ARP 扫描，输出 IP、MAC、厂商</td><td>文本；不能跨网段</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="l2" data-risk="low"><td><code>netdiscover</code></td><td>二层</td><td>ARP 主动/被动发现</td><td>文本；被动模式依赖现有流量</td><td><span class="badge ok">低</span></td></tr>
+
+            <tr data-cat="scan" data-risk="mid"><td><code>nmap</code></td><td>扫描</td><td>主机发现、端口、服务版本、OS、NSE 脚本</td><td>XML / 文本；速率与脚本会影响目标</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="scan" data-risk="high"><td><code>masscan</code></td><td>扫描</td><td>无状态高速端口扫描</td><td>JSON / XML；可能打满链路、触发防护</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="scan" data-risk="low"><td><code>fping</code></td><td>扫描</td><td>批量 ICMP 存活探测</td><td>文本；ICMP 被过滤时会漏报</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="scan" data-risk="mid"><td><code>hping3</code></td><td>扫描</td><td>自定义 TCP/IP 包、防火墙与路径测试</td><td>文本；可被滥用为 DoS，严格限速</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="scan" data-risk="high"><td><code>scapy</code></td><td>扫描</td><td>构造、发送、解析任意网络包</td><td>Python 对象；灵活但风险高</td><td><span class="badge high">高</span></td></tr>
+
+            <tr data-cat="enum" data-risk="low"><td><code>nbtscan</code></td><td>识别</td><td>NetBIOS 名称、工作组、MAC</td><td>文本；只适用于仍启用 NetBIOS 的设备</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>enum4linux-ng</code></td><td>识别</td><td>SMB/NetBIOS/RPC 用户、共享、策略枚举</td><td>文本 / JSON；可能触发账户锁定策略</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>smbclient</code></td><td>识别</td><td>列出或连接 SMB 共享、查看会话</td><td>文本；优先只读浏览，勿写入</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>smbmap</code></td><td>识别</td><td>SMB 共享与权限映射</td><td>文本；权限判断可能有误</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>rpcclient</code></td><td>识别</td><td>MS-RPC 查询用户、组、域信息</td><td>文本；需要空会话或授权凭据</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="low"><td><code>snmpwalk</code></td><td>识别</td><td>读取系统、接口、ARP、邻居等 SNMP 对象</td><td>文本；只读；社区字符串等同凭据</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>onesixtyone</code></td><td>识别</td><td>批量尝试 SNMP community</td><td>文本；仅授权，注意锁定与告警</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="mid"><td><code>ldapsearch</code></td><td>识别</td><td>查询 LDAP/AD 目录、用户、组、计算机</td><td>LDIF；注意分页、凭据与隐私</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="enum" data-risk="low"><td><code>whatweb</code></td><td>识别</td><td>Web 技术栈、框架、CMS 指纹</td><td>文本 / JSON；结果需人工确认</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="enum" data-risk="low"><td><code>sslscan</code></td><td>识别</td><td>TLS 版本、套件、证书信息</td><td>文本；用于配置评估</td><td><span class="badge ok">低</span></td></tr>
+
+            <tr data-cat="wireless" data-risk="mid"><td><code>airmon-ng</code> / <code>airodump-ng</code></td><td>无线</td><td>监听模式、AP 与客户端发现、信号与加密方式</td><td>文本 / PCAP；需授权并遵守区域法规</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="wireless" data-risk="low"><td><code>kismet</code></td><td>无线</td><td>被动发现 Wi-Fi、蓝牙设备并记录</td><td>日志 / Web；数据可能包含第三方信息</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="wireless" data-risk="high"><td><code>bettercap</code></td><td>无线</td><td>网络、无线、BLE 侦察与中间人能力</td><td>交互 / 日志；仅授权实验环境</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="wireless" data-risk="low"><td><code>wireshark</code> / <code>tshark</code></td><td>流量</td><td>抓包与协议解析、会话与端点统计</td><td>PCAP；注意隐私与数据量</td><td><span class="badge ok">低</span></td></tr>
+
+            <tr data-cat="monitor" data-risk="low"><td><code>tcpdump</code></td><td>流量</td><td>命令行抓包、BPF 过滤</td><td>PCAP；注意存储、脱敏与保留期限</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="monitor" data-risk="mid"><td><code>Zeek</code></td><td>监测</td><td>流量日志、协议解析、异常线索</td><td>TSV / JSON；通常旁路部署，需安装</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="monitor" data-risk="mid"><td><code>Suricata</code></td><td>监测</td><td>IDS/IPS、规则告警与协议日志</td><td>EVE JSON；需安装与规则调优</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="monitor" data-risk="low"><td><code>ntopng</code></td><td>监测</td><td>主机、流量、协议与历史视图</td><td>Web；需安装，注意数据保留</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="monitor" data-risk="low"><td><code>iftop</code></td><td>监测</td><td>按连接查看实时带宽</td><td>文本；只反映本机接口</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="monitor" data-risk="low"><td><code>nethogs</code></td><td>监测</td><td>按进程查看带宽占用</td><td>文本；通常需要 root</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="monitor" data-risk="low"><td><code>ss</code> / <code>lsof</code></td><td>监测</td><td>本机套接字、监听端口、进程与文件</td><td>文本；只反映本机视角</td><td><span class="badge ok">低</span></td></tr>
+
+            <tr data-cat="data" data-risk="low"><td><code>jq</code></td><td>数据</td><td>过滤、转换 JSON（nmap/masscan 输出）</td><td>文本；适合流水线处理</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="data" data-risk="low"><td><code>sqlite3</code></td><td>数据</td><td>本地资产库、去重与查询</td><td>SQL；注意 schema、备份与权限</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="data" data-risk="low"><td><code>ndiff</code></td><td>数据</td><td>对比两次 nmap XML，发现新增/消失资产</td><td>文本；变更检测的基础</td><td><span class="badge ok">低</span></td></tr>
+            <tr data-cat="data" data-risk="low"><td><code>csvkit</code></td><td>数据</td><td>CSV 清洗、合并、统计</td><td>CSV；需安装</td><td><span class="badge ok">低</span></td></tr>
+
+            <tr data-cat="manage" data-risk="mid"><td><code>ssh</code></td><td>管理</td><td>远程登录、端口转发、批量执行</td><td>会话；使用密钥与审计，禁用弱口令</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="manage" data-risk="mid"><td><code>ansible</code></td><td>管理</td><td>批量配置、基线核查、编排</td><td>YAML / 日志；需安装，先 dry-run</td><td><span class="badge mid">中</span></td></tr>
+            <tr data-cat="manage" data-risk="high"><td><code>nftables</code> / <code>iptables</code></td><td>管理</td><td>防火墙、NAT、隔离与限速</td><td>规则；误配可能直接断网</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="manage" data-risk="high"><td><code>snmpset</code></td><td>管理</td><td>写入 SNMP 对象，修改设备配置</td><td>文本；高风险，必须变更审批与备份</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="manage" data-risk="mid"><td><code>GVM</code> / <code>OpenVAS</code></td><td>管理</td><td>漏洞扫描、资产漏洞台账、复测</td><td>报告；需安装/授权，部分插件会影响服务</td><td><span class="badge mid">中</span></td></tr>
+
+            <tr data-cat="dual" data-risk="high"><td><code>Responder</code></td><td>双用途</td><td>LLMNR/NBT-NS/mDNS 欺骗与凭据捕获</td><td>捕获 / 日志；仅授权红队，禁止生产</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="dual" data-risk="high"><td><code>Ettercap</code></td><td>双用途</td><td>中间人、协议分析与注入</td><td>PCAP；仅授权实验环境</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="dual" data-risk="high"><td><code>arpspoof</code></td><td>双用途</td><td>ARP 欺骗，改变同网段流量路径</td><td>流量；仅授权实验，勿用于生产</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="dual" data-risk="high"><td><code>mitmproxy</code></td><td>双用途</td><td>HTTP(S) 拦截、查看与重放</td><td>流量；需证书与明确授权</td><td><span class="badge high">高</span></td></tr>
+            <tr data-cat="dual" data-risk="mid"><td><code>netcat</code> / <code>socat</code></td><td>双用途</td><td>TCP/UDP 连接、监听、转发与中继</td><td>文本 / 流量；双用途，勿做未授权后门</td><td><span class="badge mid">中</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="tool-empty" hidden><em>没有匹配的工具。试试“nmap”“SNMP”或清空筛选。</em></p>
+
+      <div class="callout warn">
+        <span class="label">关于“预装”</span>
+        <p>Kali 的默认镜像、Large 镜像和 “Everything” 镜像包含的工具不同；本表列的是常见工具，部分（如 Zeek、Suricata、ntopng、Ansible、GVM）可能需要额外安装或初始化。以你当前系统的 <code>kali-tools-*</code> 包与实际版本为准。</p>
+      </div>
+    </section>
+    <section id="deep" aria-labelledby="deep-title">
+      <h2 id="deep-title"><span class="num">04</span>关键工具与安全用法</h2>
+      <p>下面的命令都假设你在<strong>自有或书面授权</strong>的网段内操作，地址与接口名是占位示例。执行前先读 <code>man</code> 与 <code>--help</code>，并把命令、参数、时间、目标写进探测记录；这既是质量要求，也是审计证据。</p>
+
+      <div class="callout danger">
+        <span class="label">先授权，再扫描</span>
+        <p>不要对公网随机地址、云上他人实例、公共 Wi-Fi 或第三方企业网络执行扫描。即使只是“看看开了什么端口”，在多数司法辖区也可能构成未经授权访问或干扰。涉及 OT、医疗、交通、能源设备时，先做风险评估并安排维护窗口。</p>
+      </div>
+
+      <details open>
+        <summary>nmap：从存活主机到服务与脚本</summary>
+        <div class="details-body">
+          <p>nmap 是资产发现的主力，但应分阶段使用：先确认存活，再扫端口，最后只对确认的目标做版本与脚本探测。输出 XML 便于后续入库和对比。</p>
+          <pre><code><span class="cmt"># 1. 主机发现：不扫端口，先看谁在线</span>
+sudo nmap -sn 192.168.1.0/24
+
+<span class="cmt"># 2. 常见 TCP 端口 + 服务版本，输出 XML</span>
+sudo nmap -sS -sV --top-ports 1000 -oX nmap-lan.xml 192.168.1.0/24
+
+<span class="cmt"># 3. 只对已确认主机做协议级枚举（示例：SMB 系统信息）</span>
+sudo nmap -Pn -p 445 --script smb-os-discovery 192.168.1.10
+
+<span class="cmt"># 排除不允许触碰的地址与关键设备</span>
+sudo nmap -sn 192.168.1.0/24 --exclude 192.168.1.1,192.168.1.10</code></pre>
+          <p>注意：<code>-sS</code> 需要 root；<code>-O</code> 的系统指纹可能误判；NSE 脚本有的会登录、写入或触发告警，只选择与资产识别相关的脚本，并先阅读脚本说明。对生产网络降低并发、缩小端口范围。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>arp-scan / netdiscover：同一广播域里的“点名”</summary>
+        <div class="details-body">
+          <p>ARP 扫描速度快、结果直观，能看到 IP、MAC 和厂商（OUI），是内网台账最可靠的起点之一。它只对同一 VLAN / 广播域有效，跨网段必须依赖路由侧的 ARP 表、SNMP 或 DHCP 日志。</p>
+          <pre><code><span class="cmt"># 主动 ARP 扫描本网段</span>
+sudo arp-scan --interface=eth0 --localnet
+
+<span class="cmt"># 指定网段；-P 只被动监听，不发 ARP 请求</span>
+sudo netdiscover -r 192.168.1.0/24 -P</code></pre>
+          <p>随机 MAC 会让“同一设备”看起来像多台；虚拟化、容器和负载均衡也会造成 MAC 漂移。台账中应保留“首次出现 / 最后出现 / 观察来源”，不要只用 MAC 做唯一主键。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>masscan：高速扫描的代价</summary>
+        <div class="details-body">
+          <p>masscan 采用无状态扫描，速度极快，适合在授权范围内快速摸底大网段。代价是更容易丢包、误判，也更容易触发 IDS/IPS 或把老旧设备打挂。</p>
+          <pre><code><span class="cmt"># 控制速率，输出 JSON；仅限授权网段</span>
+sudo masscan 192.168.1.0/24 -p1-65535 --rate=500 -oJ masscan-lan.json
+
+<span class="cmt"># 排除关键地址</span>
+sudo masscan 192.168.1.0/24 -p80,443,445,161 --rate=200 --excludefile exclude.txt</code></pre>
+          <p>先小范围试跑，观察链路利用率、丢包与告警，再决定速率。不要把 <code>--rate</code> 调到链路无法承受的数值；也不要用它扫描不归你管理的公网地址。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>DNS 与公开情报：不发包也能画出一部分地图</summary>
+        <div class="details-body">
+          <p>DNS、WHOIS、证书透明度和公开搜索结果能提供域名、子域、邮件与云资产线索。它们适合作为主动扫描前的“地图”，但历史记录不等于当前在线。</p>
+          <pre><code>dig +short example.com A
+dig +short example.com MX
+dig +short -x 192.168.1.10
+
+dnsrecon -d example.com -t std
+fierce --domain example.com</code></pre>
+          <p>区域传送（AXFR）只在授权且服务器允许时使用；多数环境会拒绝。子域爆破会产生大量 DNS 查询，注意速率与日志。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>SMB / NetBIOS：识别 Windows 与文件服务器</summary>
+        <div class="details-body">
+          <p>在 Windows 占比高的内网，SMB 与 NetBIOS 能提供主机名、域、共享、用户与策略线索。优先只读枚举，避免触发账户锁定或写入审计。</p>
+          <pre><code><span class="cmt"># NetBIOS 名称扫描</span>
+nbtscan -r 192.168.1.0/24
+
+<span class="cmt"># 综合枚举，输出 JSON</span>
+enum4linux-ng -A 192.168.1.10 -oJ enum4linux-192.168.1.10.json
+
+<span class="cmt"># 列出共享（匿名会话仅限授权环境）</span>
+smbclient -L //192.168.1.10 -N</code></pre>
+          <p>账户锁定策略、登录审计和 EDR 都可能把枚举当成攻击前奏。先确认授权与维护窗口，避免使用弱口令猜测或凭据喷射。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>SNMP：路由器、交换机、打印机与 UPS 的资产金矿</summary>
+        <div class="details-body">
+          <p>SNMP 能读出系统描述、接口列表、ARP 表、桥 MAC 表、路由表和设备型号。对网络设备台账来说，它往往比端口扫描更有价值。只读使用 <code>snmpwalk</code> / <code>snmpget</code>；<code>snmpset</code> 属于配置变更，必须走变更审批。</p>
+          <pre><code><span class="cmt"># 只读系统信息（v2c 示例；社区字符串按授权配置）</span>
+snmpwalk -v2c -c public 192.168.1.1 1.3.6.1.2.1.1
+
+<span class="cmt"># 接口表与 ARP 表</span>
+snmpwalk -v2c -c public 192.168.1.1 1.3.6.1.2.1.2.2
+snmpwalk -v2c -c public 192.168.1.1 1.3.6.1.2.1.4.22</code></pre>
+          <p>社区字符串（如 <code>public</code>）应视为凭据，不要写入公开文档。优先使用 SNMPv3 的认证与加密；对只读账号做最小权限。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>无线：监听模式与被动发现</summary>
+        <div class="details-body">
+          <p>Kali 的无线工具适合做授权范围内的覆盖勘测、 rogue AP 发现和客户端清点。监听模式会切换网卡工作方式，可能影响本机联网；采集的数据可能包含第三方设备信息，需遵守隐私与保留要求。</p>
+          <pre><code><span class="cmt"># 查看无线接口并开启监听模式（接口名按实际调整）</span>
+sudo airmon-ng
+sudo airmon-ng start wlan0
+
+<span class="cmt"># 发现 AP 与客户端、信道、加密方式、信号</span>
+sudo airodump-ng wlan0mon
+
+<span class="cmt"># Kismet 被动发现 Wi-Fi 与蓝牙设备</span>
+sudo kismet -c wlan0</code></pre>
+          <p>不要抓取或分析不属于授权范围的通信内容；不要把抓到的握手包、客户端列表公开。测试结束后停止监听模式并恢复网络管理。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>流量与监测：把“现在”变成可查询的记录</summary>
+        <div class="details-body">
+          <p>抓包与流量日志能发现扫描看不到的设备（例如只发广播、从不响应探测的 IoT），也是变更与事件的证据来源。优先旁路、限时、脱敏。</p>
+          <pre><code><span class="cmt"># 抓包（限制 snaplen 与文件大小，避免打满磁盘）</span>
+sudo tcpdump -i eth0 -nn -s0 -C 100 -w capture.pcap
+
+<span class="cmt"># 统计端点与协议</span>
+tshark -r capture.pcap -q -z endpoints,ip
+tshark -r capture.pcap -q -z io,phs
+
+<span class="cmt"># 主机/流量视图（需安装并配置）</span>
+sudo ntopng -i eth0</code></pre>
+          <p>抓包前确认法律与隐私要求；对含有个人数据的流量做访问控制与保留期限管理。生产环境优先使用镜像端口或网络探针，而不是在关键主机上长期抓包。</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>把结果变成数据：XML、JSON 与差异对比</summary>
+        <div class="details-body">
+          <p>一次扫描的价值在于可复用。把结果保存为结构化格式，建立基线，再用差异对比发现新增、消失或变化的资产。</p>
+          <pre><code><span class="cmt"># nmap XML 基线</span>
+sudo nmap -sS -sV -oX baseline.xml 192.168.1.0/24
+
+<span class="cmt"># 下一次扫描后对比</span>
+ndiff baseline.xml current.xml
+
+<span class="cmt"># JSON 处理（masscan / API 输出）</span>
+jq '.[] | {ip: .ip, ports: [.ports[].port]}' masscan-lan.json</code></pre>
+          <p>建议同时保留原始文件、解析后的资产表、扫描命令和工具版本。只保留截图或聊天记录，无法支撑后续复盘。</p>
+        </div>
+      </details>
+    </section>
+    <section id="inventory" aria-labelledby="inventory-title">
+      <h2 id="inventory-title"><span class="num">05</span>从扫描结果到资产台账</h2>
+      <p>扫描只产生“观察”，台账需要“记录”。两者之间至少要有解析、归一化、去重、归属和置信度评估。否则你会得到一堆互相矛盾的 IP、MAC 和端口，无法回答“这台设备是谁的、还在不在用、上次什么时候见过”。</p>
+
+      <figure class="figure" tabindex="0" aria-label="资产数据流示意图，窄屏下可左右滚动查看">
+        <svg viewBox="0 0 920 220" role="img" aria-labelledby="fig-pipe-title fig-pipe-desc">
+          <title id="fig-pipe-title">从扫描到资产台账的数据流</title>
+          <desc id="fig-pipe-desc">扫描与抓包产生 XML、JSON、PCAP 等原始文件；经过解析和归一化写入资产库；资产库为可视化、差异对比和告警提供数据。</desc>
+          <defs>
+            <marker id="arrow-pipe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect class="box" x="18" y="62" width="150" height="82" rx="10"></rect>
+          <text class="label" x="93" y="90" text-anchor="middle">扫描 / 抓包</text>
+          <text class="label-sm" x="93" y="110" text-anchor="middle">nmap · masscan</text>
+          <text class="mono" x="93" y="128" text-anchor="middle">tcpdump · Zeek</text>
+
+          <rect class="box" x="204" y="62" width="150" height="82" rx="10"></rect>
+          <text class="label" x="279" y="90" text-anchor="middle">原始文件</text>
+          <text class="label-sm" x="279" y="110" text-anchor="middle">XML · JSON · PCAP</text>
+          <text class="mono" x="279" y="128" text-anchor="middle">不可变 · 带时间戳</text>
+
+          <rect class="box-accent" x="390" y="62" width="150" height="82" rx="10"></rect>
+          <text class="label" x="465" y="90" text-anchor="middle">解析 / 归一化</text>
+          <text class="label-sm" x="465" y="110" text-anchor="middle">jq · Python · SQL</text>
+          <text class="mono" x="465" y="128" text-anchor="middle">字段映射 · 去重</text>
+
+          <rect class="box-accent" x="576" y="62" width="150" height="82" rx="10"></rect>
+          <text class="label" x="651" y="90" text-anchor="middle">资产库</text>
+          <text class="label-sm" x="651" y="110" text-anchor="middle">CMDB / NetBox</text>
+          <text class="mono" x="651" y="128" text-anchor="middle">SQLite · PostgreSQL</text>
+
+          <rect class="box" x="762" y="62" width="140" height="82" rx="10"></rect>
+          <text class="label" x="832" y="90" text-anchor="middle">视图 / 告警</text>
+          <text class="label-sm" x="832" y="110" text-anchor="middle">ntopng · SIEM</text>
+          <text class="mono" x="832" y="128" text-anchor="middle">差异 · 报表</text>
+
+          <line class="edge" x1="168" y1="103" x2="198" y2="103" color="var(--muted)" marker-end="url(#arrow-pipe)"></line>
+          <line class="edge" x1="354" y1="103" x2="384" y2="103" color="var(--muted)" marker-end="url(#arrow-pipe)"></line>
+          <line class="edge" x1="540" y1="103" x2="570" y2="103" color="var(--muted)" marker-end="url(#arrow-pipe)"></line>
+          <line class="edge" x1="726" y1="103" x2="756" y2="103" color="var(--muted)" marker-end="url(#arrow-pipe)"></line>
+
+          <path class="edge-dashed" d="M 827 144 C 827 180, 680 188, 651 150" color="var(--amber)" marker-end="url(#arrow-pipe)"></path>
+          <text class="label-sm" x="748" y="196" text-anchor="middle">差异与告警回写资产状态</text>
+        </svg>
+        <figcaption>原始文件保留证据，资产库保留结论；两者不要混在一起。</figcaption>
+      </figure>
+
+      <h3>5.1 一张最小可用的资产表</h3>
+      <div class="table-wrap">
+        <table>
+          <caption>建议的资产字段（可按组织规模裁剪）</caption>
+          <thead>
+            <tr><th scope="col">字段</th><th scope="col">示例</th><th scope="col">来源</th><th scope="col">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>asset_id</td><td>AST-000123</td><td>资产库生成</td><td>稳定主键，不要用会变化的 IP 代替</td></tr>
+            <tr><td>MAC</td><td>00:1a:2b:3c:4d:5e</td><td>ARP / 交换机 MAC 表 / SNMP</td><td>二层识别，可能被随机化或虚拟化</td></tr>
+            <tr><td>IP</td><td>192.168.1.23</td><td>扫描 / DHCP 租约 / ARP</td><td>可变化；记录首次与最后出现时间</td></tr>
+            <tr><td>hostname</td><td>printer-3f</td><td>DNS / NetBIOS / SNMP / mDNS</td><td>多个来源可能不一致，保留来源</td></tr>
+            <tr><td>vendor / model</td><td>HP / LaserJet</td><td>OUI / SNMP sysDescr / HTTP</td><td>OUI 只说明网卡厂商，不等于整机品牌</td></tr>
+            <tr><td>os</td><td>Windows 11 / Linux 6.x</td><td>nmap -O / SMB / SNMP</td><td>标注“推测”与置信度</td></tr>
+            <tr><td>services</td><td>443/tcp, 445/tcp, 161/udp</td><td>nmap -sV / 证书 / Banner</td><td>保存端口、协议、版本、TLS 证书</td></tr>
+            <tr><td>owner / location</td><td>财务部 / 3F 东区</td><td>CMDB / 交换机端口 / 人工确认</td><td>资产治理的核心，扫描本身给不出</td></tr>
+            <tr><td>criticality</td><td>高 / 中 / 低</td><td>业务影响分析</td><td>决定扫描窗口、速率与告警优先级</td></tr>
+            <tr><td>first_seen / last_seen</td><td>2026-10-01 / 2026-11-04</td><td>每次探测</td><td>判断“新资产”与“长期失联”</td></tr>
+            <tr><td>source / confidence</td><td>arp-scan / 高</td><td>探测记录</td><td>被动、主动、协议枚举的可信度不同</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>5.2 去重：不要用单一标识符</h3>
+      <ul>
+        <li><strong>MAC 做主键的边界：</strong>适合二层同网段，但随机 MAC、容器、虚拟机和 USB 网卡会造成漂移。</li>
+        <li><strong>IP 做主键的边界：</strong>DHCP 会复用地址，今天的 <code>.23</code> 可能已经换了一台设备。</li>
+        <li><strong>推荐组合：</strong>MAC + 交换机端口 + DHCP 租约 + 主机名 + 证书/序列号；多信号一致时提高置信度，冲突时保留证据而不是强行合并。</li>
+        <li><strong>NAT 之后：</strong>外部扫描只能看到 NAT 地址，需要结合 NAT 日志、SNMP 会话表或内网代理。</li>
+      </ul>
+
+      <h3>5.3 变更检测：台账的价值在“变化”</h3>
+      <p>第一次扫描建立基线；之后每次扫描与基线对比，关注新增 MAC/IP、端口变化、服务版本变化、TLS 证书更换、设备名称变化和长期失联。nmap 的 XML 可以用 <code>ndiff</code> 对比；Zeek、DHCP 日志和 SNMP trap 可以补充扫描间隔内的变化。</p>
+      <div class="table-wrap">
+        <table>
+          <caption>常见变更信号与处理方式</caption>
+          <thead>
+            <tr><th scope="col">信号</th><th scope="col">可能含义</th><th scope="col">建议动作</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>新 MAC + 新 IP</td><td>新设备接入或访客设备</td><td>确认归属；加入待登记队列；检查接入端口</td></tr>
+            <tr><td>同一 MAC 换 IP</td><td>DHCP 续租、移动或地址冲突</td><td>核对租约与交换机端口，更新 IP 历史</td></tr>
+            <tr><td>新增 445 / 3389 / 22 端口</td><td>服务上线或配置变更</td><td>确认是否经过变更审批；检查暴露面</td></tr>
+            <tr><td>服务版本变化</td><td>升级、补丁或替换设备</td><td>更新基线；复测漏洞与兼容性</td></tr>
+            <tr><td>设备长时间失联</td><td>下线、故障、隔离或 IP 变更</td><td>标记为“待确认”，不要立即删除</td></tr>
+            <tr><td>SNMP uptime 归零</td><td>设备重启或断电</td><td>关联电源、链路与变更记录</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="matrix" aria-labelledby="matrix-title">
+      <h2 id="matrix-title"><span class="num">06</span>设备识别矩阵：看到端口，如何判断是什么</h2>
+      <p>端口是线索，不是结论。下面的矩阵把“常见设备 → 典型协议/端口 → 可用于确认的信号 → 工具”放在一起，帮助你从开放端口走到设备类型，再走到具体资产。</p>
+
+      <div class="table-wrap">
+        <table>
+          <caption>按设备类型的识别线索（端口仅为常见示例，实际以授权扫描结果为准）</caption>
+          <thead>
+            <tr><th scope="col">设备类型</th><th scope="col">常见协议 / 端口</th><th scope="col">可确认的信号</th><th scope="col">Kali 工具</th><th scope="col">注意</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>路由器 / 交换机</td><td>SNMP 161/udp、SSH 22、HTTP(S) 80/443、NTP 123/udp</td><td>sysDescr、接口表、桥 MAC 表、LLDP/CDP</td><td><code>snmpwalk</code>、<code>nmap -sV</code>、<code>tcpdump</code></td><td>SNMP 只读优先；写操作需变更审批</td></tr>
+            <tr><td>Windows 主机</td><td>SMB 445、NetBIOS 137–139、RDP 3389、WinRM 5985/5986、LDAP 389</td><td>主机名、域、SMB 签名、证书、登录横幅</td><td><code>nbtscan</code>、<code>enum4linux-ng</code>、<code>nmap</code></td><td>枚举可能触发锁定与告警</td></tr>
+            <tr><td>Linux / Unix</td><td>SSH 22、HTTP(S)、NFS 2049、SNMP 161</td><td>SSH Banner、TLS 证书、NFS 导出、系统描述</td><td><code>nmap -sV</code>、<code>sslscan</code>、<code>snmpwalk</code></td><td>不要尝试弱口令或未授权登录</td></tr>
+            <tr><td>打印机 / 复合机</td><td>IPP 631、LPD 515、SNMP 161、mDNS 5353</td><td>sysDescr、型号、纸盒/耗材 OID、Bonjour 服务</td><td><code>snmpwalk</code>、<code>nmap</code>、<code>avahi-browse</code></td><td>老旧打印机可能因扫描卡死</td></tr>
+            <tr><td>NAS / 文件服务器</td><td>SMB 445、NFS 2049、AFP 548、HTTP(S)、SNMP</td><td>共享列表、导出目录、型号、证书</td><td><code>smbclient</code>、<code>smbmap</code>、<code>showmount</code></td><td>只读浏览；不要写入或删除</td></tr>
+            <tr><td>IP 摄像头</td><td>RTSP 554、HTTP(S)、ONVIF、UPnP/SSDP 1900</td><td>RTSP Banner、ONVIF 设备信息、厂商 OUI</td><td><code>nmap</code>、<code>tcpdump</code>、<code>whatweb</code></td><td>视频流涉及隐私，禁止未授权访问</td></tr>
+            <tr><td>IoT / 传感器</td><td>mDNS 5353、SSDP 1900、MQTT 1883/8883、CoAP 5683</td><td>服务公告、主题、设备描述、MAC OUI</td><td><code>avahi-browse</code>、<code>tcpdump</code>、<code>nmap</code></td><td>设备可能休眠，扫描间隔要覆盖</td></tr>
+            <tr><td>VoIP / 会议终端</td><td>SIP 5060/5061、RTP、HTTP(S)、SNMP</td><td>SIP User-Agent、注册状态、厂商</td><td><code>nmap -sV</code>、<code>tcpdump</code></td><td>不要抓取通话内容</td></tr>
+            <tr><td>无线 AP / 控制器</td><td>SNMP 161、HTTP(S)、CAPWAP、SSH</td><td>AP 型号、关联客户端、射频与信道</td><td><code>snmpwalk</code>、<code>airodump-ng</code>、<code>kismet</code></td><td>无线监测需符合当地法规</td></tr>
+            <tr><td>虚拟化 / 云主机</td><td>Hypervisor API、SSH、RDP、HTTP(S)</td><td>云厂商元数据、实例 ID、标签、证书</td><td>Kali 扫描 + 云 API / 资产代理</td><td>仅扫可达网络会漏掉管理面</td></tr>
+            <tr><td>工控 / OT</td><td>Modbus 502、S7 102、DNP3 20000、OPC UA 4840</td><td>设备标识、固件、PLC 型号、网络拓扑</td><td>被动流量优先；主动扫描需专项授权</td><td>错误探测可能导致停机或物理风险</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">识别不是猜谜</span>
+        <p>TTL、MAC OUI、开放端口都可能被伪造或共享。关键资产至少用两种独立信号交叉确认，并记录置信度；无法确认时标为“未知设备”，而不是强行归类。</p>
+      </div>
+    </section>
+    <section id="wireless" aria-labelledby="wireless-title">
+      <h2 id="wireless-title"><span class="num">07</span>无线、物联网与 IPv6：容易被漏掉的三块</h2>
+      <p>有线扫描看不到不接线的东西；IPv4 扫描看不到只走 IPv6 的东西。把无线、IoT 广播协议和 IPv6 邻居发现补齐，台账的覆盖率才会明显提升。</p>
+
+      <h3>7.1 无线：先被动，再按需监听</h3>
+      <p>无线资产包括 AP、客户端、隐藏 SSID、访客网络、 rogue AP 和蓝牙设备。最稳妥的顺序是：先用 Kismet 被动观察，确认信道与目标；再在授权信道上做更细的抓包与客户端清点。</p>
+      <pre><code><span class="cmt"># 查看无线接口与能力</span>
+sudo airmon-ng
+iw dev
+
+<span class="cmt"># 开启监听模式并被动发现 AP / 客户端</span>
+sudo airmon-ng start wlan0
+sudo airodump-ng wlan0mon
+
+<span class="cmt"># Kismet：Wi-Fi + 蓝牙被动发现与日志</span>
+sudo kismet -c wlan0mon
+
+<span class="cmt"># 结束后恢复管理接口</span>
+sudo airmon-ng stop wlan0mon</code></pre>
+      <ul>
+        <li><strong>能得到的：</strong>BSSID、SSID、信道、加密方式、信号强度、客户端数量、厂商 OUI、Beacon/Probe 行为。</li>
+        <li><strong>不能直接得到的：</strong>AP 背后的交换机端口、管理地址、责任人；需要结合有线侧 ARP/MAC 表与 CMDB。</li>
+        <li><strong>隐私与合规：</strong>监听会看到第三方设备；报告中建议对 MAC 做哈希或截断，不保存通信内容，不公开抓包文件。</li>
+      </ul>
+
+      <h3>7.2 物联网：用广播协议找“沉默设备”</h3>
+      <p>很多 IoT 不响应 ping，但会主动发 mDNS、SSDP、MQTT 或厂商私有广播。被动监听这些协议，往往比端口扫描更有效。</p>
+      <div class="table-wrap">
+        <table>
+          <caption>常见 IoT / 多媒体发现协议</caption>
+          <thead>
+            <tr><th scope="col">协议</th><th scope="col">你会看到什么</th><th scope="col">工具示例</th><th scope="col">注意</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>mDNS / Bonjour</td><td>打印机、NAS、Apple 设备、投屏、IoT 的服务公告</td><td><code>avahi-browse -art</code>、<code>tcpdump port 5353</code></td><td>服务名可能暴露房间号或人名</td></tr>
+            <tr><td>SSDP / UPnP</td><td>智能电视、路由器、摄像头、媒体服务器的设备描述</td><td><code>nmap -sU -p1900 --script upnp-info</code></td><td>UPnP 常被滥用做端口映射，注意暴露面</td></tr>
+            <tr><td>MQTT</td><td>传感器、智能家居、工业网关的主题与 Broker</td><td><code>nmap -sV -p1883,8883</code>、<code>tcpdump</code></td><td>不要未授权订阅主题或发布消息</td></tr>
+            <tr><td>CoAP</td><td>低功耗传感器、楼宇控制</td><td><code>nmap -sU -p5683</code>、被动抓包</td><td>UDP 无响应不代表不存在</td></tr>
+            <tr><td>RTSP / ONVIF</td><td>IP 摄像头、NVR、视频会议终端</td><td><code>nmap -sV -p554</code>、HTTP 指纹</td><td>视频内容属于敏感数据，禁止未授权访问</td></tr>
+            <tr><td>Modbus / S7 / DNP3</td><td>PLC、RTU、工业网关</td><td>优先被动流量；专项授权后可用 NSE</td><td>主动探测可能导致停机，必须谨慎</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>7.3 IPv6：别只扫 IPv4</h3>
+      <p>IPv6 没有广播，但有组播与邻居发现（NDP）。很多内网同时运行 IPv4/IPv6，只扫 IPv4 会漏掉双栈设备、临时地址和只走 IPv6 的管理面。</p>
+      <pre><code><span class="cmt"># 查看本机 IPv6 地址与邻居缓存</span>
+ip -6 addr
+ip -6 neigh
+
+<span class="cmt"># 对链路本地组播地址做发现（接口名按实际调整）</span>
+ping -6 -c 2 ff02::1%eth0
+ndisc6 ff02::1 eth0
+
+<span class="cmt"># nmap 显式启用 IPv6；链路本地目标需带 %接口</span>
+sudo nmap -6 -sn 2001:db8::/64</code></pre>
+      <ul>
+        <li>IPv6 隐私扩展会轮换接口标识，MAC 关联更困难；应结合 NDP 缓存、DHCPv6 日志和 RA 信息。</li>
+        <li>部分 Kali 工具默认只处理 IPv4，使用前确认是否支持 <code>-6</code> 或 IPv6 目标格式。</li>
+        <li>云与容器网络可能使用大量临时地址；台账应以实例/工作负载为主，而不是以地址为主。</li>
+      </ul>
+    </section>
+
+    <section id="monitor" aria-labelledby="monitor-title">
+      <h2 id="monitor-title"><span class="num">08</span>持续监测与变更管理</h2>
+      <p>一次性扫描只能回答“那天看到了什么”。持续监测要回答“什么时候出现了什么变化”。对资产治理而言，变化比快照更重要。</p>
+
+      <div class="table-wrap">
+        <table>
+          <caption>监测目标与工具组合</caption>
+          <thead>
+            <tr><th scope="col">监测目标</th><th scope="col">工具 / 数据源</th><th scope="col">输出</th><th scope="col">落地方式</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>新设备接入</td><td>DHCP 日志、ARP/ND 监听、Zeek、ntopng</td><td>新 MAC/IP、首次出现时间</td><td>与资产库比对，生成待登记工单</td></tr>
+            <tr><td>端口与服务变化</td><td>定时 nmap、ndiff</td><td>新增/关闭端口、版本变化</td><td>差异报告 + 变更审批核对</td></tr>
+            <tr><td>流量异常</td><td>Suricata、Zeek、NetFlow/IPFIX</td><td>告警、会话日志、协议统计</td><td>接入 SIEM；按资产关键性分级</td></tr>
+            <tr><td>性能与容量</td><td>ntopng、iftop、nethogs、SNMP 轮询</td><td>带宽、连接数、接口利用率</td><td>阈值告警；容量规划</td></tr>
+            <tr><td>配置基线</td><td>SSH、Ansible、SNMP</td><td>配置差异、版本、运行时间</td><td>变更管理；定期备份与比对</td></tr>
+            <tr><td>漏洞与补丁</td><td>GVM / OpenVAS、厂商公告</td><td>漏洞台账、复测结果</td><td>风险排序；修复闭环</td></tr>
+            <tr><td>无线 rogue AP</td><td>Kismet、airodump-ng</td><td>异常 BSSID、信道、加密方式</td><td>结合布点与授权 AP 清单核查</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>8.1 建议的告警基线</h3>
+      <ul>
+        <li>关键资产出现新的管理端口（22/3389/445/161）或新的外部可达服务。</li>
+        <li>同一交换机端口出现新的 MAC，或同一 MAC 出现在多个端口（可能环路、欺骗或虚拟化）。</li>
+        <li>TLS 证书主体、签发者或到期时间发生非计划变化。</li>
+        <li>SNMP uptime 归零、设备长期失联后又突然出现。</li>
+        <li>无线侧出现与授权清单不符的 SSID/BSSID，或加密方式降级。</li>
+      </ul>
+
+      <div class="callout warn">
+        <span class="label">Kali 不是 CMDB</span>
+        <p>Kali 适合探测、验证和导出证据，不适合承担长期资产主数据。把结果写入 NetBox、CMDB、SQLite/PostgreSQL 或 SIEM，并在那里做归属、生命周期、工单和权限控制。扫描器只是数据源之一。</p>
+      </div>
+
+      <h3>8.2 “管理”动作的边界</h3>
+      <p>资产治理中的管理动作包括：登记、归属、分级、基线、补丁、配置变更、隔离、下线。涉及远程登录、SNMP 写、防火墙变更时，必须走变更审批、备份和回滚；不要把探测工具当成绕过审批的捷径。Kali 里的 <code>ssh</code>、<code>ansible</code>、<code>snmpset</code>、<code>nftables</code> 都具备真实修改能力，误操作可能直接造成业务中断。</p>
+    </section>
+    <section id="risk" aria-labelledby="risk-title">
+      <h2 id="risk-title"><span class="num">09</span>风险、合规与检查清单</h2>
+      <p>网络探测的风险不只来自“被黑客利用”，也来自探测本身：扫描流量可能触发防护、影响老旧设备、填满日志、暴露你的位置与意图，甚至造成 OT 停机。风险控制应写在扫描方案里，而不是事后补救。</p>
+
+      <div class="table-wrap">
+        <table>
+          <caption>探测活动的潜在影响与控制措施</caption>
+          <thead>
+            <tr><th scope="col">活动</th><th scope="col">潜在影响</th><th scope="col">控制措施</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ARP 扫描</td><td>广播流量增加；可能被端口安全/动态 ARP 检测记录</td><td>限制在维护窗口；分段执行；避开语音与 OT VLAN</td></tr>
+            <tr><td>TCP SYN / 全连接扫描</td><td>触发 IDS/IPS；占用防火墙会话表；被安全团队误判为攻击</td><td>提前告知 SOC；限速与并发；使用排除列表</td></tr>
+            <tr><td>服务版本 / NSE 脚本</td><td>老旧设备崩溃；触发应用审计；脚本可能写入或登录</td><td>先读脚本说明；只选识别类脚本；关键资产最后做</td></tr>
+            <tr><td>masscan 高速扫描</td><td>链路拥塞、丢包；设备重启；运营商/云限流</td><td>从低速率开始；监控链路；禁止对公网大段扫描</td></tr>
+            <tr><td>SNMP 枚举</td><td>暴露配置与拓扑；错误 community 可能触发锁定</td><td>只读账号；SNMPv3；最小权限；控制查询频率</td></tr>
+            <tr><td>SMB / LDAP 枚举</td><td>账户锁定；登录审计告警；目录信息泄露</td><td>书面授权；使用只读凭据；避开锁定阈值；最小化查询</td></tr>
+            <tr><td>无线监听</td><td>涉及第三方通信与位置数据；可能违反无线电/隐私法规</td><td>仅授权区域；不保存通信内容；MAC 脱敏；限时采集</td></tr>
+            <tr><td>中间人 / 欺骗（本报告不展开）</td><td>中断业务、窃取凭据、破坏信任链</td><td>仅限隔离实验环境；生产网络禁止；必须有专项授权</td></tr>
+            <tr><td>OT / 医疗 / 交通设备探测</td><td>停机、误动作、物理安全风险</td><td>被动优先；厂商与运维在场；专项风险评估与回滚方案</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>9.1 合规与数据保护</h3>
+      <ul>
+        <li><strong>书面授权：</strong>明确目标、时间、源地址、工具、速率、联系人、停止条件与报告范围。</li>
+        <li><strong>最小化：</strong>只收集资产治理必需的数据；不抓取业务内容、不导出无关个人信息。</li>
+        <li><strong>保存与访问：</strong>扫描结果、抓包和凭据分离存放；加密、限权、设定保留期限。</li>
+        <li><strong>云与第三方：</strong>遵守云服务商渗透测试政策；多云/托管环境先走工单，避免被当成攻击。</li>
+        <li><strong>披露：</strong>发现高风险暴露时，按组织流程通知资产责任人与安全团队，不在公开渠道披露细节。</li>
+      </ul>
+
+      <h3>9.2 出发前检查清单</h3>
+      <div class="calc" style="padding:18px 20px">
+        <ul class="checklist">
+          <li><label><input type="checkbox"><span>已取得书面授权，目标清单与排除项明确</span></label></li>
+          <li><label><input type="checkbox"><span>已确认时间窗口、速率上限与停止条件</span></label></li>
+          <li><label><input type="checkbox"><span>已通知 SOC / 运维 / 资产责任人，避免误报</span></label></li>
+          <li><label><input type="checkbox"><span>已识别 OT、医疗、打印、UPS 等敏感设备并降级处理</span></label></li>
+          <li><label><input type="checkbox"><span>已准备回滚、应急联系人和断网隔离方案</span></label></li>
+          <li><label><input type="checkbox"><span>扫描源地址、工具版本、命令与输出目录已记录</span></label></li>
+          <li><label><input type="checkbox"><span>数据存储、脱敏、访问控制与保留期限已确定</span></label></li>
+          <li><label><input type="checkbox"><span>报告模板与资产字段已对齐，避免“扫完无法入库”</span></label></li>
+        </ul>
+        <p class="progress" id="check-progress" aria-live="polite">已勾选 0 / 8 项</p>
+      </div>
+    </section>
+
+    <section id="start" aria-labelledby="start-title">
+      <h2 id="start-title"><span class="num">10</span>快速开始与网段计算</h2>
+      <p>先算清范围，再决定工具与速率。下面的计算器只处理 IPv4 CIDR；IPv6 请使用 <code>ipcalc</code>、<code>sipcalc</code> 或系统自带工具。</p>
+
+      <div class="calc">
+        <h3 style="margin-top:0">IPv4 CIDR 范围计算</h3>
+        <form id="cidr-form">
+          <div class="calc-grid">
+            <label class="control">CIDR 或地址/前缀
+              <input type="text" id="cidr-input" value="192.168.1.0/24" spellcheck="false" autocomplete="off" placeholder="例如 10.20.0.0/16">
+            </label>
+          </div>
+          <div class="calc-actions">
+            <button class="btn primary" type="button" id="cidr-run">计算</button>
+            <button class="btn" type="button" id="cidr-reset">恢复默认</button>
+          </div>
+          <div class="calc-out" aria-live="polite">
+            <div class="metric"><span>网络地址</span><strong id="cidr-network">—</strong></div>
+            <div class="metric"><span>子网掩码</span><strong id="cidr-mask">—</strong></div>
+            <div class="metric"><span>广播地址</span><strong id="cidr-broadcast">—</strong></div>
+            <div class="metric"><span>可用范围</span><strong id="cidr-range">—</strong></div>
+            <div class="metric"><span>可用主机数</span><strong id="cidr-usable">—</strong></div>
+            <div class="metric"><span>地址总数</span><strong id="cidr-total">—</strong></div>
+          </div>
+          <p class="verdict" id="cidr-verdict" data-level="ok">等待计算</p>
+        </form>
+      </div>
+
+      <h3>10.1 最小可用流程（约 30–60 分钟）</h3>
+      <ol class="steps">
+        <li><strong>定范围：</strong><code>ip route</code> 看本机路由，<code>ipcalc</code> 拆分网段，写下排除项与敏感设备。</li>
+        <li><strong>做被动：</strong><code>dig</code>/<code>whois</code> 查域名，<code>tcpdump</code> 或现成流量日志看广播与邻居协议。</li>
+        <li><strong>同网段点名：</strong><code>arp-scan --localnet</code> 建立 IP/MAC/厂商基线。</li>
+        <li><strong>跨网段存活：</strong><code>nmap -sn</code> 或 <code>fping</code>，对无响应目标再用 TCP 常见端口补充。</li>
+        <li><strong>服务与设备：</strong>对确认主机做 <code>nmap -sV</code>；网络设备用 <code>snmpwalk</code>；Windows 用 <code>nbtscan</code> / <code>enum4linux-ng</code>。</li>
+        <li><strong>入库与对比：</strong><code>-oX</code> 保存 XML，<code>ndiff</code> 对比基线，把结果写入资产表并标注来源与置信度。</li>
+      </ol>
+
+      <h3>10.2 一次探测应交付什么</h3>
+      <div class="table-wrap">
+        <table>
+          <caption>建议的交付物</caption>
+          <thead>
+            <tr><th scope="col">交付物</th><th scope="col">内容</th><th scope="col">用途</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>范围与授权记录</td><td>CIDR、排除项、时间窗、联系人、工具与速率</td><td>合规与复盘</td></tr>
+            <tr><td>原始数据</td><td>nmap XML、masscan JSON、PCAP、日志</td><td>证据与再分析</td></tr>
+            <tr><td>资产表</td><td>IP、MAC、主机名、系统、服务、归属、置信度</td><td>台账与责任落实</td></tr>
+            <tr><td>差异报告</td><td>新增、消失、端口/版本/证书变化</td><td>变更管理与告警</td></tr>
+            <tr><td>风险与建议</td><td>暴露面、未知设备、敏感协议、补测项</td><td>整改与下一轮计划</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section id="glossary" aria-labelledby="glossary-title">
+      <h2 id="glossary-title"><span class="num">11</span>术语与参考</h2>
+      <dl class="glossary">
+        <div class="term"><dt>CIDR</dt><dd>无类域间路由表示法，如 <code>192.168.1.0/24</code>；斜杠后是前缀长度，决定网络规模。</dd></div>
+        <div class="term"><dt>ARP / NDP</dt><dd>IPv4 用 ARP、IPv6 用邻居发现（NDP）把 IP 解析为链路层地址；同广播域发现的基础。</dd></div>
+        <div class="term"><dt>OUI</dt><dd>MAC 地址前 24 位对应的厂商标识；只能说明网卡厂商，不能单独确定整机型号。</dd></div>
+        <div class="term"><dt>NSE</dt><dd>nmap 脚本引擎；脚本可做服务识别、广播发现、漏洞检测等，使用前需读说明。</dd></div>
+        <div class="term"><dt>SMB / NetBIOS</dt><dd>Windows 文件共享与旧式名称服务；常用于主机名、域、共享与用户枚举。</dd></div>
+        <div class="term"><dt>SNMP</dt><dd>简单网络管理协议；可读取接口、ARP、路由、设备型号等，写操作风险高。</dd></div>
+        <div class="term"><dt>LDAP / AD</dt><dd>目录服务与 Active Directory；可查询用户、组、计算机与域策略。</dd></div>
+        <div class="term"><dt>mDNS / SSDP</dt><dd>局域网服务公告协议；打印机、NAS、电视、摄像头常主动广播。</dd></div>
+        <div class="term"><dt>RTSP / ONVIF</dt><dd>视频流与网络摄像头互操作协议；涉及视频内容，必须严格授权。</dd></div>
+        <div class="term"><dt>PCAP</dt><dd>抓包文件格式；保存原始流量证据，注意隐私、脱敏与保留期限。</dd></div>
+        <div class="term"><dt>IDS / IPS</dt><dd>入侵检测/防御系统；扫描流量可能触发告警，提前通报 SOC 很重要。</dd></div>
+        <div class="term"><dt>CMDB</dt><dd>配置管理数据库；资产归属、生命周期、关系与变更的权威数据源。</dd></div>
+        <div class="term"><dt>NAT</dt><dd>网络地址转换；外部扫描只能看到 NAT 地址，内网设备需结合 NAT/会话日志。</dd></div>
+        <div class="term"><dt>DHCP</dt><dd>动态主机配置协议；租约日志是“新设备接入”和“IP 归属”的关键证据。</dd></div>
+        <div class="term"><dt>Rogue AP</dt><dd>未经授权的无线接入点；可能是私接路由、攻击热点或配置错误的 AP。</dd></div>
+        <div class="term"><dt>BSSID</dt><dd>基本服务集标识，通常是 AP 某射频的 MAC 地址，用于区分同名 SSID。</dd></div>
+        <div class="term"><dt>OT</dt><dd>运营技术网络（工控、楼宇、能源、医疗设备等）；对主动扫描极其敏感。</dd></div>
+        <div class="term"><dt>SIEM</dt><dd>安全信息与事件管理平台；汇聚日志、告警与资产上下文，用于关联分析。</dd></div>
+        <div class="term"><dt>NetFlow / IPFIX</dt><dd>流量元数据协议；不含载荷，适合长期会话与流量基线。</dd></div>
+        <div class="term"><dt>EDR</dt><dd>终端检测与响应；SMB/LDAP 枚举等行为可能被 EDR 记录或阻断。</dd></div>
+        <div class="term"><dt>IPv6 隐私地址</dt><dd>临时接口标识会轮换，降低基于 MAC 的长期跟踪；台账应结合 NDP/DHCPv6 日志。</dd></div>
+      </dl>
+
+      <h3>延伸阅读</h3>
+      <ul class="refs">
+        <li><a href="https://www.kali.org/tools/" target="_blank" rel="noopener noreferrer">Kali Linux Tools</a>：官方工具索引与包说明。</li>
+        <li><a href="https://nmap.org/book/" target="_blank" rel="noopener noreferrer">Nmap Network Scanning</a>：主机发现、端口扫描、服务识别与 NSE 的权威参考。</li>
+        <li><a href="https://docs.zeek.org/" target="_blank" rel="noopener noreferrer">Zeek Documentation</a>：流量日志、协议解析与脚本框架。</li>
+        <li><a href="https://www.wireshark.org/docs/" target="_blank" rel="noopener noreferrer">Wireshark Documentation</a>：抓包与协议分析。</li>
+        <li><a href="https://netboxlabs.com/docs/netbox/" target="_blank" rel="noopener noreferrer">NetBox Documentation</a>：开源资产与网络文档模型，可承接扫描结果。</li>
+        <li><a href="https://csrc.nist.gov/pubs/sp/800/115/final" target="_blank" rel="noopener noreferrer">NIST SP 800-115</a>：信息安全测试与评估的技术指南。</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc826" target="_blank" rel="noopener noreferrer">RFC 826</a> / <a href="https://www.rfc-editor.org/rfc/rfc4861" target="_blank" rel="noopener noreferrer">RFC 4861</a>：ARP 与 IPv6 邻居发现。</li>
+      </ul>
+      <p style="font-size:.86rem;color:var(--muted)">注：工具名称与功能随 Kali 版本变化；命令与端口仅为常见示例。实际使用前请核对当前版本文档，并确保目标在授权范围内。</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>本报告用于自有网络或书面授权范围内的资产发现、识别与治理。禁止将其中方法用于未授权访问、干扰、窃听或规避审计。涉及 OT、医疗、云与第三方网络时，请先完成专项风险评估与授权流程。</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var targets = [];
+  tocLinks.forEach(function (link) {
+    var id = link.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el && targets.indexOf(el) === -1) targets.push(el);
+  });
+
+  function setActive(id) {
+    tocLinks.forEach(function (link) {
+      if (link.getAttribute('href') === '#' + id) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  if ('IntersectionObserver' in window && targets.length) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    targets.forEach(function (el) { observer.observe(el); });
+  }
+
+  var toolSearch = document.getElementById('tool-search');
+  var toolCat = document.getElementById('tool-cat');
+  var toolRisk = document.getElementById('tool-risk');
+  var toolRows = Array.prototype.slice.call(document.querySelectorAll('#tool-table tbody tr[data-cat]'));
+  var toolCount = document.getElementById('tool-count');
+  var toolEmpty = document.getElementById('tool-empty');
+  var toolReset = document.getElementById('tool-reset');
+
+  function applyToolFilter() {
+    if (!toolSearch || !toolCat || !toolRisk) return;
+    var text = toolSearch.value.trim().toLowerCase();
+    var cat = toolCat.value;
+    var risk = toolRisk.value;
+    var visible = 0;
+    toolRows.forEach(function (row) {
+      var matchText = !text || row.textContent.toLowerCase().indexOf(text) !== -1;
+      var matchCat = !cat || row.getAttribute('data-cat') === cat;
+      var matchRisk = !risk || row.getAttribute('data-risk') === risk;
+      var show = matchText && matchCat && matchRisk;
+      row.hidden = !show;
+      if (show) visible += 1;
+    });
+    if (toolCount) toolCount.textContent = visible + ' / ' + toolRows.length + ' 项';
+    if (toolEmpty) toolEmpty.hidden = visible !== 0;
+  }
+
+  if (toolSearch && toolCat && toolRisk) {
+    toolSearch.addEventListener('input', applyToolFilter);
+    toolCat.addEventListener('change', applyToolFilter);
+    toolRisk.addEventListener('change', applyToolFilter);
+    if (toolReset) {
+      toolReset.addEventListener('click', function () {
+        toolSearch.value = '';
+        toolCat.value = '';
+        toolRisk.value = '';
+        applyToolFilter();
+        toolSearch.focus();
+      });
+    }
+    applyToolFilter();
+  }
+
+  function parseIPv4(value) {
+    var match = value.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (!match) return null;
+    var parts = [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])];
+    for (var i = 0; i < 4; i += 1) {
+      if (parts[i] < 0 || parts[i] > 255) return null;
+    }
+    return (((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0);
+  }
+
+  function ipToString(value) {
+    value = value >>> 0;
+    return [(value >>> 24) & 255, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join('.');
+  }
+
+  function classifyIPv4(value) {
+    var a = (value >>> 24) & 255;
+    var b = (value >>> 16) & 255;
+    if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return '私有地址';
+    if (a === 127) return '环回地址';
+    if (a === 169 && b === 254) return '链路本地地址';
+    if (a === 100 && b >= 64 && b <= 127) return '运营商级 NAT 地址';
+    if (a >= 224 && a <= 239) return '组播地址';
+    if (a >= 240) return '保留地址';
+    return '公网地址';
+  }
+
+  var cidrForm = document.getElementById('cidr-form');
+  if (cidrForm) {
+    var cidrInput = document.getElementById('cidr-input');
+    var cidrNetwork = document.getElementById('cidr-network');
+    var cidrMask = document.getElementById('cidr-mask');
+    var cidrBroadcast = document.getElementById('cidr-broadcast');
+    var cidrRange = document.getElementById('cidr-range');
+    var cidrUsable = document.getElementById('cidr-usable');
+    var cidrTotal = document.getElementById('cidr-total');
+    var cidrVerdict = document.getElementById('cidr-verdict');
+    var cidrRun = document.getElementById('cidr-run');
+    var cidrReset = document.getElementById('cidr-reset');
+
+    function setCidrEmpty(message, level) {
+      cidrNetwork.textContent = '—';
+      cidrMask.textContent = '—';
+      cidrBroadcast.textContent = '—';
+      cidrRange.textContent = '—';
+      cidrUsable.textContent = '—';
+      cidrTotal.textContent = '—';
+      cidrVerdict.textContent = message;
+      cidrVerdict.setAttribute('data-level', level || 'bad');
+    }
+
+    function updateCidr() {
+      var raw = cidrInput.value.trim();
+      var slash = raw.indexOf('/');
+      if (slash === -1) {
+        setCidrEmpty('请输入“地址/前缀”的形式，例如 192.168.1.0/24。', 'bad');
+        return;
+      }
+      var ipValue = parseIPv4(raw.slice(0, slash));
+      var prefix = Number(raw.slice(slash + 1));
+      if (ipValue === null || !/^\d{1,2}$/.test(raw.slice(slash + 1)) || prefix < 0 || prefix > 32) {
+        setCidrEmpty('格式无效：IPv4 每段为 0–255，前缀为 0–32。', 'bad');
+        return;
+      }
+
+      var mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+      var network = (ipValue & mask) >>> 0;
+      var broadcast = (network | ((~mask) >>> 0)) >>> 0;
+      var total = Math.pow(2, 32 - prefix);
+      var usable;
+      var first;
+      var last;
+
+      if (prefix === 32) {
+        usable = 1;
+        first = network;
+        last = network;
+      } else if (prefix === 31) {
+        usable = 2;
+        first = network;
+        last = broadcast;
+      } else {
+        usable = total - 2;
+        first = (network + 1) >>> 0;
+        last = (broadcast - 1) >>> 0;
+      }
+
+      cidrNetwork.textContent = ipToString(network);
+      cidrMask.textContent = ipToString(mask) + ' /' + prefix;
+      cidrBroadcast.textContent = ipToString(broadcast);
+      cidrRange.textContent = ipToString(first) + ' – ' + ipToString(last);
+      cidrUsable.textContent = usable.toLocaleString();
+      cidrTotal.textContent = total.toLocaleString();
+
+      var kind = classifyIPv4(network);
+      var level = 'ok';
+      var message = '该网段属于' + kind + '，共 ' + total.toLocaleString() + ' 个地址，可用 ' + usable.toLocaleString() + ' 个。';
+
+      if (prefix <= 8) {
+        level = 'bad';
+        message += ' 范围极大，强烈建议拆分为 /24 或更小，并再次确认授权、排除项与速率上限。';
+      } else if (prefix <= 16) {
+        level = 'warn';
+        message += ' 建议按 /24 或业务单元分段扫描，限制并发与速率。';
+      } else if (prefix >= 31) {
+        message += ' 点对点或单主机网段，通常只适合定向核查。';
+      } else {
+        message += ' 同广播域可先用 ARP 扫描；跨网段用 nmap -sn 或 TCP 探测补足。';
+      }
+
+      if (kind === '公网地址') {
+        if (level === 'ok') level = 'warn';
+        message += ' 公网地址请特别确认书面授权、云服务商政策与速率限制。';
+      }
+      if (kind === '运营商级 NAT 地址') {
+        message += ' 该范围通常位于运营商 NAT 之后，直接扫描往往不可达。';
+      }
+
+      cidrVerdict.textContent = message;
+      cidrVerdict.setAttribute('data-level', level);
+    }
+
+    if (cidrRun) cidrRun.addEventListener('click', updateCidr);
+    if (cidrInput) {
+      cidrInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          updateCidr();
+        }
+      });
+    }
+    if (cidrReset) {
+      cidrReset.addEventListener('click', function () {
+        cidrInput.value = '192.168.1.0/24';
+        updateCidr();
+        cidrInput.focus();
+      });
+    }
+    updateCidr();
+  }
+
+  var checks = Array.prototype.slice.call(document.querySelectorAll('.checklist input[type="checkbox"]'));
+  var checkProgress = document.getElementById('check-progress');
+  if (checks.length && checkProgress) {
+    var updateChecks = function () {
+      var done = checks.filter(function (item) { return item.checked; }).length;
+      checkProgress.textContent = '已勾选 ' + done + ' / ' + checks.length + ' 项';
+    };
+    checks.forEach(function (item) { item.addEventListener('change', updateChecks); });
+    updateChecks();
+  }
+
+  function markScrollableTables() {
+    Array.prototype.slice.call(document.querySelectorAll('.table-wrap')).forEach(function (wrap) {
+      var scrollable = wrap.scrollWidth > wrap.clientWidth + 1;
+      if (scrollable) {
+        wrap.tabIndex = 0;
+        wrap.setAttribute('role', 'region');
+        wrap.setAttribute('aria-label', '表格，可左右滚动查看');
+      } else {
+        wrap.removeAttribute('tabindex');
+        wrap.removeAttribute('role');
+        wrap.removeAttribute('aria-label');
+      }
+    });
+  }
+  markScrollableTables();
+  var resizeTimer;
+  window.addEventListener('resize', function () {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(markScrollableTables, 150);
+  });
+
+  var printDetailsState = [];
+  window.addEventListener('beforeprint', function () {
+    printDetailsState = [];
+    Array.prototype.slice.call(document.querySelectorAll('details')).forEach(function (item) {
+      printDetailsState.push({ el: item, open: item.open });
+      item.open = true;
+    });
+  });
+  window.addEventListener('afterprint', function () {
+    printDetailsState.forEach(function (item) { item.el.open = item.open; });
+    printDetailsState = [];
+  });
+})();
+</script>
+</body>
+</html>

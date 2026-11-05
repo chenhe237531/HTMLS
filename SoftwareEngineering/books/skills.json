@@ -1,0 +1,189 @@
+[
+  {
+    "id": "systematic-debugging",
+    "name": "systematic-debugging",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/systematic-debugging/SKILL.md",
+    "desc": "先定位根因，再提出修复；用证据替代症状修补。",
+    "books": ["code-complete", "working-effectively-legacy-code", "site-reliability-engineering"],
+    "methods": ["根因分析优先", "缺陷预防", "特征测试", "可观测性证据"]
+  },
+  {
+    "id": "test-driven-development",
+    "name": "test-driven-development",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/test-driven-development/SKILL.md",
+    "desc": "先写失败测试，再写最小实现，最后重构。",
+    "books": ["tdd-by-example", "refactoring", "working-effectively-legacy-code"],
+    "methods": ["红-绿-重构", "小步重构", "特征测试", "测试保护"]
+  },
+  {
+    "id": "requesting-code-review",
+    "name": "requesting-code-review",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/requesting-code-review/SKILL.md",
+    "desc": "任务完成或合并前，主动请求带上下文的代码审查。",
+    "books": ["software-engineering-at-google", "code-complete"],
+    "methods": ["小 CL / 小 PR", "审查清单", "形式化审查"]
+  },
+  {
+    "id": "receiving-code-review",
+    "name": "receiving-code-review",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/receiving-code-review/SKILL.md",
+    "desc": "收到审查意见后先验证再接受，不做表演式同意。",
+    "books": ["software-engineering-at-google", "code-complete"],
+    "methods": ["技术性接受/拒绝", "审查清单", "行为反馈"]
+  },
+  {
+    "id": "writing-plans",
+    "name": "writing-plans",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/writing-plans/SKILL.md",
+    "desc": "把规格拆成可执行、可审查的小任务计划。",
+    "books": ["mythical-man-month", "pragmatic-programmer", "pressman-software-engineering"],
+    "methods": ["概念完整性", "曳光弹", "需求到任务分解"]
+  },
+  {
+    "id": "verification-before-completion",
+    "name": "verification-before-completion",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/verification-before-completion/SKILL.md",
+    "desc": "声称完成前必须运行验证并展示输出。",
+    "books": ["code-complete", "tdd-by-example", "accelerate"],
+    "methods": ["测试策略", "红-绿-重构", "质量门禁"]
+  },
+  {
+    "id": "subagent-driven-development",
+    "name": "subagent-driven-development",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/subagent-driven-development/SKILL.md",
+    "desc": "按任务派发隔离子代理，逐任务实现与审查。",
+    "books": ["mythical-man-month", "peopleware", "team-topologies"],
+    "methods": ["外科手术团队", "团队自治", "团队边界与认知负荷"]
+  },
+  {
+    "id": "dispatching-parallel-agents",
+    "name": "dispatching-parallel-agents",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/dispatching-parallel-agents/SKILL.md",
+    "desc": "把无共享状态的独立任务并行派发。",
+    "books": ["team-topologies", "mythical-man-month", "phoenix-project"],
+    "methods": ["四种团队类型", "三种交互模式", "约束与并行流"]
+  },
+  {
+    "id": "brainstorming",
+    "name": "brainstorming",
+    "repo": "obra/superpowers",
+    "stars": 312156,
+    "repoUrl": "https://github.com/obra/superpowers",
+    "path": "skills/brainstorming/SKILL.md",
+    "desc": "在动手前把模糊想法逼成明确需求与方案。",
+    "books": ["pragmatic-programmer", "pressman-software-engineering", "domain-driven-design"],
+    "methods": ["原型 / 曳光弹", "需求获取", "统一语言"]
+  },
+  {
+    "id": "webapp-testing",
+    "name": "webapp-testing",
+    "repo": "anthropics/skills",
+    "stars": 187269,
+    "repoUrl": "https://github.com/anthropics/skills",
+    "path": "skills/webapp-testing/SKILL.md",
+    "desc": "用 Playwright 驱动本地 Web 应用做功能验证与调试。",
+    "books": ["tdd-by-example", "working-effectively-legacy-code", "code-complete"],
+    "methods": ["红-绿-重构", "特征测试", "等价类 / 边界值"]
+  },
+  {
+    "id": "api-and-interface-design",
+    "name": "api-and-interface-design",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/api-and-interface-design/SKILL.md",
+    "desc": "设计稳定、难误用、边界清晰的 API 与模块接口。",
+    "books": ["clean-architecture", "domain-driven-design", "philosophy-software-design", "design-patterns"],
+    "methods": ["依赖规则", "限界上下文", "深模块", "模式词汇"]
+  },
+  {
+    "id": "code-simplification",
+    "name": "code-simplification",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/code-simplification/SKILL.md",
+    "desc": "在不改变行为的前提下降低复杂度与嵌套。",
+    "books": ["clean-code", "refactoring", "philosophy-software-design"],
+    "methods": ["小函数 / 命名", "代码坏味", "Extract / Move", "深模块"]
+  },
+  {
+    "id": "ci-cd-and-automation",
+    "name": "ci-cd-and-automation",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/ci-cd-and-automation/SKILL.md",
+    "desc": "搭建质量门禁与构建/部署流水线。",
+    "books": ["continuous-delivery", "accelerate", "devops-handbook"],
+    "methods": ["部署流水线", "主干开发", "DORA 四项指标", "三步工作法"]
+  },
+  {
+    "id": "observability-and-instrumentation",
+    "name": "observability-and-instrumentation",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/observability-and-instrumentation/SKILL.md",
+    "desc": "让生产行为可见：日志、指标、追踪与告警。",
+    "books": ["site-reliability-engineering", "devops-handbook", "phoenix-project"],
+    "methods": ["SLI / SLO / 错误预算", "日志 / 指标 / 追踪", "反馈回路"]
+  },
+  {
+    "id": "deprecation-and-migration",
+    "name": "deprecation-and-migration",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/deprecation-and-migration/SKILL.md",
+    "desc": "安全移除旧系统/API，并迁移用户与数据。",
+    "books": ["working-effectively-legacy-code", "software-engineering-at-google", "refactoring"],
+    "methods": ["接缝", "特征测试", "小步重构", "弃用 / 迁移"]
+  },
+  {
+    "id": "documentation-and-adrs",
+    "name": "documentation-and-adrs",
+    "repo": "addyosmani/agent-skills",
+    "stars": 113166,
+    "repoUrl": "https://github.com/addyosmani/agent-skills",
+    "path": "skills/documentation-and-adrs/SKILL.md",
+    "desc": "记录架构决策、权衡与未来需要的上下文。",
+    "books": ["clean-architecture", "pressman-software-engineering", "philosophy-software-design"],
+    "methods": ["架构决策记录", "需求规格", "信息隐藏"]
+  },
+  {
+    "id": "security-audit",
+    "name": "security-audit",
+    "repo": "cloudflare/security-audit-skill",
+    "stars": 58543,
+    "repoUrl": "https://github.com/cloudflare/security-audit-skill",
+    "path": "skills/security-audit/SKILL.md",
+    "desc": "按信任边界做源代码安全审计与修复优先级。",
+    "books": ["code-complete", "software-engineering-at-google", "pressman-software-engineering"],
+    "methods": ["防御式编程", "代码审查与依赖管理", "质量保证与风险"]
+  }
+]

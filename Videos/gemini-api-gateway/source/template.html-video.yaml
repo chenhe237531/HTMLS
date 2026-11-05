@@ -1,0 +1,54 @@
+spec_version: 1
+id: gemini-api-gateway
+name: Gemini API · Reverse Proxy Explainer
+description: >
+  A 30-second animated explainer for Gemini API reverse proxies: virtual keys,
+  protocol adaptation, model mapping, key pooling, quota boundaries and common
+  open-source gateway tools.
+engine: hyperframes
+engine_version: ^0.4.0
+source_entry: index.html
+
+category: explainer
+subcategory: single-scene-timeline
+tags: [explainer, gemini, reverse-proxy, api-gateway, 30s]
+
+best_for:
+  - "explaining Gemini API reverse proxy architecture"
+  - "introducing API gateway tools"
+
+output:
+  formats: [mp4]
+  default_format: mp4
+  resolution:
+    default: { width: 1280, height: 720 }
+    supported_aspects: ["16:9"]
+  fps:
+    default: 30
+    supported: [30]
+  duration:
+    type: fixed
+    min_sec: 30
+    max_sec: 31
+    default_sec: 30.4
+  alpha: false
+  audio: { supported: false, expected_inputs: [] }
+
+inputs:
+  schema:
+    type: object
+    properties: {}
+  examples: []
+
+license:
+  spdx: Apache-2.0
+  attribution_required: false
+  redistribution_allowed: true
+  commercial_use: true
+  notes: "Authored for the HTMLS Videos collection."
+
+author:
+  name: "HTMLS / Videos"
+  url: "https://github.com/nexu-io/html-video"
+
+version: "0.1.0"

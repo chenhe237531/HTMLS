@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentShark 工具报告 · 把 Agent 执行轨迹当 pcap 来查</title>
+<meta name="description" content="AgentShark 是什么、它怎么把本地 Agent 日志索引成可查询的轨迹、七个工作区怎么用、以及这个早期项目目前的真实边界。">
+<style>
+:root{
+  --ink:#14181f; --ink-2:#3c4450; --ink-3:#6a7280;
+  --bg:#fbfbf9; --panel:#fff; --line:#e2e3dc; --line-2:#eeefe9;
+  --accent:#0b6b63; --accent-2:#a05a12; --accent-soft:#e7f3f1;
+  --warn:#8a5210; --warn-soft:#fdf4e4; --danger:#9b2c2c; --danger-soft:#fbeceb;
+  --ok:#1f6b45; --ok-soft:#e8f4ed;
+  --code-bg:#121820; --code-ink:#dbe4ef;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:hover{text-decoration-style:dotted}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:#fff;padding:10px 16px;z-index:99;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+code{font-family:var(--mono);font-size:.9em}
+
+.hero{background:
+  radial-gradient(900px 340px at 8% -20%, #14494a 0%, rgba(20,73,74,0) 70%),
+  radial-gradient(800px 320px at 92% -30%, #4a3a16 0%, rgba(74,58,22,0) 72%),
+  #0e1514;color:#eef3f9;border-bottom:1px solid #0a0e14}
+.hero .wrap{padding-top:52px;padding-bottom:36px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7fd6c8;margin:0 0 14px}
+h1{font-size:clamp(27px,4.3vw,44px);line-height:1.2;margin:0 0 14px;letter-spacing:-.018em;font-weight:750;color:#fff}
+.lede{font-size:clamp(15px,1.5vw,17.5px);color:#b7cdc9;max-width:66ch;margin:0 0 24px}
+.lede strong{color:#fff;font-weight:600}
+.hero-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);overflow:hidden;margin:0 0 22px}
+.hero-facts div{background:#111918;padding:13px 15px}
+.hero-facts dt{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8fa5a2;margin:0 0 4px;font-family:var(--mono)}
+.hero-facts dd{margin:0;font-size:13.5px;color:#e9eff7;font-weight:600;line-height:1.45}
+.note-strip{border:1px solid rgba(140,230,215,.26);background:rgba(140,230,215,.08);border-radius:var(--radius);padding:13px 16px;font-size:13.5px;color:#c6e4df;line-height:1.6}
+.note-strip b{color:#eaf3ff}
+.note-strip.warn{border-color:rgba(255,196,120,.34);background:rgba(255,196,120,.09);color:#f0dcc0}
+.note-strip.warn b{color:#ffd9a6}
+
+.toc{position:sticky;top:0;z-index:20;background:rgba(251,251,249,.94);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line)}
+.toc .wrap{display:flex;flex-wrap:wrap;gap:2px;overflow-x:auto;padding:0 24px;scrollbar-width:none}
+.toc .wrap::-webkit-scrollbar{display:none}
+.toc a{flex:0 0 auto;padding:11px 10px;font-size:12.5px;color:var(--ink-2);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
+.toc a:hover{color:var(--accent);border-bottom-color:var(--line)}
+.toc a .n{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-right:5px}
+
+main{padding-bottom:20px}
+section{padding:50px 0 8px;border-top:1px solid var(--line-2);scroll-margin-top:62px}
+section:first-of-type{border-top:0}
+h2{font-size:clamp(21px,2.5vw,29px);line-height:1.3;margin:0 0 14px;letter-spacing:-.012em;font-weight:720}
+h2 .num{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.15em;color:var(--accent-2);font-weight:600;margin-bottom:8px}
+h3{font-size:17px;margin:28px 0 10px;letter-spacing:-.005em}
+h4{font-size:15px;margin:20px 0 8px}
+p{margin:0 0 14px}
+.sub{font-size:15.5px;color:var(--ink-2);max-width:76ch}
+.sub em{font-style:normal;background:linear-gradient(transparent 62%, #ffe8a8 62%);padding:0 1px}
+
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin:20px 0}
+.cols2 > *{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.panel h3,.panel h4{margin-top:0}
+.panel.warn{background:var(--warn-soft);border-color:#f0dfc2}
+.panel.bad{background:var(--danger-soft);border-color:#f2d4d1}
+.panel.good{background:var(--ok-soft);border-color:#cfe6d9}
+.panel p:last-child,.panel ul:last-child{margin-bottom:0}
+.panel pre code{white-space:pre-wrap;word-break:break-word}
+ul,ol{margin:0 0 14px;padding-left:20px}
+li{margin:5px 0}
+li::marker{color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;line-height:1.5;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid #d5e0f6;white-space:nowrap}
+.tag.g{background:var(--ok-soft);color:var(--ok);border-color:#cfe6d9}
+.tag.w{background:var(--warn-soft);color:var(--warn);border-color:#f0dfc2}
+.tag.r{background:var(--danger-soft);color:var(--danger);border-color:#f2d4d1}
+
+.tbl-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:600px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{background:#f6f6f1;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+table code{background:#f2f3ee;padding:1px 5px;border-radius:4px;white-space:nowrap}
+
+.figure{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:18px 0}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{font-size:12.5px;color:var(--ink-3);margin-top:10px;line-height:1.55}
+
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:13px 15px;overflow-x:auto;font-size:13px;line-height:1.62;margin:0 0 14px;font-family:var(--mono);tab-size:2}
+pre code{font-size:inherit}
+pre .c{color:#7d8b9c}
+pre .p{color:#8fd0ff}
+pre .k{color:#ffc98b}
+pre .s{color:#a8e0b4}
+.codewrap{position:relative;margin:0 0 14px}
+.codewrap pre{margin:0;padding-right:58px}
+.copy{position:absolute;top:8px;right:8px;font:inherit;font-size:11.5px;font-family:var(--mono);padding:3px 9px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.09);color:#c8d4e2;border:1px solid rgba(255,255,255,.14);opacity:.6;transition:opacity .15s}
+.codewrap:hover .copy,.copy:focus-visible{opacity:1}
+.copy:focus-visible{outline-color:#8fb6ff}
+
+.step{display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;margin:0 0 10px}
+.step .no{font-family:var(--mono);font-size:12px;color:#fff;background:var(--accent);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:600}
+.step > *{min-width:0}
+.step h4{margin:0 0 4px;font-size:15px}
+.step code{word-break:break-word}
+.step p{margin:0 0 6px;font-size:14px;color:var(--ink-2)}
+.step p:last-child{margin-bottom:0}
+
+details{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:0 18px;margin:10px 0}
+details[open]{padding-bottom:6px}
+summary{cursor:pointer;padding:13px 0;font-weight:600;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--mono);color:var(--accent);font-size:16px;line-height:1}
+details[open] summary::before{content:"–"}
+details p,details ul{font-size:14.5px;color:var(--ink-2)}
+
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin:16px 0}
+.links div{border:1px solid var(--line);border-radius:8px;padding:10px 13px;background:var(--panel);font-size:13.5px}
+.links b{display:block;font-size:14px;margin-bottom:2px}
+.links a{word-break:break-all;font-size:12.5px;color:var(--ink-3);text-decoration:none}
+.links a:hover{color:var(--accent);text-decoration:underline}
+
+footer{border-top:1px solid var(--line);margin-top:40px;padding:22px 0 40px;font-size:12.5px;color:var(--ink-3)}
+footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media (max-width:720px){
+  .toc .wrap{flex-wrap:nowrap;overflow-x:auto}
+  .cols2{grid-template-columns:minmax(0,1fr)}
+  .step{grid-template-columns:44px minmax(0,1fr);gap:12px}
+  .hero .wrap{padding-top:36px}
+  section{padding-top:36px}
+}
+@media print{
+  .toc,.copy{display:none}
+  body{background:#fff}
+  pre{white-space:pre-wrap;word-break:break-word}
+}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0}
+.verdict div{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px 16px}
+.verdict b{display:block;font-size:13px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;font-weight:600}
+.verdict span{font-size:14px;color:var(--ink-2)}
+.kbd{display:inline-block;font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:#f7f7f2;color:var(--ink-2)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Tool Report · AgentShark</p>
+    <h1>AgentShark：给 AI 编程 Agent<br>装一个"抓包现场"</h1>
+    <p class="lede">
+      它把 Claude Code、Codex 等工具写在磁盘上的日志，索引成一张可以按字段过滤的事件表：
+      <strong>失败排在最前</strong>、<strong>每个值都标了来源</strong>、<strong>不调用任何模型</strong>。
+      用一句话概括：Wireshark 的交互范式，搬到 Agent 执行轨迹上。
+    </p>
+    <dl class="hero-facts">
+      <div><dt>Version</dt><dd>0.1.0（未发版）</dd></div>
+      <div><dt>License</dt><dd>MIT</dd></div>
+      <div><dt>Stack</dt><dd>TypeScript + Swift / SQLite</dd></div>
+      <div><dt>Repo age</dt><dd>2026-10-25 创建</dd></div>
+      <div><dt>Runtime</dt><dd>Node ≥ 24.12</dd></div>
+    </dl>
+    <p class="note-strip warn">
+      <b>报告前提：</b>你给的 <code>github.com/AgentShark/AgentShark</code> 目前返回 404（GitHub API 确认，组织账号存在但没有同名仓库）。
+      本报告基于描述最吻合的 <b>naisslab/AgentShark</b>——README 自称 "A local, Wireshark-style inspector for agent traces"。
+      如果你指的是另一个仓库，告诉我，我按那个重写。
+    </p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章节导航">
+  <div class="wrap">
+    <a href="#match"><span class="n">01</span>仓库</a>
+    <a href="#problem"><span class="n">02</span>问题</a>
+    <a href="#status"><span class="n">03</span>状态</a>
+    <a href="#arch"><span class="n">04</span>架构</a>
+    <a href="#views"><span class="n">05</span>界面</a>
+    <a href="#evidence"><span class="n">06</span>证据</a>
+    <a href="#start"><span class="n">07</span>上手</a>
+    <a href="#cli"><span class="n">08</span>CLI</a>
+    <a href="#mcp"><span class="n">09</span>MCP</a>
+    <a href="#capture"><span class="n">10</span>抓包</a>
+    <a href="#compare"><span class="n">11</span>对比</a>
+    <a href="#risk"><span class="n">12</span>局限</a>
+    <a href="#verdict"><span class="n">13</span>结论</a>
+    <a href="#sources"><span class="n">14</span>来源</a>
+  </div>
+</nav>
+
+<main id="main">
+<div class="wrap">
+
+<section id="match">
+  <h2><span class="num">01 / WHICH REPO</span>先解决一个前置问题：到底是哪个 AgentShark</h2>
+  <p class="sub">
+    重名在 GitHub 上很常见。同名搜索能找到五个仓库，其中两个都自称"Agent 界的 Wireshark"。
+    这一步不确认清楚，后面所有结论都可能是在描述另一个项目。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>候选</th><th>它是什么</th><th>吻合度</th></tr></thead>
+      <tbody>
+        <tr><td><code>AgentShark/AgentShark</code></td><td>你给的地址：404，组织存在但无此仓库</td><td><span class="tag r">不可用</span></td></tr>
+        <tr><td><code>naisslab/AgentShark</code></td><td>本地 Agent 轨迹检查器，macOS 原生应用 + Web/CLI/MCP；README 原文 "local, Wireshark-style inspector for agent traces"</td><td><span class="tag g">高，本报告采用</span></td></tr>
+        <tr><td><code>buildstackhq/agentshark</code></td><td>TypeScript，描述是 "Imagine Wireshark deep dive but for agents"，2 star，8 月后无提交</td><td><span class="tag w">中，但停滞</span></td></tr>
+        <tr><td><code>intai2026/AgentShark</code></td><td>Python，"Wireshark for AI-agent token traffic"，单次提交后无更新</td><td><span class="tag w">低</span></td></tr>
+        <tr><td><code>Thespectier/AgentsharkX</code></td><td>Go，"for ai agent analyzer"，无说明文档</td><td><span class="tag w">低</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">判定依据（可复核）</h3>
+    <ul style="margin-bottom:0">
+      <li>你的三个关键词——"AI 编程 Agent"、"执行轨迹"、"类似 Wireshark"、"早期快速迭代"——与 naisslab 版逐条对应。</li>
+      <li>项目 2026-10-25 创建，报告抓取时（11-01）已推 19 个提交、合并/关闭了 3 个 PR，符合"早期快速迭代"。</li>
+      <li>它是唯一同时提供"本地分析器"与"原生桌面应用"的候选，其余三个停留在脚本或单文件工具阶段。</li>
+      <li>数据来自仓库 README、<code>docs/</code> 下 11 篇文档、<code>package.json</code>、GitHub API；本文未运行其代码，行为描述以文档为准。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="problem">
+  <h2><span class="num">02 / THE PROBLEM</span>Agent 失败时，证据在哪</h2>
+  <p class="sub">
+    一次 Agent 任务会产生几百到几千条记录：prompt、模型步、工具调用、工具输出、子代理派生、失败重试。
+    这些记录<em>默认是给程序读的</em>，不是给人排查用的。
+  </p>
+
+  <div class="cols2">
+    <div class="panel bad">
+      <h3 style="margin-top:0">现状：四个断层</h3>
+      <ul style="margin-bottom:0">
+        <li><b>格式不兼容</b>：Claude Code 的 JSONL、Codex 的 rollout、Copilot 的 session 文件，字段各写各的。</li>
+        <li><b>失败藏在中间</b>：最终回复说"已完成"，实际上第 42 步有个命令被 hook 拦了，重试三次后绕过去了。</li>
+        <li><b>子代理断链</b>：父会话派生的子任务失败，父会话看起来一切正常。</li>
+        <li><b>证据会消失</b>：日志会被轮转、删除、覆盖，事后只剩一句"当时报错了"。</li>
+      </ul>
+    </div>
+    <div class="panel good">
+      <h3 style="margin-top:0">它的四个对应动作</h3>
+      <ul style="margin-bottom:0">
+        <li><b>适配器归一化</b>：每个 Agent 一个 parser，统一成 session / event / span。</li>
+        <li><b>Episode 聚合</b>：把重试、恢复、绕过归并成"一次失败事件"，排到最前。</li>
+        <li><b>父子关联</b>：记录 spawn 边，子代理失败会浮到父会话的注意力队列。</li>
+        <li><b>可携带抓包</b>：<code>.agentcap</code> 打包原始字节 + 归一化结果，可离线回看。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>和"看日志"的本质差别</h3>
+  <p>
+    普通做法是 <code>grep -i error</code> 然后人工读上下文。问题在于 Agent 的日志里，<b>"错误"往往不叫 error</b>：
+    可能是一次 <code>exit code 1</code>、一次被拒绝的权限请求、一次"测试通过"的声明，或者一个空结果。
+    AgentShark 的做法是把这些隐式信号变成显式的诊断项（Diagnostics），再用规则给它们分级——
+    规则是启发式的，因此它反复强调"这是候选，不是判决"。
+  </p>
+</section>
+
+<section id="status">
+  <h2><span class="num">03 / STATUS</span>一个六天大的项目，能信到什么程度</h2>
+  <p class="sub">
+    评估早期项目，不该看 star，该看<em>它自己承认了什么没做完</em>。这个仓库的 README 相当坦诚，值得单独列出来。
+  </p>
+
+  <div class="verdict">
+    <div><b>Code</b><span>19 个提交 / 3 个 PR / 单一作者（shinan6）；PR 分支名形如 <code>codex/...</code>，是人机协作开发的直接证据。</span></div>
+    <div><b>Release</b><span>无 tag、无 release、未发布到 npm；README 明说 "there is no signed release yet"，需自行构建。</span></div>
+    <div><b>Tests</b><span>README 写明 "The test suites are not in this repository yet"，验证靠合成 fixture 与人工复核。</span></div>
+    <div><b>Docs</b><span>11 篇专题文档 + 抓包格式规范（FORMAT.md 已到 v1），文档密度高于同阶段项目。</span></div>
+    <div><b>Scope</b><span>Claude Code / Codex 完整解析；Copilot、Antigravity 部分解析；其余只做检测。</span></div>
+    <div><b>Platform</b><span>macOS 15+ 原生应用优先；其他平台走 Web viewer + CLI（Node 24.12+）。</span></div>
+  </div>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">这意味着什么</h3>
+    <p style="margin-bottom:0">
+      适合：<b>个人开发者</b>在自己的机器上排查"这次为什么没跑通"，或者<b>团队</b>拿它验证"要不要自建 Agent 可观测性"。
+      不适合：写进生产流程、作为合规证据、或要求"结果稳定可复现"的场景。
+      它的 <code>analysis_version</code> 已到 15，<code>index version</code> 到 5，升级会重解析历史日志——
+      这既是快速迭代的证据，也是接口不稳的信号。
+    </p>
+  </div>
+
+  <h3>版本与兼容性</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>维度</th><th>当前值</th><th>风险</th></tr></thead>
+      <tbody>
+        <tr><td>包版本</td><td><code>0.1.0</code>，pre-1.0</td><td>CLI 参数、MCP 工具名都可能改</td></tr>
+        <tr><td>索引版本</td><td>5（变更会重解析旧日志）</td><td>升级后首次启动慢，索引需重建</td></tr>
+        <tr><td>分析版本</td><td>15（规则与判定口径）</td><td>同一个失败，跨版本可能结论不同</td></tr>
+        <tr><td>运行时</td><td>Node ≥ 24.12；桌面端内嵌 Node</td><td>老机器/CI 镜像需要升级</td></tr>
+        <tr><td>OS</td><td>macOS 15+ 原生；Web 端跨平台</td><td>Windows/Linux 只有 Web 与 CLI 体验</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="num">04 / ARCHITECTURE</span>日志 → 适配器 → 索引 → 四个出口</h2>
+  <p class="sub">
+    它没有拦截流量，也不 hook Agent 进程；<em>只读磁盘上的日志文件</em>。
+    这决定了它的优点（零侵入、可回溯历史）和缺点（日志里没有的，它也看不到）。
+  </p>
+
+  <figure class="figure">
+    <svg viewBox="0 0 920 430" role="img" aria-labelledby="asdiag">
+      <title id="asdiag">AgentShark 数据流：本地日志经适配器归一化，进入 SQLite 索引与分析层，再输出到 macOS 应用、Web、CLI、MCP 与抓包文件</title>
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8c98a8"/>
+        </marker>
+      </defs>
+      <g font-family="-apple-system,Segoe UI,PingFang SC,sans-serif" font-size="13">
+        <text x="0" y="16" fill="#6a7280" font-size="11" letter-spacing="1.2">SOURCES（只读）</text>
+
+        <rect x="0" y="28" width="220" height="104" rx="8" fill="#eef4fc" stroke="#c9dcf2"/>
+        <text x="14" y="52" fill="#14181f" font-weight="600">本地 Agent 日志</text>
+        <text x="14" y="74" fill="#3c4450" font-size="11.5">~/.claude/projects</text>
+        <text x="14" y="92" fill="#3c4450" font-size="11.5">~/.codex/sessions</text>
+        <text x="14" y="110" fill="#3c4450" font-size="11.5">Copilot · Antigravity</text>
+
+        <rect x="268" y="28" width="230" height="104" rx="8" fill="#e8f4f1" stroke="#c7e2db"/>
+        <text x="282" y="52" fill="#14181f" font-weight="600">adapters（每源一个）</text>
+        <text x="282" y="74" fill="#3c4450" font-size="11.5">归一化成 session / event / span</text>
+        <text x="282" y="92" fill="#3c4450" font-size="11.5">未知记录保留 raw + 行偏移</text>
+        <text x="282" y="110" fill="#6a7280" font-size="11">字段缺失 → 显式 gap，不补零</text>
+
+        <rect x="546" y="28" width="374" height="104" rx="8" fill="#f5f0e6" stroke="#e7dbc2"/>
+        <text x="560" y="52" fill="#14181f" font-weight="600">SQLite 索引 + 分析</text>
+        <text x="560" y="74" fill="#3c4450" font-size="11.5">episodes（失败聚合）· attention（注意力队列）</text>
+        <text x="560" y="92" fill="#3c4450" font-size="11.5">reliability（可疑声明）· statistics · diagnostics</text>
+        <text x="560" y="110" fill="#6a7280" font-size="11">多线程解析；索引本身可近似日志体积</text>
+
+        <line x1="220" y1="80" x2="260" y2="80" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar2)"/>
+        <line x1="498" y1="80" x2="538" y2="80" stroke="#8c98a8" stroke-width="1.4" marker-end="url(#ar2)"/>
+
+        <text x="0" y="172" fill="#6a7280" font-size="11" letter-spacing="1.2">SURFACES（同一份索引，五种读法）</text>
+
+        <rect x="0" y="184" width="170" height="62" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="12" y="208" fill="#14181f" font-weight="600" font-size="12.5">macOS 应用</text>
+        <text x="12" y="227" fill="#3c4450" font-size="11">七工作区 · 快捷键</text>
+
+        <rect x="182" y="184" width="170" height="62" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="194" y="208" fill="#14181f" font-weight="600" font-size="12.5">Web Viewer</text>
+        <text x="194" y="227" fill="#3c4450" font-size="11">127.0.0.1 + 令牌</text>
+
+        <rect x="365" y="184" width="170" height="62" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="377" y="208" fill="#14181f" font-weight="600" font-size="12.5">CLI / HTTP</text>
+        <text x="377" y="227" fill="#3c4450" font-size="11">why · list · stats</text>
+
+        <rect x="547" y="184" width="170" height="62" rx="8" fill="#f2f0fa" stroke="#dad4f0"/>
+        <text x="559" y="208" fill="#14181f" font-weight="600" font-size="12.5">MCP Server</text>
+        <text x="559" y="227" fill="#3c4450" font-size="11">9 个只读工具</text>
+
+        <rect x="730" y="184" width="190" height="62" rx="8" fill="#fdf1ef" stroke="#f0d6d1"/>
+        <text x="742" y="208" fill="#14181f" font-weight="600" font-size="12.5">.agentcap / OTLP</text>
+        <text x="742" y="227" fill="#3c4450" font-size="11">可分享抓包 / 标准遥测</text>
+
+        <line x1="200" y1="132" x2="85" y2="178" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+        <line x1="300" y1="132" x2="267" y2="178" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+        <line x1="430" y1="132" x2="450" y2="178" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+        <line x1="620" y1="132" x2="632" y2="178" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+        <line x1="760" y1="132" x2="820" y2="178" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+        <line x1="825" y1="246" x2="640" y2="300" stroke="#8c98a8" stroke-width="1.3" marker-end="url(#ar2)"/>
+        <rect x="368" y="300" width="272" height="86" rx="8" fill="#eef4fc" stroke="#c9dcf2"/>
+        <text x="382" y="324" fill="#14181f" font-weight="600">Docker 离线回放</text>
+        <text x="382" y="344" fill="#3c4450" font-size="11.5">重放记录的工具调用，逐条比对结果</text>
+        <text x="382" y="362" fill="#6a7280" font-size="11">不重放模型调用，所以是"重放"不是"复现"</text>
+        <text x="382" y="378" fill="#6a7280" font-size="11">断点 / 单步 / 保存状态，像模拟器</text>
+
+        <text x="0" y="416" fill="#6a7280" font-size="11">关键约束：日志里没有的字段，工具不会替你想出来——它选择显示"缺失"，而不是用模型猜。</text>
+      </g>
+    </svg>
+    <figcaption>
+      注意右下角的回放：它<b>执行</b>的是当初记录下来的 shell / 文件操作，所以必须在无网络的容器里跑，
+      且结果与真实运行可能有差异（环境、依赖、时间）。这是"可重放的调试"，不是"确定性复现"。
+    </figcaption>
+  </figure>
+
+  <h3>索引是怎么建的</h3>
+  <ul>
+    <li>启动后扫描每个受支持 Agent 的日志目录；<code>agentshark sources</code> 会报告"这台机器上有哪些源、各有哪些字段"。</li>
+    <li>最多 8 个线程解析，<b>新的会话优先</b>：正在写的会话约 1 秒出现，历史随后补齐。</li>
+    <li>落盘到 <code>~/.agentshark/index.sqlite</code>；这是缓存，删掉可重建，但体积可能接近日志本身（官方给的例子：12GB 日志 → 约 10GB 索引，首次索引峰值内存约 5GB、耗时约 3.5 分钟）。</li>
+    <li>监听文件变化（默认 3 秒检查、最多 5 秒一次增量），也可 <code>--no-watch</code> 手动刷新。</li>
+  </ul>
+</section>
+
+
+<section id="views">
+  <h2><span class="num">05 / THE VIEWER</span>七个工作区，对应七种提问</h2>
+  <p class="sub">
+    这套界面明显是从 Wireshark 借来的：事件列表 + 解码树 + 原始字节。<span class="kbd">Alt</span>+<span class="kbd">1</span>–<span class="kbd">7</span> 切换，
+    <span class="kbd">e</span> / <span class="kbd">E</span> 跳下一个 / 上一个失败，<span class="kbd">u</span> 跳到下一个待处理项。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>工作区</th><th>回答的问题</th><th>里面有什么</th></tr></thead>
+      <tbody>
+        <tr><td>Failures</td><td>这次跑挂在哪，为什么</td><td>注意力队列 + Lens：失败链、重试、两次尝试之间的改动、是否恢复</td></tr>
+        <tr><td>Events</td><td>第 137 条记录到底写了什么</td><td>可过滤事件表、解码字段树、原始记录（带字节偏移）</td></tr>
+        <tr><td>Session</td><td>整场跑了多久，时间花在哪</td><td>Steps / Transcript / Flow / Critical Path / Reliability 五种视图，可两场对比</td></tr>
+        <tr><td>Timeline</td><td>并发与子代理谁先谁后</td><td>会话、子代理、工具调用、后台进程、失败带对齐在一条时间轴</td></tr>
+        <tr><td>Statistics</td><td>慢在哪，贵在哪</td><td>工具/模型/轮次统计，首 token 延迟、输出速度、缓存复用、资源曲线、I/O 图</td></tr>
+        <tr><td>Diagnostics</td><td>还有哪些可疑之处</td><td>Wireshark 风格的专家信息：错误、重试、拒答、权限拒绝、未配对调用、坏行</td></tr>
+        <tr><td>Sources</td><td>这台机器上数据全不全</td><td>每个 Agent 的日志覆盖度与健康状态（哪些字段它根本不写）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">最值得先看的两个：Failures 与 Critical Path</h3>
+    <p>
+      <b>Failures</b> 是它的主张：不按时间顺序读日志，而是先按"需要人处理"排序。
+      被 hook 拦截、测试失败、子代理静默失败、"所有测试通过"但没有测试支撑——这些都进入队列，并给出证据链接。
+    </p>
+    <p style="margin-bottom:0">
+      <b>Critical Path</b>（macOS <span class="kbd">⌥</span><span class="kbd">⌘</span><span class="kbd">4</span>）
+      把一场运行折算成"关键路径"：哪一步真的决定了总时长。这比看总耗时有用——总耗时 40 分钟里，可能有 25 分钟在等一个本来可以并行的安装。
+    </p>
+  </div>
+</section>
+
+<section id="evidence">
+  <h2><span class="num">06 / EVIDENCE</span>最该被抄走的设计：每个值都标来源</h2>
+  <p class="sub">
+    AI 分析工具最大的陷阱是"用模型解释日志"，读起来很顺，错得很难发现。AgentShark 走了相反的路：
+    <em>不调用任何模型</em>，改用一套证据分级 + 缺失显式化。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>标记</th><th>含义</th><th>例子</th></tr></thead>
+      <tbody>
+        <tr><td>（无标记）</td><td>日志里直接记录的值</td><td><code>exit_code: 1</code> 来自工具结果记录</td></tr>
+        <tr><td><code>≈</code> derived</td><td>由记录推算，非直接字段</td><td>用相邻两条记录的时间差算出的等待时长</td></tr>
+        <tr><td><code>~</code> parsed</td><td>从自由文本解析出来</td><td>从 "2 failed, 41 passed in 3.21s" 里抽出的测试计数</td></tr>
+        <tr><td><code>?</code> inferred</td><td>规则推断，最弱的一级</td><td>"它声称测试通过，但最后一次测试是失败的"</td></tr>
+        <tr><td>gap</td><td>日志里没有，明确留空</td><td>Copilot 没记录上下文窗口容量 → 显示"未知"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cols2">
+    <div class="panel good">
+      <h3 style="margin-top:0">为什么这套设计重要</h3>
+      <ul style="margin-bottom:0">
+        <li>报告可以直接引用证据行号，别人能复核。</li>
+        <li>规则失效时，<code>?</code> 级的结论可以被单独质疑，不会污染事实层。</li>
+        <li>"0" 和 "没有数据" 分开显示——这是很多监控系统都会犯的错。</li>
+        <li>不需要把日志发给第三方模型，天然满足"数据不出本机"。</li>
+      </ul>
+    </div>
+    <div class="panel warn">
+      <h3 style="margin-top:0">代价</h3>
+      <ul style="margin-bottom:0">
+        <li>规则要人写，覆盖不到的场景就是空白。</li>
+        <li>启发式会误报；CHANGELOG 里就有多处"修正 Reliability 误报"。</li>
+        <li>没有语义总结，第一次用会怀念"让模型解释一下"。</li>
+        <li>结论依赖日志质量：上游少写一个字段，这里就多一个 gap。</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>一条真实输出的样子</h3>
+<pre><code><span class="c">$ agentshark why</span>
+# Run report: Run the tests
+claude-code · finished · unattended · 2026-10-11T09:00:00Z to 2026-10-11T09:30:30Z
+
+Turns 16 (human 15 · task-notification 1) · Steps 53, 14 with a failure
+Impact failed 4 · blocked 1 · interrupted 1 · masked 2 · degraded 2 · recovered 4 · clean 2
+
+## Needs attention
+- blocked episode …:24: PreToolUse:Bash hook error … Blocked: rm -rf is not allowed
+- unrecovered episode …:92: tests failed on `sh:pytest` (ended-on-failure), 2 attempts
+- silent-child delegation …toolu_m19: check docs (failed)
+- unverified-claims claim …p89: “All tests pass.” (last-test-failed)</code></pre>
+  <p class="muted" style="font-size:13.5px">
+    这段来自官方文档的示例，信息密度很高：既有计数（事实），也有分类（规则），每一条都能点回原始事件。
+    "unverified-claims" 是最有意思的一类——它检查 Agent 的<b>自我报告</b>与<b>实际执行结果</b>是否一致。
+  </p>
+</section>
+
+<section id="start">
+  <h2><span class="num">07 / GETTING STARTED</span>三条上手路径，按你的平台选</h2>
+  <p class="sub">
+    没有签名发布、没有 npm 包，所以三条路径都是"从源码构建"。好消息是它零运行时依赖，构建不复杂。
+  </p>
+
+  <div class="step">
+    <div class="no">A</div>
+    <div>
+      <h4>让 Agent 帮你装（官方推荐）</h4>
+      <p>把下面这段丢给 Claude Code 或 Codex，它会 clone、按文档构建、注册 MCP。适合想省事、且信任 Agent 改本机环境的人。</p>
+<pre style="margin-bottom:0"><code>Install AgentShark for me: clone https://github.com/naisslab/AgentShark,
+then follow docs/AGENT-INSTALL.md. On macOS, build, verify and open the native app;
+on other platforms, set up the web viewer. Also register and check the MCP server
+for this coding agent.</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="no">B</div>
+    <div>
+      <h4>macOS 原生应用（功能最全）</h4>
+      <p>需要 macOS 15+、Node 24.12+、Swift 工具链（<code>xcode-select --install</code>）。别放在 iCloud 同步目录里。</p>
+<pre style="margin-bottom:0"><code>git clone https://github.com/naisslab/AgentShark.git ~/agentshark
+cd ~/agentshark
+npm ci
+npm run desktop:build
+open dist/AgentShark.app
+
+<span class="c"># 可选：验证打包完整性</span>
+PATH=/usr/bin:/bin dist/AgentShark.app/Contents/MacOS/AgentShark --verify-bundle</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="no">C</div>
+    <div>
+      <h4>Web 界面 + CLI（跨平台）</h4>
+      <p>不用 <code>npm install</code> 也能跑：仓库里的 TypeScript 由 Node 直接执行。</p>
+<pre style="margin-bottom:0"><code>node bin/agentshark.ts demo     <span class="c"># 合成样本，不读你的日志</span>
+node bin/agentshark.ts serve    <span class="c"># 索引本地日志，打印带令牌的 127.0.0.1 地址</span>
+
+<span class="c"># 想长期用，装到 PATH</span>
+npm ci &amp;&amp; npm run build &amp;&amp; npm link</code></pre>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">第一次运行会发生什么</h3>
+    <ol style="margin-bottom:0">
+      <li><b>发现</b>：扫描 <code>~/.claude</code>、<code>~/.codex</code>、Copilot、Antigravity 等目录；没装的会自动跳过。</li>
+      <li><b>索引</b>：最多 8 线程解析到 <code>~/.agentshark/index.sqlite</code>，状态栏显示 "Indexing n/m · since …"。</li>
+      <li><b>监听</b>：每 3 秒检查文件变化，Agent 持续写时最多每 5 秒增量索引一次。</li>
+      <li><b>验证</b>：先 <code>agentshark sources</code> 看数据覆盖度，再 <code>agentshark why</code> 看最近一次失败。</li>
+    </ol>
+  </div>
+</section>
+
+<section id="cli">
+  <h2><span class="num">08 / CLI</span>不用打开界面也能定位问题</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>命令</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td><code>why</code></td><td>最近一次运行为什么失败，输出可直接贴进 issue 的 Markdown（<code>--json</code> 给机器）</td></tr>
+        <tr><td><code>failures --since 7d</code></td><td>过去一周需要处理的失败 episode</td></tr>
+        <tr><td><code>sig "Error: Cannot find module ..."</code></td><td>这个错误以前出现过吗？上次是怎么绕过去的</td></tr>
+        <tr><td><code>list -f '...'</code></td><td>像 <code>tshark</code> 一样按过滤器列事件</td></tr>
+        <tr><td><code>stats</code></td><td>工具 / 模型 / 轮次 / 调用对统计</td></tr>
+        <tr><td><code>fields</code></td><td>列出所有可过滤字段名</td></tr>
+        <tr><td><code>sources</code></td><td>这台机器上各 Agent 的日志健康度</td></tr>
+        <tr><td><code>index</code></td><td>手动建/重建索引（<code>--full</code>、<code>--rederive</code>）</td></tr>
+        <tr><td><code>serve</code> / <code>demo</code> / <code>open</code></td><td>起 Web 界面 / 看合成样本 / 打开 <code>.agentcap</code></td></tr>
+        <tr><td><code>capture</code> / <code>replay</code></td><td>导出抓包 / 在容器里重放</td></tr>
+        <tr><td><code>mcp</code></td><td>以 stdio 方式提供只读查询接口</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>过滤器语法：几乎照抄 Wireshark</h3>
+<pre><code>error                                  <span class="c"># 被标记为失败的事件</span>
+tool.name == "Bash" &amp;&amp; dur &gt; 2s       <span class="c"># 慢的 shell 调用（裸数字默认毫秒）</span>
+agent == codex &amp;&amp; kind == "tool.call"  <span class="c"># 某个 Agent 的工具调用</span>
+"npm test"                             <span class="c"># 短语搜索：两个词必须相邻</span>
+"npm" &amp;&amp; "test"                        <span class="c"># 两个词可以分开出现</span>
+ts &gt; -2h                               <span class="c"># 相对时间</span>
+ts &gt;= "2026-10-11 09:00"               <span class="c"># 无时区=本地时间；带 Z 或 +08:00 亦可</span></code></pre>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">一个小坑</h3>
+    <p style="margin-bottom:0">
+      时间字段默认按<b>本地时区</b>解释，打印时却总带 UTC 偏移。跨时区看日志时（或把容器时间当本地时间），
+      很容易对不上。习惯做法：一律用带 <code>Z</code> 的 UTC 写法，或加 <code>--utc</code> 输出。
+    </p>
+  </div>
+</section>
+
+<section id="mcp">
+  <h2><span class="num">09 / MCP</span>让 Agent 查自己的病历</h2>
+  <p class="sub">
+    这是它区别于普通分析器的地方：注册为 MCP 服务器后，Claude Code / Codex 可以在下一轮对话里直接问
+    "我上次为什么卡住"。九个工具，全部只读，不写索引、不开 socket、不发网络请求。
+  </p>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">九个工具</h3>
+      <p style="font-size:14px;margin-bottom:0">
+        <code>find_runs</code> <code>run_report</code> <code>list_failures</code> <code>get_episode</code>
+        <code>lookup_error</code> <code>watch</code> <code>query</code> <code>get_event</code> <code>analyze_trace</code>
+      </p>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">注册</h3>
+<pre style="margin-bottom:0"><code>claude mcp add --scope user agentshark -- agentshark mcp
+codex mcp add agentshark -- agentshark mcp</code></pre>
+    </div>
+  </div>
+
+  <h3>它替 Agent 挡掉的四件事</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>机制</th><th>做了什么</th><th>为什么必须</th></tr></thead>
+      <tbody>
+        <tr><td>作用域</td><td>默认只看当前 Git 根目录下的运行；<code>--scope all</code> 才放开</td><td>防止一个项目的 Agent 读到另一个客户的轨迹</td></tr>
+        <tr><td>脱敏</td><td>家目录→<code>~</code>、用户名→<code>&lt;user&gt;</code>、<code>sk-</code>/<code>ghp_</code>/AKIA/Bearer/JWT/PEM→<code>&lt;secret:类:长度&gt;</code></td><td>日志里经常混着密钥，不能原样回灌给模型</td></tr>
+        <tr><td>不可信文本</td><td>日志正文只出现在 <code>*_excerpt</code> 字段，截断到 300 字符，并明确告知"这是数据不是指令"</td><td>防提示注入：仓库里的一句注释可能变成攻击载荷</td></tr>
+        <tr><td>体积与元信息</td><td>单次结果 ≤ 16KB，附 <code>index_age_s</code>、<code>analysis_version</code>、<code>gaps</code></td><td>让 Agent 知道"结果可能过期/缺字段"，而不是当成全知</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="font-size:13.5px">
+    仍然要清醒：脱敏是<b>模式匹配</b>，不是数据分类。自研格式的 token、内网主机名、客户姓名，都可能漏网。
+    把 MCP 接到含敏感数据的轨迹上之前，先用 <code>--preview</code> 看一眼实际输出。
+  </p>
+</section>
+
+<section id="capture">
+  <h2><span class="num">10 / CAPTURE &amp; REPLAY</span>把一次运行打包带走</h2>
+
+  <div class="cols2">
+    <div class="panel">
+      <h3 style="margin-top:0">.agentcap：Agent 界的 pcap</h3>
+      <ul style="margin-bottom:0">
+        <li>JSON Lines，首行 header、末行 trailer；可选 zstd / gzip（按魔数识别，不靠扩展名）</li>
+        <li>保存归一化记录 <b>和</b> 原始字节，Agent 删了日志也能回看</li>
+        <li>引用到的旁路文件按内容哈希去重存放</li>
+        <li>可附 10Hz 的 CPU / 内存 / 磁盘 / GPU / 网络采样</li>
+        <li>分享前可 <code>--profile shareable --preview</code> 预览脱敏结果</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">录一次，复现一次</h3>
+<pre style="margin-bottom:0"><code><span class="c"># 录（可同时记资源）</span>
+agentshark serve --record-resources
+agentshark capture -o run.agentcap.zst --since 7d
+
+<span class="c"># 分享前预览脱敏</span>
+agentshark capture -o share.agentcap.zst --profile shareable --preview
+
+<span class="c"># 回放：先干跑，再进容器</span>
+agentshark replay SESSION --dry-run
+agentshark replay SESSION --workspace ./repo --break status</code></pre>
+    </div>
+  </div>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">回放的边界，必须说清楚</h3>
+    <p>
+      它重放的是<b>记录下来的工具调用</b>（shell 命令、文件写入），不是模型决策。所以：
+      模型这一步"为什么选错"不会被复现；依赖外部状态（数据库、网络、时间）的命令会在离线容器里失败或产生不同结果；
+      带破坏性的命令会真的执行——<b>这就是它必须跑在无网络容器里的原因</b>。
+    </p>
+    <p style="margin-bottom:0">
+      正确的用法是"验证问题是否可重演"，而不是"证明结果必然一致"。官方文档也把它称作 emulator-style replay：
+      断点、单步、保存状态，本质是调试器，不是时间机器。
+    </p>
+  </div>
+
+  <h3>和标准遥测互通</h3>
+  <p>
+    可以把索引里的 span 导出为 OTLP/JSON（OpenInference 属性），也可以把外部的 OTLP/JSON 转成
+    <code>agentshark.telemetry.v1</code> 转换文档。注意后者<b>不会</b>塞进原生索引——通用遥测缺少 Agent 身份和
+    必要时间戳，强行合并只会污染数据。这个取舍很克制：宁可少做，不制造假数据。
+  </p>
+</section>
+
+<section id="compare">
+  <h2><span class="num">11 / COMPARISON</span>它和"Agent 可观测性平台"不是一类东西</h2>
+  <p class="sub">
+    市面上的工具大多在<b>云侧收数据、做评测、做看板</b>；AgentShark 在<b>本机读日志、做取证</b>。
+    前者回答"整体质量趋势如何"，后者回答"这一次到底发生了什么"。
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>类型</th><th>代表</th><th>数据在哪</th><th>强项</th><th>弱项</th></tr></thead>
+      <tbody>
+        <tr><td>本机检查器</td><td><b>AgentShark</b></td><td>本机 SQLite</td><td>零侵入、离线、证据可回溯、可回放</td><td>无团队协作、无托管看板、规则靠人写</td></tr>
+        <tr><td>托管追踪平台</td><td>LangSmith、Langfuse、AgentOps</td><td>云端或自托管服务</td><td>跨会话看板、评测、成本统计</td><td>要接入 SDK / 上报数据；离线不可用</td></tr>
+        <tr><td>OTel 原生评测</td><td>Arize Phoenix、OpenInference</td><td>Collector + 存储</td><td>标准语义、生态通用</td><td>需要自己搭链路；对"日志文件"这类历史数据无解</td></tr>
+        <tr><td>实验管理</td><td>Braintrust、W&B Weave</td><td>云端</td><td>数据集、对比实验、评分</td><td>面向"模型/提示词迭代"，不面向"这次运行为何失败"</td></tr>
+        <tr><td>通用日志</td><td>Loki、ELK</td><td>自建集群</td><td>全文检索、长期留存</td><td>不理解 Agent 语义，看不出"episode"和"未验证声明"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="font-size:13.5px">
+    一个务实的组合：<b>AgentShark 负责单机取证</b>，把确认过的失败通过 <code>.agentcap</code> 或 OTLP 导出，
+    再由团队平台汇总趋势。它自己也提供 OTLP 导出，说明作者没打算做"唯一入口"。
+  </p>
+</section>
+
+<section id="risk">
+  <h2><span class="num">12 / RISKS</span>现在用它，要接受七个不确定</h2>
+
+  <details>
+    <summary>1. "日志即事实"是错觉</summary>
+    <p>工具能看到的上限就是日志写了什么。不同 Agent 版本、不同插件、不同权限模式下的日志差异很大；
+       它用 <code>Sources</code> 页面把"缺哪些字段"显式化，但缺的仍然缺。做结论时要区分"没发生"和"没记录"。</p>
+  </details>
+
+  <details>
+    <summary>2. 规则会误报，而且改起来很频繁</summary>
+    <p>CHANGELOG 里有大量"修正 Reliability 误报""保留未知工具输出"这类条目。说明规则还在校准期。
+       看到 <code>?</code> 级结论，先点开证据看原始记录，别直接贴进复盘报告。</p>
+  </details>
+
+  <details>
+    <summary>3. 回放 ≠ 复现</summary>
+    <p>只重放工具调用，不重放模型。外部依赖、时间、随机性都会让结果偏离。它可以证明"这个命令确实会失败"，
+       不能证明"当时失败一定因为这个"。</p>
+  </details>
+
+  <details>
+    <summary>4. 脱敏是模式匹配，不是数据分级</summary>
+    <p>内置模式覆盖常见密钥前缀与 PEM 块，但客户名、内网域名、自研 token 格式不在其中。默认抓包<b>保留原文</b>，
+       分享前必须走 <code>--profile shareable</code> 并肉眼复核。</p>
+  </details>
+
+  <details>
+    <summary>5. 资源占用不小</summary>
+    <p>官方给的实测：12GB 日志 → 约 10GB 索引，首次索引峰值约 5GB 内存、约 3.5 分钟。笔记本上建议
+       把 <code>AGENTSHARK_HOME</code> 指到大盘，并定期清理。</p>
+  </details>
+
+  <details>
+    <summary>6. 权限与供应链</summary>
+    <p>没有签名发布，需要自行构建；没有 npm 正式包，安装意味着从源码跑。MCP 是只读的，但它会把轨迹内容
+       （截断后）交给模型——这本身就是一次数据外流，接敏感项目前要评估。</p>
+  </details>
+
+  <details>
+    <summary>7. 平台与接口都在变</summary>
+    <p>macOS 体验最完整（原生应用、快捷键、Workbench），其他平台是 Web + CLI。0.1.0 阶段，
+       CLI 参数、MCP 工具名、索引版本都可能在升级时改变。</p>
+  </details>
+</section>
+
+<section id="verdict">
+  <h2><span class="num">13 / VERDICT</span>给三类人的不同建议</h2>
+
+  <div class="verdict">
+    <div>
+      <b>个人开发者</b>
+      <span>值得花 30 分钟：<code>demo</code> 看界面 → <code>serve</code> 索引自己日志 → <code>why</code> 看最近一次失败。
+            哪怕不用，它的"证据分级"思路也可以直接搬进你自己的日志设计。</span>
+    </div>
+    <div>
+      <b>团队 / 平台工程</b>
+      <span>当作"自建 Agent 可观测性"的参考实现来读：<code>.agentcap</code> 格式、MCP 的作用域与脱敏、
+            episode 聚合模型，都是可以借鉴的接口设计。生产依赖请等签名发布与测试套件。</span>
+    </div>
+    <div>
+      <b>安全 / 合规</b>
+      <span>这是一个把"日志里有什么"暴露得更彻底的工具：方便取证，也方便泄露。
+            要评估的是索引文件、抓包文件、MCP 输出的留存与访问控制，而不是工具本身。</span>
+    </div>
+  </div>
+
+  <h3>30 分钟试用路线</h3>
+  <div class="step"><div class="no">1</div><div>
+    <h4>看合成样本（5 分钟）</h4>
+    <p><code>node bin/agentshark.ts demo</code>：不需要任何本地日志，先理解七个工作区。<code>.agentcap</code> 的结构也能在这里看清。</p>
+  </div></div>
+  <div class="step"><div class="no">2</div><div>
+    <h4>索引自己的日志（10 分钟）</h4>
+    <p><code>agentshark index</code> 后跑 <code>agentshark sources</code>：先确认你的 Agent 版本是否被"完整解析"，
+       再决定要不要投入时间。</p>
+  </div></div>
+  <div class="step"><div class="no">3</div><div>
+    <h4>查一次真实失败（10 分钟）</h4>
+    <p><code>agentshark failures --since 7d</code> → 选一条 → <code>why --session ID</code>。
+       重点验证：它给的证据能不能对上你记忆中的现场。</p>
+  </div></div>
+  <div class="step"><div class="no">4</div><div>
+    <h4>决定要不要接 MCP（5 分钟）</h4>
+    <p>接上后让 Agent 自己解释一次失败。观察它是否会滥用"日志里的文本当作指令"——这是检验 MCP 设计是否可靠的直接方式。</p>
+  </div></div>
+
+  <div class="panel">
+    <h3 style="margin-top:0">一句话判断</h3>
+    <p style="margin-bottom:0">
+      如果你的痛点是"Agent 说做完了，但其实没做完，而我不知道哪一步断的"，它现在就值得试；
+      如果你的痛点是"要在团队层面统计成功率、做 A/B 评测"，它是错的工具，去看 LangSmith / Phoenix 那一类。
+    </p>
+  </div>
+</section>
+
+<section id="sources">
+  <h2><span class="num">14 / SOURCES</span>依据与待核实项</h2>
+  <p class="sub">
+    数据快照：2026-11-01（UTC-8）。本文未执行其代码，功能描述来自仓库文档；仓库处于早期，以下内容随时可能变化。
+  </p>
+  <div class="links">
+    <div><b>仓库</b><a href="https://github.com/naisslab/AgentShark" target="_blank" rel="noopener noreferrer">github.com/naisslab/AgentShark</a></div>
+    <div><b>README</b><a href="https://github.com/naisslab/AgentShark/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a></div>
+    <div><b>CLI 与过滤器</b><a href="https://github.com/naisslab/AgentShark/blob/main/docs/CLI.md" target="_blank" rel="noopener noreferrer">docs/CLI.md</a></div>
+    <div><b>MCP 服务器</b><a href="https://github.com/naisslab/AgentShark/blob/main/docs/MCP.md" target="_blank" rel="noopener noreferrer">docs/MCP.md</a></div>
+    <div><b>抓包格式</b><a href="https://github.com/naisslab/AgentShark/blob/main/docs/FORMAT.md" target="_blank" rel="noopener noreferrer">docs/FORMAT.md</a></div>
+    <div><b>回放</b><a href="https://github.com/naisslab/AgentShark/blob/main/docs/REPLAY.md" target="_blank" rel="noopener noreferrer">docs/REPLAY.md</a></div>
+    <div><b>安装</b><a href="https://github.com/naisslab/AgentShark/blob/main/docs/INSTALL.md" target="_blank" rel="noopener noreferrer">docs/INSTALL.md</a></div>
+    <div><b>变更日志</b><a href="https://github.com/naisslab/AgentShark/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">CHANGELOG.md</a></div>
+  </div>
+
+  <div class="panel warn">
+    <h3 style="margin-top:0">待你确认的两件事</h3>
+    <ol style="margin-bottom:0">
+      <li>仓库地址：<code>AgentShark/AgentShark</code> 不存在。若你指的是别处（例如内部 Git、私有仓库），
+          当前报告需要替换数据源。</li>
+      <li>版本与结论：项目在报告抓取后仍在快速提交，<code>0.1.0</code> 的界面与命令可能已变。
+          以仓库当天的 README 与 <code>agentshark --help</code> 为准。</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</main>
+<footer>
+  <div class="wrap">
+    <span>AgentShark 工具报告 · 把 Agent 执行轨迹当 pcap 来查</span>
+    <span>数据快照 2026-11-01 · 早期项目，结论以仓库当日状态为准</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  Array.prototype.slice.call(document.querySelectorAll("pre")).forEach(function (pre) {
+    var wrap = document.createElement("div");
+    wrap.className = "codewrap";
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制这段命令");
+
+    btn.addEventListener("click", function () {
+      var text = pre.innerText;
+      function done(ok) {
+        btn.textContent = ok ? "已复制" : "失败";
+        setTimeout(function () { btn.textContent = "复制"; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+    wrap.appendChild(btn);
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+  var sections = links.map(function (a) {
+    return document.querySelector(a.getAttribute("href"));
+  }).filter(Boolean);
+
+  function setActive(id) {
+    links.forEach(function (a) {
+      var on = a.getAttribute("href") === "#" + id;
+      a.style.color = on ? "var(--accent)" : "";
+      a.style.borderBottomColor = on ? "var(--accent)" : "";
+    });
+  }
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) setActive(en.target.id);
+      });
+    }, { rootMargin: "-70px 0px -70% 0px", threshold: 0 });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>
