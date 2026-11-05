@@ -22,6 +22,7 @@
 | [`Agents/Prompt/`](Agents/Prompt/index.html) | Prompt 工作台：25 条常用提示词与 11 个开源项目 |
 | [`Agents/Prompt/prompt-engineering-guide/`](Agents/Prompt/prompt-engineering-guide/index.html) | Prompt Engineering Guide 使用指南：结构、学习路线与本地运行 |
 | [`Agents/agent-sandbox/`](Agents/agent-sandbox/index.html) | Agent 沙箱技术白皮书：隔离方案、安全防护、资源调度与利用率（2026-10） |
+| [`Agents/agent-guide/`](Agents/agent-guide/index.html) | 从 0 到 1 构建 Agent：核心循环、最小架构、工具设计、上下文与记忆、评测、安全与 Python 骨架（2026-11） |
 | [`AgentsTeam/`](AgentsTeam/agent-fleet-1000.html) | Agent 舰队：通往 1000+ Agent 的五条路线 + [开源项目实证报告](AgentsTeam/agent-fleet-at-scale.html) |
 | [`Agents/Context/`](Agents/Context/index.html) | 上下文工程：注意力预算、压缩与记忆、工具输出、多 Agent 隔离与度量（2026-10） |
 | [`Agents/Context/caching/`](Agents/Context/caching/index.html) | 缓存机制：KV cache、prompt caching、语义/工具缓存、失效原因与盈亏平衡（2026-10） |
@@ -39,6 +40,8 @@
 | [`BigModel/`](BigModel/index.html) | 主流大模型调研：评测方法、AA v5 综合/分项排名、16 个模型的价格与性价比、月成本估算器（2026-11） |
 
 | [`Agents/Rules/`](Agents/Rules/index.html) | Agent 规则指南：AGENTS.md / CLAUDE.md / .cursor/rules 的加载机制、优先级、写法与体检表 |
+
+| [`AndroidAgents/`](AndroidAgents/index.html) | 安卓 AI Agent 调研：Operit、Mika、Eta、OmniBot 等 5 款原生 App + 4 个被控端框架，含权限与选型（2026-11） |
 
 ## 约定
 
